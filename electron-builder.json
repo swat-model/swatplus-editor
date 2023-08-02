@@ -1,0 +1,72 @@
+{
+    "appId": "TAMU.SWATPlusEditor",
+	"artifactName": "${name}-installer-${version}.${ext}",
+	"productName": "SWATPlusEditor",
+    "win": {
+		"target": "nsis",
+		"icon": "release/build/icons/ico/256x256.ico",
+		"asar": true,
+		"asarUnpack": [
+			"src/main/static"
+		]
+	},
+	"nsis": {
+		"oneClick": true,
+		"allowToChangeInstallationDirectory": false,
+		"include": "release/installer.nsh",
+		"runAfterFinish": false,
+		"shortcutName": "SWAT+ Editor"
+	},
+	"linux": {
+		"target": "tar.gz",
+		"asar": true,
+		"asarUnpack": [
+			"src/main/static"
+		],
+		"executableName": "SWATPlusEditor",
+		"artifactName": "${name}-${version}.${ext}"
+	},
+	"mac": {
+		"target": "dmg",
+		"icon": "release/build/icons/ico/256x256.ico",
+		"asar": true,
+		"asarUnpack": [
+			"src/main/static"
+		]
+	},
+	"appImage": {
+		"license": "license.txt",
+		"artifactName": "${name}-${version}.${ext}",
+		"category": "Science"
+	},
+	"directories": {
+		"buildResources": "release/build",
+		"output": "release/dist"
+	},
+    "files": [
+        "build/main/**/*",
+        {
+            "from": "build/renderer",
+            "to": "renderer",
+            "filter": ["**/*"]
+        },
+        {
+            "from": "src/main/static",
+            "to": "static",
+            "filter": ["**/*"]
+        },
+        "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+        "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+        "!**/node_modules/*.d.ts",
+        "!**/node_modules/.bin",
+        "!src",
+        "!config",
+        "!README.md",
+        "!scripts",
+        "!build/renderer",
+        "!dist",
+		"!release/*",
+		"!.git/*",
+		"!.vscode/*"
+    ]
+}
