@@ -1,4 +1,4 @@
-import {app, BrowserWindow, ipcMain, session, Menu, dialog, shell} from 'electron';
+import {app, BrowserWindow, ipcMain, session, Menu, dialog, shell, nativeTheme} from 'electron';
 import child_process from 'child_process';
 import {join} from 'path';
 import fs from 'fs';
@@ -55,7 +55,7 @@ function createWindow () {
 		height: mainWindowState.height,
 		x: mainWindowState.x,
 		y: mainWindowState.y,
-		title: 'SWAT Check ' + appsettings.version,
+		title: 'SWAT+ Editor ' + appsettings.version,
 		icon: join(app.getAppPath(), 'static/256x256.png'),
 		webPreferences: {
 			preload: join(__dirname, 'preload.js'),
@@ -177,6 +177,21 @@ ipcMain.on('read-swatcheck', (event, projectPath:string) => {
 	const data = fs.readFileSync(join(projectPath, 'SWATCheck.json'), 'utf8');
 	//console.log(data);
 	event.returnValue = data;
+})
+
+ipcMain.on('set-color-theme', (event, colorTheme:string) => {
+	switch(colorTheme) //while this seems redundant, themeSource can't be set to a variable
+	{
+		case 'dark':
+			nativeTheme.themeSource = 'dark';
+			break;
+		case 'light':
+			nativeTheme.themeSource = 'light';
+			break;
+		default:
+			nativeTheme.themeSource = 'system';
+			break;
+	}
 })
 
 //Set Menu

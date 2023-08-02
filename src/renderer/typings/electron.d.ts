@@ -13,7 +13,8 @@ export default interface ElectronApi {
 	openUrl: (key:string) => void,
 	openFileDialog: (options:any) => string[],
 	setWindowTitle: (message: string) => void,
-	readSwatCheck: (projectPath:string) => any
+	readSwatCheck: (projectPath:string) => any,
+	setColorTheme: (colorTheme:string) => void
 }
 
 declare global {
