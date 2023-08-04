@@ -1,43 +1,10 @@
-// Include any default variable overrides here (though functions won't be available)
-
-
-@import "node_modules/bootstrap/scss/bootstrap";
-
-// Then add additional custom code here
-body {
-	min-height: 100vh;
-	min-height: -webkit-fill-available;
+.v-tooltip > .v-overlay__content {
+	background-color: rgba(0,0,0, 0.9) !important;
+	color: white !important;
 }
 
-html {
-	height: -webkit-fill-available;
+.v-theme--light {
+	#secondary-nav {
+		background-color: #ECEFF1;
+	}
 }
-
-main {
-	height: 100vh;
-	height: -webkit-fill-available;
-	max-height: 100vh;
-	overflow-x: auto;
-	overflow-y: hidden;
-}
-
-#content-window {
-	height: 100vh;
-	overflow-y: hidden;
-}
-
-#inner-content-window {
-	overflow-y: auto;
-}
-
-table.table-min-width-th th, th.min, table.nowrap-headers th {
-	width: 1%;
-	white-space: nowrap;
-}
-
-.bi {
-	vertical-align: -.125em;
-	fill: currentColor;
-  }
-
-

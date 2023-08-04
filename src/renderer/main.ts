@@ -8,9 +8,16 @@ import { far } from '@fortawesome/free-regular-svg-icons';
 import { fab } from '@fortawesome/free-brands-svg-icons';
 import { FontAwesomeIcon, FontAwesomeLayers, FontAwesomeLayersText } from '@fortawesome/vue-fontawesome';
 
+// Vuetify
+import 'vuetify/styles'
+import './app.scss'
+import { createVuetify } from 'vuetify';
+import * as components from 'vuetify/components';
+import * as directives from 'vuetify/directives';
+import { aliases, fa } from 'vuetify/iconsets/fa-svg';
+
 //Custom Components
 import OpenInBrowser from './components/OpenInBrowser.vue';
-import BootstrapModal from './components/BootstrapModal.vue';
 
 const app = createApp(App);
 
@@ -20,8 +27,32 @@ app.component('font-awesome-icon', FontAwesomeIcon);
 app.component('font-awesome-layers', FontAwesomeLayers);
 app.component('font-awesome-layers-text', FontAwesomeLayersText);
 
+//Vuetify
+const vuetify = createVuetify({
+    components,
+    directives,
+    icons: {
+        defaultSet: 'fa',
+        aliases,
+        sets: {
+            fa,
+        },
+    },
+    theme: {
+        themes: {
+            dark: {
+                dark: true,
+                colors: {
+                    background: '#031a33',
+                    surface: '#092d54'
+                }
+            }
+        }
+    }
+});
+
 //Custom Components
 app.component('open-in-browser', OpenInBrowser);
-app.component('b-modal', BootstrapModal);
 
+app.use(vuetify);
 app.mount('#app');

@@ -1,5 +1,6 @@
 const Path = require('path');
-const vuePlugin = require('@vitejs/plugin-vue')
+const vuePlugin = require('@vitejs/plugin-vue');
+const vuetifyPlugin = require('vite-plugin-vuetify');
 
 const { defineConfig } = require('vite');
 
@@ -17,7 +18,10 @@ const config = defineConfig({
         outDir: Path.join(__dirname, 'build', 'renderer'),
         emptyOutDir: true,
     },
-    plugins: [vuePlugin()],
+    plugins: [
+        vuePlugin(),
+        vuetifyPlugin()
+    ],
 });
 
 module.exports = config;
