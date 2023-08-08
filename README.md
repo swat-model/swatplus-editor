@@ -14,6 +14,7 @@ Read the documentation at [swatplus.gitbook.io/docs](https://swatplus.gitbook.io
     * From command prompt, go to source code `/src/api` directory
 	* Create a directory `.venv` if it does not already exist
 	* Run `pipenv install`
+	* Run `pipenv --py` and confirm the python location matches the `pythonPath` in `/src/main/static/appsettings.json`
 
 ### Front-end development stack ###
 

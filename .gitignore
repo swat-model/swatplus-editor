@@ -25,6 +25,7 @@ release/output
 __pycache__/
 *.py[cod]
 .sass-cache/
+*.spec
 src/api/.venv/*
 src/api/build/
 src/api/Pipfile.lock
