@@ -9,10 +9,11 @@ Read the documentation at [swatplus.gitbook.io/docs](https://swatplus.gitbook.io
 ### Back-end development stack ###
 
 1. Install [Python 3](https://www.python.org/) (version 3.10 and up)
-2. Install required Python packages
+2. Set up virtual environment
+    * Run `pip install pipenv` (might be `pip3` on Linux and MacOS)
     * From command prompt, go to source code `/src/api` directory
-    * Run `pip install -r requirements.txt` (might be `pip3` on Linux and MacOS)
-3. Update the `/src/main/static/appsettings.json` file with your python PATH variable (typically `python` on Windows and `python3` on Linux and MacOS)
+	* Create a directory `.venv` if it does not already exist
+	* Run `pipenv install`
 
 ### Front-end development stack ###
 
@@ -23,7 +24,6 @@ Read the documentation at [swatplus.gitbook.io/docs](https://swatplus.gitbook.io
 
 ### Running the source code ###
 
-1. If needed, adjust the `pythonPath` setting in `/src/main/static/appsettings.json`; change to `python` (Windows) or `python3` (Linux/MacOS)
 1. From command prompt, go to the root directory of the source code
 2. Run `npm run dev`
 

@@ -4,14 +4,7 @@
 	const theme = useTheme();
 	const electron = window.electronApi;
 
-	let globals:any = {
-		dev_mode: true,
-		platform: null,
-		project_path: null,
-		version: null
-	}
-
-	globals = electron.getGlobals();
+	let globals = electron.getGlobals();
 	electron.setWindowTitle(`SWAT+ Editor ${globals.version}`);
 	
 	let page:any = reactive({

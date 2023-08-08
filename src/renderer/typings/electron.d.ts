@@ -2,18 +2,30 @@
  * Should match main/preload.ts for typescript support in renderer
  */
 export default interface ElectronApi {
-	runApi: (projectPath:string, readDb:boolean) => any,
+	sendMessage: (message: string) => void,
+	setWindowTitle: (message: string) => void,
+	getGlobals: () => ElectronGlobals,
+	getAppSettings: () => ElectronAppSettings,
+	addToStore: (key: string, value:any) => void,
+	getStoreSetting: (key:string) => any,
+	deleteFromStore: (key:string) => void,
+	getAppPath: () => string,
+	quitApp: () => void,
+	pathExists: (directory:string) => boolean,
+	joinPaths: (paths:string[]) => string,
+	pathDirectoryName: (directory:string) => string,
+	openFileOnSystem: (key:string) => void,
+	openUrl: (key:string) => void,
+	openFileDialog: (options:any) => string[],
+	saveFileDialog: (options:any) => string[],
+	spawnProcess: (script_name:string, args:string[]) => any,
 	processStdout: (callback:any) => void,
 	processStderr: (callback:any) => void,
 	processClose: (callback:any) => void,
 	killProcess: (pid:any) => void,
-	getGlobals: () => any,
-	quitApp: () => void,
-	openFileOnSystem: (key:string) => void,
-	openUrl: (key:string) => void,
-	openFileDialog: (options:any) => string[],
-	setWindowTitle: (message: string) => void,
-	readSwatCheck: (projectPath:string) => any,
+	runSwat: (debug:boolean, inputDir:string) => any,
+	getSwatPlusToolboxPath: () => string,
+	launchSwatPlusToolbox: (projectDb:string) => string,
 	setColorTheme: (colorTheme:string) => void
 }
 

@@ -21,3 +21,10 @@ obj/
 api_dist/
 release/dist
 release/output
+
+__pycache__/
+*.py[cod]
+.sass-cache/
+src/api/.venv/*
+src/api/build/
+src/api/Pipfile.lock
