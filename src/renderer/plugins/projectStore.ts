@@ -10,6 +10,7 @@ export const useProjectStore = defineStore('project', () => {
 	const description = ref<string|null>(null);
 	const version = ref<string|null>(null);
 	const isLte = ref<boolean>(false);
+	const hasLoadedCommandLine = ref<boolean>(false);
 
 	const hasCurrentProject = computed(() => !!projectDb.value)
 
@@ -29,6 +30,22 @@ export const useProjectStore = defineStore('project', () => {
 		return txtinout;
 	})
 
+	function setHasLoadedCommandLine(loaded:boolean):void {
+		hasLoadedCommandLine.value = loaded;
+	}
+
+	function getObject():ProjectSettings {
+		let project:ProjectSettings = {
+			projectDb: projectDb.value,
+			datasetsDb: datasetsDb.value,
+			name: name.value,
+			description: description.value,
+			version: version.value,
+			isLte: isLte.value,
+		};
+		return project;
+	}
+
 	function setCurrentProject(project:any):void {
 		projectDb.value = project.projectDb;
 		datasetsDb.value = project.datasetsDb;
@@ -40,14 +57,18 @@ export const useProjectStore = defineStore('project', () => {
 
 	function getApiHeader() {
 		let headerDict:any = {};
-		if (projectDb.value !== null) headerDict['project_db'] = projectDb.value;
-		if (datasetsDb.value !== null) headerDict['datasets_db'] = datasetsDb.value;
+		if (projectDb.value !== null) headerDict['Project-Db'] = projectDb.value;
+		if (datasetsDb.value !== null) headerDict['Datasets-Db'] = datasetsDb.value;
 		return { headers: headerDict };
 	}
 
+	function getTempApiHeader(customProjectDb:string) {
+		return { headers: { 'Project-Db': customProjectDb }}
+	}
+
 	return {
-		projectDb, datasetsDb, name, description, version, isLte,
+		projectDb, datasetsDb, name, description, version, isLte, hasLoadedCommandLine,
 		hasCurrentProject, projectPath, txtInOutPath,
-		setCurrentProject, getApiHeader
+		setHasLoadedCommandLine, getObject, setCurrentProject, getApiHeader, getTempApiHeader
 	}
 })

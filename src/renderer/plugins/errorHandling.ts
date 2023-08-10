@@ -1,5 +1,5 @@
 export function useErrorHandling() {
-	function log(message:string) {
+	function log(message:any) {
 		if (process.env.NODE_ENV === 'development') console.log(message);
 	}
 

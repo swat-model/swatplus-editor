@@ -16,7 +16,7 @@ export function useUtilities() {
 		return electron.pathExists(path);
 	}
 
-	function joinPaths(paths:[]) {
+	function joinPaths(paths:any[]) {
 		return electron.joinPaths(paths);
 	}
 
@@ -174,6 +174,16 @@ export function useUtilities() {
 		return item;
 	}
 
+	function setColorTheme(colorTheme:string):void {
+		electron.setColorTheme(colorTheme);
+	}
+
+	function setWindowTitle() {
+		let title = `SWAT+ Editor ${constants.appSettings.version}`;
+		if (!formatters.isNullOrEmpty(currentProject.name))  title += ' / ' + currentProject.name;
+		electron.setWindowTitle(title);
+	}
+
 	async function exit() {
 		electron.quitApp();
 	}
@@ -184,6 +194,7 @@ export function useUtilities() {
 		getVersionSupport,
 		getMostRecentProject, getRecentProjects, pushRecentProject, deleteRecentProject,
 		getObjTypeRoute, getMeta, setToNameProp, setVars,
+		setColorTheme, setWindowTitle,
 		exit
 	}
 }

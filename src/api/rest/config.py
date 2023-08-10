@@ -1,8 +1,8 @@
 from database.project.setup import SetupProjectDatabase
 
 class RequestHeaders:
-	PROJECT_DB = "project_db"
-	DATASETS_DB = "datasets_db"
+	PROJECT_DB = "Project-Db"
+	DATASETS_DB = "Datasets-Db"
     
 	def init(project_db_header, datasets_db_header=None):
 		if project_db_header:

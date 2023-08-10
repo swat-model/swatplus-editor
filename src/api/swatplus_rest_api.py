@@ -1,13 +1,16 @@
-from flask import Flask, jsonify
+from flask import Flask, make_response, jsonify
+from flask_cors import CORS
 from helpers.executable_api import Unbuffered
 import sys
 import argparse
 import platform
 import os
+import werkzeug
 
 from rest import setup
 
 app = Flask(__name__)
+CORS(app)
 exiting = False
 
 app.register_blueprint(setup.bp)
@@ -29,6 +32,11 @@ def shutdown():
 def teardown(exception):
 	if exiting:
 		os._exit(0)
+
+@app.errorhandler(werkzeug.exceptions.BadRequest)
+def handle_bad_request(e):
+    return make_response(jsonify(message=e.description), e.code)
+
 
 if __name__ == '__main__':
 	sys.stdout = Unbuffered(sys.stdout)

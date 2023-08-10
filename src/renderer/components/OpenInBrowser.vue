@@ -3,7 +3,10 @@
 	interface Props {
 		url: string,
 		class?: string,
-		text: string
+		text: string,
+		button: boolean,
+		color?: string,
+		variant?: "text" | "elevated" | "flat" | "tonal" | "outlined" | "plain" | undefined
 	}
 
 	const props = defineProps<Props>();
@@ -15,5 +18,6 @@
 </script>
 
 <template>
-	<a :href="url" @click="open" :class="class" :title="url">{{ text }}</a>
+	<v-btn v-if="props.button" @click="open" :title="url" :color="props.color" :variant="variant">{{ text }}</v-btn>
+	<a v-else :href="url" @click="open" :class="class" :title="url">{{ text }}</a>
 </template>

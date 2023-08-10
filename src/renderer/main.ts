@@ -1,5 +1,7 @@
 import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 import App from './App.vue';
+import router from './router';
 
 //Font Awesome
 import { library } from '@fortawesome/fontawesome-svg-core';
@@ -18,7 +20,9 @@ import { aliases, fa } from 'vuetify/iconsets/fa-svg';
 
 //Custom Components
 import OpenInBrowser from './components/OpenInBrowser.vue';
+import PageLoading from './components/PageLoading.vue';
 
+const pinia = createPinia();
 const app = createApp(App);
 
 //Font Awesome
@@ -44,15 +48,24 @@ const vuetify = createVuetify({
                 dark: true,
                 colors: {
                     background: '#031a33',
-                    surface: '#092d54'
+                    surface: '#092d54',
+					primary: '#81D4FA'
                 }
-            }
+            },
+			light: {
+				colors: {
+					primary: '#0068C1'
+				}
+			}
         }
     }
 });
 
 //Custom Components
 app.component('open-in-browser', OpenInBrowser);
+app.component('page-loading', PageLoading);
 
+app.use(router);
+app.use(pinia);
 app.use(vuetify);
 app.mount('#app');
