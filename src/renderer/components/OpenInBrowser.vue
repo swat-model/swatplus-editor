@@ -3,8 +3,8 @@
 	interface Props {
 		url: string,
 		class?: string,
-		text: string,
-		button: boolean,
+		text?: string,
+		button?: boolean,
 		color?: string,
 		variant?: "text" | "elevated" | "flat" | "tonal" | "outlined" | "plain" | undefined
 	}

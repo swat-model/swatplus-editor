@@ -23,7 +23,31 @@
 	src: url('/fonts/Roboto-Bold.ttf');
 }
 
+$font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
+
 $swat-blue: #0068C1;
+$swat-gray: #F4F5F7;
+
+code {
+	font-family: $font-family-monospace;
+}
+
+p {
+	margin-bottom: 12px;
+}
+
+td.min, th.min {
+	width: 1%;
+	white-space: nowrap;
+}
+
+.dash-heading {
+	font-size: 0.9rem;
+	font-weight: 500;
+	text-transform: uppercase;
+	text-align: center;
+	color: rgba(var(--v-theme-surface-variant), var(--v-disabled-opacity));
+}
 
 .v-tooltip > .v-overlay__content {
 	background-color: rgba(0,0,0, 0.9) !important;
@@ -34,15 +58,14 @@ ul.plain-border {
 	list-style: none;
 	margin-left: 0;
 	padding-left: 0;
-	border-top: 1px dashed rgba(255,255,255,0.2);
+	border-top: 1px solid rgba(255,255,255,0.1);
   
 	li {
 		padding: 0.5rem;
-		border-bottom: 1px dashed rgba(255,255,255,0.2);
+		border-bottom: 1px solid rgba(255,255,255,0.1);
 
 		a {
 			text-decoration: none;
-			color: #B3E5FC;
 
 			&.icon {
 				color: rgba(255,255,255,0.4);
@@ -60,27 +83,45 @@ ul.plain-border {
 }
 
 .v-theme--light {
+	&#mainContainer {
+		background-color: #fafafa;
+	}
 	#secondary-nav {
-		background-color: #ECEFF1;
+		background-color: $swat-gray;
 	}
 
 	#action-bar {
-		background-color: #ECEFF1;
+		background-color: $swat-gray;
 	}
 
 	ul.plain-border {
-		border-top-color: rgba(0,0,0,0.2);
+		border-top-color: rgba(0,0,0,0.1);
 	  
 		li {
-			border-bottom-color: rgba(0,0,0,0.2);
+			border-bottom-color: rgba(0,0,0,0.1);
 	
 			a {
-				color: #546E7A;
-	
 				&.icon {
 					color: rgba(0,0,0,0.4);
 				}
 			}
 		}
 	}
+}
+
+@import 'highcharts/css/highcharts.css';
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --highcharts-background-color: #092d54;
+    }
+}
+
+.highcharts-dark {
+    --highcharts-background-color: #092d54;
+}
+
+.highcharts-container {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
 }

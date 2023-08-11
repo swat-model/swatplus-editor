@@ -1,25 +1,21 @@
 <script setup lang="ts">
 	import { reactive, ref, onMounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
-	import { useTheme } from 'vuetify';
-	import { useApi, useConstants, useErrorHandling, useFormatters, useProjectStore, useRunProcess, useUtilities } from '../plugins';
+	import { useTheme, useDisplay } from 'vuetify';
+	import { usePlugins } from '../plugins';
 	import '../plugins/interfaces';
 	import SwatPlusToolboxButton from '../components/SwatPlusToolboxButton.vue';
 
 	const route = useRoute();
 	const theme = useTheme();
-	const api = useApi();
-	const constants = useConstants();
-	const errors = useErrorHandling();
-	const formatters = useFormatters();
-	const currentProject = useProjectStore();
-	const runProcess = useRunProcess();
-	const utilities = useUtilities();
+	const { mobile } = useDisplay();
+	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = usePlugins();
 	
 	let page:any = reactive({
 		error: null,
 		loading: false,
 		colorTheme: 'light',
+		secondaryNav: !mobile.value,
 		open: {
 			loading: false,
 			error: null,
@@ -225,6 +221,7 @@
 
 	function getPieChart(title:string, data:any, seriesLabel = 'Area') {
 		return {
+			chart: { styledMode: true },
 			plotOptions: { pie: { dataLabels: { enabled: false }, showInLegend: true } },
 			title: { text: title },
 			tooltip: { pointFormat: '{series.name}: <b>{point.percentage:,.1f}% ({point.y:,.1f} ha)</b>' },
@@ -516,6 +513,14 @@
 <template>
 	<div>
 		<v-navigation-drawer theme="dark" rail permanent>
+			<div class="px-2">
+				<v-tooltip location="end" text="Expand menu">
+					<template v-slot:activator="{ props }">
+						<v-app-bar-nav-icon v-bind="props" v-if="mobile" rounded="0" variant="text" @click.stop="page.secondaryNav = !page.secondaryNav"></v-app-bar-nav-icon>
+					</template>
+				</v-tooltip>
+				
+			</div>
 			<v-list density="compact" nav>
 				<v-list-item prepend-icon="fas fa-folder-open" to="/">
 					<v-tooltip activator="parent" location="end">Project setup and information</v-tooltip>
@@ -564,7 +569,7 @@
 
 			</div>
 			<div v-else>
-				<v-navigation-drawer permanent id="secondary-nav">
+				<v-navigation-drawer v-model="page.secondaryNav" id="secondary-nav">
 					<div class="pa-3">
 						<h1 class="mb-2 text-h6">SWAT+ Editor {{ constants.appSettings.version }}</h1>
 						<p class="mb-5">
@@ -581,7 +586,7 @@
 							<h2 class="mb-2 text-h6">Recent Projects</h2>
 							<ul class="plain-border text-body-2">
 								<li v-for="(project, i) in recentProjects" :key="i" class="d-flex">
-									<a href="#" :title="project.projectDb" :class="project.projectDb === currentProject.projectDb ? 'font-italic' : null"
+									<a href="#" :title="project.projectDb" :class="project.projectDb === currentProject.projectDb ? 'font-italic text-primary' : 'text-primary'"
 										@click.prevent="loadProject(project)">{{project.name}}</a>
 									<a class="ml-auto text-medium icon" href="#"
 										@click.prevent="removeProject(project)"
@@ -594,19 +599,206 @@
 				</v-navigation-drawer>
 
 				<v-main>
+					<div class="py-3 px-6">
+						<v-card class="mb-6">
+							<v-card-title>{{currentProject.name}}</v-card-title>
+							<v-card-subtitle v-if="!formatters.isNullOrEmpty(currentProject.description)">{{currentProject.description}}</v-card-subtitle>
+							<v-card-actions>
+								<open-file button :file-path="info.file_path" variant="text" size="small" icon="fas fa-folder-open"></open-file>
+								<v-btn v-if="versionSupport.supported" @click="openEditProject" variant="text" size="small" icon="fas fa-pen-to-square" title="Change name/description"></v-btn>
+								<v-spacer></v-spacer>
+								<open-file button :file-path="info.file_path" variant="text" size="small" color="surface-variant"><code style="text-transform: none !important;">{{info.file_path}}</code></open-file>
+							</v-card-actions>
+						</v-card>
+
+						<v-alert type="error" v-if="!formatters.isNullOrEmpty(versionSupport.error)" class="mb-6">
+							{{ versionSupport.error }}
+						</v-alert>
+
+						<div v-if="versionSupport.supported">
+							<v-row v-if="info.status.imported_weather || info.status.wrote_inputs">
+								<v-col :md="info.scenarios.length > 0 ? 6 : 12" cols="12">
+									<v-card>
+										<v-list density="compact">
+											<v-list-subheader class="text-uppercase">Project Status</v-list-subheader>
+											<v-list-item to="/edit/stations">
+												<template #prepend>
+													<v-icon :color="info.status.imported_weather ? 'success' : 'plain'">{{ info.status.imported_weather ? 'fas fa-check' : 'fas fa-minus' }}</v-icon>
+												</template>
+												Set up weather stations and weather generators
+											</v-list-item>
+											<v-list-item to="/run">
+												<template #prepend>
+													<v-icon :color="info.status.wrote_inputs ? 'success' : 'plain'">{{ info.status.wrote_inputs ? 'fas fa-check' : 'fas fa-minus' }}</v-icon>
+												</template>
+												Wrote SWAT+ input files
+											</v-list-item>
+											<v-list-item to="/run">
+												<template #prepend>
+													<v-icon :color="info.status.ran_swat ? 'success' : 'plain'">{{ info.status.ran_swat ? 'fas fa-check' : 'fas fa-minus' }}</v-icon>
+												</template>
+												Ran SWAT+
+											</v-list-item>
+											<v-list-item to="/run">
+												<template #prepend>
+													<v-icon :color="info.status.imported_output ? 'success' : 'plain'">{{ info.status.imported_output ? 'fas fa-check' : 'fas fa-minus' }}</v-icon>
+												</template>
+												Imported SWAT+ output into a database for analysis
+											</v-list-item>
+										</v-list>
+									</v-card>
+								</v-col>
+								<v-col v-if="info.scenarios.length > 0" md="6">
+									<v-card>
+										<v-list density="compact">
+											<v-list-subheader class="text-uppercase">Saved Scenarios</v-list-subheader>
+											<v-list-item v-for="(s, i) in info.scenarios" :key="i" @click="askLoadScenario(s)">{{ s.name }}</v-list-item>
+										</v-list>
+									</v-card>
+								</v-col>
+							</v-row>
+
+							<h2 class="mt-6 mb-4 dash-heading">SWAT+ Project Information</h2>
+
+							<v-row>
+								<v-col cols="12" md="6">
+									<v-card>
+										<v-table>
+											<tbody>
+												<tr>
+													<th>Total area</th>
+													<td>{{formatters.toNumberFormat(info.total_area, 2)}} ha</td>
+												</tr>
+												<tr>
+													<th>Simulation period</th>
+													<td>
+														{{info.simulation.yrc_start}}
+														{{info.simulation.day_start > 0 ? 'day ' + info.simulation.day_start : ''}}
+														- 
+														{{info.simulation.yrc_end}}
+														{{info.simulation.day_end > 0 ? 'day ' + info.simulation.day_end : ''}}
+													</td>
+												</tr>
+											</tbody>
+										</v-table>
+									</v-card>
+								</v-col>
+								<v-col cols="12" md="6">
+									<v-card>
+										<v-table>
+											<tbody>
+												<tr>
+													<th>Software</th>
+													<td>SWAT+ Editor {{info.editor_version}}<span v-if="info.status.using_gis">, {{info.gis_version}}</span></td>
+												</tr>
+												<tr>
+													<th>Last saved</th>
+													<td>{{formatters.toDate(info.last_modified)}}</td>
+												</tr>
+											</tbody>
+										</v-table>
+									</v-card>
+								</v-col>
+							</v-row>
+
+							<v-row>
+								<v-col cols="12" md="6">
+									<v-card>
+										<v-card-subtitle class="text-uppercase mt-3">Object totals</v-card-subtitle>
+										<v-table density="comfortable">
+											<tbody>
+												<tr v-if="info.status.using_gis">
+													<td class="text-right min">{{info.totals.subs}}</td>
+													<td>Subbasins</td>
+												</tr>
+												<tr v-if="info.totals.lhru > 0">
+													<td class="text-right min">{{info.totals.lhru}}</td>
+													<td><router-link class="text-primary" to="/edit/hrus-lte">HRUs</router-link></td>
+												</tr>
+												<tr v-else>
+													<td class="text-right min">{{info.totals.hru}}</td>
+													<td><router-link class="text-primary" to="/edit/hrus">HRUs</router-link></td>
+												</tr>
+												<tr>
+													<td class="text-right min">{{info.totals.cha > 0 ? info.totals.cha : info.totals.lcha}}</td>
+													<td><router-link class="text-primary" to="/edit/channels">Channels</router-link></td>
+												</tr>
+												<tr v-if="!info.is_lte">
+													<td class="text-right min">{{info.totals.aqu}}</td>
+													<td><router-link class="text-primary" to="/edit/aquifers">Aquifers</router-link></td>
+												</tr>
+												<tr v-if="!info.is_lte">
+													<td class="text-right min">{{info.totals.res}}</td>
+													<td><router-link class="text-primary" to="/edit/reservoirs">Reservoirs</router-link></td>
+												</tr>
+												<tr v-if="!info.is_lte">
+													<td class="text-right min">{{info.totals.rtu}}</td>
+													<td><router-link class="text-primary" to="/edit/routing_unit">Routing Units</router-link></td>
+												</tr>
+												<tr>
+													<td class="text-right min">{{info.totals.lsus}}</td>
+													<td><router-link class="text-primary" to="/edit/regions/ls_units">Landscape Units</router-link></td>
+												</tr>
+												<tr v-if="!info.is_lte">
+													<td class="text-right min">{{info.totals.rec}}</td>
+													<td><router-link class="text-primary" to="/edit/recall">Recall (point source/inlet data)</router-link></td>
+												</tr>
+												<tr v-if="!info.is_lte">
+													<td class="text-right min">{{info.totals.exco}}</td>
+													<td><router-link class="text-primary" to="/edit/exco">Export Coefficients</router-link></td>
+												</tr>
+												<tr v-if="!info.is_lte">
+													<td class="text-right min">{{info.totals.dlr}}</td>
+													<td><router-link class="text-primary" to="/edit/dr">Delivery Ratio</router-link></td>
+												</tr>
+											</tbody>
+										</v-table>
+									</v-card>
+								</v-col>
+								<v-col cols="12" md="6">
+									<v-card>
+										<v-card-text class="py-9 highcharts-dashboards-dark"><highcharts :options="charts.landuse"></highcharts></v-card-text>
+									</v-card>
+								</v-col>
+							</v-row>
+						</div>
+						<div v-else-if="versionSupport.updatable">
+							<p>
+								You must update your project to continue using it in this version of SWAT+ Editor.
+								If you do not wish to update your project, please uninstall this version of the editor and
+								<open-in-browser url="https://swatplus.gitbook.io/docs/installation"  text="install a compatible earlier version" class="text-primary" />.
+							</p>
+							<p>
+								Your project database may be modified during the upgrade. We will make a backup of the database and store it in the Backups folder 
+								within your project directory. There may be changes to the model inputs, so we recommend you <open-in-browser url="https://swatplus.gitbook.io/docs/release-notes"  text="read our full release notes" class="text-primary" />
+								to see what has changed <strong>before</strong> upgrading your project.
+							</p>
+						</div>
+					</div>					
 
 					<v-bottom-navigation id="action-bar" elevation="0" border="t" grow>
-						<v-btn to="/run" :active="false">
+						<v-btn v-if="versionSupport.supported && info.status.imported_weather && !mobile" to="/run" :active="false">
 							<v-icon>fas fa-play</v-icon> Run Model
 						</v-btn>
-						<swat-plus-toolbox-button text="SWAT+ Toolbox" :ran-swat="info.status.ran_swat"></swat-plus-toolbox-button>
-						<v-btn @click="openEditProject" :active="false">
+						<v-btn v-else-if="versionSupport.supported && !mobile" to="/edit" :active="false">
+							<v-icon>fas fa-pencil-alt</v-icon> Get Started
+						</v-btn>
+						<v-btn v-else-if="versionSupport.updatable" @click="updateProject" :active="false">
+							<v-icon>fas fa-circle-up</v-icon> Update Project
+						</v-btn>
+
+						<swat-plus-toolbox-button v-if="versionSupport.supported && !info.is_lte" text="SWAT+ Toolbox" :ran-swat="info.status.ran_swat"></swat-plus-toolbox-button>
+
+						<v-btn v-if="versionSupport.supported" @click="openEditProject" :active="false">
 							<v-icon>fas fa-pen-to-square</v-icon> Change Name
+						</v-btn>
+						<v-btn v-if="versionSupport.supported && info.status.using_gis" @click="reimportGis" :active="false">
+							<v-icon>fas fa-globe</v-icon> Re-import from GIS
 						</v-btn>
 						<v-btn @click="page.close.removeFromRecent=false; page.close.show=true" :active="false">
 							<v-icon>fas fa-circle-xmark</v-icon> Close Project
 						</v-btn>
-						<v-btn @click="utilities.exit" :active="false">
+						<v-btn v-if="!mobile" @click="utilities.exit" :active="false">
 							<v-icon>fas fa-arrow-right-from-bracket</v-icon> Quit
 						</v-btn>
 					</v-bottom-navigation>

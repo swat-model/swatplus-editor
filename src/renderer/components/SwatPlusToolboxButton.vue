@@ -1,11 +1,8 @@
 <script setup lang="ts">
 	import { reactive, computed } from 'vue';
-	import { useConstants, useFormatters, useProjectStore, useUtilities } from '../plugins';
+	import { usePlugins } from '../plugins';
 
-	const constants = useConstants();
-	const formatters = useFormatters();
-	const currentProject = useProjectStore();
-	const utilities = useUtilities();
+	const { constants, formatters, currentProject, utilities } = usePlugins();
 
 	const electron = window.electronApi;
 	const props = defineProps({
@@ -48,7 +45,7 @@
 </script>
 
 <template>
-	<v-btn v-if="constants.globals.platform === 'win32'" @click="open">
+	<v-btn v-if="constants.globals.platform === 'win32'" @click="open" :active="false">
 		<v-icon>fas fa-toolbox</v-icon> {{ props.text }}
 	</v-btn>
 

@@ -25,6 +25,8 @@
 		"electron-args": "^0.1.0",
 		"electron-store": "^8.1.0",
 		"electron-window-state": "^5.0.3",
+		"highcharts": "^11.1.0",
+		"highcharts-vue": "^1.4.3",
 		"moment": "^2.29.4",
 		"pinia": "^2.1.6",
 		"portfinder": "^1.0.32",

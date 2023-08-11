@@ -18,7 +18,16 @@ import * as components from 'vuetify/components';
 import * as directives from 'vuetify/directives';
 import { aliases, fa } from 'vuetify/iconsets/fa-svg';
 
+//Highcharts
+import HighchartsVue from 'highcharts-vue';
+import Highcharts from 'highcharts';
+import HighchartsMore from 'highcharts/highcharts-more';
+import exportingInit from 'highcharts/modules/exporting';
+import exportDataInit from 'highcharts/modules/export-data';
+import offlineExportInit from 'highcharts/modules/offline-exporting';
+
 //Custom Components
+import OpenFile from './components/OpenFile.vue';
 import OpenInBrowser from './components/OpenInBrowser.vue';
 import PageLoading from './components/PageLoading.vue';
 
@@ -61,7 +70,32 @@ const vuetify = createVuetify({
     }
 });
 
+//Highcharts
+// @ts-ignore
+app.use(HighchartsVue);
+Highcharts.setOptions({
+	chart: {
+		style: {
+			fontFamily: '"Roboto", sans-serif'
+		}
+	},
+	lang: {
+		thousandsSep: '\u002c'
+	},
+	title: {
+        style: {
+			fontSize: '16px',
+			fontWeight: 'bold'
+        }
+    }
+});
+HighchartsMore(Highcharts);
+exportingInit(Highcharts);
+exportDataInit(Highcharts);
+offlineExportInit(Highcharts);
+
 //Custom Components
+app.component('open-file', OpenFile);
 app.component('open-in-browser', OpenInBrowser);
 app.component('page-loading', PageLoading);
 
