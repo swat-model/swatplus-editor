@@ -27,9 +27,12 @@ import exportDataInit from 'highcharts/modules/export-data';
 import offlineExportInit from 'highcharts/modules/offline-exporting';
 
 //Custom Components
+import ErrorAlert from './components/ErrorAlert.vue';
 import OpenFile from './components/OpenFile.vue';
 import OpenInBrowser from './components/OpenInBrowser.vue';
 import PageLoading from './components/PageLoading.vue';
+import SelectFolderInput from './components/SelectFolderInput.vue';
+import SelectFileInput from './components/SelectFileInput.vue';
 
 const pinia = createPinia();
 const app = createApp(App);
@@ -95,9 +98,12 @@ exportDataInit(Highcharts);
 offlineExportInit(Highcharts);
 
 //Custom Components
+app.component('error-alert', ErrorAlert);
 app.component('open-file', OpenFile);
 app.component('open-in-browser', OpenInBrowser);
 app.component('page-loading', PageLoading);
+app.component('select-folder-input', SelectFolderInput);
+app.component('select-file-input', SelectFileInput);
 
 app.use(router);
 app.use(pinia);

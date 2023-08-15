@@ -178,6 +178,10 @@ export function useUtilities() {
 		electron.setColorTheme(colorTheme);
 	}
 
+	function getColorTheme():string {
+		return electron.getColorTheme();
+	}
+
 	function setWindowTitle() {
 		let title = `SWAT+ Editor ${constants.appSettings.version}`;
 		if (!formatters.isNullOrEmpty(currentProject.name))  title += ' / ' + currentProject.name;
@@ -194,7 +198,7 @@ export function useUtilities() {
 		getVersionSupport,
 		getMostRecentProject, getRecentProjects, pushRecentProject, deleteRecentProject,
 		getObjTypeRoute, getMeta, setToNameProp, setVars,
-		setColorTheme, setWindowTitle,
+		setColorTheme, getColorTheme, setWindowTitle,
 		exit
 	}
 }

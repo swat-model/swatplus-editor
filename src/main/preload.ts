@@ -28,5 +28,6 @@ contextBridge.exposeInMainWorld('electronApi', {
 	runSwat: (debug:boolean, inputDir:string) => {return ipcRenderer.sendSync('run-swat', debug, inputDir) },
 	getSwatPlusToolboxPath: () => {return ipcRenderer.sendSync('get-swatplustoolbox-path') },
 	launchSwatPlusToolbox: (projectDb:string) => {return ipcRenderer.sendSync('launch-swatplustoolbox', projectDb) },
-	setColorTheme: (colorTheme:string) => {return ipcRenderer.send('set-color-theme', colorTheme) }
+	setColorTheme: (colorTheme:string) => {return ipcRenderer.send('set-color-theme', colorTheme) },
+	getColorTheme: () => {return ipcRenderer.sendSync('get-color-theme') }
 })

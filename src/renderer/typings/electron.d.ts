@@ -26,7 +26,8 @@ export default interface ElectronApi {
 	runSwat: (debug:boolean, inputDir:string) => any,
 	getSwatPlusToolboxPath: () => string,
 	launchSwatPlusToolbox: (projectDb:string) => string,
-	setColorTheme: (colorTheme:string) => void
+	setColorTheme: (colorTheme:string) => void,
+	getColorTheme: () => string
 }
 
 declare global {

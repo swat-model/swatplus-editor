@@ -230,6 +230,7 @@ app.whenReady().then(() => {
 				}
 			
 				createWindow();
+				initColorTheme();
 			})
 			.catch((err) => {
 				console.log('Could not find port: ' + err);
@@ -457,6 +458,14 @@ ipcMain.on('launch-swatplustoolbox', (event, projectDb:string) => {
 })
 
 ipcMain.on('set-color-theme', (event, colorTheme:string) => {
+	setColorTheme(colorTheme);
+})
+
+ipcMain.on('get-color-theme', (event) => {
+	event.returnValue = nativeTheme.themeSource;
+})
+
+function setColorTheme(colorTheme:string) {
 	switch(colorTheme) //while this seems redundant, themeSource can't be set to a variable
 	{
 		case 'dark':
@@ -469,7 +478,13 @@ ipcMain.on('set-color-theme', (event, colorTheme:string) => {
 			nativeTheme.themeSource = 'system';
 			break;
 	}
-})
+}
+
+function initColorTheme() {
+	let colorTheme = 'light';
+	if (nativeTheme.themeSource === 'dark' || nativeTheme.shouldUseDarkColors) colorTheme = 'dark';
+	setColorTheme(colorTheme);
+}
 
 //Set Menu
 const template: Electron.MenuItemConstructorOptions[] = [

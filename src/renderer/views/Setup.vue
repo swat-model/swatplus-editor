@@ -479,12 +479,13 @@
 
 	function getColorTheme():void {
 		let colorTheme = localStorage.getItem('colorTheme');
+		if (colorTheme === null) colorTheme = utilities.getColorTheme();
 		setColorTheme(colorTheme);
 		console.log(theme.current.value.colors)
 	}
 
 	function setColorTheme(colorTheme:string|null):void {
-		if (colorTheme === null) colorTheme = 'light';
+		if (colorTheme === null || colorTheme === 'system') colorTheme = 'light';
 		page.colorTheme = colorTheme;
 		theme.global.name.value = colorTheme;
 		utilities.setColorTheme(colorTheme);
@@ -705,7 +706,7 @@
 								<v-col cols="12" md="6">
 									<v-card>
 										<v-card-subtitle class="text-uppercase mt-3">Object totals</v-card-subtitle>
-										<v-table density="comfortable">
+										<v-table density="comfortable" class="mt-1">
 											<tbody>
 												<tr v-if="info.status.using_gis">
 													<td class="text-right min">{{info.totals.subs}}</td>
@@ -741,11 +742,7 @@
 												</tr>
 												<tr v-if="!info.is_lte">
 													<td class="text-right min">{{info.totals.rec}}</td>
-													<td><router-link class="text-primary" to="/edit/recall">Recall (point source/inlet data)</router-link></td>
-												</tr>
-												<tr v-if="!info.is_lte">
-													<td class="text-right min">{{info.totals.exco}}</td>
-													<td><router-link class="text-primary" to="/edit/exco">Export Coefficients</router-link></td>
+													<td><router-link class="text-primary" to="/edit/recall">Point Sources / Inlets</router-link></td>
 												</tr>
 												<tr v-if="!info.is_lte">
 													<td class="text-right min">{{info.totals.dlr}}</td>
@@ -757,7 +754,7 @@
 								</v-col>
 								<v-col cols="12" md="6">
 									<v-card>
-										<v-card-text class="py-9 highcharts-dashboards-dark"><highcharts :options="charts.landuse"></highcharts></v-card-text>
+										<v-card-text class="py-4 highcharts-dashboards-dark"><highcharts :options="charts.landuse"></highcharts></v-card-text>
 									</v-card>
 								</v-col>
 							</v-row>
@@ -804,6 +801,54 @@
 					</v-bottom-navigation>
 				</v-main>
 			</div>
+
+			<v-dialog v-model="page.open.show" :max-width="constants.dialogSizes.md">
+				<v-card title="Open Project">
+					<v-card-text>
+						<select-file-input v-model="page.open.projectDb" :value="page.open.projectDb" label="Select your project/GIS SQLite database file" file-type="sqlite" required invalid-feedback="Select a SQLite database file"></select-file-input>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn :loading="page.open.loading" @click="openProject" color="primary" variant="text">Open</v-btn>
+						<v-btn @click="page.open.show = false">Cancel</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
+
+			<v-dialog v-model="page.close.show" :max-width="constants.dialogSizes.md">
+				<v-card title="Close Current Project?">
+					<v-card-text>
+						<p>
+							This will close the project currently open, <strong>{{currentProject.name}}</strong>. Are you sure?
+						</p>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn @click="closeCurrentProject" color="primary" variant="text">Yes</v-btn>
+						<v-btn @click="page.close.show = false">No</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
+
+			<v-dialog v-model="page.edit.show" :max-width="constants.dialogSizes.md">
+				<v-card title="Update Project Name and Description">
+					<v-card-text>
+						<error-alert :text="page.edit.error"></error-alert>
+
+						<v-text-field v-model="page.edit.name" :rules="[constants.formRules.required]"
+							label="Project display name"></v-text-field>
+
+						<v-text-field v-model="page.edit.description" :rules="[constants.formRules.max(25, page.edit.description)]"
+							label="Briefly describe your project location (main river, country)" 
+							hint="25 character limit; spaces will be converted to underscores"></v-text-field>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn @click="editProject" :loading="page.edit.saving" color="primary" variant="text">Save</v-btn>
+						<v-btn @click="page.edit.show = false">Cancel</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
 		</div>
 		<router-view></router-view>
 	</div>

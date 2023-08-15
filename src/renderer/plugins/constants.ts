@@ -41,12 +41,30 @@ export function useConstants() {
 	const globals = electron.getGlobals();
 	const appSettings = electron.getAppSettings();
 
+	const dialogSizes = {
+		xs: '300px',
+		sm: '500px',
+		md: '800px',
+		lg: '1000px'
+	}
+
+	const formRules = {
+		required: (value:string) => !!value || 'Required',
+		max: (numChars:number, value:string) => (value || '').length <= numChars || `Maximum ${numChars} characters`,
+		email: (value:string) => {
+			const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+			return pattern.test(value) || 'Invalid e-mail.'
+		}
+	}
+
 	return {
 		objTypeRouteTable,
 		noObjTypeRoutes,
 		objTypeToConTable,
 		commonMessages,
 		globals,
-		appSettings
+		appSettings,
+		dialogSizes,
+		formRules
 	}
 }
