@@ -124,6 +124,22 @@ export function useUtilities() {
 		return filtered;
 	}
 
+	function getDatabaseInstallPath(database_file:string='swatplus_datasets.sqlite') {
+		let installPath = electron.joinPaths([appPath, '../../../Databases/' + database_file]);
+		let installPathMac = electron.joinPaths([appPath, '../../../../../Databases/' + database_file]);
+		let searchPaths = [
+			installPath,
+			installPathMac,
+			'C:/SWAT/SWATPlus/Databases/' + database_file
+		];
+
+		for (let p of searchPaths) {
+			if (pathExists(p)) return p;
+		}
+
+		return null;
+	}
+
 	function getObjTypeRoute(item:any) {
 		let route = constants.objTypeRouteTable[item.obj_typ].path;
 		if (route === '#')
@@ -174,6 +190,10 @@ export function useUtilities() {
 		return item;
 	}
 
+	function openUrl(href:string) {
+		electron.openUrl(href);
+	}
+
 	function setColorTheme(colorTheme:string):void {
 		electron.setColorTheme(colorTheme);
 	}
@@ -197,7 +217,8 @@ export function useUtilities() {
 		getAutoComplete, getAutoCompleteId,
 		getVersionSupport,
 		getMostRecentProject, getRecentProjects, pushRecentProject, deleteRecentProject,
-		getObjTypeRoute, getMeta, setToNameProp, setVars,
+		getDatabaseInstallPath,
+		getObjTypeRoute, getMeta, setToNameProp, setVars, openUrl,
 		setColorTheme, getColorTheme, setWindowTitle,
 		exit
 	}

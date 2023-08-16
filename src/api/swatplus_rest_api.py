@@ -33,8 +33,8 @@ def teardown(exception):
 	if exiting:
 		os._exit(0)
 
-@app.errorhandler(werkzeug.exceptions.BadRequest)
-def handle_bad_request(e):
+@app.errorhandler(werkzeug.exceptions.HTTPException)
+def handle_exception(e):
     return make_response(jsonify(message=e.description), e.code)
 
 

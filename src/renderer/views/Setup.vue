@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { reactive, ref, onMounted, watch } from 'vue';
+	import { reactive, onMounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useTheme, useDisplay } from 'vuetify';
 	import { usePlugins } from '../plugins';
@@ -36,7 +36,7 @@
 			name: null,
 			description: null,
 			projectFolder: null,
-			datasetsDb: null,
+			datasetsDb: utilities.getDatabaseInstallPath(),
 			isLte: false
 		},
 		close: {
@@ -316,7 +316,8 @@
 				'--project_name='+ project.name,
 				'--editor_version='+ constants.appSettings.version,
 				'--is_lte=' + lte, 
-				'--project_description='+ project.description
+				'--project_description='+ project.description,
+				'--copy_datasets_db=y'
 			];
 
 			runTask(args, project);
@@ -523,7 +524,7 @@
 				
 			</div>
 			<v-list density="compact" nav>
-				<v-list-item prepend-icon="fas fa-folder-open" to="/">
+				<v-list-item prepend-icon="fas fa-folder-open" to="/" :active="$route.path === '/'">
 					<v-tooltip activator="parent" location="end">Project setup and information</v-tooltip>
 				</v-list-item>
 				<v-list-item prepend-icon="fas fa-pencil-alt" to="/edit">
@@ -539,7 +540,7 @@
 
 			<template #append>
 				<v-list density="compact" nav>
-					<v-list-item prepend-icon="fas fa-circle-question" to="/help">
+					<v-list-item prepend-icon="fas fa-circle-question" to="help">
 						<v-tooltip activator="parent" location="end">Help</v-tooltip>
 					</v-list-item>
 					<v-list-item :prepend-icon="page.colorTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon'" @click="toggleColorTheme">
@@ -603,7 +604,7 @@
 					<div class="py-3 px-6">
 						<v-card class="mb-6">
 							<v-card-title>{{currentProject.name}}</v-card-title>
-							<v-card-subtitle v-if="!formatters.isNullOrEmpty(currentProject.description)">{{currentProject.description}}</v-card-subtitle>
+							<v-card-subtitle v-if="!formatters.isNullOrEmpty(currentProject.description)">{{formatters.toReadable(currentProject.description||'')}}</v-card-subtitle>
 							<v-card-actions>
 								<open-file button :file-path="info.file_path" variant="text" size="small" icon="fas fa-folder-open"></open-file>
 								<v-btn v-if="versionSupport.supported" @click="openEditProject" variant="text" size="small" icon="fas fa-pen-to-square" title="Change name/description"></v-btn>
@@ -849,7 +850,221 @@
 					</v-card-actions>
 				</v-card>
 			</v-dialog>
+
+			<v-dialog v-model="page.import.show" :max-width="constants.dialogSizes.md" persistent>
+				<v-card title="Start SWAT+ Editor Project from QSWAT+">
+					<v-card-text>
+						<error-alert :text="page.open.error"></error-alert>			
+						<error-alert :text="page.import.error"></error-alert>
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing your GIS data." :stack-trace="task.error.toString()" />
+						
+						<div v-if="task.running">
+							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped></v-progress-linear>
+							<p>
+								{{task.progress.message}}
+							</p>
+						</div>
+						<div v-else-if="formatters.isNullOrEmpty(task.error)">
+							<p>
+								This is the first time opening your QSWAT+ project in SWAT+ Editor. We need to import your GIS data into SWAT+ objects.
+								This may take a few seconds to several minutes depending on the size of your project.
+							</p>
+
+							<v-form>
+								<v-text-field v-model="page.import.project.name" :rules="[constants.formRules.required]"
+									label="Project display name"></v-text-field>
+
+								<v-text-field v-model="page.import.project.description" :rules="[constants.formRules.max(25, page.edit.description)]"
+									label="Briefly describe your project location (main river, country)" 
+									hint="25 character limit; spaces will be converted to underscores"></v-text-field>
+
+								<v-checkbox v-model="page.import.project.isLte" class="mt-4">
+									<template #label>
+										Use SWAT+ lte? This is a lite version of the model that greatly simplifies hydrology and plant growth and 
+										does not simulate nutrients, concentrating on gully formation and stream degradation.
+									</template>
+								</v-checkbox>
+							</v-form>
+						</div>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn v-if="formatters.isNullOrEmpty(task.error)" :loading="task.running" @click="importProject" color="primary" variant="text">Start</v-btn>
+						<v-btn @click="cancelTask">Cancel</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
+
+			<v-dialog v-model="page.loadScenario.show" :max-width="constants.dialogSizes.md" persistent>
+				<v-card title="Load Scenario">
+					<v-card-text>
+						<error-alert :text="page.loadScenario.error"></error-alert>
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error loading your scenario." :stack-trace="task.error.toString()" />
+						
+						<div v-if="task.running">
+							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped></v-progress-linear>
+							<p>
+								{{task.progress.message}}
+							</p>
+						</div>
+						<div v-else-if="formatters.isNullOrEmpty(task.error)">
+							<p>
+								Are you sure you want to load the scenario, <strong>{{page.loadScenario.scenario.name}}</strong>?
+								Loading the scenario will <strong class="text-error">replace</strong> everything currently loaded 
+								in the editor (the default scenario), so please make sure any changes are saved as a new scenario if you wish 
+								to keep them. Scenarios can be saved from the <router-link to="/run" class="text-primary">run model screen</router-link>.
+							</p>
+							<p>
+								<strong class="text-error">WARNING:</strong> if you have QGIS open, you may need to completely close it first
+								because it locks some of the files we need to replace. Make sure QGIS is not open, then open just SWAT+ Editor on its 
+								own before loading the scenario. SWAT+ Editor can be launched in Windows by searching "SWAT+ Editor" in the search bar.
+							</p>
+						</div>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn v-if="formatters.isNullOrEmpty(task.error)" :loading="task.running" @click="loadScenario" color="primary" variant="text">Load Scenario</v-btn>
+						<v-btn @click="cancelTask">Cancel</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
+
+			<v-dialog v-model="page.create.show" :max-width="constants.dialogSizes.lg" persistent>
+				<v-card title="Create a New SWAT+ Editor Project">
+					<v-card-text>
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error creating your project." :stack-trace="task.error.toString()" />
+						
+						<div v-if="task.running">
+							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped></v-progress-linear>
+							<p>
+								{{task.progress.message}}
+							</p>
+						</div>
+						<div v-else-if="formatters.isNullOrEmpty(task.error)">
+							<p>
+								It is strongly recommended to start your new SWAT+ project from within the QSWAT+ interface.
+								QSWAT+ will set up your watershed and direct you to the editor after HRU delineation. For help using QSWAT+,
+								please <open-in-browser url="https://swat.tamu.edu/software/plus/"  text="visit our website" />.
+							</p>
+							<p>
+								However, it is not required to use GIS to start your project. Complete the form below to start a SWAT+ Editor project from scratch.
+								A project database will be created for you and you will need to input your spatial connections manually. If you already have
+								a project database, click cancel below and choose the open project button instead.
+							</p>
+
+							<error-alert :text="page.create.error"></error-alert>
+
+							<v-form>
+								<v-text-field v-model="page.create.name" :rules="[constants.formRules.required]" class="mb-3"
+									label="Project display name"></v-text-field>
+
+								<v-text-field v-model="page.create.description" :rules="[constants.formRules.max(25, page.edit.description)]" class="mb-3"
+									label="Briefly describe your project location (main river, country)" 
+									hint="25 character limit; spaces will be converted to underscores"></v-text-field>
+
+								<select-folder-input v-model="page.create.projectFolder" :value="page.create.projectFolder" class="mb-3"
+									label="Select your project folder"
+									hint="This will be where we create your project SQLite database file" persistent-hint
+									required invalidFeedback="Please select a folder"></select-folder-input>
+
+								<select-file-input v-model="page.create.datasetsDb" :value="page.create.datasetsDb" class="mb-3"
+									label="Select your SWAT+ datasets SQLite database file"
+									hint="This will be copied to your project folder above" persistent-hint
+									fileType="sqlite" required 
+									invalidFeedback="Please select a SQLite database file"></select-file-input>
+
+								<v-checkbox v-model="page.create.isLte" class="mt-4">
+									<template #label>
+										Use SWAT+ lte? This is a lite version of the model that greatly simplifies hydrology and plant growth and 
+										does not simulate nutrients, concentrating on gully formation and stream degradation. 
+									</template>
+								</v-checkbox>
+							</v-form>
+						</div>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn v-if="formatters.isNullOrEmpty(task.error)" :loading="page.create.loading || task.running" @click="createProject" color="primary" variant="text">Create</v-btn>
+						<v-btn @click="cancelTask">Cancel</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
+
+			<v-dialog v-model="page.openConfirm.show" :max-width="constants.dialogSizes.md" persistent>
+				<v-card title="Has your watershed changed?">
+					<v-card-text>
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error re-importing your project GIS data." :stack-trace="task.error.toString()" />
+						
+						<div v-if="task.running">
+							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped></v-progress-linear>
+							<p>
+								{{task.progress.message}}
+							</p>
+						</div>
+						<div v-else-if="formatters.isNullOrEmpty(task.error)">
+							<p v-if="!page.openConfirm.reimportMessage">
+								Did you run steps 1 or 2 of QSWAT+ since last opening SWAT+ Editor?
+								If so, we'll need to re-import your watershed data. 
+							</p>
+							<p v-else>
+								Did you run steps 1 or 2 of QSWAT+ since last opening SWAT+ Editor, 
+								or would you like to start over or switch between full SWAT+ and SWAT+ lte?
+								If so, we'll need to re-import your watershed data.
+								Warning: you may lose any changes you've made in the editor so far.
+							</p>
+
+							<v-checkbox v-model="page.openConfirm.project.isLte" class="mt-4">
+								<template #label>
+									Use SWAT+ lte? This is a lite version of the model that greatly simplifies hydrology and plant growth and 
+									does not simulate nutrients, concentrating on gully formation and stream degradation. 
+								</template>
+							</v-checkbox>
+						</div>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn @click="confirmOpen" color="primary" variant="text">No, continue to editor</v-btn>
+						<v-btn v-if="formatters.isNullOrEmpty(task.error)" :loading="task.running" @click="reImportProject" color="primary" variant="text">Yes, import new watershed</v-btn>
+						<v-btn v-if="task.running || !formatters.isNullOrEmpty(task.error)" @click="cancelTask">Cancel</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
+
+			<v-dialog v-model="page.update.show" :max-width="constants.dialogSizes.md" persistent>
+				<v-card title="Updating Project">
+					<v-card-text>
+						<error-alert :text="page.update.error"></error-alert>
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error updating your project." :stack-trace="task.error.toString()" />
+						
+						<div v-if="task.running">
+							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped></v-progress-linear>
+							<p>
+								{{task.progress.message}}
+							</p>
+						</div>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn @click="cancelTask">Cancel</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
+
+			<v-dialog v-model="page.noProject.show" :max-width="constants.dialogSizes.md">
+				<v-card title="Project Not Found">
+					<v-card-text>
+						<p>
+							The project's files cannot be found. Please use the open project button to select the project database file.
+						</p>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn @click="page.noProject.show = false">OK</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
 		</div>
+		
 		<router-view></router-view>
 	</div>
 </template>

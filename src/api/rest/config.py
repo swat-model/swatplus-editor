@@ -4,6 +4,7 @@ class RequestHeaders:
 	PROJECT_DB = "Project-Db"
 	DATASETS_DB = "Datasets-Db"
     
+	@staticmethod
 	def init(project_db_header, datasets_db_header=None):
 		if project_db_header:
 			SetupProjectDatabase.init(project_db_header, datasets_db_header)
@@ -11,5 +12,6 @@ class RequestHeaders:
 		else:
 			return False, 'Project database path was not sent in the request header. Please contact the development team.'
 		
+	@staticmethod
 	def close():
 		SetupProjectDatabase.close()

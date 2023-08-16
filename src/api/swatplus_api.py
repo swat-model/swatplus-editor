@@ -56,6 +56,7 @@ if __name__ == '__main__':
 	parser.add_argument("--is_lte", type=str, help="y/n use lte version of SWAT+ (default n)", nargs="?")
 	parser.add_argument("--update_project_values", type=str, help="y/n update project values (default n)", nargs="?")
 	parser.add_argument("--reimport_gis", type=str, help="y/n re-import GIS data (default n)", nargs="?")
+	parser.add_argument("--copy_datasets_db", type=str, help="y/n copy datasets sqlite to project folder (default n)", nargs="?")
 
 	# run from command line
 	parser.add_argument("--swat_exe_file", type=str, help="full path of the SWAT+ executable file", nargs="?")
@@ -81,9 +82,10 @@ if __name__ == '__main__':
 	is_lte = True if args.is_lte == "y" else False
 	update_project_values = True if args.update_project_values == "y" else False
 	reimport_gis = True if args.reimport_gis == "y" else False
+	copy_datasets_db = True if args.copy_datasets_db == "y" else False
 
 	if args.action == "setup_project":
-		api = SetupProject(args.project_db_file, args.editor_version, args.project_name, args.datasets_db_file, constant_ps, is_lte, args.project_description)
+		api = SetupProject(args.project_db_file, args.editor_version, args.project_name, args.datasets_db_file, constant_ps, is_lte, args.project_description, copy_datasets_db)
 	elif args.action == "update_project":
 		api = UpdateProject(args.project_db_file, args.editor_version, args.datasets_db_file, update_project_values, reimport_gis)
 	elif args.action == "reimport_gis":

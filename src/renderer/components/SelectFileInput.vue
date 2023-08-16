@@ -36,6 +36,15 @@
 		defaultFileName: {
 			type: String,
 			required: false
+		},
+		hint: {
+			type: String,
+			required: false,
+			default: 'Click the folder icon on the right to browse'
+		},
+		persistentHint: {
+			type: Boolean,
+			required: false
 		}
 	})
 
@@ -92,7 +101,8 @@
 </script>
 
 <template>
-	<v-text-field :value="model" :label="props.label" :id="props.id" :rules="appliedRules" hint="Click the folder icon on the right to browse"
+	<v-text-field :value="model" :label="props.label" :id="props.id" :rules="appliedRules" 
+		:hint="props.hint" :persistent-hint="props.persistentHint"
 		@click:append="selectFile" append-icon="fas fa-folder-open"
 		@input="updateModelValue"
 		@change="$emit('change', $event.target.value)"

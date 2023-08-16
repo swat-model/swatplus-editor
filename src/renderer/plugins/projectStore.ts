@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { useUtilities } from './utilities';
 
 export const useProjectStore = defineStore('project', () => {
 	const electron = window.electronApi;
+	const utilities = useUtilities();
 
 	const projectDb = ref<string|null>(null);
 	const datasetsDb = ref<string|null>(null);
@@ -13,6 +15,11 @@ export const useProjectStore = defineStore('project', () => {
 	const hasLoadedCommandLine = ref<boolean>(false);
 
 	const hasCurrentProject = computed(() => !!projectDb.value)
+	const isSupported = computed(() => {
+		if (!hasCurrentProject) return false;
+		let versionSupport = utilities.getVersionSupport(version.value||'');
+        return versionSupport.supported;
+	})
 
 	const projectPath = computed(() => {
 		if (!!projectDb.value) return null;
@@ -69,6 +76,6 @@ export const useProjectStore = defineStore('project', () => {
 	return {
 		projectDb, datasetsDb, name, description, version, isLte, hasLoadedCommandLine,
 		hasCurrentProject, projectPath, txtInOutPath,
-		setHasLoadedCommandLine, getObject, setCurrentProject, getApiHeader, getTempApiHeader
+		setHasLoadedCommandLine, getObject, setCurrentProject, getApiHeader, getTempApiHeader, isSupported
 	}
 })

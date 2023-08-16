@@ -21,11 +21,19 @@ from playhouse.migrate import *
 OVERWRITE_PLANTS = False
 
 class SetupProject(ExecutableApi):
-	def __init__(self, project_db, editor_version, project_name=None, datasets_db=None, constant_ps=True, is_lte=False, project_description=None):
+	def __init__(self, project_db, editor_version, project_name=None, datasets_db=None, constant_ps=True, is_lte=False, project_description=None, copy_datasets_db=False):
 		self.__abort = False
 
 		base_path = os.path.dirname(project_db)
 		rel_project_db = os.path.relpath(project_db, base_path)
+
+		if copy_datasets_db and datasets_db is not None:
+			src_datasets_db_path = os.path.dirname(datasets_db)
+			if base_path != src_datasets_db_path:
+				rel_datasets_db = os.path.relpath(datasets_db, src_datasets_db_path)
+				new_datasets_db = os.path.join(base_path, rel_datasets_db)
+				copyfile(datasets_db, new_datasets_db)
+				datasets_db = new_datasets_db
 
 		if datasets_db is None:
 			conn = lib.open_db(project_db)
@@ -123,10 +131,13 @@ if __name__ == '__main__':
 	parser.add_argument("--datasets_db_file", type=str, help="full path of datasets SQLite database file", nargs="?")
 	parser.add_argument("--constant_ps", type=str, help="y/n constant point source values (default n)", nargs="?")
 	parser.add_argument("--is_lte", type=str, help="y/n use lte version of SWAT+ (default n)", nargs="?")
+	parser.add_argument("--project_description", type=str, help="project name", nargs="?")
+	parser.add_argument("--copy_datasets_db", type=str, help="y/n copy datasets sqlite to project folder (default n)", nargs="?")
 
 	args = parser.parse_args()
 
 	constant_ps = True if args.constant_ps == "y" else False
 	is_lte = True if args.is_lte == "y" else False
+	copy_datasets_db = True if args.copy_datasets_db == "y" else False
 
-	api = SetupProject(args.project_db_file, args.editor_version, args.project_name, args.datasets_db_file, constant_ps, is_lte)
+	api = SetupProject(args.project_db_file, args.editor_version, args.project_name, args.datasets_db_file, constant_ps, is_lte, args.project_description, copy_datasets_db)

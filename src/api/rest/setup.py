@@ -43,6 +43,40 @@ def getConfig():
 
 		return jsonify(d)
 	
+@bp.route('/config', methods=['PUT'])
+def saveConfig():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	data = request.json
+	if 'name' not in data: abort(400, 'Project name was omitted from the request.')
+	
+	m = config.Project_config.get_or_none()
+	
+	if m is None:
+		rh.close()
+		abort(400, 'Could not retrieve project configuration table.')
+	
+	m.project_name = data['name']
+	result = m.save()
+
+	oc = simulation.Object_cnt.get_or_none()
+	if oc is None:
+		rh.close()
+		abort(400, 'Could not retrieve object_cnt table.')
+	
+	if 'description' in data and data['description'] is not None:
+		oc.name = data['description']
+	else:
+		oc.name = data['name']
+	result = oc.save()
+
+	rh.close()
+	if result > 0: return '', 200
+	abort(400, 'Unable to update project configuration table.')
+
+	
 @bp.route('/info', methods=['GET'])
 def getInfo():
 	project_db = request.headers.get(rh.PROJECT_DB)

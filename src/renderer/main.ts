@@ -31,8 +31,10 @@ import ErrorAlert from './components/ErrorAlert.vue';
 import OpenFile from './components/OpenFile.vue';
 import OpenInBrowser from './components/OpenInBrowser.vue';
 import PageLoading from './components/PageLoading.vue';
+import ProjectContainer from './components/ProjectContainer.vue';
 import SelectFolderInput from './components/SelectFolderInput.vue';
 import SelectFileInput from './components/SelectFileInput.vue';
+import StackTraceError from './components/StackTraceError.vue';
 
 const pinia = createPinia();
 const app = createApp(App);
@@ -102,8 +104,10 @@ app.component('error-alert', ErrorAlert);
 app.component('open-file', OpenFile);
 app.component('open-in-browser', OpenInBrowser);
 app.component('page-loading', PageLoading);
+app.component('project-container', ProjectContainer);
 app.component('select-folder-input', SelectFolderInput);
 app.component('select-file-input', SelectFileInput);
+app.component('stack-trace-error', StackTraceError);
 
 app.use(router);
 app.use(pinia);

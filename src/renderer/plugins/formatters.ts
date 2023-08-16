@@ -53,6 +53,10 @@ export function useFormatters() {
 		return parts.join(".");
 	}
 
+	function toReadable(text:string) {
+		return text.replace(/_/g, ' ');
+	}
+
 	function toRoundNumber(num:any, precision:number) {
 		let base = 10 ** precision;
 		return Number((Math.round(num * base) / base).toFixed(precision));
@@ -99,6 +103,7 @@ export function useFormatters() {
 		toMoneyFormat,
 		toNumberFormat,
 		toNumberWithCommas,
+		toReadable,
 		toRoundNumber,
 		toSum,
 		toUpperFirstLetter,
