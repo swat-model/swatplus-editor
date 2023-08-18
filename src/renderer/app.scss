@@ -114,6 +114,20 @@ ul.plain-border {
 	z-index: 450;
 }
 
+.data-table {
+	thead tr th {
+		font-weight: bold !important;
+		text-transform: uppercase;
+		font-size: 0.8rem;
+		white-space: nowrap;
+	}
+}
+
+.bg-secondary-tonal {
+	background-color: rgba(var(--v-theme-secondary), 0.12) !important;
+	color: rgb(var(--v-theme-secondary)) !important;
+}
+
 .v-theme--light {
 	&#mainContainer {
 		background-color: #fafafa;

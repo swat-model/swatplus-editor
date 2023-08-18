@@ -43,7 +43,8 @@ export function useFormatters() {
 		return '$' + toNumberFormat(value, 2);
 	}
 
-	function toNumberFormat(value:any, decimals = 1, units = '') {
+	function toNumberFormat(value:any, decimals = 1, units = '', valueIfNull = '') {
+		if (isNullOrEmpty(value)) return valueIfNull;
 		return toNumberWithCommas(toRoundNumber(Number(value), decimals)) + units;
 	}
 
