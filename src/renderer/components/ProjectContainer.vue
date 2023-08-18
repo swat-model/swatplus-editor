@@ -3,13 +3,15 @@
 	const { formatters, currentProject } = usePlugins();
 
 	interface Props {
-		loading: boolean,
-		loadError?: string | null
+		loading?: boolean,
+		loadError?: string | null,
+		addErrorFrame?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
 		loading: false,
-		loadError: null
+		loadError: null,
+		addErrorFrame: false
 	});
 
 	let errorMessage = !formatters.isNullOrEmpty(props.loadError) ? props.loadError : 'No project open. Please go to project setup to continue.';
@@ -18,9 +20,16 @@
 <template>
 	<div>
 		<page-loading :loading="props.loading"></page-loading>
-		<div v-if="!loading">
+		<div v-if="!props.loading">
 			<div v-if="currentProject.hasCurrentProject && currentProject.isSupported && formatters.isNullOrEmpty(props.loadError)">
 				<slot></slot>
+			</div>
+			<div v-else-if="props.addErrorFrame">
+				<v-main>
+					<div class="py-3 px-6">
+						<error-alert :text="errorMessage"></error-alert>
+					</div>
+				</v-main>
 			</div>
 			<div v-else>
 				<error-alert :text="errorMessage"></error-alert>

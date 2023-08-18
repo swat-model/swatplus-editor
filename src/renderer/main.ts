@@ -27,7 +27,9 @@ import exportDataInit from 'highcharts/modules/export-data';
 import offlineExportInit from 'highcharts/modules/offline-exporting';
 
 //Custom Components
+import ActionBar from './components/ActionBar.vue';
 import ErrorAlert from './components/ErrorAlert.vue';
+import FileHeader from './components/FileHeader.vue';
 import OpenFile from './components/OpenFile.vue';
 import OpenInBrowser from './components/OpenInBrowser.vue';
 import PageLoading from './components/PageLoading.vue';
@@ -68,7 +70,8 @@ const vuetify = createVuetify({
             },
 			light: {
 				colors: {
-					primary: '#0068C1'
+					primary: '#0068C1',
+					secondary: '#607D8B'
 				}
 			}
         }
@@ -100,7 +103,9 @@ exportDataInit(Highcharts);
 offlineExportInit(Highcharts);
 
 //Custom Components
+app.component('action-bar', ActionBar);
 app.component('error-alert', ErrorAlert);
+app.component('file-header', FileHeader);
 app.component('open-file', OpenFile);
 app.component('open-in-browser', OpenInBrowser);
 app.component('page-loading', PageLoading);

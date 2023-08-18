@@ -503,7 +503,7 @@
 	onMounted(async () => await init());
 
 	watch(
-		() => route,
+		() => route.name,
 		async () => await init()
 	)
 
@@ -540,7 +540,7 @@
 
 			<template #append>
 				<v-list density="compact" nav>
-					<v-list-item prepend-icon="fas fa-circle-question" to="help">
+					<v-list-item prepend-icon="fas fa-circle-question" to="/help">
 						<v-tooltip activator="parent" location="end">Help</v-tooltip>
 					</v-list-item>
 					<v-list-item :prepend-icon="page.colorTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon'" @click="toggleColorTheme">

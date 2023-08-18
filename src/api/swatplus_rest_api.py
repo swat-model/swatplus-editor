@@ -7,13 +7,14 @@ import platform
 import os
 import werkzeug
 
-from rest import setup
+from rest import setup, channels
 
 app = Flask(__name__)
 CORS(app)
 exiting = False
 
 app.register_blueprint(setup.bp)
+app.register_blueprint(channels.bp)
 
 @app.route('/', methods=['GET'])
 def default():

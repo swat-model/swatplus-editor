@@ -1,6 +1,6 @@
 <script setup lang="ts">
 	import { reactive, watch, onMounted } from 'vue';
-	import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router';
+	import { RouteRecordName, useRoute } from 'vue-router';
 	import { usePlugins } from '../../plugins';
 	
 	const route = useRoute();
@@ -233,8 +233,8 @@
 		return items.filter((el:any) => { return el.show; })
 	}
 
-	function processSubOpenItem(thisRoute:RouteLocationNormalizedLoaded, name:string) {
-		if (thisRoute?.name?.toString().includes(name)) page.subOpen.push(name);
+	function processSubOpenItem(thisRoute:RouteRecordName|null|undefined, name:string) {
+		if (thisRoute?.toString().includes(name)) page.subOpen.push(name);
 		else {
 			let idx = page.subOpen.indexOf(name);
 			if (idx > -1) {
@@ -243,7 +243,7 @@
 		}
 	}
 
-	function processSubOpen(thisRoute:RouteLocationNormalizedLoaded) {
+	function processSubOpen(thisRoute:RouteRecordName|null|undefined) {
 		let subOpenItems = [
 			'Channels', 'Aquifers', 'Reservoirs', 'RoutingUnit', 'Delratio',
 			'Stations', 'Operations', 'LandscapeUnits', 'HardCalibration', 'SoftCalibration', 'Constituents'
@@ -255,17 +255,18 @@
 	}
 
 	watch(
-		() => route,
+		() => route.name,
 		(newRoute) => {
 			processSubOpen(newRoute);
+			console.log('newRoute')
 		}
 	)
 
-	onMounted(() => processSubOpen(route));
+	onMounted(() => processSubOpen(route.name));
 </script>
 
 <template>
-	<project-container :loading="page.loading">
+	<project-container :loading="page.loading" add-error-frame>
 		<v-navigation-drawer permanent id="secondary-nav">
 			<v-list v-model:opened="page.open" :lines="false" density="compact" nav>
 				<v-list-group v-for="navGroup in shownNavGroups(nav)" :key="navGroup.name"
@@ -274,7 +275,8 @@
 						<v-list-item v-bind="props" :title="navGroup.name" color="primary" variant="tonal"></v-list-item>
 					</template>
 					<v-list-item v-for="navItem in shownNavItems(navGroup.items)" :key="navItem.name"
-						:to="navItem.path" :title="navItem.name">
+						:to="navItem.path" :title="navItem.name" color="secondary"
+						:class="navItem.subItems.length > 0 && page.subOpen.includes(navItem.routeName) ? 'sub-open' : ''">
 						<v-list v-if="navItem.subItems.length > 0 && page.subOpen.includes(navItem.routeName)" :lines="false" density="compact" nav>
 							<v-list-item v-for="navSubItem in shownNavItems(navItem.subItems)" :key="navSubItem.name" 
 								:to="navSubItem.path" :title="navSubItem.name"></v-list-item>

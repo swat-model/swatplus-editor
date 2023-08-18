@@ -4,6 +4,10 @@ import Setup from '../views/Setup.vue';
 import Help from '../views/Help.vue';
 import Edit from '../views/edit/Edit.vue';
 
+import connect from './connect';
+
+const editRoutes = connect;
+
 export default createRouter({
 	history: createWebHistory(),
 	linkActiveClass: 'parent-active',
@@ -14,7 +18,8 @@ export default createRouter({
 			children: [
 				{ path: 'help', name: 'Help', component: Help },
 				{ 
-					path: 'edit', name: 'Edit', component: Edit
+					path: 'edit', name: 'Edit', component: Edit,
+					children: editRoutes
 				}
 			]
 		},
