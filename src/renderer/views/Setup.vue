@@ -555,20 +555,51 @@
 				<page-loading :loading="page.loading"></page-loading>
 			</v-main>
 			<v-main v-else-if="!formatters.isNullOrEmpty(page.error)">
-				<h1>SWAT+ Editor {{ constants.appSettings.version }}</h1>
-				<v-alert color="info" icon="$info">
-					<template #text>
-						<p>SWAT+ Editor encountered an error: {{page.error}}</p>
-						<p>
-							Check to make sure SWAT+ Editor is working properly by checking the Help page and scrolling to the bottom.
-							Contact the developer if needed. First, you might try reloading in case your computer is slow to open the APIs:
-						</p>
-						<v-btn @click="getInfo" :loading="page.loading">Reload SWAT+ Editor</v-btn>
-					</template>
-				</v-alert>
+				<div class="py-3 px-6">
+					<h1>SWAT+ Editor {{ constants.appSettings.version }}</h1>
+					<v-alert color="info" icon="$info">
+						<template #text>
+							<p>SWAT+ Editor encountered an error: {{page.error}}</p>
+							<p>
+								Check to make sure SWAT+ Editor is working properly by checking the Help page and scrolling to the bottom.
+								Contact the developer if needed. First, you might try reloading in case your computer is slow to open the APIs:
+							</p>
+							<v-btn @click="getInfo" :loading="page.loading">Reload SWAT+ Editor</v-btn>
+						</template>
+					</v-alert>
+				</div>
 			</v-main>
 			<div v-else-if="!currentProject.hasCurrentProject">
+				<v-main>
+					<div class="py-3 px-6">
+						<v-sheet elevation="2" max-width="800" rounded="lg" width="100%" class="my-4 pa-4 text-center mx-auto">
+							<h2 class="text-h5 mb-6">Welcome to SWAT+ Editor {{constants.appSettings.version}}</h2>
 
+							<p class="mb-4 text-medium-emphasis">
+								<open-in-browser url="https://swatplus.gitbook.io/docs/release-notes"  text="Read our release notes" /> to learn more about this release.
+							</p>
+
+							<div v-if="recentProjects.length > 0" class="my-5">
+								<h2 class="text-h6 text-center">Recent Projects</h2>
+								<ul class="plain-border">
+									<li v-for="(project, i) in recentProjects" :key="i" class="d-flex">
+										<a href="#" :title="project.projectDb" :class="project.projectDb === currentProject.projectDb ? 'font-italic text-primary' : 'text-primary'"
+											@click.prevent="loadProject(project)">{{project.name}}</a>
+										<a class="ml-auto text-medium icon" href="#"
+											@click.prevent="removeProject(project)"
+											:title="'Remove ' + project.name + ' from recent projects list'">
+											<font-awesome-icon :icon="['fas', 'times']" /></a>
+									</li>
+								</ul>
+							</div>
+
+							<div>
+								<v-btn class="text-none mr-2" color="primary" rounded variant="flat" @click="page.open.show = true">Open a project</v-btn>
+								<v-btn class="text-none" color="secondary" rounded variant="tonal" @click="page.create.show = true">Create a new project</v-btn>
+							</div>
+						</v-sheet>
+					</div>
+				</v-main>
 			</div>
 			<div v-else>
 				<v-navigation-drawer v-model="page.secondaryNav" id="secondary-nav">

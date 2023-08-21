@@ -1,3 +1,4 @@
+import { useRoute } from 'vue-router';
 import { useApi } from './api';
 import { useProjectStore } from './projectStore';
 import { useFormatters } from './formatters';
@@ -5,12 +6,17 @@ import { useConstants } from './constants';
 
 export function useUtilities() {
 	const electron = window.electronApi;
+	const route = useRoute();
 	const api = useApi();
 	const currentProject = useProjectStore();
 	const formatters = useFormatters();
 	const constants = useConstants();
 
 	const appPath = electron.getAppPath().replace('app.asar', 'app.asar.unpacked');
+
+	function appendRoute(pathToAppend:string) {
+		return route.path + (route.path.endsWith('/') ? '' : '/') + pathToAppend
+	}
 
 	function pathExists(path:string) {
 		return electron.pathExists(path);
@@ -22,12 +28,12 @@ export function useUtilities() {
 
 	function getAutoComplete(type:string, name:any) {
 		if (formatters.isNullOrEmpty(name))
-			return api.get(`autocomplete-np/${type}`, currentProject.getApiHeader());
-		return api.get(`autocomplete/${type}/${name}`, currentProject.getApiHeader());
+			return api.get(`auto_complete/all/${type}`, currentProject.getApiHeader());
+		return api.get(`auto_complete/match/${type}/${name}`, currentProject.getApiHeader());
 	}
 
 	function getAutoCompleteId(type:string, name:any) {
-		return api.get(`autocomplete/id/${type}/${name}`, currentProject.getApiHeader());
+		return api.get(`auto_complete/item-id/${type}/${name}`, currentProject.getApiHeader());
 	}
 
 	function getVersionSupport(version:string) {
@@ -213,7 +219,7 @@ export function useUtilities() {
 	}
 
 	return {
-		appPath, pathExists, joinPaths,
+		appPath, appendRoute, pathExists, joinPaths,
 		getAutoComplete, getAutoCompleteId,
 		getVersionSupport,
 		getMostRecentProject, getRecentProjects, pushRecentProject, deleteRecentProject,

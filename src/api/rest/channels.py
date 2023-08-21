@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
@@ -59,8 +59,8 @@ def con():
 		return DefaultRestMethods.post_con('lcha', Chandeg_con, Channel_lte_cha)
 	abort(405, 'HTTP Method not allowed.')
 
-@bp.route('/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def conId():
+@bp.route('/items/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def conId(id):
 	if request.method == 'GET':
 		return DefaultRestMethods.get(id, Chandeg_con, 'Channel', True)
 	elif request.method == 'PUT':
@@ -74,7 +74,7 @@ def conOut():
 	return DefaultRestMethods.post_con_out('chandeg_con', Chandeg_con_out)
 
 @bp.route('/out/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def conOutId():
+def conOutId(id):
 	if request.method == 'GET':
 		return DefaultRestMethods.get(id, Chandeg_con_out, 'Outflow', True)
 	elif request.method == 'PUT':
@@ -141,7 +141,7 @@ def init():
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/initial/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def initId():
+def initId(id):
 	if request.method == 'GET':
 		return DefaultRestMethods.get(id, Initial_cha, 'Channel', True)
 	elif request.method == 'DELETE':
@@ -265,7 +265,7 @@ def nutrients():
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/nutrients/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def nutrientsId():
+def nutrientsId(id):
 	if request.method == 'GET':
 		return DefaultRestMethods.get(id, Nutrients_cha, 'Channel')
 	elif request.method == 'DELETE':
@@ -297,7 +297,7 @@ def hydsed():
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/hydsed/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def hydsedId():
+def hydsedId(id):
 	if request.method == 'GET':
 		return DefaultRestMethods.get(id, Hyd_sed_lte_cha, 'Channel')
 	elif request.method == 'DELETE':
@@ -364,7 +364,7 @@ def properties():
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/properties/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def propertiesId():
+def propertiesId(id):
 	if request.method == 'GET':
 		return DefaultRestMethods.get(id, Channel_lte_cha, 'Channel', True)
 	elif request.method == 'DELETE':

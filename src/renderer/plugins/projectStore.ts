@@ -22,12 +22,14 @@ export const useProjectStore = defineStore('project', () => {
 	})
 
 	const projectPath = computed(() => {
-		if (!!projectDb.value) return null;
 		return electron.pathDirectoryName(projectDb.value||'');
 	})
 
+	const projectDbUrl = computed(() => {
+		return encodeURIComponent(projectDb.value||'');
+	})
+
 	const txtInOutPath = computed(() => {
-		if (!!projectDb.value) return null;
 		let pp = electron.pathDirectoryName(projectDb.value||'');
 		let txtinout = electron.joinPaths([pp, 'Scenarios', 'Default', 'TxtInOut']);
 
@@ -69,13 +71,13 @@ export const useProjectStore = defineStore('project', () => {
 		return { headers: headerDict };
 	}
 
-	function getTempApiHeader(customProjectDb:string) {
+	function getTempApiHeader(customProjectDb:any) {
 		return { headers: { 'Project-Db': customProjectDb }}
 	}
 
 	return {
 		projectDb, datasetsDb, name, description, version, isLte, hasLoadedCommandLine,
-		hasCurrentProject, projectPath, txtInOutPath,
+		hasCurrentProject, projectPath, txtInOutPath, projectDbUrl,
 		setHasLoadedCommandLine, getObject, setCurrentProject, getApiHeader, getTempApiHeader, isSupported
 	}
 })

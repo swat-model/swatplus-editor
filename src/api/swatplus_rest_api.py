@@ -7,14 +7,16 @@ import platform
 import os
 import werkzeug
 
-from rest import setup, channels
+from rest import setup, auto_complete, channels, definitions
 
 app = Flask(__name__)
 CORS(app)
 exiting = False
 
 app.register_blueprint(setup.bp)
+app.register_blueprint(auto_complete.bp)
 app.register_blueprint(channels.bp)
+app.register_blueprint(definitions.bp)
 
 @app.route('/', methods=['GET'])
 def default():

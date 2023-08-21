@@ -3,7 +3,7 @@
 </script>
 
 <template>
-	<v-sheet elevation="12" max-width="600" rounded="lg" width="100%" class="my-4 pa-4 text-center mx-auto">
+	<v-sheet elevation="2" max-width="600" rounded="lg" width="100%" class="my-4 pa-4 text-center mx-auto">
 		<v-icon class="mb-5" color="primary" icon="fas fa-magnifying-glass" size="112" ></v-icon>
 
 		<h2 class="text-h5 mb-6">Page Not Found</h2>

@@ -4,7 +4,7 @@
 	// @ts-ignore
 	import _ from 'underscore';
 	import { usePlugins } from '../plugins';
-	const { api, currentProject, errors, formatters } = usePlugins();
+	const { api, currentProject, errors, formatters, utilities } = usePlugins();
 
 	interface Props {
 		apiUrl: string,
@@ -12,6 +12,7 @@
 		headers?: GridViewHeader[],
 		useDynamicHeaders?: boolean,
 		noActionBar?: boolean,
+		fullWidthActionBar?: boolean,
 		hideSummary?: boolean,
 		hideFilter?: boolean,
 		hideCreate?: boolean,
@@ -19,6 +20,7 @@
 		hideDelete?: boolean,
 		itemsPerPage?: number,
 		defaultSort?: [string,string], //[sort key, asc or desc]
+		hideFields?: string[]
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -27,13 +29,15 @@
 		headers: () => <GridViewHeader[]>[],
 		useDynamicHeaders: false,
 		noActionBar: false,
+		fullWidthActionBar: false,
 		hideSummary: false,
 		hideFilter: false,
 		hideCreate: false,
 		hideEdit: false,
 		hideDelete: false,
 		itemsPerPage: 50,
-		defaultSort: () => ['name', 'asc']
+		defaultSort: () => ['name', 'asc'],
+		hideFields: () => ['id']
 	});
 
 	const loaderArray = computed(() => {
@@ -75,7 +79,7 @@
 		items: []
 	});
 
-	async function get() {
+	async function get(init = false) {
 		table.loading = true;
 		table.error = null;
 
@@ -99,6 +103,10 @@
 			data.total = response.data.total;
 			data.matches = response.data.total;
 			data.items = response.data.items;
+
+			if (init) {
+				getDynamicHeaders();
+			}
 		} catch (error) {
 			errors.log(error);
 		}
@@ -106,10 +114,32 @@
 		table.loading = false;
 	}
 
+	function getDynamicHeaders() {
+		if (props.useDynamicHeaders && data.items.length > 0) {
+			let item = data.items[0];
+			let keys = Object.keys(item);
+
+			for (let key of keys) {
+				if (!props.hideFields.includes(key) && !Array.isArray(item[key])) {
+					console.log(key + ' ' + typeof(item[key]));
+					let header:GridViewHeader = <GridViewHeader>{
+						key: key,
+						type: item[key] == null ? 'string' : typeof(item[key]),
+						decimals: typeof(item[key]) == 'number' ? 2 : 0,
+						class: typeof(item[key]) == 'number' ? 'text-right' : ''
+					};
+					
+					if (key == 'name') table.headers.unshift(header);
+					else table.headers.push(header);
+				}
+			}
+		}
+	}
+
 	async function doSort(newSortByKey:string) {
 		let dir = table.sortBy[1] === 'asc' ? 'desc' : 'asc';
 		table.sortBy = [newSortByKey, dir];
-		await get();
+		await get(false);
 	}
 
 	function getNumPages() {
@@ -118,12 +148,12 @@
 
 	async function filterChange() {
 		table.page = 1;
-		_.debounce(await get(), 500);
+		_.debounce(await get(false), 500);
 	}
 
 	onMounted(async () => {
 		page.loading = true;
-		await get();
+		await get(true);
 		page.loading = false;
 	});
 </script>
@@ -163,7 +193,7 @@
 			<tbody v-else>
 				<tr v-for="item in data.items">
 					<td v-if="!props.hideEdit" class="min">
-						<router-link :to="`edit/${item.id}`" class="text-decoration-none text-primary" title="Edit/View">
+						<router-link :to="utilities.appendRoute(`edit/${item.id}`)" class="text-decoration-none text-primary" title="Edit/View">
 							<font-awesome-icon :icon="['fas', 'edit']"></font-awesome-icon>
 						</router-link>
 					</td>
@@ -175,7 +205,8 @@
 							{{ item[header.key] ? 'Y' : 'N' }}
 						</div>
 						<div v-else-if="header.type === 'object'">
-							<router-link v-if="!formatters.isNullOrEmpty(header.objectRoutePath)" class="text-primary text-decoration-none" 
+							<span v-if="formatters.isNullOrEmpty(item[header.key])">-</span>
+							<router-link v-else-if="!formatters.isNullOrEmpty(header.objectRoutePath)" class="text-primary text-decoration-none" 
 								:to="`${header.objectRoutePath}${item[header.objectValueField||'id']}`">
 								{{ item[header.key][header.objectTextField||'name'] }}
 							</router-link>
@@ -184,7 +215,7 @@
 							</span>
 						</div>
 						<div v-else>
-							{{ item[header.key] }}
+							{{ formatters.isNullOrEmpty(item[header.key]) ? '-' : item[header.key] }}
 						</div>	
 					</td>
 					<td v-if="!props.hideDelete" class="min">
@@ -194,9 +225,9 @@
 			</tbody>
 		</v-table>
 	</v-card>
-		<action-bar v-if="!props.noActionBar">
-			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" to="create">Create Record</v-btn>
-			<v-pagination v-model="table.page" @update:modelValue="get" :total-visible="getNumPages()"
+		<action-bar v-if="!props.noActionBar" :full-width="props.fullWidthActionBar">
+			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" :to="utilities.appendRoute('create')">Create Record</v-btn>
+			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="getNumPages()"
 				:length="getNumPages()" class="ml-auto" size="small"></v-pagination>
 		</action-bar>
 	</project-container>

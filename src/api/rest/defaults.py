@@ -165,7 +165,7 @@ class DefaultRestMethods:
 	
 	@staticmethod
 	def get_paged_list(table, filter_cols=[], back_refs=False, table_lookups={}) -> Response:
-		items = DefaultRestMethods.base_paged_items(table, filter_cols, table_lookups)
+		items = DefaultRestMethods.get_paged_items(table, filter_cols, table_lookups)
 		m = items['model']
 
 		if back_refs:

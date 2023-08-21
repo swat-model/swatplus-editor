@@ -18,20 +18,19 @@ export function useConstants() {
 		'hlt', 'rec', 'out', 'mfl'
 	];
 
-	const objTypeToConTable = {
-		'hru': 'hru_con',
-		'hlt': 'hru_lte_con',
-		'ru': 'rtu_con',
-		'aqu': 'aqu_con',
-		'cha': 'cha_con',
-		'res': 'res_con',
-		'rec': 'rec_con',
-		'exc': 'exco_con',
-		'dr': 'dr_con',
-		'out': 'out_con',
-		'mfl': 'modflow_con',
-		'sdc': 'chandeg_con'
-	};
+	let objTypeToConTable:any = {};
+	objTypeToConTable['hru'] = 'hru_con';
+	objTypeToConTable['hlt'] = 'hru_lte_con';
+	objTypeToConTable['ru'] = 'rtu_con';
+	objTypeToConTable['aqu'] = 'aqu_con';
+	objTypeToConTable['cha'] = 'cha_con';
+	objTypeToConTable['res'] = 'res_con';
+	objTypeToConTable['rec'] = 'rec_con';
+	objTypeToConTable['exc'] = 'exco_con';
+	objTypeToConTable['dr'] = 'dr_con';
+	objTypeToConTable['out'] = 'out_con';
+	objTypeToConTable['mfl'] = 'modflow_con';
+	objTypeToConTable['sdc'] = 'chandeg_con';
 
 	const commonMessages = {
 		leaveWarning: 'Click to view details. Warning: any unsaved changes on this page will be lost!'
@@ -51,6 +50,8 @@ export function useConstants() {
 	const formRules = {
 		required: (value:string) => !!value || 'Required',
 		max: (numChars:number, value:string) => (value || '').length <= numChars || `Maximum ${numChars} characters`,
+		nameLength: (value:string) => (value || '').length <= 16 || `Maximum 16 characters`,
+		longNameLength: (value:string) => (value || '').length <= 40 || `Maximum 40 characters`,
 		email: (value:string) => {
 			const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 			return pattern.test(value) || 'Invalid e-mail.'

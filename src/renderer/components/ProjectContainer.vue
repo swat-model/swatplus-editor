@@ -14,7 +14,7 @@
 		addErrorFrame: false
 	});
 
-	let errorMessage = !formatters.isNullOrEmpty(props.loadError) ? props.loadError : 'No project open. Please go to project setup to continue.';
+	let errorMessage = 'No project open. Please go to project setup to continue.';
 </script>
 
 <template>
@@ -27,12 +27,12 @@
 			<div v-else-if="props.addErrorFrame">
 				<v-main>
 					<div class="py-3 px-6">
-						<error-alert :text="errorMessage"></error-alert>
+						<error-alert :text="!formatters.isNullOrEmpty(props.loadError) ? props.loadError : errorMessage"></error-alert>
 					</div>
 				</v-main>
 			</div>
 			<div v-else>
-				<error-alert :text="errorMessage"></error-alert>
+				<error-alert :text="!formatters.isNullOrEmpty(props.loadError) ? props.loadError : errorMessage"></error-alert>
 			</div>
 		</div>
 	</div>

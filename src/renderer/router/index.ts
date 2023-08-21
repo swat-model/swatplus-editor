@@ -3,6 +3,7 @@ import NotFound from '../views/NotFound.vue';
 import Setup from '../views/Setup.vue';
 import Help from '../views/Help.vue';
 import Edit from '../views/edit/Edit.vue';
+import TableBrowser from '../views/TableBrowser.vue';
 
 import connect from './connect';
 
@@ -23,6 +24,7 @@ export default createRouter({
 				}
 			]
 		},
+		{ path: '/table-browser', name: 'TableBrowser', component: TableBrowser },
 		{ path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound }
 	],
 })
