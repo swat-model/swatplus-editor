@@ -258,7 +258,6 @@
 		() => route.name,
 		(newRoute) => {
 			processSubOpen(newRoute);
-			console.log('newRoute')
 		}
 	)
 

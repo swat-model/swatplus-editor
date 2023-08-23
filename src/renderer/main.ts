@@ -29,6 +29,7 @@ import offlineExportInit from 'highcharts/modules/offline-exporting';
 //Custom Components
 import ActionBar from './components/ActionBar.vue';
 import AutoComplete from './components/AutoComplete.vue';
+import BackButton from './components/BackButton.vue';
 import ErrorAlert from './components/ErrorAlert.vue';
 import FileHeader from './components/FileHeader.vue';
 import GridView from './components/GridView.vue';
@@ -108,6 +109,7 @@ offlineExportInit(Highcharts);
 //Custom Components
 app.component('action-bar', ActionBar);
 app.component('auto-complete', AutoComplete);
+app.component('back-button', BackButton);
 app.component('error-alert', ErrorAlert);
 app.component('file-header', FileHeader);
 app.component('grid-view', GridView);

@@ -134,6 +134,20 @@ mark {
 		left: 0;
 		width: 100%;
 	}
+
+	button {
+		margin-top: 7px;
+		margin-bottom: 7px;
+	}
+
+	.v-pagination button {
+		margin-top: 0;
+		margin-bottom: 0;
+	}
+
+	.v-checkbox-btn {
+		min-height: auto;
+	}
 }
 
 .data-table {
@@ -151,9 +165,13 @@ mark {
 }
 
 .scroll-check {
-	max-width: 20rem;
-	min-width: 12rem;
+	max-width: 25rem;
+	min-width: 16rem;
 	border-bottom: 1px solid $border-color;
+
+	.v-checkbox-btn {
+		min-height: auto;
+	}
 
 	.items {
 		max-height: 180px;
@@ -161,17 +179,28 @@ mark {
 
 		.item {
 			display: block !important;
-			padding: 5px;
+			padding: 0 5px;
 			border-bottom: 1px solid $border-color;
 		}
 	}
 
 	.check-all {
-		padding: 5px;
+		padding: 0 10px 0 5px;
 		border: 1px solid $border-color;
 		border-width: 1px 0;
 		background-color: rgba(var(--v-theme-secondary), 0.12) !important;
 		color: rgb(var(--v-theme-secondary)) !important;
+	}
+}
+
+.table-editor {
+	th {
+		white-space: nowrap;
+	}
+
+	td.field {
+		white-space: nowrap;
+		max-width: 250px;
 	}
 }
 

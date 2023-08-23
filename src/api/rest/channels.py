@@ -333,7 +333,7 @@ def properties():
 		try:
 			m = Channel_lte_cha()
 			m.name = args['name']
-			m.description = args['description']
+			m.description = None if 'description' not in args else args['description']
 			m.init_id = RestHelpers.get_id_from_name(Initial_cha, args['init_name'])
 			m.hyd_id = RestHelpers.get_id_from_name(Hyd_sed_lte_cha, args['hyd_name'])
 			m.nut_id = RestHelpers.get_id_from_name(Nutrients_cha, args['nut_name'])
@@ -378,7 +378,7 @@ def propertiesId(id):
 		try:
 			m = Channel_lte_cha.get(Channel_lte_cha.id == id)
 			m.name = args['name']
-			m.description = args['description']
+			m.description = None if 'description' not in args else args['description']
 			m.init_id = RestHelpers.get_id_from_name(Initial_cha, args['init_name'])
 			m.hyd_id = RestHelpers.get_id_from_name(Hyd_sed_lte_cha, args['hyd_name'])
 			m.nut_id = RestHelpers.get_id_from_name(Nutrients_cha, args['nut_name'])

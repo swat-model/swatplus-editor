@@ -21,6 +21,7 @@
 	});
 
 	async function get() {
+		if (route.params.id === undefined) return;
 		data.page.loading = true;
 		data.page.error = null;
 
@@ -59,6 +60,7 @@
 
 	onMounted(async () => await get())
 	watch(() => route.name, async () => await get())
+	watch(() => route.params.id, async () => await get())
 </script>
 
 <template>

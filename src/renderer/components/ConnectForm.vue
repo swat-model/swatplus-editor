@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { reactive, onMounted, computed, watch } from 'vue';
+	import { reactive, onMounted, watch } from 'vue';
 	import { usePlugins } from '../plugins';
 	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
 
@@ -21,12 +21,16 @@
 		itemOutflow: () => [{id: 0}]
 	});
 
+	const emit = defineEmits(['change', 'loaded']);
+
 	let page:any = reactive({
 		loading: false,
 		error: null
 	});
 
-	let selectedVars:string[] = reactive([]);
+	let selected:any = reactive({
+		vars: []
+	});
 
 	let outflow:any = reactive({
 		loading: false,
@@ -36,8 +40,8 @@
 			{ key: 'order' },
 			{ key: 'obj_typ', label: 'Type' },
 			{ key: 'obj_name', label: 'Name' },
-			{ key: 'hyd_typ', label: 'Hydrograph' },
-			{ key: 'frac', label: 'Fraction' },
+			{ key: 'hyd_typ', label: 'Hyd.' },
+			{ key: 'frac', label: 'Frac.' },
 			{ key: 'delete', label: '', class: 'min' }
 		],
 		delete: {
@@ -68,7 +72,7 @@
 	});
 
 	function getCodesDb(type:string) {
-		return api.get(`definitions/codes/connect/${type}/${utilities.appPath}`);
+		return api.get(`definitions/codes/connect/${type}/${utilities.appPathUrl}`);
 	}
 
 	async function get() {
@@ -86,6 +90,7 @@
 		}
 		
 		page.loading = false;
+		emit('loaded', true);
 	}
 
 	function add() {
@@ -123,7 +128,10 @@
 		outflow.form.saving = true;
 		outflow.form.validated = true;
 
+		errors.log(outflow.obj);
+		errors.log(outflow.obj_name);
 		if (validateOutflow()) {
+			errors.log('validated')
 			try {
 				const response = await utilities.getAutoCompleteId(constants.objTypeToConTable[outflow.obj.obj_typ], outflow.obj_name);
 				outflow.obj.obj_id = response.data.id;
@@ -189,7 +197,7 @@
 		outflow.error = null;
 
 		try {
-			const response = await api.get(`${props.apiUrl}/${props.item.id}`, currentProject.getApiHeader());
+			const response = await api.get(`${props.apiUrl}/items/${props.item.id}`, currentProject.getApiHeader());
 			outflow.list = response.data.con_outs;
 		} catch (error) {
 			outflow.error = errors.logError(error, 'Unable to get object from database.');
@@ -198,10 +206,8 @@
 		outflow.loading = false;
 	}
 
-	const emit = defineEmits(['change'])
-
-	watch(selectedVars, async () => {
-		emit('change', selectedVars);
+	watch(() => selected.vars, async () => {
+		emit('change', selected.vars);
 	})
 
 	onMounted(async () => await get());
@@ -211,20 +217,161 @@
 	<div>{{ page.error }}</div>
 	<project-container :loading="page.loading" :load-error="page.error">
 		<v-row>
-			<v-col cols="12" :md="isUpdate && !isBulkMode ? 7 : 12">
-				<div class="form-group">
+			<v-col cols="12" :md="props.isUpdate && !props.isBulkMode ? 7 : 12">
+				<div class="form-group" v-if="!props.isBulkMode">
 					<v-text-field v-model="item.name" :rules="[constants.formRules.required, constants.formRules.nameLength]" 
 						label="Name" hint="Must be unique"></v-text-field>
 				</div>
 
-				<div class="form-group">
-					<auto-complete label="Weather Station"
+				<div class="form-group d-flex">
+					<v-checkbox v-if="props.isBulkMode" v-model="selected.vars" value="wst_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
+					<auto-complete label="Weather Station" class="flex-grow-1 flex-shrink-0"
 						v-model="item.wst_name" :value="item.wst_name" :show-item-link="props.isUpdate"
 						table-name="wst" route-name="StationsEdit"
 						section="Climate / Weather Stations" help-file="weather-sta.cli" help-db="weather_sta_cli"
 						api-url="climate/stations"></auto-complete>
 				</div>
+
+				<v-row v-if="!props.isBulkMode">
+					<v-col cols="12" md="6">
+						<div class="form-group mb-0">
+							<v-text-field v-model="item.lat" :rules="[constants.formRules.required]" 
+								label="Latitude" type="number" step="any"></v-text-field>
+						</div>
+					</v-col>
+					<v-col cols="12" md="6">
+						<div class="form-group mb-0">
+							<v-text-field v-model="item.lon" :rules="[constants.formRules.required]" 
+								label="Longitude" type="number" step="any"></v-text-field>
+						</div>
+					</v-col>
+				</v-row>
+
+				<v-row class="mt-0">
+					<v-col cols="12" md="6" v-if="!props.isBulkMode">
+						<div class="form-group">
+							<v-text-field v-model="item.area" :rules="[constants.formRules.required]" 
+								label="Area" suffix="ha" type="number" step="any"></v-text-field>
+						</div>
+					</v-col>
+					<v-col cols="12" :md="!props.isBulkMode ? 6 : 12">
+						<div class="form-group d-flex">
+							<v-checkbox v-if="props.isBulkMode" v-model="selected.vars" value="elev" class="flex-shrink-1 flex-grow-0"></v-checkbox>
+							<v-text-field v-model="item.elev" class="flex-grow-1 flex-shrink-0" 
+								label="Elevation" suffix="m" type="number" step="any"></v-text-field>
+						</div>
+					</v-col>
+				</v-row>
+			</v-col>
+			<v-col cols="12" v-if="props.isUpdate && !props.isBulkMode" :md="props.isUpdate && !props.isBulkMode ? 5 : 12">
+				<v-card>
+					<v-card-title>Outflow</v-card-title>
+					<v-card-text v-if="outflow.list.length < 1">
+						This object does not have any outflow
+					</v-card-text>
+					<v-card-text v-else>
+						<v-table class="data-table" density="compact">
+							<thead>
+								<tr class="bg-surface">
+									<th v-for="header in outflow.fields" :key="header.key" :class="`${header.class} bg-secondary-tonal`">
+										{{ header.label }}
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr v-for="(item, i) in outflow.list" :key="i">
+									<td v-for="header in outflow.fields" :key="header.key" :class="header.class">
+										<div v-if="header.key==='edit'">
+											<font-awesome-icon :icon="['fas', 'edit']" class="pointer text-primary" @click="edit(item)"></font-awesome-icon>
+										</div>
+										<div v-else-if="header.key==='delete'">
+											<font-awesome-icon :icon="['fas', 'times']" class="pointer text-error" @click="askDelete(item.id, 'outflow')"></font-awesome-icon>
+										</div>
+										<div v-else-if="header.key==='obj_name'">
+											<div v-if="item.obj_name != null">
+												<router-link v-if="utilities.getObjTypeRoute(item) != '#'" 
+													class="text-primary text-decoration-none"
+													:to="utilities.getObjTypeRoute(item)">{{ item.obj_name }}</router-link>
+												<div v-else>{{ item.obj_name }}</div>
+											</div>
+										</div>
+										<div v-else>{{ item[header.key] }}</div>
+									</td>
+								</tr>
+							</tbody>
+						</v-table>
+					</v-card-text>
+
+					<v-card-actions>
+						<v-btn @click="add" color="primary">Add Outflow</v-btn>
+					</v-card-actions>
+				</v-card>
 			</v-col>
 		</v-row>
+
+		<v-dialog v-model="outflow.form.show" :max-width="constants.dialogSizes.lg">
+			<v-card :title="outflow.form.update ? 'Update outflow' : 'Add outflow'">
+				<v-card-text>
+					<error-alert :text="outflow.form.error"></error-alert>
+
+					<v-row>
+						<v-col cols="12" md="6">
+							<div class="form-group">
+								<v-select label="Object type" v-model="outflow.obj.obj_typ" :items="outflow.obj_typs" item-title="text" item-value="value" required @change="outflow.obj_name = null"></v-select>
+							</div>
+						</v-col>
+						<v-col cols="12" md="6">
+							<div class="form-group">
+								<auto-complete label="Object name" class="flex-grow-1 flex-shrink-0"
+									v-model="outflow.obj_name" :value="outflow.obj_name" :show-item-link="false"
+									:table-name="constants.objTypeToConTable[outflow.obj.obj_typ]" :route-name="constants.objTypeRouteTable[outflow.obj.obj_typ].name"></auto-complete>
+							</div>
+						</v-col>
+					</v-row>
+					<v-row>
+						<v-col cols="12" md="6">
+							<div class="form-group">
+								<v-select label="Hydrograph type" v-model="outflow.obj.hyd_typ" :items="outflow.hyd_typs" item-title="text" item-value="value" required></v-select>
+							</div>
+						</v-col>
+						<v-col cols="12" md="6">
+							<div class="form-group">
+								<v-text-field v-model="outflow.obj.frac" :rules="[constants.formRules.required]" label="Fraction" type="number" step="any"></v-text-field>
+							</div>
+						</v-col>
+					</v-row>
+					<v-row>
+						<v-col cols="12" md="6">
+							<div class="form-group">
+								<v-text-field v-model="outflow.obj.order" :rules="[constants.formRules.required]" label="Order" type="number" step="1"></v-text-field>
+							</div>
+						</v-col>
+					</v-row>
+				</v-card-text>
+				<v-divider></v-divider>
+				<v-card-actions>
+					<v-btn @click="saveOutflow" :loading="outflow.form.saving" color="primary" variant="text">Save</v-btn>
+					<v-btn @click="outflow.form.show = false">Cancel</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
+
+		<v-dialog v-model="outflow.delete.show" :max-width="constants.dialogSizes.md">
+			<v-card title="Confirm delete">
+				<v-card-text>
+					<error-alert :text="outflow.delete.error"></error-alert>
+		
+					<p>
+						Are you sure you want to delete <strong>{{outflow.delete.name}}</strong>?
+						This action is permanent and cannot be undone. 
+					</p>
+				</v-card-text>
+				<v-divider></v-divider>
+				<v-card-actions>
+					<v-btn :loading="outflow.delete.saving" @click="confirmDelete" color="error" variant="text">Delete</v-btn>
+					<v-btn @click="outflow.delete.show = false">Cancel</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
 	</project-container>
 </template>

@@ -11,6 +11,7 @@ from rest import setup, auto_complete, channels, definitions
 
 app = Flask(__name__)
 CORS(app)
+app.json.sort_keys = False
 exiting = False
 
 app.register_blueprint(setup.bp)

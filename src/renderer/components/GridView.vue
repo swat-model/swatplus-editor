@@ -1,9 +1,12 @@
 <script setup lang="ts">
-	import { reactive, onMounted, computed } from 'vue';
+	import { reactive, onMounted, computed, watch } from 'vue';
+	import { useRoute } from 'vue-router';
 	import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader';
 	// @ts-ignore
 	import _ from 'underscore';
 	import { usePlugins } from '../plugins';
+
+	const route = useRoute();
 	const { api, currentProject, errors, formatters, utilities } = usePlugins();
 
 	interface Props {
@@ -20,7 +23,10 @@
 		hideDelete?: boolean,
 		itemsPerPage?: number,
 		defaultSort?: [string,string], //[sort key, asc or desc]
-		hideFields?: string[]
+		hideFields?: string[],
+		showImportExport?: boolean,
+		defaultCsvFile?: string,
+		tableName?: string
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -37,7 +43,10 @@
 		hideDelete: false,
 		itemsPerPage: 50,
 		defaultSort: () => ['name', 'asc'],
-		hideFields: () => ['id']
+		hideFields: () => ['id'],
+		showImportExport: false,
+		defaultCsvFile: '',
+		tableName: ''
 	});
 
 	const loaderArray = computed(() => {
@@ -101,7 +110,7 @@
 			const response = await api.get(`${props.apiUrl}${query}`, currentProject.getApiHeader());
 			errors.log(response.data);
 			data.total = response.data.total;
-			data.matches = response.data.total;
+			data.matches = response.data.matches;
 			data.items = response.data.items;
 
 			if (init) {
@@ -121,7 +130,6 @@
 
 			for (let key of keys) {
 				if (!props.hideFields.includes(key) && !Array.isArray(item[key])) {
-					console.log(key + ' ' + typeof(item[key]));
 					let header:GridViewHeader = <GridViewHeader>{
 						key: key,
 						type: item[key] == null ? 'string' : typeof(item[key]),
@@ -156,6 +164,8 @@
 		await get(true);
 		page.loading = false;
 	});
+
+	watch(() => route.name, async () => await get(true))
 </script>
 
 <template>
@@ -171,60 +181,60 @@
 			</div>
 		</div>
 		<v-card>
-		<v-table class="data-table" fixed-header height="70vh" density="compact">
-			<thead>
-				<tr class="bg-surface">
-					<th v-if="!props.hideEdit" class="bg-secondary-tonal min"></th>
-					<th v-for="header in table.headers" :key="header.key" :class="`${header.class} pointer bg-secondary-tonal`" @click="doSort(header.key)">
-						{{ formatters.isNullOrEmpty(header.label) ? header.key : header.label }}
-						<v-icon v-if="!header.noSort && table.sortBy[0] === header.key && table.sortBy[1] === 'asc'" class="fa-xs ms-2">fas fa-arrow-up</v-icon>
-						<v-icon v-if="!header.noSort && table.sortBy[0] === header.key && table.sortBy[1] === 'desc'" class="fa-xs ms-2">fas fa-arrow-down</v-icon>
-					</th>
-					<th v-if="!props.hideDelete" class="bg-secondary-tonal min"></th>
-				</tr>
-			</thead>
-			<tbody v-if="table.loading">
-				<tr v-for="i in loaderArray" :key="i">
-					<td v-if="!props.hideEdit" class="min"></td>
-					<td v-for="header in table.headers" :key="header.key"><v-skeleton-loader type="text" max-width="150"></v-skeleton-loader></td>
-					<td v-if="!props.hideDelete" class="min"></td>
-				</tr>
-			</tbody>
-			<tbody v-else>
-				<tr v-for="item in data.items">
-					<td v-if="!props.hideEdit" class="min">
-						<router-link :to="utilities.appendRoute(`edit/${item.id}`)" class="text-decoration-none text-primary" title="Edit/View">
-							<font-awesome-icon :icon="['fas', 'edit']"></font-awesome-icon>
-						</router-link>
-					</td>
-					<td v-for="header in table.headers" :key="header.key" :class="header.class">
-						<div v-if="header.type === 'number'">
-							{{ formatters.toNumberFormat(item[header.key], header.decimals||2, '', '-') }}
-						</div>
-						<div v-else-if="header.type === 'boolean'">
-							{{ item[header.key] ? 'Y' : 'N' }}
-						</div>
-						<div v-else-if="header.type === 'object'">
-							<span v-if="formatters.isNullOrEmpty(item[header.key])">-</span>
-							<router-link v-else-if="!formatters.isNullOrEmpty(header.objectRoutePath)" class="text-primary text-decoration-none" 
-								:to="`${header.objectRoutePath}${item[header.objectValueField||'id']}`">
-								{{ item[header.key][header.objectTextField||'name'] }}
+			<v-table class="data-table" fixed-header height="70vh" density="compact">
+				<thead>
+					<tr class="bg-surface">
+						<th v-if="!props.hideEdit" class="bg-secondary-tonal min"></th>
+						<th v-for="header in table.headers" :key="header.key" :class="`${header.class} pointer bg-secondary-tonal`" @click="doSort(header.key)">
+							{{ formatters.isNullOrEmpty(header.label) ? header.key : header.label }}
+							<v-icon v-if="!header.noSort && table.sortBy[0] === header.key && table.sortBy[1] === 'asc'" class="fa-xs ms-2">fas fa-arrow-up</v-icon>
+							<v-icon v-if="!header.noSort && table.sortBy[0] === header.key && table.sortBy[1] === 'desc'" class="fa-xs ms-2">fas fa-arrow-down</v-icon>
+						</th>
+						<th v-if="!props.hideDelete" class="bg-secondary-tonal min"></th>
+					</tr>
+				</thead>
+				<tbody v-if="table.loading">
+					<tr v-for="i in loaderArray" :key="i">
+						<td v-if="!props.hideEdit" class="min"></td>
+						<td v-for="header in table.headers" :key="header.key"><v-skeleton-loader type="text" max-width="150"></v-skeleton-loader></td>
+						<td v-if="!props.hideDelete" class="min"></td>
+					</tr>
+				</tbody>
+				<tbody v-else>
+					<tr v-for="item in data.items">
+						<td v-if="!props.hideEdit" class="min">
+							<router-link :to="utilities.appendRoute(`edit/${item.id}`)" class="text-decoration-none text-primary" title="Edit/View">
+								<font-awesome-icon :icon="['fas', 'edit']"></font-awesome-icon>
 							</router-link>
-							<span v-else>
-								{{ item[header.key][header.objectTextField||'name'] }}
-							</span>
-						</div>
-						<div v-else>
-							{{ formatters.isNullOrEmpty(item[header.key]) ? '-' : item[header.key] }}
-						</div>	
-					</td>
-					<td v-if="!props.hideDelete" class="min">
-						<font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" title="Delete"></font-awesome-icon>
-					</td>
-				</tr>
-			</tbody>
-		</v-table>
-	</v-card>
+						</td>
+						<td v-for="header in table.headers" :key="header.key" :class="header.class">
+							<div v-if="header.type === 'number'">
+								{{ formatters.toNumberFormat(item[header.key], header.decimals||2, '', '-') }}
+							</div>
+							<div v-else-if="header.type === 'boolean'">
+								{{ item[header.key] ? 'Y' : 'N' }}
+							</div>
+							<div v-else-if="header.type === 'object'">
+								<span v-if="formatters.isNullOrEmpty(item[header.key])">-</span>
+								<router-link v-else-if="!formatters.isNullOrEmpty(header.objectRoutePath)" class="text-primary text-decoration-none" 
+									:to="`${header.objectRoutePath}${item[header.objectValueField||'id']}`">
+									{{ item[header.key][header.objectTextField||'name'] }}
+								</router-link>
+								<span v-else>
+									{{ item[header.key][header.objectTextField||'name'] }}
+								</span>
+							</div>
+							<div v-else>
+								{{ formatters.isNullOrEmpty(item[header.key]) ? '-' : item[header.key] }}
+							</div>	
+						</td>
+						<td v-if="!props.hideDelete" class="min">
+							<font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" title="Delete"></font-awesome-icon>
+						</td>
+					</tr>
+				</tbody>
+			</v-table>
+		</v-card>
 		<action-bar v-if="!props.noActionBar" :full-width="props.fullWidthActionBar">
 			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" :to="utilities.appendRoute('create')">Create Record</v-btn>
 			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="getNumPages()"

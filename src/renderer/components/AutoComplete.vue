@@ -46,7 +46,8 @@
 		},
 		apiUrl: {
 			type: String,
-			required: false
+			required: false,
+			default: ''
 		},
 		section: {
 			type: String,
@@ -83,18 +84,7 @@
 
 	let appliedRules = props.required ? [rules.required] : [];
 
-	const emit = defineEmits([
-		'update:modelValue',
-		'change',
-		'blur',
-		'focus',
-		'keyup',
-	])
-
-	function updateModelValue($event:any) {
-		model.value = $event.target.value;
-    	emit('update:modelValue', $event.target.value);
-	}
+	const emit = defineEmits(['update:modelValue'])
 
 	async function get() {
 		data.loading = true;
@@ -125,21 +115,20 @@
 		}
 	)
 
+	watch(model, (newModel) => {
+		emit('update:modelValue', newModel);
+	})
+
 	onMounted(async () => await get())
 </script>
 
 <template>
 	<div>
-		<v-autocomplete v-model="model" :value="model" :label="props.label" :rules="appliedRules"
+		<v-autocomplete v-model="model" :label="props.label" :rules="appliedRules"
 			:hint="props.hint" :persistent-hint="props.persistentHint"
-			:loading="data.loading" v-model:search="data.search" :items="data.items" auto-select-first
-			@input="updateModelValue"
-			@change="$emit('change', $event.target.value)"
-			@focus="$emit('focus', $event.target.value)"
-			@blur="$emit('blur', $event.target.value)"
-			@keyup="$emit('keyup', $event.target.value)">
+			:loading="data.loading" v-model:search="data.search" :items="data.items" auto-select-first>
 			<template v-slot:append>
-				<v-menu open-on-hover>
+				<v-menu open-on-hover v-if="!formatters.isNullOrEmpty(props.section)">
 					<template v-slot:activator="{ props }">
 						<v-btn v-bind="props" icon="fas fa-database" variant="text"></v-btn>
 					</template>

@@ -22,6 +22,7 @@
 	});
 
 	let page:any = reactive({
+		loading: true,
 		error: null,
 		validated: false,
 		saving: false,
@@ -131,7 +132,7 @@
 <template>
 	<div>
 		<error-alert :text="page.error"></error-alert>
-		<v-snackbar v-model="page.saveSuccess" :timeout="2000">
+		<v-snackbar v-model="page.saveSuccess" :timeout="3000" location="top">
 			Changes saved!
 			<template v-slot:actions>
 				<v-btn color="primary" variant="text" @click="page.saveSuccess = false">Close</v-btn>
@@ -139,16 +140,63 @@
 		</v-snackbar>
 
 		<v-form @submit.prevent="save">
+			<div v-if="page.bulk.show">
+				<object-selector name="Channels" table="chandeg_con" @change="bulkSelectionChange"></object-selector>
+			</div>
+			
 			<connect-form
 				:item="item.connect" :item-outflow="item.outflow" :api-url="props.apiUrl" outflow-con-id-field="chandeg_con_id"
-				:is-update="props.isUpdate" @change="connectVarsChange"
+				:is-update="props.isUpdate" @change="connectVarsChange" @loaded="page.loading=false"
 				:is-bulk-mode="page.bulk.show"></connect-form>
 
-			<auto-complete label="Initial Properties"
-				v-model="item.props.init_name" :value="item.props.init_name" :show-item-link="props.isUpdate"
-				table-name="init_cha" route-name="ChannelsInitialEdit"
-				section="Channels / Initial" help-file="initial.cha" help-db="initial_cha"
-				api-url="channels/initial"></auto-complete>
+			<div v-if="!page.loading">
+				<v-divider class="mb-6"></v-divider>
+
+				<v-row>
+					<v-col cols="12" md="6">
+						<div class="form-group d-flex">
+							<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="init_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
+							<auto-complete label="Initial Properties" class="flex-grow-1 flex-shrink-0"
+								v-model="item.props.init_name" :value="item.props.init_name" :show-item-link="props.isUpdate"
+								table-name="init_cha" route-name="ChannelsInitialEdit"
+								section="Channels / Initial" help-file="initial.cha" help-db="initial_cha"
+								api-url="channels/initial"></auto-complete>
+						</div>
+					</v-col>
+					<v-col cols="12" md="6">
+						<div class="form-group d-flex">
+							<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="hyd_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
+							<auto-complete label="Hydrology/Sediment Properties" class="flex-grow-1 flex-shrink-0"
+								v-model="item.props.hyd_name" :value="item.props.hyd_name" :show-item-link="props.isUpdate"
+								table-name="hyd_sed_lte_cha" route-name="ChannelsHydSedLteEdit"
+								section="Hydrology &amp; Sediment" help-file="hyd-sed-lte.cha" help-db="hyd_sed_lte_cha"
+								api-url="channels/hydsed"></auto-complete>
+						</div>
+					</v-col>
+				</v-row>
+				<v-row>
+					<v-col cols="12" md="6">
+						<div class="form-group d-flex">
+							<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="nut_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
+							<auto-complete label="Nutrients Properties" class="flex-grow-1 flex-shrink-0"
+								v-model="item.props.nut_name" :value="item.props.nut_name" :show-item-link="props.isUpdate"
+								table-name="nut_cha" route-name="ChannelsNutrientsEdit"
+								section="Channels / Nutrients" help-file="nutrients.cha" help-db="nutrients_cha"
+								api-url="channels/nutrients"></auto-complete>
+						</div>
+					</v-col>
+				</v-row>
+
+				<action-bar>
+					<v-btn type="submit" :loading="page.saving" variant="flat" color="primary" class="mr-2">
+						{{ page.bulk.show ? 'Save Bulk Changes' : 'Save Changes' }}
+					</v-btn>
+					<back-button></back-button>
+					<div v-if="props.allowBulkEdit" class="ml-auto">
+						<v-checkbox v-model="page.bulk.show" hide-details label="Edit multiple rows"></v-checkbox>
+					</div>
+				</action-bar>
+			</div>
 		</v-form>
 	</div>
 </template>

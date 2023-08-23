@@ -1,17 +1,21 @@
+import { useFormatters } from './formatters';
+
 export function useConstants() {
+	const formatters = useFormatters();
+
 	const objTypeRouteTable:{[key:string]:{path:string,name:string}} = {
-		'hru': { path: '/edit/hrus/edit/', name: 'HrusEdit' },
-		'hlt': { path: '/edit/hrus-lte/edit/', name: 'HrusLteEdit' },
-		'ru': { path: '/edit/routing_unit/edit/', name: 'RoutingUnitEdit' },
-		'aqu': { path: '/edit/aquifers/edit/', name: 'AquifersEdit' },
-		'cha': { path: '/edit/channels/edit/', name: 'ChannelsEdit' },
-		'res': { path: '/edit/reservoirs/edit/', name: 'ReservoirsEdit' },
-		'rec': { path: '/edit/recall/edit/', name: 'RecallEdit' },
-		'exc': { path: '/edit/exco/edit/', name: 'ExcoEdit' },
-		'dr': { path: '/edit/dr/edit/', name: 'DelratioEdit' },
+		'hru': { path: '/edit/cons/hrus/edit/', name: 'HrusEdit' },
+		'hlt': { path: '/edit/cons/hrus-lte/edit/', name: 'HrusLteEdit' },
+		'ru': { path: '/edit/cons/routing_unit/edit/', name: 'RoutingUnitEdit' },
+		'aqu': { path: '/edit/cons/aquifers/edit/', name: 'AquifersEdit' },
+		'cha': { path: '/edit/cons/channels/edit/', name: 'ChannelsEdit' },
+		'res': { path: '/edit/cons/reservoirs/edit/', name: 'ReservoirsEdit' },
+		'rec': { path: '/edit/cons/recall/edit/', name: 'RecallEdit' },
+		'exc': { path: '/edit/cons/recall/edit/', name: 'RecallEdit' },
+		'dr': { path: '/edit/cons/dr/edit/', name: 'DelratioEdit' },
 		'out': { path: '#', name: '#' },
 		'mfl': { path: '#', name: '#' },
-		'sdc': { path: '/edit/channels/edit/', name: 'ChannelsEdit' }
+		'sdc': { path: '/edit/cons/channels/edit/', name: 'ChannelsEdit' }
 	};
 
 	const noObjTypeRoutes = [
@@ -48,7 +52,7 @@ export function useConstants() {
 	}
 
 	const formRules = {
-		required: (value:string) => !!value || 'Required',
+		required: (value:string) => !formatters.isNullOrEmpty(value) || 'Required',
 		max: (numChars:number, value:string) => (value || '').length <= numChars || `Maximum ${numChars} characters`,
 		nameLength: (value:string) => (value || '').length <= 16 || `Maximum 16 characters`,
 		longNameLength: (value:string) => (value || '').length <= 40 || `Maximum 40 characters`,
