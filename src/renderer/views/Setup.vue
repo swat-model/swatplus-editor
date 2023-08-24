@@ -110,8 +110,8 @@
 	})
 
 	async function init() {
+		getColorTheme();
 		if (route.path === '/') {
-			getColorTheme();
 			recentProjects = utilities.getRecentProjects();
 
 			let commandLineDb = currentProject.hasLoadedCommandLine ? '' : constants.globals.project_db;
@@ -482,7 +482,7 @@
 		let colorTheme = localStorage.getItem('colorTheme');
 		if (colorTheme === null) colorTheme = utilities.getColorTheme();
 		setColorTheme(colorTheme);
-		console.log(theme.current.value.colors)
+		//console.log(theme.current.value.colors)
 	}
 
 	function setColorTheme(colorTheme:string|null):void {
@@ -540,6 +540,15 @@
 
 			<template #append>
 				<v-list density="compact" nav>
+					<v-list-item prepend-icon="fas fa-circle-info" v-if="currentProject.hasCurrentProject" class="pointer">
+						<v-menu activator="parent" location="end" open-on-hover>
+							<v-list density="compact">
+								<v-list-subheader>SWAT+ Editor {{ constants.appSettings.version }}</v-list-subheader>
+								<v-list-item>{{currentProject.name}}</v-list-item>
+								<v-list-item><open-file :file-path="info.file_path" class="text-primary text-decoration-none">Open project directory</open-file></v-list-item>
+							</v-list>
+						</v-menu>
+					</v-list-item>
 					<v-list-item prepend-icon="fas fa-circle-question" to="/help">
 						<v-tooltip activator="parent" location="end">Help</v-tooltip>
 					</v-list-item>

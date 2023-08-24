@@ -3,7 +3,6 @@
 	import { useRouter } from 'vue-router';
 	import { usePlugins } from '../../../../plugins';
 	import ConnectForm from '../../../../components/ConnectForm.vue';
-
 	const router = useRouter();
 	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
 
@@ -29,7 +28,22 @@
 		saveSuccess: false,
 		bulk: {
 			show: false
-		}
+		},
+		redirectRoute: 'HrusEdit',
+		propCol: 'hru',
+		propFields: [
+			'topo_name', 'hyd_name', 'soil_name', 'lu_mgt_name', 'soil_plant_init_name', 'surf_stor', 'snow_name', 'field_name'
+		],
+		propDefs: [
+			{ name: 'topo_name', label: 'Topography Properties', section: 'Hydrology / Topography', file: 'topography.hyd', db: 'topography_hyd', tableName: 'topo', routeName: 'TopographyEdit', apiUrl: 'hydrology/topography'},
+			{ name: 'hyd_name', label: 'Hydrology Properties', section: 'Hydrology', file: 'hydrology.hyd', db: 'hydrology_hyd', tableName: 'hyd', routeName: 'HydrologyEdit', apiUrl: 'hydrology/hydrology'},
+			{ name: 'soil_name', label: 'Soil Properties', section: 'Soils', file: 'soils.sol', db: 'soils_sol', tableName: 'soil', routeName: 'SoilsEdit', apiUrl: 'soils/soils'},
+			{ name: 'lu_mgt_name', label: 'Land Use Management Properties', section: 'Land Use Management', file: 'landuse.lum', db: 'landuse_lum', tableName: 'lu_mgt', routeName: 'LanduseEdit', apiUrl: 'lum/landuse'},
+			{ name: 'soil_plant_init_name', label: 'Soil Plant Properties', section: 'Initialization Data / Soil Plant', file: 'soil_plant.ini', db: 'soil_plant_ini', tableName: 'soil_plant_ini', routeName: 'InitSoilPlantEdit', apiUrl: 'init/soil_plant'},
+			{ name: 'surf_stor', label: 'Surface Storage Properties', section: 'Connections / Reservoirs / Wetlands', file: 'wetlands.wet', db: 'wetlands_wet', tableName: 'wet_res', routeName: 'ReservoirsWetlandsEdit', apiUrl: 'reservoirs/wetlands'},
+			{ name: 'snow_name', label: 'Snow Properties', section: 'Databases / Snow', file: 'snow.sno', db: 'snow_sno', tableName: 'snow', routeName: 'SnowEdit', apiUrl: 'db/snow'},
+			{ name: 'field_name', label: 'Field Properties', section: 'Hydrology / Fields', file: 'field.fld', db: 'field_fld', tableName: 'fld', routeName: 'FieldsEdit', apiUrl: 'hydrology/fields'}
+		]
 	});
 
 	let selected:any = reactive({
@@ -56,34 +70,33 @@
 		page.error = null;
 		page.saving = true;
 		page.validated = true;
-		let item = props.item;
-		
-		if (item.connect.elev === '') item.connect.elev = null;
-		if (item.connect.wst_name === '') item.connect.wst_name = null;
-		if (item.props.init_name === '') item.props.init_name = null;
-		if (item.props.hyd_name === '') item.props.hyd_name = null;
-		if (item.props.nut_name === '') item.props.nut_name = null;
+
+		if (props.item.connect.elev === '') props.item.connect.elev = null;
+		if (props.item.connect.wst_name === '') props.item.connect.wst_name = null;
+		for (let field of page.propFields) {
+			if (props.item.props[field] === '') props.item.props[field] = null;
+		}
 
 		if (!page.bulk.show) {
-			let name = formatters.toValidName(item.connect.name);
-			item.props.name = name;
-			item.connect.name = name;
+			let name = formatters.toValidName(props.item.connect.name);
+			props.item.props.name = name;
+			props.item.connect.name = name;
 
 			if (props.isUpdate)
-				item.connect.lcha_id = item.props.id;
+				props.item.connect[`${page.propCol}_id`] = props.item.props.id;
 
 			try {
-				const response = await putPropsDb(item.props);
+				const response = await putPropsDb(props.item.props);
 				if (!props.isUpdate)
-					item.connect.lcha_id = response.data.id;
+					props.item.connect[`${page.propCol}_id`] = response.data.id;
 					
-				const response2 = await putConnectDb(item.connect);
+				const response2 = await putConnectDb(props.item.connect);
 				page.validated = false;
 				
 				if (props.isUpdate)
-					page.saveSuccess = true;
+				page.saveSuccess = true;
 				else
-					router.push({ name: 'ChannelsEdit', params: { id: response2.data.id } });
+					router.push({ name: page.redirectRoute, params: { id: response2.data.id } });
 			} catch (error) {
 				page.error = errors.logError(error, 'Unable to save changes to database.');
 			}
@@ -102,12 +115,13 @@
 				for (let v of selected.connectVars) {
 					item[v] = props.item.connect[v];
 				}
+
+				console.log(props.item);
 				for (let v of selected.vars) {
 					item[v] = props.item.props[v];
 				}
 				
 				try {
-					errors.log(item);
 					const response = await api.put(`${props.apiUrl}/properties/many`, item, currentProject.getApiHeader());
 					page.validated = false;
 					page.saveSuccess = true;
@@ -141,11 +155,11 @@
 
 		<v-form @submit.prevent="save">
 			<div v-if="page.bulk.show">
-				<object-selector name="Channels" table="chandeg_con" @change="bulkSelectionChange"></object-selector>
+				<object-selector name="HRUs" table="hru_con" @change="bulkSelectionChange" is-hru></object-selector>
 			</div>
 			
 			<connect-form
-				:item="item.connect" :item-outflow="item.outflow" :api-url="props.apiUrl" outflow-con-id-field="chandeg_con_id"
+				:item="item.connect" :item-outflow="item.outflow" :api-url="props.apiUrl" outflow-con-id-field="hru_con_id"
 				:is-update="props.isUpdate" @change="connectVarsChange" @loaded="page.loading=false"
 				:is-bulk-mode="page.bulk.show"></connect-form>
 
@@ -153,36 +167,14 @@
 				<v-divider class="mb-6"></v-divider>
 
 				<v-row>
-					<v-col cols="12" md="6">
+					<v-col cols="12" md="6" v-for="p in page.propDefs" :key="p.name">
 						<div class="form-group d-flex">
-							<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="init_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
-							<auto-complete label="Initial Properties" class="flex-grow-1 flex-shrink-0"
-								v-model="item.props.init_name" :value="item.props.init_name" :show-item-link="props.isUpdate"
-								table-name="init_cha" route-name="ChannelsInitialEdit"
-								section="Channels / Initial" help-file="initial.cha" help-db="initial_cha"
-								api-url="channels/initial"></auto-complete>
-						</div>
-					</v-col>
-					<v-col cols="12" md="6">
-						<div class="form-group d-flex">
-							<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="hyd_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
-							<auto-complete label="Hydrology/Sediment Properties" class="flex-grow-1 flex-shrink-0"
-								v-model="item.props.hyd_name" :value="item.props.hyd_name" :show-item-link="props.isUpdate"
-								table-name="hyd_sed_lte_cha" route-name="ChannelsHydSedLteEdit"
-								section="Hydrology &amp; Sediment" help-file="hyd-sed-lte.cha" help-db="hyd_sed_lte_cha"
-								api-url="channels/hydsed"></auto-complete>
-						</div>
-					</v-col>
-				</v-row>
-				<v-row>
-					<v-col cols="12" md="6">
-						<div class="form-group d-flex">
-							<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="nut_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
-							<auto-complete label="Nutrients Properties" class="flex-grow-1 flex-shrink-0"
-								v-model="item.props.nut_name" :value="item.props.nut_name" :show-item-link="props.isUpdate"
-								table-name="nut_cha" route-name="ChannelsNutrientsEdit"
-								section="Channels / Nutrients" help-file="nutrients.cha" help-db="nutrients_cha"
-								api-url="channels/nutrients"></auto-complete>
+							<v-checkbox v-if="page.bulk.show" v-model="selected.vars" :value="p.name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
+							<auto-complete :label="p.label" class="flex-grow-1 flex-shrink-0"
+								v-model="item.props[p.name]" :value="item.props[p.name]" :show-item-link="props.isUpdate"
+								:table-name="p.tableName" :route-name="p.routeName"
+								:section="p.section" :help-file="p.file" :help-db="p.db"
+								:api-url="p.apiUrl"></auto-complete>
 						</div>
 					</v-col>
 				</v-row>

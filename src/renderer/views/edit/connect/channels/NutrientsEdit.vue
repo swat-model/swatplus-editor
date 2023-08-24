@@ -9,8 +9,8 @@
 
 	let data:any = reactive({
 		paths: {
-			data: 'channels/hydsed',
-			vars: 'hyd_sed_lte_cha'
+			data: 'channels/nutrients',
+			vars: 'nutrients_cha'
 		},
 		page: {
 			loading: false,
@@ -45,17 +45,17 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="hyd-sed-lte.cha" docs-path="connections/channels">
+		<file-header input-file="nutrients.cha" docs-path="connections/channels">
 			<router-link to="/edit/cons/channels">Channels</router-link> / 
-			<router-link to="/edit/cons/channels/hydsed">Hydrology &amp; Sediment</router-link>
+			<router-link to="/edit/cons/channels/nutrients">Nutrients</router-link>
 			/ Edit
 		</file-header>
 
-		<edit-form show-description is-update allow-bulk-edit
-			name="Channels" table="hyd_sed_lte_cha"
-			:item="data.item"
+		<edit-form show-description show-range is-update get-datasets-record allow-bulk-edit
+			name="Channels" table="nut_cha"
+			:item="data.item" 
 			:vars="data.vars" 
-			:api-url="data.paths.data"
-			redirect-route="ChannelsHydSedLte"></edit-form>
+			api-url="channels/nutrients"
+			redirect-route="ChannelsNutrients" />
 	</project-container>
 </template>

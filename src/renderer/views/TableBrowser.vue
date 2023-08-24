@@ -1,9 +1,11 @@
 <script setup lang="ts">
 	import { reactive, onMounted } from 'vue';
 	import { useRoute } from 'vue-router';
+	import { useTheme } from 'vuetify';
 	import { usePlugins } from '../plugins';
 	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();	
 	const route = useRoute();
+	const theme = useTheme();
 
 	let page:any = reactive({
 		loading: false,
@@ -13,6 +15,7 @@
 	async function get() {
 		page.loading = true;
 		page.error = null;
+		getColorTheme();
 
 		try {
 			const response = await api.get(`setup/config`, currentProject.getTempApiHeader(route.query.projectDb));
@@ -34,6 +37,19 @@
 		}
 		
 		page.loading = false;
+	}
+
+	function getColorTheme():void {
+		let colorTheme = localStorage.getItem('colorTheme');
+		if (colorTheme === null) colorTheme = utilities.getColorTheme();
+		setColorTheme(colorTheme);
+	}
+
+	function setColorTheme(colorTheme:string|null):void {
+		if (colorTheme === null || colorTheme === 'system') colorTheme = 'light';
+		theme.global.name.value = colorTheme;
+		utilities.setColorTheme(colorTheme);
+		localStorage.setItem('colorTheme', colorTheme);
 	}
 
 	onMounted(async () => await get())

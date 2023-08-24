@@ -237,7 +237,7 @@
 		</v-card>
 		<action-bar v-if="!props.noActionBar" :full-width="props.fullWidthActionBar">
 			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" :to="utilities.appendRoute('create')">Create Record</v-btn>
-			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="getNumPages()"
+			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="6"
 				:length="getNumPages()" class="ml-auto" size="small"></v-pagination>
 		</action-bar>
 	</project-container>

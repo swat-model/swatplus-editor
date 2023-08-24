@@ -93,24 +93,30 @@
 		<td v-if="showDatasets" :class="(datasetValue === value || (props.varDef.type === 'lookup' && props.datasetValue?.name === props.value?.name) ? 'text-info' : 'text-warning') + ' text-right min'">
 			{{ props.varDef.type === 'lookup' ? props.datasetValue?.name : datasetValue }}
 		</td>
-		<td class="field" :colspan="props.varDef.type === 'select' ? 2 : 1">
-			<v-text-field density="compact" v-if="props.varDef.type === 'float'" :rules="data.rules" v-model.number="data.model" type="number" step="any" :disabled="inputDisabled" hide-details="auto">
-				<template v-slot:append-inner>{{ writeUnits(props.varDef.units) }}</template>
+		<td class="field">
+			<v-text-field density="compact" v-if="props.varDef.type === 'float'" :rules="data.rules" 
+				v-model.number="data.model" type="number" step="any" :disabled="inputDisabled" hide-details="auto">
+				<template v-slot:append-inner v-if="props.varDef.units.length < 10"><div v-html="writeUnits(props.varDef.units)"></div></template>
 			</v-text-field>
 
-			<v-text-field density="compact" v-else-if="props.varDef.type === 'int'" :rules="data.rules" :id="id" v-model.number="data.model" type="number" :disabled="inputDisabled" hide-details="auto">
-				<template v-slot:append-inner>{{ writeUnits(props.varDef.units) }}</template>
+			<v-text-field density="compact" v-else-if="props.varDef.type === 'int'" :rules="data.rules" :id="id" 
+				v-model.number="data.model" type="number" :disabled="inputDisabled" hide-details="auto">
+				<template v-slot:append-inner v-if="props.varDef.units.length < 10"><div v-html="writeUnits(props.varDef.units)"></div></template>
 			</v-text-field>
 
 			<v-select density="compact" v-else-if="props.varDef.type === 'select'" v-model="data.model" :items="props.varDef.options" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
 			<v-select density="compact" v-else-if="props.varDef.type === 'lookup'" v-model="data.model.id" :items="data.lookupOptions" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
 			<v-select density="compact" v-else-if="props.varDef.type === 'bool'" v-model="data.model" :items="data.boolOptions" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
 			
-			<v-text-field density="compact" v-else v-model="data.model" type="text" class="form-control" :disabled="inputDisabled" hide-details="auto">
-				<template v-slot:append-inner>{{ writeUnits(props.varDef.units) }}</template>
+			<v-text-field density="compact" v-else 
+				v-model="data.model" type="text" class="form-control" :disabled="inputDisabled" hide-details="auto">
+				<template v-slot:append-inner v-if="props.varDef.units.length < 10"><div v-html="writeUnits(props.varDef.units)"></div></template>
 			</v-text-field>
 		</td>
-		<td>{{ props.varDef.description }}</td>
+		<td>
+			{{ props.varDef.description }}
+			<div v-if="props.varDef.units.length >= 10" v-html="writeUnits(props.varDef.units)" class="text-body-2 text-medium-emphasis"></div>
+		</td>
 		<td><code>{{ props.varDef.name }}</code></td>
 		<td v-if="!showDatasets">{{ writeDefault(props.varDef) }}</td>
 		<td v-if="props.showRange">

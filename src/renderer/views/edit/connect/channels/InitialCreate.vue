@@ -18,8 +18,8 @@
 <template>
 	<project-container>
 		<file-header input-file="initial.cha" docs-path="connections/channels">
-			<router-link to="/edit/channels">Channels</router-link> / 
-			<router-link to="/edit/channels/initial">Initial</router-link>
+			<router-link to="/edit/cons/channels">Channels</router-link> / 
+			<router-link to="/edit/cons/channels/initial">Initial</router-link>
 			/ Create
 		</file-header>
 

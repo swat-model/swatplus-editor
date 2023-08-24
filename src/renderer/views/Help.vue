@@ -20,7 +20,8 @@
 
 		try {
 			const response = await api.get('/');
-			apiCheck = response.data;
+			apiCheck.editor = response.data.editor;
+			apiCheck.pythonVersion = response.data.pythonVersion;
 		} catch (error) {
 			page.error = errors.logError(error, 'Unable to connect to SWAT+ API.');
 			apiCheck.editor = 'API call unsuccessful';

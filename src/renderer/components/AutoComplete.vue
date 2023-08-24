@@ -119,14 +119,14 @@
 		emit('update:modelValue', newModel);
 	})
 
-	onMounted(async () => await get())
+	//onMounted(async () => await get())
 </script>
 
 <template>
 	<div>
 		<v-autocomplete v-model="model" :label="props.label" :rules="appliedRules"
-			:hint="props.hint" :persistent-hint="props.persistentHint"
-			:loading="data.loading" v-model:search="data.search" :items="data.items" auto-select-first>
+			:hint="props.hint" :persistent-hint="props.persistentHint" :no-data-text="data.loading ? 'Loading...' : 'No data available'"
+			:loading="data.loading" v-model:search.sync="data.search" :items="data.items" auto-select-first>
 			<template v-slot:append>
 				<v-menu open-on-hover v-if="!formatters.isNullOrEmpty(props.section)">
 					<template v-slot:activator="{ props }">

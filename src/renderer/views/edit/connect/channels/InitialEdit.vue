@@ -49,8 +49,8 @@
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<file-header input-file="initial.cha" docs-path="connections/channels">
-			<router-link to="/edit/channels">Channels</router-link> / 
-			<router-link to="/edit/channels/initial">Initial</router-link>
+			<router-link to="/edit/cons/channels">Channels</router-link> / 
+			<router-link to="/edit/cons/channels/initial">Initial</router-link>
 			/ Edit
 		</file-header>
 

@@ -102,13 +102,13 @@ def init():
 			m.name = args['name']
 			m.description = args['description']
 			m.org_min_id = RestHelpers.get_id_from_name(Om_water_ini, args['org_min_name'])
-			if args['pest_name']:
+			if 'pest_name' in args:
 				m.pest_id = RestHelpers.get_id_from_name(Pest_water_ini, args['pest_name'])
-			if args['path_name']:
+			if 'path_name' in args:
 				m.path_id = RestHelpers.get_id_from_name(Path_water_ini, args['path_name'])
-			if args['hmet_name']:
+			if 'hmet_name' in args:
 				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
-			if args['salt_name']:
+			if 'salt_name' in args:
 				m.salt_id = RestHelpers.get_id_from_name(Salt_water_ini, args['salt_name'])
 			result = m.save()
 
@@ -424,18 +424,18 @@ def propertiesMany():
 		try:
 			param_dict = {}
 
-			if args['init_name'] is not None:
+			if 'init_name' in args:
 				param_dict['init_id'] = RestHelpers.get_id_from_name(Initial_cha, args['init_name'])
-			if args['hyd_name'] is not None:
+			if 'hyd_name' in args:
 				param_dict['hyd_id'] = RestHelpers.get_id_from_name(Hyd_sed_lte_cha, args['hyd_name'])
-			if args['nut_name'] is not None:
+			if 'nut_name' in args:
 				param_dict['nut_id'] = RestHelpers.get_id_from_name(Nutrients_cha, args['nut_name'])
 
 			con_table = Chandeg_con
 			con_prop_field = Chandeg_con.lcha_id
 			prop_table = Channel_lte_cha
 
-			result = RestHelpers.put_many_con(args, param_dict, con_table, con_prop_field, prop_table)
+			result = DefaultRestMethods.put_many_con(args, param_dict, con_table, con_prop_field, prop_table)
 			rh.close()
 			if result > 0:
 				return '', 200

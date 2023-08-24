@@ -385,7 +385,7 @@ class DefaultRestMethods:
 
 			params['{}_id'.format(prop_name)] = args['{}_id'.format(prop_name)]
 
-			if args['wst_name'] is not None:
+			if 'wst_name' in args:
 				params['wst_id'] = RestHelpers.get_id_from_name(climate.Weather_sta_cli, args['wst_name'])
 
 			result = con_table.update(params).where(con_table.id == id).execute()
@@ -414,9 +414,9 @@ class DefaultRestMethods:
 	@staticmethod
 	def put_many_con(args, param_dict, con_table, con_prop_field, prop_table):
 		con_param_dict = {}
-		if args['wst_name'] is not None:
+		if 'wst_name' in args:
 			con_param_dict['wst_id'] = RestHelpers.get_id_from_name(climate.Weather_sta_cli, args['wst_name'])
-		if args['elev'] is not None:
+		if 'elev' in args:
 			con_param_dict['elev'] = args['elev']
 
 		con_result = 1

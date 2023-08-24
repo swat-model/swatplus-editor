@@ -181,17 +181,17 @@
 		{
 			name: 'Hydrology', routeName: 'Hydrology', show: !currentProject.isLte,
 			items: [
-				{ name: 'Hydrology', path: '/edit/hydrology', show: true, routeName: '', subItems: [] },
-				{ name: 'Topography', path: '/edit/topography', show: true, routeName: '', subItems: [] },
-				{ name: 'Fields', path: '/edit/fields', show: true, routeName: '', subItems: [] }
+				{ name: 'Hydrology', path: '/edit/hydrology/hydrology', show: true, routeName: '', subItems: [] },
+				{ name: 'Topography', path: '/edit/hydrology/topography', show: true, routeName: '', subItems: [] },
+				{ name: 'Fields', path: '/edit/hydrology/fields', show: true, routeName: '', subItems: [] }
 			]
 		},
 		{
 			name: 'Soils', routeName: 'Soils', show: true,
 			items: [
-				{ name: 'Soils', path: '/edit/soils', show: !currentProject.isLte, routeName: '', subItems: [] },
-				{ name: 'Nutrients', path: '/edit/soil-nutrients', show: !currentProject.isLte, routeName: '', subItems: [] },
-				{ name: 'Soil Textures', path: '/edit/soils-lte', show: currentProject.isLte, routeName: '', subItems: [] }
+				{ name: 'Soils', path: '/edit/soils/soils', show: !currentProject.isLte, routeName: '', subItems: [] },
+				{ name: 'Nutrients', path: '/edit/soils/soil-nutrients', show: !currentProject.isLte, routeName: '', subItems: [] },
+				{ name: 'Soil Textures', path: '/edit/soils/soils-lte', show: currentProject.isLte, routeName: '', subItems: [] }
 			]
 		},
 		{
@@ -220,7 +220,7 @@
 		{
 			name: 'Water Rights', routeName: 'WaterRights', show: !currentProject.isLte,
 			items: [
-				{ name: 'Water Allocation', path: '/edit/water_allocation', show: true, routeName: '', subItems: [] }
+				{ name: 'Water Allocation', path: '/edit/water-rights/water-allocation', show: true, routeName: '', subItems: [] }
 			]
 		}
 	]
@@ -303,7 +303,7 @@
 						links to resources to help you with SWAT+ and the editor. User groups are available where you can ask questions if you get stuck.
 					</p>
 
-					<hr class="my-6" />
+					<v-divider class="my-6"></v-divider>
 
 					<p>
 						Any SWAT+ features not available through the editor can be modified manually through the text input files.

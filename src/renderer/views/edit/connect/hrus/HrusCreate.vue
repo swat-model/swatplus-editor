@@ -1,9 +1,9 @@
 <script setup lang="ts">
 	import { reactive } from 'vue';
-	import ChannelsForm from './ChannelsForm.vue';
+	import HrusForm from './HrusForm.vue';
 
 	let data:any = reactive({
-		apiUrl: 'channels',
+		apiUrl: 'hrus',
 		item: {
 			connect: {
 				name: null,
@@ -21,11 +21,11 @@
 
 <template>
 	<project-container>
-		<file-header input-file="chandeg.con" docs-path="connections/channels">
-			<router-link to="/edit/cons/channels">Channels</router-link>
+		<file-header input-file="hru.con" docs-path="connections/hrus">
+			<router-link to="/edit/cons/hrus">HRUs</router-link>
 			/ Create
 		</file-header>
 
-		<channels-form :item="data.item" :api-url="data.apiUrl"></channels-form>
+		<hrus-form :item="data.item" :api-url="data.apiUrl"></hrus-form>
 	</project-container>
 </template>
