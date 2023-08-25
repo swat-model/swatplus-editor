@@ -514,10 +514,12 @@ class RestHelpers:
 		for field in table._meta.sorted_fields:
 			if field.column_name in args or field.name in args:
 				if field.name in lookup_fields:
-					d = ast.literal_eval(args[field.name])
+					#d = ast.literal_eval(args[field.name])
+					d = args[field.name]
 					params[field.name] = int(d['id'])
 				elif field.column_name in lookup_fields:
-					d = ast.literal_eval(args[field.column_name])
+					#d = ast.literal_eval(args[field.column_name])
+					d = args[field.column_name]
 					params[field.column_name] = int(d['id'])
 				else:
 					params[field.column_name] = args[field.column_name]

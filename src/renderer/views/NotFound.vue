@@ -11,7 +11,7 @@
 		<p class="mb-4 text-medium-emphasis">
 			The item you clicked does not go to an active page.
 			This is a bug in the editor. Please report the route: <strong>{{ $route.path }}</strong>
-			to the <open-in-browser url="https://groups.google.com/d/forum/swatplus-editor" text="SWAT+ Editor user group"></open-in-browser>.
+			to the <open-in-browser url="https://groups.google.com/d/forum/swatplus-editor" text="SWAT+ Editor user group" class="text-primary"></open-in-browser>.
 		</p>
 
 		<v-divider class="mb-4"></v-divider>

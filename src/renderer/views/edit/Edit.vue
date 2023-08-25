@@ -33,7 +33,7 @@
 		subItems: NavItem[],
 	}
 
-	let nav:NavGroup[] = [
+	let nav:NavGroup[] = reactive([
 		{
 			name: 'Climate', routeName: 'Climate', show: true,
 			items: [
@@ -223,7 +223,7 @@
 				{ name: 'Water Allocation', path: '/edit/water-rights/water-allocation', show: true, routeName: '', subItems: [] }
 			]
 		}
-	]
+	])
 
 	function shownNavItems(items:NavItem[]) {
 		return items.filter((el:any) => { return el.show; })
@@ -254,12 +254,7 @@
 		}
 	}
 
-	watch(
-		() => route.name,
-		(newRoute) => {
-			processSubOpen(newRoute);
-		}
-	)
+	watch(() => route.name, (newRoute) => processSubOpen(newRoute))
 
 	onMounted(() => processSubOpen(route.name));
 </script>

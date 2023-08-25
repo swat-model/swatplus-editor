@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { reactive, ref, watch, computed } from 'vue';
+	import { reactive, onMounted, watch, computed } from 'vue';
 	import { usePlugins } from '../plugins';
 	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
 
@@ -54,9 +54,10 @@
 	async function get() {
 		if (props.varDef.type === 'lookup') {
 			try {
-				const response = await api.get(`selectlist/${props.varDef.default_text}`, currentProject.getApiHeader());
+				const response = await api.get(`auto_complete/select-list/${props.varDef.default_text}/id`, currentProject.getApiHeader());
 
 				data.lookupOptions = response.data;
+				errors.log(response.data);
 			} catch (error) {
 				data.lookupError = errors.logError(error, `Unable to get ${props.varDef.default_text} options from database.`);
 			}
@@ -83,6 +84,8 @@
 	const inputDisabled = computed(() => {
 		return props.bulkMode && !data.varSelected;
 	})
+
+	onMounted(async () => await get())
 </script>
 
 <template>

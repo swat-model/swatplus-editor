@@ -51,7 +51,7 @@
 			/ Edit
 		</file-header>
 
-		<edit-form show-description show-range is-update get-datasets-record allow-bulk-edit
+		<edit-form show-description show-range is-update allow-bulk-edit
 			name="Channels" table="nut_cha"
 			:item="data.item" 
 			:vars="data.vars" 

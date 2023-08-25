@@ -156,6 +156,7 @@ class UpdateProject(ExecutableApi):
 				migrator.drop_column('weir_res', 'weir_wd'),
 				migrator.drop_column('weir_res', 'vel_co'),
 				migrator.drop_column('weir_res', 'dp_co'),
+				migrator.drop_column('weir_res', 'num_steps'),
 				migrator.add_column('weir_res', 'linear_c', DoubleField(default=1.84)),
 				migrator.add_column('weir_res', 'exp_k', DoubleField(default=2.6)),
 				migrator.add_column('weir_res', 'width', DoubleField(default=2.5)),

@@ -4,23 +4,23 @@
 	const formatters = useFormatters();
 
 	interface Props {
-		text: string | null,
+		text?: string | null,
 		type?: "error" | "success" | "warning" | "info" | undefined,
 		hideIcon?: boolean,
 		variant?: "text" | "elevated" | "flat" | "tonal" | "outlined" | "plain" | undefined,
 		border?: boolean | "top" | "bottom" | "start" | "end" | undefined,
-		asPopup?: boolean,
+		noPopup?: boolean,
 		show?: boolean,
 		timeout?: number
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
-		text: null,
-		type: 'error',
-		variant: 'tonal',
+		text: 'Changes saved.',
+		type: 'success',
+		variant: undefined,
 		hideIcon: false,
 		border: 'start',
-		asPopup: false,
+		noPopup: false,
 		show: false,
 		timeout: 3000
 	});
@@ -34,7 +34,7 @@
 
 <template>
 	<div>
-		<v-alert v-if="!props.asPopup && !formatters.isNullOrEmpty(props.text)" 
+		<v-alert v-if="props.noPopup && !formatters.isNullOrEmpty(props.text)" 
 			:type="props.type" :icon="hideIcon ? false : '$' + props.type" :variant="props.variant" :border="props.border"
 			class="mb-4">
 			{{ props.text }}

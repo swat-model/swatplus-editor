@@ -1,3 +1,25 @@
+<script setup lang="ts">
+	import { useRoute } from 'vue-router';
+	const route = useRoute();
+
+	let table:any = {
+		apiUrl: 'hrus-lte/items',
+		headers: [
+			{ key: 'name', label: 'Name' },
+			{ key: 'area', label: 'Area (ha)', type: 'number', class: 'text-right' },
+			{ key: 'lat', label: 'Lat', type: 'number', class: 'text-right' },
+			{ key: 'lon', label: 'Lon', type: 'number', class: 'text-right' },
+			{ key: 'elev', label: 'Elev (m)', type: 'number', class: 'text-right' },
+			{ key: 'wst', label: 'Weather Station', type: 'object', class: 'text-right', objectRoutePath: '/edit/climate/stations/edit/' },
+			{ key: 'soil_text', label: 'Soil', type: 'object', class: 'text-right', objectRoutePath: '/edit/soils/soils-lte/edit/' },
+			{ key: 'grow_start', label: 'Grow Start', type: 'object', class: 'text-right', objectRoutePath: '/edit/decision_table/edit/' },
+			{ key: 'grow_end', label: 'Grow End', type: 'object', class: 'text-right', objectRoutePath: '/edit/decision_table/edit/' },
+			{ key: 'plnt_typ', label: 'Plant', type: 'object', class: 'text-right', objectRoutePath: '/edit/db/plants/edit/' },
+			{ key: 'outflow', label: '# Outflow', class: 'text-right' }
+		],
+	};
+</script>
+
 <template>
 	<project-container>
 		<div v-if="$route.name == 'HrusLte'">
@@ -5,33 +27,8 @@
 				HRUs
 			</file-header>
 
-			<connect-grid-view
-				api-url="hrus-lte"
-				collection-description="HRUs"
-				:fields="fields" :router-link-fields="routerLinkFields" />
+			<grid-view :api-url="table.apiUrl" :headers="table.headers"></grid-view>
 		</div>
 		<router-view></router-view>
 	</project-container>
 </template>
-
-<script>
-export default {
-	name: 'HrusLte',
-	data() {
-		return {
-			fields: [
-				{ key: 'soil_text', label: 'Soil', sortable: true, class: 'text-right' },
-				{ key: 'grow_start', label: 'Grow Start', sortable: true, class: 'text-right' },
-				{ key: 'grow_end', label: 'Grow End', sortable: true, class: 'text-right' },
-				{ key: 'plnt_typ', label: 'Plant', sortable: true, class: 'text-right' }
-			],
-			routerLinkFields: [
-				{ key: 'soil_text', route: '/edit/soils-lte/edit/' },
-				{ key: 'grow_start', route: '/edit/decision_table/edit/' },
-				{ key: 'grow_end', route: '/edit/decision_table/edit/' },
-				{ key: 'plnt_typ', route: '/edit/db/plants/edit/' }
-			]
-		}
-	}
-}
-</script>

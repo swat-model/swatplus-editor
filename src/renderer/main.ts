@@ -41,6 +41,7 @@ import ProjectContainer from './components/ProjectContainer.vue';
 import SelectFolderInput from './components/SelectFolderInput.vue';
 import SelectFileInput from './components/SelectFileInput.vue';
 import StackTraceError from './components/StackTraceError.vue';
+import SuccessAlert from './components/SuccessAlert.vue';
 
 const pinia = createPinia();
 const app = createApp(App);
@@ -121,6 +122,7 @@ app.component('project-container', ProjectContainer);
 app.component('select-folder-input', SelectFolderInput);
 app.component('select-file-input', SelectFileInput);
 app.component('stack-trace-error', StackTraceError);
+app.component('success-alert', SuccessAlert);
 
 app.use(router);
 app.use(pinia);

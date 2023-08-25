@@ -1,78 +1,74 @@
+<script setup lang="ts">
+	import { reactive, onMounted, watch } from 'vue';
+	import { useRoute } from 'vue-router';
+	import { usePlugins } from '../../../../plugins';
+	import HrusLteForm from './HrusLteForm.vue';
+
+	const route = useRoute();
+	const { api, currentProject, errors, utilities } = usePlugins();
+
+	let data:any = reactive({
+		apiUrl: 'hrus-lte',
+		paths: {
+			vars: 'hru_lte_hru'
+		},
+		page: {
+			loading: false,
+			error: null
+		},
+		item: {
+			connect: {},
+			props: {},
+			outflow: []
+		},
+		vars: []
+	});
+
+	async function get() {
+		if (route.params.id === undefined) return;
+		data.page.loading = true;
+		data.page.error = null;
+
+		try {
+			const response = await api.get(`${data.apiUrl}/items/${route.params.id}`, currentProject.getApiHeader());
+			errors.log(response.data);
+
+			data.item.connect = {
+				id: response.data.id,
+				name: response.data.name,
+				area: response.data.area,
+				lat: response.data.lat,
+				lon: response.data.lon,
+				elev: response.data.elev,
+				wst_name: response.data.wst != null ? response.data.wst.name : ''
+			};
+
+			data.item.outflow = response.data.con_outs;
+
+			const response2 = await api.get(`${data.apiUrl}/properties/${response.data.lhru.id}`, currentProject.getApiHeader());
+			data.item.props = response2.data;
+
+			const response3 = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			data.vars = response3.data;
+		} catch (error) {
+			data.page.error = errors.logError(error, 'Unable to get project information from database.');
+		}
+		
+		data.page.loading = false;
+	}
+
+	onMounted(async () => await get())
+	watch(() => route.name, async () => await get())
+	watch(() => route.params.id, async () => await get())
+</script>
+
 <template>
-	<project-container :loading="page.loading" :load-error="page.error">
+	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<file-header input-file="hru-lte.con" docs-path="connections/hrus">
-			<router-link to="/edit/hrus-lte">HRUs</router-link>
+			<router-link to="/edit/cons/hrus-lte">HRUs</router-link>
 			/ Edit
 		</file-header>
 
-		<hrus-lte-form :item="item" :api-url="apiUrl" is-update allow-bulk-edit :vars="vars"></hrus-lte-form>
+		<hrus-lte-form :item="data.item" :api-url="data.apiUrl" is-update allow-bulk-edit :vars="data.vars"></hrus-lte-form>
 	</project-container>
 </template>
-
-<script>
-import HrusLteForm from './HrusLteForm.vue';
-
-export default {
-	name: 'HrusEdit',
-	components: {
-		HrusLteForm
-	},
-	data() {
-		return {
-			apiUrl: 'hrus-lte',
-			paths: {
-				vars: 'hru_lte_hru'
-			},
-			page: {
-				loading: false,
-				error: null
-			},
-			item: {
-				connect: {},
-				props: {},
-				outflow: []
-			},
-			vars: []
-		}
-	},
-	async created() {
-		if (this.currentProjectSupported) await this.get();
-	},
-	watch: {
-		'$route': 'get'
-	},
-	methods: {
-		async get() {
-			this.page.loading = true;
-			this.page.error = null;
-
-            try {
-				const response = await this.$http.get(`${this.apiUrl}/${this.$route.params.id}/${this.projectDbUrl}`);
-				this.log(response.data);
-
-				this.item.connect = {
-					id: response.data.id,
-					name: response.data.name,
-					area: response.data.area,
-					lat: response.data.lat,
-					lon: response.data.lon,
-					elev: response.data.elev,
-					wst_name: this.setToNameProp(response.data.wst)
-				};
-
-				this.item.outflow = response.data.con_outs;
-
-				const response2 = await this.$http.get(`${this.apiUrl}/properties/${response.data.lhru.id}/${this.projectDbUrl}`);
-				this.item.props = response2.data;
-
-				const response3 = await this.$http.get(`vars/${this.paths.vars}/${this.appPath}`);
-				this.vars = response3.data;
-			} catch (error) {
-				this.page.error = this.logError(error, 'Unable to get project information from database.');
-			}
-			
-			this.page.loading = false;
-		}
-	}
-}
-</script>

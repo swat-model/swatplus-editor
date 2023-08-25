@@ -69,6 +69,7 @@
 	async function save() {
 		page.error = null;
 		page.saving = true;
+		page.saveSuccess = false;
 		page.validated = true;
 
 		if (props.item.connect.elev === '') props.item.connect.elev = null;
@@ -146,12 +147,7 @@
 <template>
 	<div>
 		<error-alert :text="page.error"></error-alert>
-		<v-snackbar v-model="page.saveSuccess" :timeout="3000" location="top">
-			Changes saved!
-			<template v-slot:actions>
-				<v-btn color="primary" variant="text" @click="page.saveSuccess = false">Close</v-btn>
-			</template>
-		</v-snackbar>
+		<success-alert v-model="page.saveSuccess" :show="page.saveSuccess"></success-alert>
 
 		<v-form @submit.prevent="save">
 			<div v-if="page.bulk.show">

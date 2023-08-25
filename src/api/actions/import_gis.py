@@ -596,6 +596,11 @@ class GisImport(ExecutableApi):
 					stl_vel=1
 				)
 
+				try:
+					db_lib.execute_non_query(self.project_db_file, 'ALTER TABLE weir_res DROP COLUMN num_steps')
+				except:
+					pass
+
 				reservoir.Weir_res.create(
 					name='shape1',
 					linear_c=1.84,

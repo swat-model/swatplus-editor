@@ -6,19 +6,13 @@ from peewee import *
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project.climate import Weather_sta_cli
-from database.project.connect import Hru_con, Hru_con_out, Hru_lte_con, Hru_lte_con_out
+from database.project.connect import Hru_lte_con, Hru_lte_con_out
 from database.project.hru import Hru_data_hru, Hru_lte_hru
-from database.project.hydrology import Hydrology_hyd, Topography_hyd, Field_fld
-from database.project.soils import Nutrients_sol, Soils_sol, Soils_lte_sol
-from database.project.lum import Landuse_lum
-from database.project.hru_parm_db import Snow_sno, Plants_plt
-from database.project.init import Soil_plant_ini
+from database.project.soils import Soils_lte_sol
+from database.project.hru_parm_db import Plants_plt
 from database.project.decision_table import D_table_dtl
-from database.project.reservoir import Wetland_wet
 
-import ast
-
-bp = Blueprint('hru_lte', __name__, url_prefix='/hru-lte')
+bp = Blueprint('hru_lte', __name__, url_prefix='/hrus-lte')
 
 @bp.route('/items', methods=['GET', 'POST'])
 def con():
@@ -181,11 +175,11 @@ def propertiesMany():
 
 		args = request.json
 		try:
-			if args['grow_start'] is not None:
+			if 'grow_start' in args:
 				args['grow_start_id'] = RestHelpers.get_id_from_name(D_table_dtl, args['grow_start'])
 				args.pop('grow_start', None)
 
-			if args['grow_end'] is not None:
+			if 'grow_end' in args:
 				args['grow_end_id'] = RestHelpers.get_id_from_name(D_table_dtl, args['grow_end'])
 				args.pop('grow_end', None)
 
@@ -193,9 +187,9 @@ def propertiesMany():
 
 			param_dict = {}
 			for key in args.keys():
-				if args[key] is not None and key != 'selected_ids':
+				if key in args and key != 'selected_ids':
 					if key in lookup_fields:
-						d = ast.literal_eval(args[key])
+						d = args[key]
 						if int(d['id']) != 0:
 							param_dict[key] = int(d['id'])
 					else:

@@ -1,13 +1,22 @@
 <script setup lang="ts">
 	import { reactive, onMounted, computed, watch } from 'vue';
 	import { useRoute } from 'vue-router';
+	import { useDisplay } from 'vuetify';
 	import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader';
 	// @ts-ignore
 	import _ from 'underscore';
 	import { usePlugins } from '../plugins';
 
 	const route = useRoute();
+	const { height } = useDisplay();
 	const { api, currentProject, errors, formatters, utilities } = usePlugins();
+
+	const tableHeight = computed(() => {
+		if (height.value < 730) return '60vh';
+		if (height.value < 900) return '70vh';
+		if (height.value < 1050) return '75vh';
+		return '78vh';
+	})
 
 	interface Props {
 		apiUrl: string,
@@ -181,7 +190,7 @@
 			</div>
 		</div>
 		<v-card>
-			<v-table class="data-table" fixed-header height="70vh" density="compact">
+			<v-table class="data-table" fixed-header :height="tableHeight" density="compact">
 				<thead>
 					<tr class="bg-surface">
 						<th v-if="!props.hideEdit" class="bg-secondary-tonal min"></th>

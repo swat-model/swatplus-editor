@@ -18,6 +18,10 @@ import Hrus from '../views/edit/connect/hrus/Hrus.vue';
 import HrusEdit from '../views/edit/connect/hrus/HrusEdit.vue';
 import HrusCreate from '../views/edit/connect/hrus/HrusCreate.vue'; 
 
+import HrusLte from '../views/edit/connect/hrus-lte/HrusLte.vue';
+import HrusLteEdit from '../views/edit/connect/hrus-lte/HrusLteEdit.vue';
+import HrusLteCreate from '../views/edit/connect/hrus-lte/HrusLteCreate.vue'; 
+
 export default [
 	{ 
 		path: 'cons/channels', name: 'Channels', component: Channels,
@@ -52,6 +56,13 @@ export default [
 			children: [
 				{ path: 'edit/:id', name: 'HrusEdit', component: HrusEdit },
 				{ path: 'create', name: 'HrusCreate', component: HrusCreate }
+			] 	 			
+	},
+	{ 
+		path: 'cons/hrus-lte', name: 'HrusLte', component: HrusLte, 
+			children: [
+				{ path: 'edit/:id', name: 'HrusLteEdit', component: HrusLteEdit },
+				{ path: 'create', name: 'HrusLteCreate', component: HrusLteCreate }
 			] 	 			
 	},
 ];

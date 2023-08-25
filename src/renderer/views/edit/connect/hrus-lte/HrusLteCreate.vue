@@ -1,70 +1,64 @@
+<script setup lang="ts">
+	import { reactive, onMounted } from 'vue';
+	import { usePlugins } from '../../../../plugins';
+	import HrusLteForm from './HrusLteForm.vue';
+
+	const { api, errors, utilities } = usePlugins();
+
+	let data:any = reactive({
+		apiUrl: 'hrus-lte',
+		paths: {
+			vars: 'hru_lte_hru'
+		},
+		page: {
+			loading: true,
+			error: null
+		},
+		item: {
+			connect: {
+				name: null,
+				area: 0,
+				lat: 0,
+				lon: 0,
+				elev: null,
+				wst_name: null
+			},
+			props: {},
+			outflow: []
+		},
+		vars: []
+	});
+
+	async function get() {
+		data.page.loading = true;
+		data.page.error = null;
+
+		try {
+			const response = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			data.vars = response.data;
+			
+			let keys = Object.keys(data.vars);
+			for (let k of keys) {
+				let v = data.vars[k];
+				data.item.props[k] = v.type == 'string' ? v.default_text : v.default_value;
+			}
+		} catch (error) {
+			data.page.error = errors.logError(error, 'Unable to get table metadata from database.');
+		}
+			
+		data.page.loading = false;
+	}
+
+	onMounted(async () => await get())
+</script>
+
 <template>
-	<project-container :loading="page.loading" :load-error="page.error">
+	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<file-header input-file="hru-lte.con" docs-path="connections/hrus">
-			<router-link to="/edit/hrus-lte">HRUs</router-link>
+			<router-link to="/edit/cons/hrus-lte">HRUs</router-link>
 			/ Create
 		</file-header>
 
-		<hrus-lte-form :item="item" :api-url="apiUrl" :vars="vars"></hrus-lte-form>
+		<hrus-lte-form :item="data.item" :api-url="data.apiUrl" :vars="data.vars"></hrus-lte-form>
 	</project-container>
 </template>
-
-<script>
-import HrusLteForm from './HrusLteForm.vue';
-
-export default {
-	name: 'HrusLteCreate',
-	components: {
-		HrusLteForm
-	},
-	data() {
-		return {
-			apiUrl: 'hrus-lte',
-			paths: {
-				vars: 'hru_lte_hru'
-			},
-			page: {
-				loading: true,
-				error: null
-			},
-			item: {
-				connect: {
-					name: null,
-					area: 0,
-					lat: 0,
-					lon: 0,
-					elev: null,
-					wst_name: null
-				},
-				props: {},
-				outflow: []
-			},
-			vars: []
-		}
-	},
-	async created() {
-		if (this.currentProjectSupported) await this.get();
-	},
-	methods: {
-		async get() {
-			this.page.loading = true;
-			this.page.error = null;
-
-            try {
-				const response = await this.$http.get(`vars/${this.paths.vars}/${this.appPath}`);
-                this.vars = response.data;
-                
-                let keys = Object.keys(this.vars);
-                for (let k of keys) {
-					let v = this.vars[k];
-                    this.item.props[k] = v.type == 'string' ? v.default_text : v.default_value;
-                }
-			} catch (error) {
-				this.page.error = this.logError(error, 'Unable to get table metadata from database.');
-			}
-				
-			this.page.loading = false;
-		}
-	}
-}
-</script>

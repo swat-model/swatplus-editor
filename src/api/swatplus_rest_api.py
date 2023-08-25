@@ -6,8 +6,9 @@ import argparse
 import platform
 import os
 import werkzeug
+import traceback
 
-from rest import setup, auto_complete, channel, definitions, hru, hru_lte
+from rest import setup, aquifer, auto_complete, channel, definitions, hru, hru_lte, routing_unit
 
 app = Flask(__name__)
 CORS(app)
@@ -15,11 +16,13 @@ app.json.sort_keys = False
 exiting = False
 
 app.register_blueprint(setup.bp)
+app.register_blueprint(aquifer.bp)
 app.register_blueprint(auto_complete.bp)
 app.register_blueprint(channel.bp)
 app.register_blueprint(definitions.bp)
 app.register_blueprint(hru.bp)
 app.register_blueprint(hru_lte.bp)
+app.register_blueprint(routing_unit.bp)
 
 @app.route('/', methods=['GET'])
 def default():
@@ -41,7 +44,7 @@ def teardown(exception):
 
 @app.errorhandler(werkzeug.exceptions.HTTPException)
 def handle_exception(e):
-    return make_response(jsonify(message=e.description), e.code)
+    return make_response(jsonify(message=e.description, stacktrace=traceback.format_exc()), e.code)
 
 
 if __name__ == '__main__':

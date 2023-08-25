@@ -57,6 +57,7 @@
 			error: null,
 			saving: false,
 			saveSuccess: false,
+			saveError: false,
 			validated: false,
 			checkAll: false,
 			bulk: {
@@ -99,7 +100,7 @@
 		data.page.loading = true;
 		data.selectedItems.push(props.item.id);
 
-		if (props.getDatasetsRecord) {
+		if (props.getDatasetsRecord && props.item.name) {
 			try {
 				const response = await getDatasetsDb(props.item.name);
 				data.datasetItem = response.data;
@@ -115,6 +116,8 @@
 	async function save() {
 		data.page.error = null;
 		data.page.saving = true;
+		data.page.saveSuccess = false;
+		data.page.saveError = false;
 		data.page.validated = true;
 		let val_error = false;
 
@@ -126,15 +129,18 @@
 			if (!formatters.isNullOrEmpty(emptyFields)) {
 				val_error = true;
 				data.page.error = `The following fields are required: ${emptyFields}.`;
+				data.page.saveError = true;
 			}
 		} else {
 			if (data.selectedItems.length < 1) {
 				val_error = true;
 				data.page.error = 'You must select at least one record to edit.';
+				data.page.saveError = true;
 			}
 			else if (data.selectedVars.length < 1) {
 				val_error = true;
 				data.page.error = 'You must check at least one field to edit.';
+				data.page.saveError = true;
 			}
 			else {
 				item = {};
@@ -159,6 +165,7 @@
 				}
 			} catch (error) {
 				data.page.error = errors.logError(error, 'Unable to save changes to database.');
+				data.page.saveError = true;
 			}
 		}
 		
@@ -182,6 +189,7 @@
 	async function copy() {
 		data.page.copy.error = null;
 		data.page.copy.saving = true;
+		data.page.copy.saveSuccess = false;
 
 		if (formatters.isNullOrEmpty(data.page.copy.name)) {
 			data.page.copy.error = 'Please enter a name.';
@@ -227,19 +235,9 @@
 
 <template>
 	<div>
-		<error-alert :text="data.page.error"></error-alert>
-		<v-snackbar v-model="data.page.saveSuccess" :timeout="3000" location="top">
-			Changes saved!
-			<template v-slot:actions>
-				<v-btn color="primary" variant="text" @click="data.page.saveSuccess = false">Close</v-btn>
-			</template>
-		</v-snackbar>
-		<v-snackbar v-model="data.page.copy.saveSuccess" :timeout="3000" location="top">
-			Your item has been copied.
-			<template v-slot:actions>
-				<v-btn color="primary" variant="text" @click="data.page.copy.saveSuccess = false">Close</v-btn>
-			</template>
-		</v-snackbar>
+		<error-alert as-popup v-model="data.page.saveError" :show="data.page.saveError" :text="data.page.error" :timeout="-1"></error-alert>
+		<success-alert v-model="data.page.saveSuccess" :show="data.page.saveSuccess"></success-alert>
+		<success-alert v-model="data.page.copy.saveSuccess" :show="data.page.copy.saveSuccess" text="Your item has been copied."></success-alert>
 
 		<v-form @submit.prevent="save">
 			<div v-if="!data.page.bulk.show">
@@ -307,8 +305,6 @@
                         :show-datasets="data.hasDatasetItem" :dataset-value="data.hasDatasetItem ? data.datasetItem[v.name] : null"></tr-var-editor>
 				</tbody>
 			</v-table>
-
-            <error-alert :text="data.page.error"></error-alert>
 
 			<action-bar>
 				<v-btn type="submit" :loading="data.page.saving" variant="flat" color="primary" class="mr-2">
