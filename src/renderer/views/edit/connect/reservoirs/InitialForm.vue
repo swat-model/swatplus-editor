@@ -36,11 +36,11 @@
 
 	function putDb(data:any) {
 		if (page.bulk.show)
-			return api.put('channels/initial/many/', data, currentProject.getApiHeader());
+			return api.put('reservoirs/initial/many/', data, currentProject.getApiHeader());
 		else if (props.isUpdate)
-			return api.put(`channels/initial/${props.item.id}`, data, currentProject.getApiHeader());
+			return api.put(`reservoirs/initial/${props.item.id}`, data, currentProject.getApiHeader());
 		else
-			return api.post(`channels/initial`, data, currentProject.getApiHeader());
+			return api.post(`reservoirs/initial`, data, currentProject.getApiHeader());
 	}
 
 	async function save() {
@@ -80,7 +80,7 @@
 				if (props.isUpdate)
 					page.saveSuccess = true;
 				else
-					router.push({ name: 'ChannelsInitial'});
+					router.push({ name: 'ReservoirsInitial'});
 			} catch (error) {
 				page.error = errors.logError(error, 'Unable to save changes to database.');
 			}
@@ -112,7 +112,7 @@
 				</div>
             </div>
             <div v-else>
-                <object-selector name="Channels" table="init_cha" @change="bulkSelectionChange"></object-selector>
+                <object-selector name="Reservoirs" table="init_res" @change="bulkSelectionChange"></object-selector>
             </div>
 
 			<div class="form-group d-flex">

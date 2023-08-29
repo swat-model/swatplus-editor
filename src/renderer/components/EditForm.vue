@@ -246,8 +246,8 @@
 						label="Name" hint="Must be unique"></v-text-field>
 				</div>
 
-				<div class="form-group">
-					<v-text-field v-model="item.name" label="Description (optional)"></v-text-field>
+				<div class="form-group" v-if="showDescription">
+					<v-text-field v-model="item.description" label="Description (optional)"></v-text-field>
 				</div>
             </div>
             <div v-else>

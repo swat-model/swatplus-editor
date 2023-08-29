@@ -747,7 +747,7 @@
 								<v-col cols="12" md="6">
 									<v-card>
 										<v-card-subtitle class="text-uppercase mt-3">Object totals</v-card-subtitle>
-										<v-table density="comfortable" class="mt-1">
+										<v-table density="comfortable" class="mt-1 mb-11">
 											<tbody>
 												<tr v-if="info.status.using_gis">
 													<td class="text-right min">{{info.totals.subs}}</td>
@@ -784,10 +784,6 @@
 												<tr v-if="!info.is_lte">
 													<td class="text-right min">{{info.totals.rec}}</td>
 													<td><router-link class="text-primary" to="/edit/recall">Point Sources / Inlets</router-link></td>
-												</tr>
-												<tr v-if="!info.is_lte">
-													<td class="text-right min">{{info.totals.dlr}}</td>
-													<td><router-link class="text-primary" to="/edit/dr">Delivery Ratio</router-link></td>
 												</tr>
 											</tbody>
 										</v-table>

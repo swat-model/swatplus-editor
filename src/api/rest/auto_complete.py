@@ -183,6 +183,7 @@ def getObjects(table_type):
 			'hyd': gis.Gis_hrus,
 			'topo_hru': gis.Gis_hrus,
 			'wet_res': gis.Gis_hrus,
+			'hyd_wet': gis.Gis_hrus,
 
 			'chandeg_con': gis.Gis_channels,
 			'init_cha': gis.Gis_channels,
@@ -192,7 +193,7 @@ def getObjects(table_type):
 			'rec_con': gis.Gis_points
 		}
 
-		hru_types = ['rtu_con', 'hru_con', 'hru_lte_con', 'hyd', 'topo_hru', 'wet_res']
+		hru_types = ['rtu_con', 'hru_con', 'hru_lte_con', 'hyd', 'topo_hru', 'wet_res', 'hyd_wet']
 		rtu_types = ['rtu_con', 'fld', 'topo']
 
 		gis_table = con_to_gis.get(table_type, None)
@@ -211,6 +212,7 @@ def getObjects(table_type):
 			'hyd': (connect.Hru_con, hru.Hru_data_hru, hru.Hru_data_hru.hydro_id),
 			'topo_hru': (connect.Hru_con, hru.Hru_data_hru, hru.Hru_data_hru.topo_id),
 			'wet_res': (connect.Hru_con, hru.Hru_data_hru, hru.Hru_data_hru.surf_stor_id),
+			'hyd_wet': (connect.Hru_con, hru.Hru_data_hru, hru.Hru_data_hru.surf_stor_id, reservoir.Wetland_wet, reservoir.Wetland_wet.hyd_id),
 
 			'init_aqu': (connect.Aquifer_con, aquifer.Aquifer_aqu, aquifer.Aquifer_aqu.init_id),
 
@@ -246,7 +248,14 @@ def getObjects(table_type):
 			prop_col = prop_types[2]
 
 			con_items = con_table.select(prop_col).join(prop_table).where(con_table.gis_id.in_(sub_items))
-			items = items.where(table.id.in_(con_items))
+
+			if len(prop_types) > 3:
+				second_prop_table = prop_types[3]
+				second_prop_col = prop_types[4]
+				second_items = second_prop_table.select(second_prop_col).where(second_prop_table.id.in_(con_items))
+				items = items.where(table.id.in_(second_items))
+			else:
+				items = items.where(table.id.in_(con_items))
 
 	rh.close()
 	return [{'value': m.id, 'text': m.name} for m in items.order_by(table.name)]

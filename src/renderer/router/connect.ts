@@ -22,6 +22,50 @@ import HrusLte from '../views/edit/connect/hrus-lte/HrusLte.vue';
 import HrusLteEdit from '../views/edit/connect/hrus-lte/HrusLteEdit.vue';
 import HrusLteCreate from '../views/edit/connect/hrus-lte/HrusLteCreate.vue'; 
 
+import RoutingUnits from '../views/edit/connect/routing-units/RoutingUnits.vue';
+import RoutingUnitsEdit from '../views/edit/connect/routing-units/RoutingUnitsEdit.vue';
+import RoutingUnitsCreate from '../views/edit/connect/routing-units/RoutingUnitsCreate.vue';
+
+import RoutingUnitsElements from '../views/edit/connect/routing-units/Elements.vue';
+import RoutingUnitsElementsEdit from '../views/edit/connect/routing-units/ElementsEdit.vue';
+import RoutingUnitsElementsCreate from '../views/edit/connect/routing-units/ElementsCreate.vue';
+
+import Aquifers from '../views/edit/connect/aquifers/Aquifers.vue';
+import AquifersEdit from '../views/edit/connect/aquifers/AquifersEdit.vue';
+import AquifersCreate from '../views/edit/connect/aquifers/AquifersCreate.vue';
+
+import AquifersInitial from '../views/edit/connect/aquifers/Initial.vue';
+import AquifersInitialEdit from '../views/edit/connect/aquifers/InitialEdit.vue';
+import AquifersInitialCreate from '../views/edit/connect/aquifers/InitialCreate.vue';
+
+import Reservoirs from '../views/edit/connect/reservoirs/Reservoirs.vue';
+import ReservoirsEdit from '../views/edit/connect/reservoirs/ReservoirsEdit.vue';
+import ReservoirsCreate from '../views/edit/connect/reservoirs/ReservoirsCreate.vue';
+
+import ReservoirsInitial from '../views/edit/connect/reservoirs/Initial.vue';
+import ReservoirsInitialEdit from '../views/edit/connect/reservoirs/InitialEdit.vue';
+import ReservoirsInitialCreate from '../views/edit/connect/reservoirs/InitialCreate.vue';
+
+import ReservoirsHydrology from '../views/edit/connect/reservoirs/Hydrology.vue';
+import ReservoirsHydrologyEdit from '../views/edit/connect/reservoirs/HydrologyEdit.vue';
+import ReservoirsHydrologyCreate from '../views/edit/connect/reservoirs/HydrologyCreate.vue';
+
+import ReservoirsSediment from '../views/edit/connect/reservoirs/Sediment.vue';
+import ReservoirsSedimentEdit from '../views/edit/connect/reservoirs/SedimentEdit.vue';
+import ReservoirsSedimentCreate from '../views/edit/connect/reservoirs/SedimentCreate.vue';
+
+import ReservoirsNutrients from '../views/edit/connect/reservoirs/Nutrients.vue';
+import ReservoirsNutrientsEdit from '../views/edit/connect/reservoirs/NutrientsEdit.vue';
+import ReservoirsNutrientsCreate from '../views/edit/connect/reservoirs/NutrientsCreate.vue';
+
+import ReservoirsWetlands from '../views/edit/connect/reservoirs/Wetlands.vue';
+import ReservoirsWetlandsEdit from '../views/edit/connect/reservoirs/WetlandsEdit.vue';
+import ReservoirsWetlandsCreate from '../views/edit/connect/reservoirs/WetlandsCreate.vue';
+
+import ReservoirsWetlandsHydrology from '../views/edit/connect/reservoirs/WetlandsHydrology.vue';
+import ReservoirsWetlandsHydrologyEdit from '../views/edit/connect/reservoirs/WetlandsHydrologyEdit.vue';
+import ReservoirsWetlandsHydrologyCreate from '../views/edit/connect/reservoirs/WetlandsHydrologyCreate.vue';
+
 export default [
 	{ 
 		path: 'cons/channels', name: 'Channels', component: Channels,
@@ -65,4 +109,81 @@ export default [
 				{ path: 'create', name: 'HrusLteCreate', component: HrusLteCreate }
 			] 	 			
 	},
+	{ 
+		path: 'cons/routing-units', name: 'RoutingUnits', component: RoutingUnits, 		
+			children: [
+				{ path: 'edit/:id', name: 'RoutingUnitsEdit', component: RoutingUnitsEdit },
+				{ path: 'create', name: 'RoutingUnitsCreate', component: RoutingUnitsCreate },
+				{ 
+					path: 'elements', name: 'RoutingUnitsElements', component: RoutingUnitsElements,
+					children: [
+						{ path: 'edit/:id', name: 'RoutingUnitsElementsEdit', component: RoutingUnitsElementsEdit },
+						{ path: 'create', name: 'RoutingUnitsElementsCreate', component: RoutingUnitsElementsCreate }
+					]
+				}
+			] 	  	
+	},
+	{ 
+		path: 'cons/aquifers', name: 'Aquifers', component: Aquifers, 
+			children: [
+				{ path: 'edit/:id', name: 'AquifersEdit', component: AquifersEdit },
+				{ path: 'create', name: 'AquifersCreate', component: AquifersCreate },
+				{ 
+					path: 'initial', name: 'AquifersInitial', component: AquifersInitial,
+					children: [
+						{ path: 'edit/:id', name: 'AquifersInitialEdit', component: AquifersInitialEdit },
+						{ path: 'create', name: 'AquifersInitialCreate', component: AquifersInitialCreate }
+					] 
+				},		
+			] 					
+	},
+	{ 
+		path: 'cons/reservoirs', name: 'Reservoirs', component: Reservoirs, 
+		children: [
+			{ path: 'edit/:id', name: 'ReservoirsEdit', component: ReservoirsEdit },
+			{ path: 'create', name: 'ReservoirsCreate', component: ReservoirsCreate },
+			{ 
+				path: 'initial', name: 'ReservoirsInitial', component: ReservoirsInitial,
+				children: [
+					{ path: 'edit/:id', name: 'ReservoirsInitialEdit', component: ReservoirsInitialEdit },
+					{ path: 'create', name: 'ReservoirsInitialCreate', component: ReservoirsInitialCreate }
+				] 
+			},
+			{ 
+				path: 'hydrology', name: 'ReservoirsHydrology', component: ReservoirsHydrology,
+				children: [
+					{ path: 'edit/:id', name: 'ReservoirsHydrologyEdit', component: ReservoirsHydrologyEdit },
+					{ path: 'create', name: 'ReservoirsHydrologyCreate', component: ReservoirsHydrologyCreate }
+				]  
+			},
+			{ 
+				path: 'sediment', name: 'ReservoirsSediment', component: ReservoirsSediment,
+				children: [
+					{ path: 'edit/:id', name: 'ReservoirsSedimentEdit', component: ReservoirsSedimentEdit },
+					{ path: 'create', name: 'ReservoirsSedimentCreate', component: ReservoirsSedimentCreate }
+				] 
+			},
+			{ 
+				path: 'nutrients', name: 'ReservoirsNutrients', component: ReservoirsNutrients,
+				children: [
+					{ path: 'edit/:id', name: 'ReservoirsNutrientsEdit', component: ReservoirsNutrientsEdit },
+					{ path: 'create', name: 'ReservoirsNutrientsCreate', component: ReservoirsNutrientsCreate }
+				] 
+			},
+			{ 
+				path: 'wetlands', name: 'ReservoirsWetlands', component: ReservoirsWetlands,
+				children: [
+					{ path: 'edit/:id', name: 'ReservoirsWetlandsEdit', component: ReservoirsWetlandsEdit },
+					{ path: 'create', name: 'ReservoirsWetlandsCreate', component: ReservoirsWetlandsCreate }
+				] 
+			},
+			{ 
+				path: 'wetlands_hydrology', name: 'ReservoirsWetlandsHydrology', component: ReservoirsWetlandsHydrology,
+				children: [
+					{ path: 'edit/:id', name: 'ReservoirsWetlandsHydrologyEdit', component: ReservoirsWetlandsHydrologyEdit },
+					{ path: 'create', name: 'ReservoirsWetlandsHydrologyCreate', component: ReservoirsWetlandsHydrologyCreate }
+				] 
+			},
+		]
+	}
 ];

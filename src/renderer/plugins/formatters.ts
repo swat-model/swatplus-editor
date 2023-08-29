@@ -72,6 +72,7 @@ export function useFormatters() {
 	}
 
 	function toUpperFirstLetter(s:string) {
+		if (isNullOrEmpty(s)) return s;
 		return s.charAt(0).toUpperCase() + s.slice(1);
 	}
 

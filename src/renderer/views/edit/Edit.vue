@@ -60,9 +60,9 @@
 				{ name: 'HRUs', path: '/edit/cons/hrus', show: !currentProject.isLte, routeName: '', subItems: [] },
 				{ name: 'HRUs', path: '/edit/cons/hrus-lte', show: currentProject.isLte, routeName: '', subItems: [] },
 				{ 
-					name: 'Routing Units', path: '/edit/cons/routing_unit', show: !currentProject.isLte, routeName: 'RoutingUnit', 
+					name: 'Routing Units', path: '/edit/cons/routing-units', show: !currentProject.isLte, routeName: 'RoutingUnits', 
 					subItems: [
-						{ name: 'Elements', path: '/edit/cons/routing_unit/elements', show: true, routeName: '', subItems: [] }
+						{ name: 'Elements', path: '/edit/cons/routing-units/elements', show: true, routeName: '', subItems: [] }
 					]
 				},
 				{ 
@@ -82,13 +82,7 @@
 						{ name: 'Wetland Hydrology', path: '/edit/cons/reservoirs/wetlands_hydrology', show: true, routeName: '', subItems: [] }
 					]
 				},
-				{ name: 'Point Sources / Inlets', path: '/edit/cons/recall', show: !currentProject.isLte, routeName: '', subItems: [] },
-				{ 
-					name: 'Delivery Ratio', path: '/edit/cons/dr', show: !currentProject.isLte, routeName: 'Delratio', 
-					subItems: [
-						{ name: 'Organic Mineral', path: '/edit/cons/dr/om', show: true, routeName: '', subItems: [] }
-					]
-				}
+				{ name: 'Point Sources / Inlets', path: '/edit/cons/recall', show: !currentProject.isLte, routeName: '', subItems: [] }
 			]
 		},
 		{
@@ -245,7 +239,7 @@
 
 	function processSubOpen(thisRoute:RouteRecordName|null|undefined) {
 		let subOpenItems = [
-			'Channels', 'Aquifers', 'Reservoirs', 'RoutingUnit', 'Delratio',
+			'Channels', 'Aquifers', 'Reservoirs', 'RoutingUnits', 
 			'Stations', 'Operations', 'LandscapeUnits', 'HardCalibration', 'SoftCalibration', 'Constituents'
 		];
 

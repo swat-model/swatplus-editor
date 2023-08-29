@@ -233,7 +233,7 @@ class DefaultRestMethods:
 
 			rh.close()
 			if result > 0:
-				return '', 201
+				return '', 200
 
 			abort(400, 'Unable to update {item} {id}.'.format(item=item_description.lower(), id=id))
 		except IntegrityError as e:
