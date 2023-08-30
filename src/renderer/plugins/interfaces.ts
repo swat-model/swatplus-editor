@@ -31,4 +31,5 @@ interface GridViewHeader {
 	objectValueField?: string|null;
 	objectTextField?: string|null;
 	objectRoutePath?: string|null;
+	formatter?: (value:any) => string;
 }

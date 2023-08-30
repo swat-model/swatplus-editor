@@ -66,6 +66,10 @@ import ReservoirsWetlandsHydrology from '../views/edit/connect/reservoirs/Wetlan
 import ReservoirsWetlandsHydrologyEdit from '../views/edit/connect/reservoirs/WetlandsHydrologyEdit.vue';
 import ReservoirsWetlandsHydrologyCreate from '../views/edit/connect/reservoirs/WetlandsHydrologyCreate.vue';
 
+import Recall from '../views/edit/connect/recall/Recall.vue';
+import RecallEdit from '../views/edit/connect/recall/RecallEdit.vue';
+import RecallCreate from '../views/edit/connect/recall/RecallCreate.vue';
+
 export default [
 	{ 
 		path: 'cons/channels', name: 'Channels', component: Channels,
@@ -185,5 +189,14 @@ export default [
 				] 
 			},
 		]
+	},
+	{ 
+		path: 'cons/recall', name: 'Recall', component: Recall, 
+		children: [
+			{ 
+				path: 'edit/:id', name: 'RecallEdit', component: RecallEdit
+			},
+			{ path: 'create', name: 'RecallCreate', component: RecallCreate }
+		] 					
 	}
 ];

@@ -361,7 +361,10 @@ ipcMain.on('save-file-dialog', (event, options) => {
 })
 
 let pids:any = [];
-ipcMain.on('spawn-process', (event, script_name:string, args:string[]) => {
+ipcMain.on('spawn-process', (event, proc_name:string, script_name:string, args:string[]) => {
+	console.log(`proc_name: ${proc_name}`)
+	console.log(`script_name: ${script_name}`)
+	console.log(`args: ${args}`)
 	let script = getScriptPath(script_name);
 	if (DEV_MODE || appsettings.python) {
 		args.unshift(script);
@@ -373,7 +376,7 @@ ipcMain.on('spawn-process', (event, script_name:string, args:string[]) => {
 	let stderrChunks = [];
 	ipcProcess.stdout.on('data', (data) => {
 		console.log(`stdout: ${data}`);
-		mainWindow.webContents.send('process-stdout', data.toString());
+		mainWindow.webContents.send(`process-stdout-${proc_name}`, data.toString());
 	});
 
 	ipcProcess.stderr.on('data', (data) => {
@@ -385,12 +388,12 @@ ipcMain.on('spawn-process', (event, script_name:string, args:string[]) => {
 		if (stderrContent === undefined || stderrContent === null || stderrContent.trim() === '') {
 			//mainWindow.webContents.send('process-close', 1);
 		} else {
-			mainWindow.webContents.send('process-stderr', stderrContent);
+			mainWindow.webContents.send(`process-stderr-${proc_name}`, stderrContent);
 		}
 	});
 	
 	ipcProcess.on('close', (code) => {
-		mainWindow.webContents.send('process-close', code);
+		mainWindow.webContents.send(`process-close-${proc_name}`, code);
 	});
 
 	event.returnValue = ipcProcess.pid;
@@ -418,7 +421,7 @@ ipcMain.on('run-swat', (event, debug:boolean, inputDir:string) => {
 	let stderrChunks = [];
 	
 	ipcProcess.stdout.on('data', (data) => {
-		mainWindow.webContents.send('process-stdout', data.toString());
+		mainWindow.webContents.send('process-stdout-run-swat', data.toString());
 	});
 
 	ipcProcess.stderr.on('data', (data) => {
@@ -430,12 +433,12 @@ ipcMain.on('run-swat', (event, debug:boolean, inputDir:string) => {
 		if (stderrContent === undefined || stderrContent === null || stderrContent.trim() === '') {
 			//mainWindow.webContents.send('process-close', 1);
 		} else {
-			mainWindow.webContents.send('process-stderr', stderrContent);
+			mainWindow.webContents.send('process-stderr-run-swat', stderrContent);
 		}
 	});
 	
 	ipcProcess.on('close', (code) => {
-		mainWindow.webContents.send('process-close', code);
+		mainWindow.webContents.send('process-close-run-swat', code);
 	});
 
 	event.returnValue = ipcProcess.pid;

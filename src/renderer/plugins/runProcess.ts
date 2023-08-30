@@ -8,18 +8,17 @@ export function useRunProcess() {
 	const formatters = useFormatters();
 	const utilities = useUtilities();
 
-	function runApiProc(script_name:string, args:string[]) {
-		errors.log("starting process");
-		return electron.spawnProcess(script_name, args);
+	function runApiProc(proc_name:string, script_name:string, args:string[]) {
+		return electron.spawnProcess(proc_name, script_name, args);
 	}
 	
 	function runSwatProc(inputDir:string, debug:boolean) {
 		return electron.runSwat(debug, inputDir);
 	}
 	
-	const processStdout = (callback:any) => electron.processStdout(callback);
-	const processStderr = (callback:any) => electron.processStderr(callback);
-	const processClose = (callback:any) => electron.processClose(callback);
+	const processStdout = (proc_name:string, callback:(_event:any, data:any) => any) => electron.processStdout(proc_name, callback);
+	const processStderr = (proc_name:string, callback:(_event:any, data:any) => any) => electron.processStderr(proc_name, callback);
+	const processClose = (proc_name:string, callback:(_event:any, code:any) => any) => electron.processClose(proc_name, callback);
 
 	function killProcess(pid:any) {
 		electron.killProcess(pid);

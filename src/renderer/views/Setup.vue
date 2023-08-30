@@ -109,7 +109,7 @@
 		landuse: {}
 	})
 
-	async function init() {
+	async function init(loadCallbacks:boolean) {
 		getColorTheme();
 		if (route.path === '/') {
 			recentProjects = utilities.getRecentProjects();
@@ -135,6 +135,10 @@
 				if (hasProject) {
 					await getInfo();
 				}
+			}
+
+			if (loadCallbacks) {
+				initRunProcessHandlers();
 			}
 		}		
 	}
@@ -427,37 +431,39 @@
 		};
 		task.currentProject = project;
 
-		task.currentPid = runProcess.runApiProc('swatplus_api', args);
+		task.currentPid = runProcess.runApiProc('setup', 'swatplus_api', args);
 	}
 
-	runProcess.processStdout((_event:any, data:any) => {
-		task.progress = runProcess.getApiOutput(data);
-	});
-	
-	runProcess.processStderr((_event:any, data:any) => {
-		console.log(`stderr: ${data}`);
-		task.error = data;
-		task.running = false;
-	});
-	
-	runProcess.processClose(async (_event:any, code:any) => {
-		let project = task.currentProject;
-		if (formatters.isNullOrEmpty(task.error)) {
-			if (page.loadScenario.running) {
-				page.open.projectDb = project.projectDb;
-				await openProject();
-				task.running = false;
-				closeTaskModals();
-			} else {
-				if (page.update.running) {
-					project.version = constants.appSettings.version;
+	function initRunProcessHandlers() {
+		runProcess.processStdout('setup', (_event:any, data:any) => {
+			task.progress = runProcess.getApiOutput(data);
+		});
+		
+		runProcess.processStderr('setup', (_event:any, data:any) => {
+			console.log(`stderr: ${data}`);
+			task.error = data;
+			task.running = false;
+		});
+		
+		runProcess.processClose('setup', async (_event:any, code:any) => {
+			let project = task.currentProject;
+			if (formatters.isNullOrEmpty(task.error)) {
+				if (page.loadScenario.running) {
+					page.open.projectDb = project.projectDb;
+					await openProject();
+					task.running = false;
+					closeTaskModals();
+				} else {
+					if (page.update.running) {
+						project.version = constants.appSettings.version;
+					}
+					await loadProject(project);
+					task.running = false;
+					closeTaskModals();
 				}
-				await loadProject(project);
-				task.running = false;
-				closeTaskModals();
 			}
-		}
-	});
+		});
+	}
 
 	function cancelTask() {
 		task.error = null;
@@ -500,11 +506,11 @@
 
 	//Lifecycle hooks
 
-	onMounted(async () => await init());
+	onMounted(async () => await init(true));
 
 	watch(
 		() => route.name,
-		async () => await init()
+		async () => await init(true)
 	)
 
 	async function sleep(ms:number|undefined) {

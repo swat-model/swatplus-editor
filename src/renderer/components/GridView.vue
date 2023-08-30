@@ -76,6 +76,13 @@
 		return max > data.matches ? data.matches : max;
 	});
 
+	const headerCount = computed(() => {
+		let c = table.headers.length;
+		if (!props.hideEdit) c++;
+		if (!props.hideDelete) c++;
+		return c;
+	})
+
 	let page:any = reactive({
 		loading: false,
 		error: null
@@ -175,6 +182,10 @@
 	});
 
 	watch(() => route.name, async () => await get(true))
+
+	defineExpose({
+		get
+	})
 </script>
 
 <template>
@@ -184,7 +195,9 @@
 				<v-text-field density="compact" variant="solo" append-inner-icon="fas fa-magnifying-glass" single-line hide-details
 					class="mb-0" style="width:300px"
 					label="Search..." v-model="table.filter" @input="filterChange"></v-text-field>
+				
 			</div>
+			<slot name="header"></slot>
 			<div v-if="!props.hideSummary" class="ml-auto text-right text-body-2">
 				Showing {{showFirst}} - {{showLast}} of {{data.matches}} {{formatters.isNullOrEmpty(table.filter) ? 'rows' : 'matches'}}
 			</div>
@@ -210,6 +223,11 @@
 					</tr>
 				</tbody>
 				<tbody v-else>
+					<tr v-if="data.items.length < 1">
+						<td :colspan="headerCount" class="text-center text-medium-emphasis py-6">
+							<em>No data available. {{ !props.hideCreate && formatters.isNullOrEmpty(table.filter) ? 'Use the button at the bottom of this page to create a new record.' : '' }}</em>
+						</td>
+					</tr>
 					<tr v-for="item in data.items">
 						<td v-if="!props.hideEdit" class="min">
 							<router-link :to="utilities.appendRoute(`edit/${item.id}`)" class="text-decoration-none text-primary" title="Edit/View">
@@ -233,6 +251,9 @@
 									{{ item[header.key][header.objectTextField||'name'] }}
 								</span>
 							</div>
+							<div v-else-if="header.formatter !== undefined">
+								{{ header.formatter(item[header.key]) }}
+							</div>
 							<div v-else>
 								{{ formatters.isNullOrEmpty(item[header.key]) ? '-' : item[header.key] }}
 							</div>	
@@ -245,7 +266,8 @@
 			</v-table>
 		</v-card>
 		<action-bar v-if="!props.noActionBar" :full-width="props.fullWidthActionBar">
-			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" :to="utilities.appendRoute('create')">Create Record</v-btn>
+			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" class="mr-2" :to="utilities.appendRoute('create')">Create Record</v-btn>
+			<slot name="actions"></slot>
 			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="6"
 				:length="getNumPages()" class="ml-auto" size="small"></v-pagination>
 		</action-bar>
