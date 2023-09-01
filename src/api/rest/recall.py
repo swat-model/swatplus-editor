@@ -283,45 +283,44 @@ def propertiesMany():
 
 # Recall.dat
 
-@bp.route('/data', methods=['GET', 'POST'])
-def hydsed():
-	if request.method == 'GET':
-		project_db = request.headers.get(rh.PROJECT_DB)
-		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+@bp.route('/data-list/<int:id>', methods=['GET'])
+def dataList(id):
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
 
-		table = Recall_dat
-		args = request.args
-		sort = RestHelpers.get_arg(args, 'sort', 'name')
-		reverse = RestHelpers.get_arg(args, 'reverse', 'n')
-		page = RestHelpers.get_arg(args, 'page', 1)
-		per_page = RestHelpers.get_arg(args, 'per_page', 50)
-		
-		s = table.select().where(table.recall_rec_id == id)
-		total = s.count()
+	table = Recall_dat
+	args = request.args
+	sort = RestHelpers.get_arg(args, 'sort', 'name')
+	reverse = RestHelpers.get_arg(args, 'reverse', 'n')
+	page = RestHelpers.get_arg(args, 'page', 1)
+	per_page = RestHelpers.get_arg(args, 'per_page', 50)
+	
+	s = table.select().where(table.recall_rec_id == id)
+	total = s.count()
 
-		if sort == 'name':
-			sort_val = table.name if reverse != 'y' else table.name.desc()
-		else:
-			sort_val = SQL('[{}]'.format(sort))
-			if reverse == 'y':
-				sort_val = SQL('[{}]'.format(sort)).desc()
+	if sort == 'name':
+		sort_val = table.name if reverse != 'y' else table.name.desc()
+	else:
+		sort_val = SQL('[{}]'.format(sort))
+		if reverse == 'y':
+			sort_val = SQL('[{}]'.format(sort)).desc()
 
-		m = s.order_by(sort_val).paginate(int(page), int(per_page))
+	m = s.order_by(sort_val).paginate(int(page), int(per_page))
 
-		rh.close()
-		return {
-			'total': total,
-			'matches': total,
-			'items': [model_to_dict(v, recurse=False) for v in m]
-		}
+	rh.close()
+	return {
+		'total': total,
+		'matches': total,
+		'items': [model_to_dict(v, recurse=False) for v in m]
+	}
 
-	elif request.method == 'POST':
-		return DefaultRestMethods.post(Recall_dat, 'Recall')
-	abort(405, 'HTTP Method not allowed.')
+@bp.route('/data', methods=['POST'])
+def data():
+	return DefaultRestMethods.post(Recall_dat, 'Recall')
 
 @bp.route('/data/<int:id>', methods=['GET', 'PUT', 'DELETE'])
-def hydsedId(id):
+def dataItem(id):
 	if request.method == 'GET':
 		return DefaultRestMethods.get(id, Recall_dat, 'Recall')
 	elif request.method == 'DELETE':

@@ -69,7 +69,7 @@
 	}
 
 	function selectFile() {
-		var filters;
+		let filters:any;
 
 		if (props.fileType == "json") {
 			filters = [{ name: 'Json', extensions: ['json'] }];
@@ -85,7 +85,7 @@
 			filters = [{ name: 'All files', extensions: ['*'] }]
 		}
 
-		var files;
+		let files:any;
 		if (props.saveDialog) {
 			files = electron.saveFileDialog({filters: filters, defaultPath: props.defaultFileName});
 		} else {
@@ -94,7 +94,7 @@
 		console.log(files);
 
 		if (files !== undefined) {
-			model.value = files[0];
+			model.value = props.saveDialog ? files : files[0];
 			emit('update:modelValue', model.value);
 		}
 	}

@@ -69,6 +69,8 @@ import ReservoirsWetlandsHydrologyCreate from '../views/edit/connect/reservoirs/
 import Recall from '../views/edit/connect/recall/Recall.vue';
 import RecallEdit from '../views/edit/connect/recall/RecallEdit.vue';
 import RecallCreate from '../views/edit/connect/recall/RecallCreate.vue';
+import RecallDataEdit from '../views/edit/connect/recall/DataEdit.vue';
+import RecallDataCreate from '../views/edit/connect/recall/DataCreate.vue';
 
 export default [
 	{ 
@@ -194,7 +196,11 @@ export default [
 		path: 'cons/recall', name: 'Recall', component: Recall, 
 		children: [
 			{ 
-				path: 'edit/:id', name: 'RecallEdit', component: RecallEdit
+				path: 'edit/:id', name: 'RecallEdit', component: RecallEdit,
+				children: [
+					{ path: 'edit/:dataId', name: 'RecallDataEdit', component: RecallDataEdit },
+					{ path: 'create', name: 'RecallDataCreate', component: RecallDataCreate }
+				]
 			},
 			{ path: 'create', name: 'RecallCreate', component: RecallCreate }
 		] 					

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { reactive, onMounted, watch } from 'vue';
+	import { reactive, onMounted, onUnmounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useTheme, useDisplay } from 'vuetify';
 	import { usePlugins } from '../plugins';
@@ -109,7 +109,7 @@
 		landuse: {}
 	})
 
-	async function init(loadCallbacks:boolean) {
+	async function init() {
 		getColorTheme();
 		if (route.path === '/') {
 			recentProjects = utilities.getRecentProjects();
@@ -135,10 +135,6 @@
 				if (hasProject) {
 					await getInfo();
 				}
-			}
-
-			if (loadCallbacks) {
-				initRunProcessHandlers();
 			}
 		}		
 	}
@@ -434,18 +430,24 @@
 		task.currentPid = runProcess.runApiProc('setup', 'swatplus_api', args);
 	}
 
+	let listeners:any = {
+		stdout: undefined,
+		stderr: undefined,
+		close: undefined
+	}
+
 	function initRunProcessHandlers() {
-		runProcess.processStdout('setup', (_event:any, data:any) => {
+		listeners.stdout = runProcess.processStdout('setup', (data:any) => {
 			task.progress = runProcess.getApiOutput(data);
 		});
 		
-		runProcess.processStderr('setup', (_event:any, data:any) => {
+		listeners.stderr = runProcess.processStderr('setup', (data:any) => {
 			console.log(`stderr: ${data}`);
 			task.error = data;
 			task.running = false;
 		});
 		
-		runProcess.processClose('setup', async (_event:any, code:any) => {
+		listeners.close = runProcess.processClose('setup', async (code:any) => {
 			let project = task.currentProject;
 			if (formatters.isNullOrEmpty(task.error)) {
 				if (page.loadScenario.running) {
@@ -463,6 +465,12 @@
 				}
 			}
 		});
+	}
+
+	function removeRunProcessHandlers() {
+		if (listeners.stdout) listeners.stdout();
+		if (listeners.stderr) listeners.stderr();
+		if (listeners.close) listeners.close();
 	}
 
 	function cancelTask() {
@@ -506,11 +514,15 @@
 
 	//Lifecycle hooks
 
-	onMounted(async () => await init(true));
+	onMounted(async () => {
+		initRunProcessHandlers();
+		await init();
+	});
+	onUnmounted(() => removeRunProcessHandlers());
 
 	watch(
 		() => route.name,
-		async () => await init(true)
+		async () => await init()
 	)
 
 	async function sleep(ms:number|undefined) {

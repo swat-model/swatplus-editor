@@ -10,7 +10,7 @@
 	interface Props {
 		apiUrl: string,
 		redirectRoute: string,
-		redirectPath?: string,
+		redirectPath?: boolean,
 		showDescription?: boolean,
 		showRange?: boolean,
 		isUpdate?: boolean,
@@ -32,7 +32,7 @@
 	const props = withDefaults(defineProps<Props>(), {
 		apiUrl: '',
 		redirectRoute: '',
-		redirectPath: '',
+		redirectPath: false,
 		showDescription: false,
 		showRange: false,
 		isUpdate: false,
@@ -241,7 +241,7 @@
 
 		<v-form @submit.prevent="save">
 			<div v-if="!data.page.bulk.show">
-                <div class="form-group">
+                <div class="form-group" v-if="!hideName">
 					<v-text-field v-model="item.name" :rules="[constants.formRules.required, constants.formRules.nameLength]" 
 						label="Name" hint="Must be unique"></v-text-field>
 				</div>

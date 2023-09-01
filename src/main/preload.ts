@@ -21,9 +21,32 @@ contextBridge.exposeInMainWorld('electronApi', {
 	saveFileDialog: (options:any) => { return ipcRenderer.sendSync('save-file-dialog', options) },
 
 	spawnProcess: (proc_name:string, script_name:string, args:string[]) => { return ipcRenderer.sendSync('spawn-process', proc_name, script_name, args) },
-	processStdout: (proc_name:string, callback:(_event:any, data:any) => any) => ipcRenderer.on(`process-stdout-${proc_name}`, (_event:any, code:any) => callback(_event, code)),
-	processStderr: (proc_name:string, callback:(_event:any, data:any) => any) => ipcRenderer.on(`process-stderr-${proc_name}`, (_event:any, code:any) => callback(_event, code)),
-	processClose: (proc_name:string, callback:(_event:any, data:any) => any) => ipcRenderer.on(`process-close-${proc_name}`, (_event:any, code:any) => callback(_event, code)),
+	processStdout: (proc_name:string, callback:(data:any) => any) => {
+		let channel = `process-stdout-${proc_name}`;
+		const subscription = (_event:any, data:any) => callback(data);
+		ipcRenderer.on(channel, subscription);
+		return () => {
+			ipcRenderer.removeListener(channel, subscription);
+		}
+	},
+	processStderr: (proc_name:string, callback:(data:any) => any) => {
+		let channel = `process-stderr-${proc_name}`;
+		const subscription = (_event:any, data:any) => callback(data);
+		ipcRenderer.on(channel, subscription);
+		return () => {
+			ipcRenderer.removeListener(channel, subscription);
+		}
+	},
+	processClose: (proc_name:string, callback:(code:any) => any) => {
+		let channel = `process-close-${proc_name}`;
+		const subscription = (_event:any, code:any) => callback(code);
+		ipcRenderer.on(channel, subscription);
+		return () => {
+			ipcRenderer.removeListener(channel, subscription);
+		}
+	},
+	//processStderr: (proc_name:string, callback:(_event:any, data:any) => any) => ipcRenderer.on(`process-stderr-${proc_name}`, (_event:any, code:any) => callback(_event, code)),
+	//processClose: (proc_name:string, callback:(_event:any, data:any) => any) => ipcRenderer.on(`process-close-${proc_name}`, (_event:any, code:any) => callback(_event, code)),
 	killProcess: (pid:any) => ipcRenderer.send('kill-process', pid),
 	runSwat: (debug:boolean, inputDir:string) => {return ipcRenderer.sendSync('run-swat', debug, inputDir) },
 	getSwatPlusToolboxPath: () => {return ipcRenderer.sendSync('get-swatplustoolbox-path') },

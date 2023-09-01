@@ -12,7 +12,17 @@
 		size?: string
 	}
 
-	const props = defineProps<Props>();
+	const props = withDefaults(defineProps<Props>(), {
+		filePath: '',
+		class: '',
+		text: '',
+		button: false,
+		color: undefined,
+		variant: 'flat',
+		block: false,
+		icon: undefined,
+		size: undefined
+	});
 
 	function open(e:any) {
 		e.preventDefault();

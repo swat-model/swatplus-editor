@@ -183,6 +183,15 @@ export function useUtilities() {
 		};
 	}
 
+	function getRecTypDescription(rec_typ:any) {
+		switch (rec_typ) {
+			case 1: return 'Daily';
+			case 2: return 'Monthly';
+			case 3: return 'Yearly';
+			default: return 'Constant';
+		}
+	}
+
 	function setToNameProp(item:any) {
 		if (formatters.isNullOrEmpty(item)) return '';
 		return item['name'];
@@ -225,7 +234,7 @@ export function useUtilities() {
 		getVersionSupport,
 		getMostRecentProject, getRecentProjects, pushRecentProject, deleteRecentProject,
 		getDatabaseInstallPath,
-		getObjTypeRoute, getMeta, setToNameProp, setVars, openUrl,
+		getObjTypeRoute, getMeta, getRecTypDescription, setToNameProp, setVars, openUrl,
 		setColorTheme, getColorTheme, setWindowTitle,
 		exit
 	}

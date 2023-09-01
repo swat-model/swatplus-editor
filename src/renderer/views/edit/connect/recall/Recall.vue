@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { reactive, ref, onMounted } from 'vue';
+	import { reactive, ref, onMounted, onUnmounted } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { usePlugins } from '../../../../plugins';
 	const route = useRoute();
@@ -101,18 +101,25 @@
 		task.currentPid = runProcess.runApiProc('recall', 'swatplus_api', args);
 	}
 
+	let listeners:any = {
+		stdout: undefined,
+		stderr: undefined,
+		close: undefined
+	}
+
 	function initRunProcessHandlers() {
-		runProcess.processStdout('recall', (_event:any, data:any) => {
+		listeners.stdout = runProcess.processStdout('recall', (data:any) => {
 			task.progress = runProcess.getApiOutput(data);
 		});
 		
-		runProcess.processStderr('recall', (_event:any, data:any) => {
+		listeners.stderr = runProcess.processStderr('recall', (data:any) => {
 			console.log(`stderr: ${data}`);
 			task.error = data;
 			task.running = false;
 		});
 		
-		runProcess.processClose('recall', async (_event:any, code:any) => {
+		listeners.close = runProcess.processClose('recall', async (code:any) => {
+			console.log('recall close')
 			if (formatters.isNullOrEmpty(task.error)) {
 				if (page.import.type === 'export_csv') {
 					task.running = false;
@@ -125,6 +132,12 @@
 				}
 			}
 		});
+	}
+
+	function removeRunProcessHandlers() {
+		if (listeners.stdout) listeners.stdout();
+		if (listeners.stderr) listeners.stderr();
+		if (listeners.close) listeners.close();
 	}
 
 	function cancelTask() {
@@ -140,6 +153,7 @@
 	}
 
 	onMounted(() => initRunProcessHandlers());
+	onUnmounted(() => removeRunProcessHandlers());
 </script>
 
 <template>
@@ -242,6 +256,23 @@
 							{{ page.import.type === 'export_csv' ? 'Export Data' : 'Import Data' }}
 						</v-btn>
 						<v-btn @click="cancelTask">Cancel</v-btn>
+					</v-card-actions>
+				</v-card>
+			</v-dialog>
+
+			<v-dialog v-model="page.exported.show" :max-width="constants.dialogSizes.md">
+				<v-card title="Data Exported">
+					<v-card-text>
+						<p>
+							Your data has been exported. 
+						</p>
+						<p>
+							<open-file :file-path="page.import.exportDir" text="Open directory" button color="primary"></open-file>
+						</p>
+					</v-card-text>
+					<v-divider></v-divider>
+					<v-card-actions>
+						<v-btn @click="page.exported.show = false">Close</v-btn>
 					</v-card-actions>
 				</v-card>
 			</v-dialog>
