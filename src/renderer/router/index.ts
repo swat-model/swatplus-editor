@@ -5,9 +5,10 @@ import Help from '../views/Help.vue';
 import Edit from '../views/edit/Edit.vue';
 import TableBrowser from '../views/TableBrowser.vue';
 
+import basin from './basin';
 import connect from './connect';
 
-const editRoutes = connect;
+const editRoutes = connect.concat(basin);
 
 export default createRouter({
 	history: createWebHistory(),

@@ -107,12 +107,12 @@
 				<template v-slot:append-inner v-if="props.varDef.units.length < 10"><div v-html="writeUnits(props.varDef.units)"></div></template>
 			</v-text-field>
 
-			<v-select density="compact" v-else-if="props.varDef.type === 'select'" v-model="data.model" :items="props.varDef.options" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
-			<v-select density="compact" v-else-if="props.varDef.type === 'lookup'" v-model="data.model.id" :items="data.lookupOptions" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
-			<v-select density="compact" v-else-if="props.varDef.type === 'bool'" v-model="data.model" :items="data.boolOptions" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
+			<v-select density="compact" v-else-if="props.varDef.type === 'select'" :rules="data.rules" v-model="data.model" :items="props.varDef.options" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
+			<v-select density="compact" v-else-if="props.varDef.type === 'lookup'" :rules="data.rules" v-model="data.model.id" :items="data.lookupOptions" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
+			<v-select density="compact" v-else-if="props.varDef.type === 'bool'" :rules="data.rules" v-model="data.model" :items="data.boolOptions" item-title="text" item-value="value" :disabled="inputDisabled" hide-details="auto"></v-select>
 			
 			<v-text-field density="compact" v-else 
-				v-model="data.model" type="text" class="form-control" :disabled="inputDisabled" hide-details="auto">
+				v-model="data.model" type="text" class="form-control" :disabled="inputDisabled" hide-details="auto" :rules="data.rules">
 				<template v-slot:append-inner v-if="props.varDef.units.length < 10"><div v-html="writeUnits(props.varDef.units)"></div></template>
 			</v-text-field>
 		</td>

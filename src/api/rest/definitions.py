@@ -20,11 +20,14 @@ def getVars(table, appPath):
 		options = []
 		for o in v.options:
 			if o.text_only:
-				options.append({'value': o.text, 'text': o.text})
+				val = None if o.text == 'null' else o.text
+				options.append({'value': val, 'text': o.text})
 			elif o.text_value is not None:
-				options.append({'value': o.text_value, 'text': o.text})
+				val = None if o.text_value == 'null' else o.text_value
+				options.append({'value': val, 'text': o.text})
 			else:
-				options.append({'value': o.value, 'text': o.text})
+				val = None if o.value == 'null' else o.value
+				options.append({'value': val, 'text': o.text})
 
 		values[v.variable] = {
 			'name': v.variable,

@@ -26,7 +26,8 @@
 		table?: string,
 		name?: string,
 		includeHruOption?: boolean,
-		hideCopy?: boolean
+		hideCopy?: boolean,
+		nullableFields?: string[]
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -48,7 +49,8 @@
 		table: '',
 		name: '',
 		includeHruOption: false,
-		hideCopy: false
+		hideCopy: false,
+		nullableFields: () => []
 	});
 
 	const data:any = reactive({
@@ -177,7 +179,7 @@
 		let emptyFields:string[] = [];
 		for (let k of Object.keys(props.vars)) {
 			let v = props.vars[k];
-			if (formatters.isNullOrEmpty(item[v.name])) {
+			if (!props.nullableFields.includes(v.name) && formatters.isNullOrEmpty(item[v.name])) {
 				emptyFields.push(v.name);
 			}
 		}
@@ -299,7 +301,7 @@
 				</thead>
 				<tbody>
 					<tr-var-editor v-for="(v, i) in props.vars" :key="i" :bulk-mode="data.page.bulk.show" @change="selectedVarChange"
-						:id="'item_' + v.name" :required="!data.page.bulk.show" :show-range="showRange"
+						:id="'item_' + v.name" :required="!data.page.bulk.show && !props.nullableFields.includes(v.name)" :show-range="showRange"
 						v-model="item[v.name]" :value="item[v.name]"
 						:var-def="v"
                         :show-datasets="data.hasDatasetItem" :dataset-value="data.hasDatasetItem ? data.datasetItem[v.name] : null"></tr-var-editor>
