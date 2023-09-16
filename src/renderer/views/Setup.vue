@@ -536,10 +536,10 @@
 			<div class="px-2">
 				<v-tooltip location="end" text="Expand menu">
 					<template v-slot:activator="{ props }">
-						<v-app-bar-nav-icon v-bind="props" v-if="mobile" rounded="0" variant="text" @click.stop="page.secondaryNav = !page.secondaryNav"></v-app-bar-nav-icon>
+						<v-app-bar-nav-icon v-bind="props" v-if="mobile && route.path === '/' && formatters.isNullOrEmpty(page.error) && currentProject.hasCurrentProject" 
+							rounded="0" variant="text" @click.stop="page.secondaryNav = !page.secondaryNav"></v-app-bar-nav-icon>
 					</template>
 				</v-tooltip>
-				
 			</div>
 			<v-list density="compact" nav>
 				<v-list-item prepend-icon="fas fa-folder-open" to="/" :active="$route.path === '/'">

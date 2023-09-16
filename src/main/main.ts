@@ -465,7 +465,8 @@ ipcMain.on('set-color-theme', (event, colorTheme:string) => {
 })
 
 ipcMain.on('get-color-theme', (event) => {
-	event.returnValue = nativeTheme.themeSource;
+	if (nativeTheme.shouldUseDarkColors) event.returnValue = 'dark';
+	else event.returnValue = nativeTheme.themeSource;
 })
 
 function setColorTheme(colorTheme:string) {
