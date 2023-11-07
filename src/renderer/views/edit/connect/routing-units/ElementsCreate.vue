@@ -1,9 +1,9 @@
 <script setup lang="ts">
 	import { reactive, onMounted } from 'vue';
-	import { usePlugins } from '../../../../plugins';
+	import { useHelpers } from '@/helpers';
 	import ElementsForm from './ElementsForm.vue';
 
-	const { api, currentProject, errors, utilities } = usePlugins();
+	const { api, currentProject, errors, utilities } = useHelpers();
 
 	let data:any = reactive({
 		page: {

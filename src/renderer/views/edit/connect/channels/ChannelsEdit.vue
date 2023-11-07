@@ -1,11 +1,11 @@
 <script setup lang="ts">
 	import { reactive, onMounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
-	import { usePlugins } from '../../../../plugins';
+	import { useHelpers } from '@/helpers';
 	import ChannelsForm from './ChannelsForm.vue';
 
 	const route = useRoute();
-	const { api, currentProject, errors } = usePlugins();
+	const { api, currentProject, errors } = useHelpers();
 
 	let data:any = reactive({
 		apiUrl: 'channels',

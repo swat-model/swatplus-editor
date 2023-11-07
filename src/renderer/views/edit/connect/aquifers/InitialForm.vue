@@ -1,10 +1,10 @@
 <script setup lang="ts">
 	import { reactive, onMounted, computed, watch } from 'vue';
 	import { useRouter } from 'vue-router';
-	import { usePlugins } from '../../../../plugins';
+	import { useHelpers } from '@/helpers';
 
 	const router = useRouter();
-	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
+	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
 
 	interface Props {
 		item: any,

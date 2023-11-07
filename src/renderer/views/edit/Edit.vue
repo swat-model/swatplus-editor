@@ -1,10 +1,10 @@
 <script setup lang="ts">
 	import { reactive, watch, onMounted } from 'vue';
 	import { RouteRecordName, useRoute } from 'vue-router';
-	import { usePlugins } from '../../plugins';
+	import { useHelpers } from '@/helpers';
 	
 	const route = useRoute();
-	const { api, constants, errors, utilities, currentProject } = usePlugins();
+	const { api, constants, errors, utilities, currentProject } = useHelpers();
 
 	interface Page {
 		loading: boolean,

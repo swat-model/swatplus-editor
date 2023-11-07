@@ -2,10 +2,10 @@
 	import { reactive, onMounted, watch, computed } from 'vue';
 	import { useRouter } from 'vue-router';
 	import TrVarEditor from './TrVarEditor.vue';
-	import { usePlugins } from '../plugins';
+	import { useHelpers } from '@/helpers';
 
 	const router = useRouter();
-	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
+	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
 
 	interface Props {
 		apiUrl: string,

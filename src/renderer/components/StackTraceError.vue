@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import { useFormatters } from '../plugins/formatters';
+	import { useFormatters } from '@/helpers/formatters';
 	const formatters = useFormatters();
 
 	interface Props {

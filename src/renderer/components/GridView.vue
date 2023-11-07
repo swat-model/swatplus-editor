@@ -5,11 +5,12 @@
 	import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader';
 	// @ts-ignore
 	import _ from 'underscore';
-	import { usePlugins } from '../plugins';
+	import { useHelpers } from '@/helpers';
+	import { GridViewHeader } from '@/typings';
 
 	const route = useRoute();
 	const { height } = useDisplay();
-	const { api, constants, currentProject, errors, formatters, runProcess, utilities } = usePlugins();
+	const { api, constants, currentProject, errors, formatters, runProcess, utilities } = useHelpers();
 
 	const tableHeight = computed(() => {
 		if (height.value < 730) return '60vh';

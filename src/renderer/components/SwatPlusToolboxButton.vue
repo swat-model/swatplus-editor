@@ -1,8 +1,8 @@
 <script setup lang="ts">
 	import { reactive, computed } from 'vue';
-	import { usePlugins } from '../plugins';
+	import { useHelpers } from '@/helpers';
 
-	const { constants, formatters, currentProject, utilities } = usePlugins();
+	const { constants, formatters, currentProject, utilities } = useHelpers();
 
 	const electron = window.electronApi;
 	const props = defineProps({

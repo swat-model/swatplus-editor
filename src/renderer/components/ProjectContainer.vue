@@ -1,6 +1,6 @@
 <script setup lang="ts">
-	import { usePlugins } from '../plugins';
-	const { formatters, currentProject } = usePlugins();
+	import { useHelpers } from '@/helpers';
+	const { formatters, currentProject } = useHelpers();
 
 	interface Props {
 		loading?: boolean,

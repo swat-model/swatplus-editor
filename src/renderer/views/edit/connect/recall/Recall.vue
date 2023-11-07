@@ -1,9 +1,9 @@
 <script setup lang="ts">
 	import { reactive, ref, onMounted, onUnmounted } from 'vue';
 	import { useRoute } from 'vue-router';
-	import { usePlugins } from '../../../../plugins';
+	import { useHelpers } from '@/helpers';
 	const route = useRoute();
-	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = usePlugins();
+	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = useHelpers();
 	const electron = window.electronApi;
 
 	const recallGrid = ref();

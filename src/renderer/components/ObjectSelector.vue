@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, onMounted, computed, watch } from 'vue';
-	import { usePlugins } from '../plugins';
-	const { api, currentProject, errors, formatters } = usePlugins();
+	import { useHelpers } from '@/helpers';
+	const { api, currentProject, errors, formatters } = useHelpers();
 
 	interface Props {
 		table: string,

@@ -1,18 +1,18 @@
-interface ElectronGlobals {
+export interface ElectronGlobals {
 	dev_mode: boolean;
 	platform: string|null;
 	project_db: string|null;
 	api_port: number|null;
 }
 
-interface ElectronAppSettings {
+export interface ElectronAppSettings {
 	version: string;
 	swatplus: string;
 	python: boolean;
 	pythonPath: string;
 }
 
-interface ProjectSettings {
+export interface ProjectSettings {
 	projectDb: string|null;
 	datasetsDb: string|null;
 	name: string|null;
@@ -21,7 +21,7 @@ interface ProjectSettings {
 	isLte: boolean;
 }
 
-interface GridViewHeader {
+export interface GridViewHeader {
 	key: string;
 	label?: string|null;
 	noSort?: boolean|null;

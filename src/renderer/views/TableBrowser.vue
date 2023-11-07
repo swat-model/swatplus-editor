@@ -2,8 +2,8 @@
 	import { reactive, onMounted } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useTheme } from 'vuetify';
-	import { usePlugins } from '../plugins';
-	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();	
+	import { useHelpers } from '@/helpers';
+	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();	
 	const route = useRoute();
 	const theme = useTheme();
 

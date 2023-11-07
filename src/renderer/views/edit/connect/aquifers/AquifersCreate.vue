@@ -1,9 +1,9 @@
 <script setup lang="ts">
 	import { reactive, onMounted } from 'vue';
-	import { usePlugins } from '../../../../plugins';
+	import { useHelpers } from '@/helpers';
 	import AquifersForm from './AquifersForm.vue';
 
-	const { api, errors, utilities } = usePlugins();
+	const { api, errors, utilities } = useHelpers();
 
 	let data:any = reactive({
 		apiUrl: 'aquifers',

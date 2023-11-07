@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, onMounted, watch } from 'vue';
-	import { usePlugins } from '../plugins';
-	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
+	import { useHelpers } from '@/helpers';
+	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
 
 	interface Props {
 		apiUrl: string,

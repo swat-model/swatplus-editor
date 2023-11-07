@@ -1,3 +1,5 @@
+import { ElectronAppSettings, ElectronGlobals } from ".";
+
 /**
  * Should match main/preload.ts for typescript support in renderer
  */

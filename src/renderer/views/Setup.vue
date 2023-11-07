@@ -2,14 +2,14 @@
 	import { reactive, onMounted, onUnmounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useTheme, useDisplay } from 'vuetify';
-	import { usePlugins } from '../plugins';
-	import '../plugins/interfaces';
+	import { useHelpers } from '@/helpers';
 	import SwatPlusToolboxButton from '../components/SwatPlusToolboxButton.vue';
+	import { ProjectSettings } from '@/typings';
 
 	const route = useRoute();
 	const theme = useTheme();
 	const { mobile } = useDisplay();
-	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = usePlugins();
+	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = useHelpers();
 	
 	let page:any = reactive({
 		error: null,

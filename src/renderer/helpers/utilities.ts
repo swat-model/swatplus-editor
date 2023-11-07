@@ -1,6 +1,6 @@
 import { useRoute } from 'vue-router';
 import { useApi } from './api';
-import { useProjectStore } from './projectStore';
+import { useCurrentProject } from '../store/currentProject';
 import { useFormatters } from './formatters';
 import { useConstants } from './constants';
 
@@ -8,7 +8,7 @@ export function useUtilities() {
 	const electron = window.electronApi;
 	const route = useRoute();
 	const api = useApi();
-	const currentProject = useProjectStore();
+	const currentProject = useCurrentProject();
 	const formatters = useFormatters();
 	const constants = useConstants();
 

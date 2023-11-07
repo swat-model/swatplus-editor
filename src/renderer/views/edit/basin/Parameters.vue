@@ -1,11 +1,11 @@
 <script setup lang="ts">
 	import { reactive, onMounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
-	import { usePlugins } from '../../../plugins';
-	import EditForm from '../../../components/EditForm.vue';
+	import { useHelpers } from '@/helpers';
+	import EditForm from '@/components/EditForm.vue';
 
 	const route = useRoute();
-	const { api, currentProject, errors, utilities } = usePlugins();
+	const { api, currentProject, errors, utilities } = useHelpers();
 
 	let data:any = reactive({
 		page: {

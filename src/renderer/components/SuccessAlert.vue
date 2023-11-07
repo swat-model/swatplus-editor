@@ -1,6 +1,6 @@
 <script setup lang="ts">
 	import { ref, watch } from 'vue';
-	import { useFormatters } from '../plugins/formatters';
+	import { useFormatters } from '@/helpers/formatters';
 	const formatters = useFormatters();
 
 	interface Props {

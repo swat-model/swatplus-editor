@@ -3,8 +3,8 @@
 	import { useRouter } from 'vue-router';
 	// @ts-ignore
 	import _ from 'underscore';
-	import { usePlugins } from '../plugins';
-	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
+	import { useHelpers } from '@/helpers';
+	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
 	const router = useRouter();
 
 	const props = defineProps({

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, onMounted, watch, computed } from 'vue';
-	import { usePlugins } from '../plugins';
-	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
+	import { useHelpers } from '@/helpers';
+	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
 
 	interface Props {
 		value: any,

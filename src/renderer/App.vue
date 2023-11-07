@@ -1,6 +1,6 @@
 <script setup lang="ts">
 	import { useRoute } from 'vue-router';
-	import { useFormatters } from './plugins/formatters';
+	import { useFormatters } from '@/helpers/formatters';
 	const route = useRoute();
 	const formatters = useFormatters();
 </script>

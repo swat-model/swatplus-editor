@@ -1,8 +1,8 @@
 <script setup lang="ts">
 	import { reactive, onMounted } from 'vue';
-	import { usePlugins } from '../plugins';
+	import { useHelpers } from '@/helpers';
 
-	const { api, constants, errors, utilities } = usePlugins();
+	const { api, constants, errors, utilities } = useHelpers();
 
 	let page:any = reactive({
 		loading: false,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 	import { reactive, onMounted } from 'vue';
-	import { usePlugins } from '../../../../plugins';
-	import EditForm from '../../../../components/EditForm.vue';
+	import { useHelpers } from '@/helpers';
+	import EditForm from '@/components/EditForm.vue';
 
-	const { api, errors, utilities } = usePlugins();
+	const { api, errors, utilities } = useHelpers();
 
 	let data:any = reactive({
 		paths: {

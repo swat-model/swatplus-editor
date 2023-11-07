@@ -1,10 +1,10 @@
 <script setup lang="ts">
 	import { reactive, ref } from 'vue';
 	import { useRouter } from 'vue-router';
-	import { usePlugins } from '../../../../plugins';
-	import ConnectForm from '../../../../components/ConnectForm.vue';
+	import { useHelpers } from '@/helpers';
+	import ConnectForm from '@/components/ConnectForm.vue';
 	const router = useRouter();
-	const { api, constants, currentProject, errors, formatters, utilities } = usePlugins();
+	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
 
 	interface Props {
 		apiUrl: string,
