@@ -12,6 +12,7 @@ from rest import setup, aquifer, auto_complete, basin, channel, climate, definit
 
 app = Flask(__name__)
 CORS(app)
+app.debug = False
 app.json.sort_keys = False
 exiting = False
 
@@ -56,4 +57,4 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='SWAT+ Editor REST API')
 	parser.add_argument('port', type=str, help='port number to run API', default=5000, nargs='?')
 	args = parser.parse_args()
-	app.run(port=int(args.port))
+	app.run(port=int(args.port), debug=True, use_reloader=False)

@@ -67,7 +67,7 @@ class Water_allocation_wro(BaseFileModel):
 							col(row.rule_typ),
 							col(len(row.src_obs)),
 							col(len(row.dmd_obs)),
-							col(row.cha_ob)]
+							col(row.cha_ob, force_bool_type=True)]
 					self.write_row(file, row_cols)
 					file.write("\n")
 

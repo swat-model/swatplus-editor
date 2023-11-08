@@ -1,17 +1,18 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 import NotFound from '../views/NotFound.vue';
 import Setup from '../views/Setup.vue';
 import Help from '../views/Help.vue';
 import Edit from '../views/edit/Edit.vue';
 import TableBrowser from '../views/TableBrowser.vue';
 
-import basin from './basin';
 import connect from './connect';
+import basin from './basin';
+import climate from './climate';
 
-const editRoutes = connect.concat(basin);
+const editRoutes = connect.concat(basin, climate);
 
 export default createRouter({
-	history: createWebHistory(),
+	history: createWebHashHistory(),
 	linkActiveClass: 'parent-active',
 	linkExactActiveClass: 'active',
 	routes: [

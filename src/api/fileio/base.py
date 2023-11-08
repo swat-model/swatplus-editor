@@ -276,12 +276,16 @@ class BaseFileModel:
 			if file_col.is_desc:
 				utils.write_desc_string(file, file_col.value)
 			elif file_col.padding_override is not None:
-				if isinstance(file_col.value, int):
+				if file_col.force_bool_type:
+					utils.write_bool_yn(file, file_col.value, default_pad=file_col.padding_override, direction=file_col.direction, text_if_null=num_null)
+				elif isinstance(file_col.value, int):
 					utils.write_int(file, file_col.value, default_pad=file_col.padding_override, direction=file_col.direction)
 				elif isinstance(file_col.value, float):
 					utils.write_num(file, file_col.value, default_pad=file_col.padding_override, direction=file_col.direction, text_if_null=num_null, use_non_zero_min=file_col.use_non_zero_min)
 				else:
 					utils.write_string(file, file_col.value, default_pad=file_col.padding_override, direction=file_col.direction, text_if_null=string_null)
+			elif file_col.force_bool_type:
+				utils.write_bool_yn(file, file_col.value, direction=file_col.direction, text_if_null=num_null)
 			elif isinstance(file_col.value, int):
 				utils.write_int(file, file_col.value, direction=file_col.direction)
 			elif isinstance(file_col.value, float):
@@ -431,7 +435,7 @@ class BaseFileModel:
 
 
 class FileColumn:
-	def __init__(self, value, direction="right", padding_override=None, not_in_db=False, repeat=None, alt_header_name="", query_alias="", text_if_null=None, is_desc=False, use_non_zero_min=False):
+	def __init__(self, value, direction="right", padding_override=None, not_in_db=False, repeat=None, alt_header_name="", query_alias="", text_if_null=None, is_desc=False, use_non_zero_min=False, force_bool_type=False):
 		self.value = value
 		self.direction = direction
 		self.padding_override = padding_override
@@ -442,3 +446,4 @@ class FileColumn:
 		self.text_if_null = text_if_null
 		self.is_desc = is_desc
 		self.use_non_zero_min = use_non_zero_min
+		self.force_bool_type = force_bool_type

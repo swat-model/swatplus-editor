@@ -4,9 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
 peewee = "*"
 flask-cors = "*"
+pyinstaller = "*"
+flask = "*"
 
 [dev-packages]
 pyinstaller = "*"

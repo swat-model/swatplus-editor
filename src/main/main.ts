@@ -12,6 +12,8 @@ import kill from 'tree-kill';
 
 const store = new Store();
 let DEV_MODE = process.env.NODE_ENV === 'development';
+
+let pids:any = [];
 let pythonProcess: any = null;
 
 const cli = parseArgs(`
@@ -185,6 +187,7 @@ app.whenReady().then(() => {
 		} else {
 			pythonProcess = child_process.spawn(script, script_args);
 		}
+		pids.push(pythonProcess.pid);
 
 		console.log(script);
 		console.log(script_args);
@@ -214,6 +217,7 @@ app.whenReady().then(() => {
 				} else {
 					pythonProcess = child_process.spawn(script, [port.toString()]);
 				}
+				pids.push(pythonProcess.pid);
 			
 				if (pythonProcess != null) {
 					console.log('SWAT+ API started: ' + port + ', process ID: ' + pythonProcess.pid);
@@ -248,26 +252,14 @@ app.whenReady().then(() => {
 	}
 });
 
-app.on('window-all-closed', function () {
-	if (process.platform !== 'darwin') app.quit()
-});
-
-app.on('before-quit', () => {
-	if (pythonProcess != undefined) {
-		axios.get('http://localhost:' + global.api_port + '/shutdown')
-			.then(res => {
-				pythonProcess.kill();
-				kill(pythonProcess.pid);
-			})
-			.catch(err => {});
+async function closeProcesses() {
+	try {
+		await axios.create({ baseURL: `http://127.0.0.1:${global.api_port}/` }).get('shutdown');
+	} catch(error) {
+		//console.log(error)
 	}
 
-	if (pythonProcess != undefined) {
-		try {
-			kill(pythonProcess.pid);
-		} catch(error) {}
-	}
-
+	console.log('Killing API processes...');
 	for (let pid of pids) {
 		if (pid != undefined) {
 			try {
@@ -275,6 +267,17 @@ app.on('before-quit', () => {
 			} catch(error) {}
 		}
 	}
+
+	console.log('Press CTRL+C to exit');
+}
+
+app.on('window-all-closed', function () {
+	//closeProcesses();
+	if (process.platform !== 'darwin') app.quit()
+});
+
+app.on('before-quit', async () => {
+	await closeProcesses();
 });
 
 //IPC functions to connect to renderer
@@ -360,7 +363,6 @@ ipcMain.on('save-file-dialog', (event, options) => {
 	event.returnValue = dialog.showSaveDialogSync(mainWindow, options);
 })
 
-let pids:any = [];
 ipcMain.on('spawn-process', (event, proc_name:string, script_name:string, args:string[]) => {
 	console.log(`proc_name: ${proc_name}`)
 	console.log(`script_name: ${script_name}`)

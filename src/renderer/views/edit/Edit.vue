@@ -37,11 +37,11 @@
 		{
 			name: 'Climate', routeName: 'Climate', show: true,
 			items: [
-				{ name: 'Weather Generator', path: '/edit/wgn', show: true, routeName: '', subItems: [] },
+				{ name: 'Weather Generator', path: '/edit/climate/wgn', show: true, routeName: '', subItems: [] },
 				{ 
-					name: 'Weather Stations', path: '/edit/stations', show: true, routeName: 'Stations', 
+					name: 'Weather Stations', path: '/edit/climate/stations', show: true, routeName: 'Stations', 
 					subItems: [
-						{ name: 'Atmospheric Deposition', path: '/edit/stations/atmo', show: true, routeName: '', subItems: [] }
+						{ name: 'Atmospheric Deposition', path: '/edit/climate/stations/atmo', show: true, routeName: '', subItems: [] }
 					]
 				}
 			]

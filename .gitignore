@@ -21,6 +21,7 @@ obj/
 api_dist/
 release/dist
 release/output
+release/data/downloads
 
 __pycache__/
 *.py[cod]
@@ -29,3 +30,4 @@ __pycache__/
 src/api/.venv/*
 src/api/build/
 src/api/Pipfile.lock
+*.log
