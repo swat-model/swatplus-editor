@@ -16,7 +16,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Wgn'">
+		<div v-if="$route.name === 'Wgn'">
 			<file-header input-file="weather-wgn.cli" docs-path="climate">
 				Weather Generator
 			</file-header>

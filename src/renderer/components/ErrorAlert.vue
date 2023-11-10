@@ -11,7 +11,8 @@
 		border?: boolean | "top" | "bottom" | "start" | "end" | undefined,
 		asPopup?: boolean,
 		show?: boolean,
-		timeout?: number
+		timeout?: number,
+		modelValue?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -22,13 +23,25 @@
 		border: 'start',
 		asPopup: false,
 		show: false,
-		timeout: 3000
+		timeout: 3000,
+		modelValue: false
 	});
 
-	const showAlert = ref(props.show);
+	const emit = defineEmits(['update:modelValue'])
 
-	watch(() => props.show, (newValue) => {
+	const showAlert = ref(props.modelValue);
+
+	function closeAlert() {
+		emit('update:modelValue', false);
+		showAlert.value = false;
+	}
+
+	watch(() => props.modelValue, (newValue) => {
 		showAlert.value = newValue;
+	})
+
+	watch(showAlert, (newValue) => {
+		emit('update:modelValue', newValue);
 	})
 </script>
 
@@ -42,7 +55,7 @@
 		<v-snackbar v-else v-model="showAlert" :timeout="props.timeout" location="top" :color="props.type">
 			{{ props.text }}
 			<template v-slot:actions>
-				<v-btn variant="text" @click="showAlert = false">Close</v-btn>
+				<v-btn variant="text" @click="closeAlert">Close</v-btn>
 			</template>
 		</v-snackbar>
 	</div>

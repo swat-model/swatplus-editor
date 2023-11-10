@@ -51,6 +51,9 @@ export function useConstants() {
 		lg: '1000px'
 	}
 
+	const formNameMaxLength = 16;
+	const formLongNameMaxLength = 40;
+
 	const formRules = {
 		required: (value:string) => !formatters.isNullOrEmpty(value) || 'Required',
 		max: (numChars:number, value:string) => (value || '').length <= numChars || `Maximum ${numChars} characters`,
@@ -62,6 +65,21 @@ export function useConstants() {
 		}
 	}
 
+	const monthSelectList = [
+		{ value: 1, title: '01 - January' },
+		{ value: 2, title: '02 - February' },
+		{ value: 3, title: '03 - March' },
+		{ value: 4, title: '04 - April' },
+		{ value: 5, title: '05 - May' },
+		{ value: 6, title: '06 - June' },
+		{ value: 7, title: '07 - July' },
+		{ value: 8, title: '08 - August' },
+		{ value: 9, title: '09 - September' },
+		{ value: 10, title: '10 - October' },
+		{ value: 11, title: '11 - November' },
+		{ value: 12, title: '12 - December' }
+	]
+
 	return {
 		objTypeRouteTable,
 		noObjTypeRoutes,
@@ -70,6 +88,9 @@ export function useConstants() {
 		globals,
 		appSettings,
 		dialogSizes,
-		formRules
+		formNameMaxLength,
+		formLongNameMaxLength,
+		formRules,
+		monthSelectList
 	}
 }
