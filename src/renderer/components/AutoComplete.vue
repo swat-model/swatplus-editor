@@ -7,68 +7,41 @@
 	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
 	const router = useRouter();
 
-	const props = defineProps({
-		value: {
-			type: String,
-			required: false,
-			default: ''
-		},
-		label: {
-			type: String,
-			required: false,
-			default: ''
-		},
-		required: {
-			type: Boolean,
-			required: false
-		},
-		invalidFeedback: {
-			type: String,
-			required: false,
-			default: 'Required'
-		},
-		hint: {
-			type: String,
-			required: false,
-			default: ''
-		},
-		persistentHint: {
-			type: Boolean,
-			required: false
-		},
-		tableName: {
-			type: String,
-			required: true
-		},
-		routeName: {
-			type: String,
-			required: true
-		},
-		apiUrl: {
-			type: String,
-			required: false,
-			default: ''
-		},
-		section: {
-			type: String,
-			required: false,
-			default: ''
-		},
-		helpFile: {
-			type: String,
-			required: false,
-			default: ''
-		},
-		helpDb: {
-			type: String,
-			required: false,
-			default: ''
-		},
-		showItemLink: {
-			type: Boolean,
-			default: false
-		}
-	})
+	interface Props {
+		value?: string,
+		label?: string,
+		required?: boolean,
+		invalidFeedback?: string,
+		hint?: string,
+		persistentHint?: boolean,
+		tableName?: string,
+		routeName?: string,
+		apiUrl?: string,
+		section?: string,
+		helpFile?: string,
+		helpDb?: string,
+		showItemLink?: boolean,
+		customSearchUrl?: string,
+		hideDetails?: boolean
+	}
+
+	const props = withDefaults(defineProps<Props>(), {
+		value: '',
+		label: '',
+		required: false,
+		invalidFeedback: 'Required',
+		hint: '',
+		persistentHint: false,
+		tableName: '',
+		routeName: '',
+		apiUrl: '',
+		section: '',
+		helpFile: '',
+		helpDb: '',
+		showItemLink: false,
+		customSearchUrl: '',
+		hideDetails: false
+	});
 
 	let model = ref(props.value);
 
@@ -88,7 +61,18 @@
 
 	async function get() {
 		data.loading = true;
-		const response = await utilities.getAutoComplete(props.tableName, data.search);
+		let query;
+		if (!formatters.isNullOrEmpty(props.customSearchUrl)) {
+			if (formatters.isNullOrEmpty(data.search)) {
+				data.loading = false;
+				return;
+			}
+
+			query = api.get(`${props.customSearchUrl}/${data.search}`, currentProject.getApiHeader());
+		} else {
+			query = utilities.getAutoComplete(props.tableName, data.search);
+		}
+		const response = await query;
 		errors.log(response.data);
 		data.items = response.data;
 		data.loading = false;
@@ -124,7 +108,7 @@
 
 <template>
 	<div>
-		<v-autocomplete v-model="model" :label="props.label" :rules="appliedRules"
+		<v-autocomplete v-model="model" :label="props.label" :rules="appliedRules" :hide-details="props.hideDetails"
 			:hint="props.hint" :persistent-hint="props.persistentHint" :no-data-text="data.loading ? 'Loading...' : 'No data available'"
 			:loading="data.loading" v-model:search.sync="data.search" :items="data.items" auto-select-first>
 			<template v-slot:append>
@@ -145,7 +129,7 @@
 						<v-card-actions>
 							<v-btn v-if="!formatters.isNullOrEmpty(props.apiUrl)" 
 								color="primary"
-								:href="`/table-browser?apiUrl=${props.apiUrl}&section=${props.section}&projectDb=${currentProject.projectDbUrl}`" target="_blank">
+								:href="`/#/table-browser?apiUrl=${props.apiUrl}&section=${props.section}&projectDb=${currentProject.projectDbUrl}`" target="_blank">
 								Browse Table
 								<font-awesome-icon :icon="['fas', 'up-right-from-square']" class="ml-1"></font-awesome-icon>
 							</v-btn>

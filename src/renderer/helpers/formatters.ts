@@ -90,7 +90,7 @@ export function useFormatters() {
 		return val.toLowerCase();
 	}
 
-	function toValue(value:any, valueIfNull = 'N/A') {
+	function toValue(value:any, valueIfNull:any = 'N/A') {
 		return isNullOrEmpty(value) ? valueIfNull : value;
 	}
 

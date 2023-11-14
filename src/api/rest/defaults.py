@@ -164,7 +164,7 @@ class DefaultRestMethods:
 		}
 	
 	@staticmethod
-	def get_paged_list(table, filter_cols=[], back_refs=False, table_lookups={}) -> Response:
+	def get_paged_list(table, filter_cols=[], back_refs=False, table_lookups={}, recurse=False) -> Response:
 		items = DefaultRestMethods.get_paged_items(table, filter_cols, table_lookups)
 		m = items['model']
 
@@ -173,7 +173,7 @@ class DefaultRestMethods:
 			for d in ml:
 				RestHelpers.get_obj_name(d)
 		else:
-			ml = [model_to_dict(v, recurse=False) for v in m]
+			ml = [model_to_dict(v, recurse=recurse) for v in m]
 
 		return {
 			'total': items['total'],

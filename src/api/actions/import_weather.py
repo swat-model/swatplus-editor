@@ -305,67 +305,73 @@ class WeatherImport(ExecutableApi):
 			self.emit_progress(prog, "Inserting {type} files and coordinates...".format(type=weather_type))
 			weather_files = []
 			dir = os.path.dirname(source_file)
-			with open(source_file, "r") as source_data:
-				i = 0
-				for line in source_data:
-					if self.__abort:
-						break
+			try:
+				with open(source_file, "r") as source_data:
+					i = 0
+					for line in source_data:
+						if self.__abort:
+							break
 
-					if i > 1:
-						station_name = line.strip('\n')
-						station_file = os.path.join(dir, station_name)
-						if not os.path.exists(station_file):
-							raise IOError("File {file} not found. Weather data import aborted.".format(file=station_file))
+						if i > 1:
+							station_name = line.strip('\n')
+							station_file = os.path.join(dir, station_name)
+							if not os.path.exists(station_file):
+								raise IOError("File {file} not found. Weather data import aborted.".format(file=station_file))
 
-						try:
-							existing = Weather_file.get((Weather_file.filename == station_name) & (Weather_file.type == weather_type))
-						except Weather_file.DoesNotExist:
-							with open(station_file, "r") as station_data:
-								j = 0
-								for sline in station_data:
-									if j == 2:
-										station_info = sline.strip().split()
-										if len(station_info) < 4:
-											raise ValueError("Invalid value at line {ln} of {file}. Expecting nbyr, tstep, lat, long, elev values separated by a space.".format(ln=str(j + 1), file=station_file))
+							try:
+								existing = Weather_file.get((Weather_file.filename == station_name) & (Weather_file.type == weather_type))
+							except Weather_file.DoesNotExist:
+								try:
+									with open(station_file, "r") as station_data:
+										j = 0
+										for sline in station_data:
+											if j == 2:
+												station_info = sline.strip().split()
+												if len(station_info) < 4:
+													raise ValueError("Invalid value at line {ln} of {file}. Expecting nbyr, tstep, lat, long, elev values separated by a space.".format(ln=str(j + 1), file=station_file))
 
-										lat = float(station_info[2])
-										lon = float(station_info[3])
+												lat = float(station_info[2])
+												lon = float(station_info[3])
 
-										file = {
-											"filename": station_name,
-											"type": weather_type,
-											"lat": lat,
-											"lon": lon
-										}
-										weather_files.append(file)
-									elif j == 3:
-										begin_data = sline.strip().split()
-										if len(begin_data) < 3:
-											raise ValueError("Invalid value at line {ln} of {file}. Expecting year, julian day, and weather value separated by a space.".format(ln=str(j + 1), file=station_file))
+												file = {
+													"filename": station_name,
+													"type": weather_type,
+													"lat": lat,
+													"lon": lon
+												}
+												weather_files.append(file)
+											elif j == 3:
+												begin_data = sline.strip().split()
+												if len(begin_data) < 3:
+													raise ValueError("Invalid value at line {ln} of {file}. Expecting year, julian day, and weather value separated by a space.".format(ln=str(j + 1), file=station_file))
 
-										date = datetime.datetime(int(begin_data[0]), 1, 1)
-										current_start_date = date + datetime.timedelta(days=int(begin_data[1])-1)
-										#if start_date is not None and current_start_date != start_date:
-										#	raise ValueError("Start dates in weather files do not match. Make sure all weather files have the same starting and ending dates.")
+												date = datetime.datetime(int(begin_data[0]), 1, 1)
+												current_start_date = date + datetime.timedelta(days=int(begin_data[1])-1)
+												#if start_date is not None and current_start_date != start_date:
+												#	raise ValueError("Start dates in weather files do not match. Make sure all weather files have the same starting and ending dates.")
 
-										#start_date = current_start_date
-										starts.append(current_start_date)
-									elif j > 3:
-										break
+												#start_date = current_start_date
+												starts.append(current_start_date)
+											elif j > 3:
+												break
 
-									j += 1
+											j += 1
 
-								non_empty_lines = [sline for sline in station_data if sline]
-								last_line = non_empty_lines[len(non_empty_lines)-1].strip().split()
-								date = datetime.datetime(int(last_line[0]), 1, 1)
-								current_end_date = date + datetime.timedelta(days=int(last_line[1])-1)
-								#if end_date is not None and current_end_date != end_date:
-								#	raise ValueError("Ending dates in weather files do not match. Make sure all weather files have the same starting and ending dates.")
+										non_empty_lines = [sline for sline in station_data if sline]
+										last_line = non_empty_lines[len(non_empty_lines)-1].strip().split()
+										date = datetime.datetime(int(last_line[0]), 1, 1)
+										current_end_date = date + datetime.timedelta(days=int(last_line[1])-1)
+										#if end_date is not None and current_end_date != end_date:
+										#	raise ValueError("Ending dates in weather files do not match. Make sure all weather files have the same starting and ending dates.")
 
-								#end_date = current_end_date
-								ends.append(current_end_date)
+										#end_date = current_end_date
+										ends.append(current_end_date)
+								except UnicodeDecodeError:
+									sys.exit('Non-unicode character detected in {}. Please check the first line of the file and remove any accents or other characters that are not UTF-8 encoding.'.format(station_file))
 
-					i += 1
+						i += 1
+			except UnicodeDecodeError:
+				sys.exit('Non-unicode character detected in {}. Please check your station names and remove any accents or other characters that are not UTF-8 encoding.'.format(source_file))
 
 			db_lib.bulk_insert(project_base.db, Weather_file, weather_files)
 			if len(starts) > 0 and len(ends) > 0:
@@ -455,31 +461,34 @@ class Swat2012WeatherImport(ExecutableApi):
 				new_file.write("filename\n")
 				new_file_names = []
 
-				with open(source_file, "r") as source_data:
-					i = 0
-					curr_file_num = starting_file_num
-					for line in source_data:
-						if self.__abort:
-							break
+				try:
+					with open(source_file, "r") as source_data:
+						i = 0
+						curr_file_num = starting_file_num
+						for line in source_data:
+							if self.__abort:
+								break
 
-						if i == 0 and not "ID,NAME,LAT,LONG,ELEVATION" in line:
-							return curr_file_num, "Skipping {type} import. Invalid file format in header: {file}. Expecting 'ID,NAME,LAT,LONG,ELEVATION'".format(type=weather_type, file=source_file)
-						if i > 0:
-							station_obj = [x.strip() for x in line.split(',')]
-							if len(station_obj) != 5:
-								return curr_file_num, "Skipping {type} import. Invalid file format in line {line_no}: {file}, {line}".format(type=weather_type, line_no=i+1, file=source_file, line=line)
+							if i == 0 and not "ID,NAME,LAT,LONG,ELEVATION" in line:
+								return curr_file_num, "Skipping {type} import. Invalid file format in header: {file}. Expecting 'ID,NAME,LAT,LONG,ELEVATION'".format(type=weather_type, file=source_file)
+							if i > 0:
+								station_obj = [x.strip() for x in line.split(',')]
+								if len(station_obj) != 5:
+									return curr_file_num, "Skipping {type} import. Invalid file format in line {line_no}: {file}, {line}".format(type=weather_type, line_no=i+1, file=source_file, line=line)
 
-							new_file_name = "{s}.{ext}".format(s=station_obj[1].replace("-", ""), ext=weather_type)
-							new_file_names.append(new_file_name)
-							#new_file.write(new_file_name)
-							#new_file.write("\n")
+								new_file_name = "{s}.{ext}".format(s=station_obj[1].replace("-", ""), ext=weather_type)
+								new_file_names.append(new_file_name)
+								#new_file.write(new_file_name)
+								#new_file.write("\n")
 
-							self.write_station(os.path.dirname(source_file), station_obj, weather_type)
-							prog = round(curr_file_num * 100 / total_files)
-							self.emit_progress(prog, "Writing {type}, {file}...".format(type=weather_type, file=new_file_name))
-							curr_file_num += 1
+								self.write_station(os.path.dirname(source_file), station_obj, weather_type)
+								prog = round(curr_file_num * 100 / total_files)
+								self.emit_progress(prog, "Writing {type}, {file}...".format(type=weather_type, file=new_file_name))
+								curr_file_num += 1
 
-						i += 1
+							i += 1
+				except UnicodeDecodeError:
+					sys.exit('Non-unicode character detected in {}. Please check your station names and remove any accents or other characters that are not UTF-8 encoding.'.format(source_file))
 
 				for fn in sorted(new_file_names, key=str.lower):
 					new_file.write(fn)
@@ -611,7 +620,10 @@ class WgnImport(ExecutableApi):
 		old_to_new_id = fileio.read_csv_file(self.file1, Weather_wgn_cli, self.project_db, 0, ignore_id_col=True, overwrite=fileio.FileOverwrite.replace, remove_spaces_cols=['name'], return_id_dict=True)
 		prog = (total_prog - start_prog) / 2 + start_prog
 		self.emit_progress(prog, 'Adding weather generator monthly values...')
-		fileio.read_csv_file(self.file2, Weather_wgn_cli_mon, self.project_db, 0, ignore_id_col=True, overwrite=fileio.FileOverwrite.ignore, replace_id_col='weather_wgn_cli', replace_id_dict=old_to_new_id)
+		try:
+			fileio.read_csv_file(self.file2, Weather_wgn_cli_mon, self.project_db, 0, ignore_id_col=True, overwrite=fileio.FileOverwrite.ignore, replace_id_col='weather_wgn_cli', replace_id_dict=old_to_new_id)
+		except UnicodeDecodeError:
+			sys.exit('Your CSV files contain a character that is not UTF-8 encoding. Please check your station names and remove any accents or other non-unicode characters.')
 
 	def add_wgn_stations_db(self, start_prog, total_prog):
 		if self.__abort: return
@@ -739,104 +751,107 @@ class WgnImport(ExecutableApi):
 
 	def add_wgn_stations_sf(self, start_prog, total_prog):
 		if self.__abort: return
-		csv_file = open(self.file1, "r")
+		try:
+			csv_file = open(self.file1, "r")
 
-		dialect = csv.Sniffer().sniff(csv_file.readline())
-		csv_file.seek(0)
-		replace_commas = dialect is not None and dialect.delimiter != ','
-		hasHeader = csv.Sniffer().has_header(csv_file.readline())
-		csv_file.seek(0)
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
 
-		csv_reader = csv.reader(csv_file, dialect)
+			csv_reader = csv.reader(csv_file, dialect)
 
-		if hasHeader:
-			headerLine = next(csv_reader)
+			if hasHeader:
+				headerLine = next(csv_reader)
 
-		#row_count = sum(1 for row in csv_reader)
+			#row_count = sum(1 for row in csv_reader)
 
-		i = 0
-		stations = [] 
-		station_to_mv = {}
-		self.emit_progress(round(total_prog*0.5), 'Reading CSV file...')
-		for val in csv_reader:
-			if replace_commas:
-				val = [item.replace(',', '.', 1) for item in val]
-			
-			station = {}
-			station['name'] = utils.remove_space(val[0])
+			i = 0
+			stations = [] 
+			station_to_mv = {}
+			self.emit_progress(round(total_prog*0.5), 'Reading CSV file...')
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+				
+				station = {}
+				station['name'] = utils.remove_space(val[0])
 
-			#Check for duplicate name
-			table = Weather_wgn_cli
-			try:
-				m = table.get(table.name == station['name'])
+				#Check for duplicate name
+				table = Weather_wgn_cli
+				try:
+					m = table.get(table.name == station['name'])
 
-				k = 1
-				while table.select().where(table.name == '{name}{num}'.format(name=station['name'], num=k)).exists():
-					k += 1
+					k = 1
+					while table.select().where(table.name == '{name}{num}'.format(name=station['name'], num=k)).exists():
+						k += 1
 
-				station['name'] = '{name}{num}'.format(name=station['name'], num=k)
-			except table.DoesNotExist:
-				pass
+					station['name'] = '{name}{num}'.format(name=station['name'], num=k)
+				except table.DoesNotExist:
+					pass
 
-			station['lat'] = utils.val_if_null(val[1], 0)
-			station['lon'] = utils.val_if_null(val[2], 0)
-			station['elev'] = utils.val_if_null(val[3], 0)
-			station['rain_yrs'] = utils.val_if_null(val[4], 0)
+				station['lat'] = utils.val_if_null(val[1], 0)
+				station['lon'] = utils.val_if_null(val[2], 0)
+				station['elev'] = utils.val_if_null(val[3], 0)
+				station['rain_yrs'] = utils.val_if_null(val[4], 0)
 
-			idx = 5
-			monthly_values = []
-			for m in range(1, 13):
-				month = {}
-				month['month'] = m
-				month['tmp_max_ave'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['tmp_min_ave'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['tmp_max_sd'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['tmp_min_sd'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['pcp_ave'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['pcp_sd'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['pcp_skew'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['wet_dry'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['wet_wet'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['pcp_days'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['pcp_hhr'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['slr_ave'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['dew_ave'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				month['wnd_ave'] = utils.val_if_null(val[idx], 0)
-				idx += 1
-				monthly_values.append(month)
-			
-			stations.append(station)
-			station_to_mv[station['name']] = monthly_values
-			i += 1
+				idx = 5
+				monthly_values = []
+				for m in range(1, 13):
+					month = {}
+					month['month'] = m
+					month['tmp_max_ave'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['tmp_min_ave'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['tmp_max_sd'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['tmp_min_sd'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['pcp_ave'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['pcp_sd'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['pcp_skew'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['wet_dry'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['wet_wet'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['pcp_days'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['pcp_hhr'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['slr_ave'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['dew_ave'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					month['wnd_ave'] = utils.val_if_null(val[idx], 0)
+					idx += 1
+					monthly_values.append(month)
+				
+				stations.append(station)
+				station_to_mv[station['name']] = monthly_values
+				i += 1
 
-		self.emit_progress(round(total_prog*0.75), 'Inserting stations into project database...')
-		db_lib.bulk_insert(self.project_db, Weather_wgn_cli, stations)
-		name_to_id = {}
-		for row in Weather_wgn_cli.select(Weather_wgn_cli.id, Weather_wgn_cli.name):
-			name_to_id[row.name] = row.id
+			self.emit_progress(round(total_prog*0.75), 'Inserting stations into project database...')
+			db_lib.bulk_insert(self.project_db, Weather_wgn_cli, stations)
+			name_to_id = {}
+			for row in Weather_wgn_cli.select(Weather_wgn_cli.id, Weather_wgn_cli.name):
+				name_to_id[row.name] = row.id
 
-		mv_to_insert = []
-		for name in station_to_mv:
-			id = name_to_id[name]
-			for m in station_to_mv[name]:
-				m['weather_wgn_cli'] = id
-				mv_to_insert.append(m)
+			mv_to_insert = []
+			for name in station_to_mv:
+				id = name_to_id[name]
+				for m in station_to_mv[name]:
+					m['weather_wgn_cli'] = id
+					mv_to_insert.append(m)
 
-		self.emit_progress(round(total_prog*0.90), 'Inserting monthly values into project database...')
-		db_lib.bulk_insert(self.project_db, Weather_wgn_cli_mon, mv_to_insert)
+			self.emit_progress(round(total_prog*0.90), 'Inserting monthly values into project database...')
+			db_lib.bulk_insert(self.project_db, Weather_wgn_cli_mon, mv_to_insert)
+		except UnicodeDecodeError:
+			sys.exit('Your CSV file contains a character that is not UTF-8 encoding. Please check your station names and remove any accents or other non-unicode characters.')
 
 
 	def create_weather_stations(self, start_prog, total_prog):  # total_prog is the total progress percentage available for this method

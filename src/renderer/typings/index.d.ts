@@ -26,10 +26,12 @@ export interface GridViewHeader {
 	label?: string|null;
 	noSort?: boolean|null;
 	class?: string|null;
-	type?: 'string'|'int'|'number'|'boolean'|'object'|null;
+	type?: 'string'|'int'|'number'|'boolean'|'object'|'file'|null;
 	decimals?: number|null;
 	objectValueField?: string|null;
 	objectTextField?: string|null;
 	objectRoutePath?: string|null;
+	filePath?: string|null;
+	defaultIfNull?: string|null;
 	formatter?: (value:any) => string;
 }

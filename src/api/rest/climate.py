@@ -24,7 +24,7 @@ def stations():
 		table_lookups = {
 			table.wgn: Weather_wgn_cli
 		}
-		return DefaultRestMethods.get_paged_list(table, filter_cols, True, table_lookups)
+		return DefaultRestMethods.get_paged_list(table, filter_cols, False, table_lookups, True)
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
@@ -34,6 +34,15 @@ def stations():
 		try:
 			m = Weather_sta_cli()
 			m.name = args['name']
+			m.pcp = args['pcp']
+			m.tmp = args['tmp']
+			m.slr = args['slr']
+			m.hmd = args['hmd']
+			m.wnd = args['wnd']
+			m.wnd_dir = args['wnd_dir']
+			m.atmo_dep = args['atmo_dep']
+			m.lat = args['lat']
+			m.lon = args['lon']
 			if 'wgn_name' in args:
 				m.wgn_id = RestHelpers.get_id_from_name(Weather_wgn_cli, args['wgn_name'])
 			result = m.save()
@@ -67,7 +76,19 @@ def stations():
 @bp.route('/stations/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def stationsId(id):
 	if request.method == 'GET':
-		return DefaultRestMethods.get(id, Weather_sta_cli, 'Weather station', back_refs=True)
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+		try:
+			m = Weather_sta_cli.get(Weather_sta_cli.id == id)
+			d = model_to_dict(m, recurse=False)
+			if m.wgn is not None:
+				d["wgn_name"] = m.wgn.name
+			rh.close()
+			return d
+		except Weather_sta_cli.DoesNotExist:
+			rh.close()
+			abort(404, 'Weather station {id} does not exist'.format(id=id))
 	elif request.method == 'DELETE':
 		return DefaultRestMethods.delete(id, Weather_sta_cli, 'Weather station')
 	elif request.method == 'PUT':
@@ -79,6 +100,15 @@ def stationsId(id):
 		try:
 			m = Weather_sta_cli.get(Weather_sta_cli.id == id)
 			m.name = args['name']
+			m.pcp = args['pcp']
+			m.tmp = args['tmp']
+			m.slr = args['slr']
+			m.hmd = args['hmd']
+			m.wnd = args['wnd']
+			m.wnd_dir = args['wnd_dir']
+			m.atmo_dep = args['atmo_dep']
+			m.lat = args['lat']
+			m.lon = args['lon']
 			if 'wgn_name' in args:
 				m.wgn_id = RestHelpers.get_id_from_name(Weather_wgn_cli, args['wgn_name'])
 
@@ -125,9 +155,9 @@ def directory():
 
 			rh.close()
 			if result > 0:
-				return 200
+				return '', 200
 
-			abort(400, message='Unable to update project configuration.')
+			abort(400, 'Unable to update project configuration.')
 		except Project_config.DoesNotExist:
 			rh.close()
 			abort(404, 'Could not retrieve project configuration data.')

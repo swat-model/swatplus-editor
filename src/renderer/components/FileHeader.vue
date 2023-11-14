@@ -19,7 +19,7 @@
 		if (!formatters.isNullOrEmpty(props.docsPath)) {
 			e.preventDefault();
 			if (props.useIo)
-				electron.openUrl('https://swatplus.gitbook.io/swat+-documentation/introduction/' + props.docsPath);
+				electron.openUrl('https://swatplus.gitbook.io/io-docs/introduction/' + props.docsPath);
 			else
 				electron.openUrl('https://swatplus.gitbook.io/docs/user/editor/inputs/' + props.docsPath);
 		}

@@ -39,7 +39,7 @@ def write_csv(file_name, table, ignore_id_col=False, ignored_cols=[], custom_que
 
 
 def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, convert_name_to_lower=False, overwrite=FileOverwrite.ignore, remove_spaces_cols=[], return_id_dict=False, replace_id_col=None, replace_id_dict={}):
-	csv_file = open(file_name, "r")
+	csv_file = open(file_name, mode='r')
 
 	dialect = csv.Sniffer().sniff(csv_file.readline())
 	csv_file.seek(0)
@@ -122,7 +122,8 @@ def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, conv
 	if return_id_dict:
 		old_to_new_id = {}
 		for tr in table.select(table.id, table.name):
-			old_to_new_id[old_name_to_id[tr.name]] = tr.id
+			if tr.name in old_name_to_id:
+				old_to_new_id[old_name_to_id[tr.name]] = tr.id
 		return old_to_new_id
 
 

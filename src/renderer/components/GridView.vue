@@ -343,7 +343,7 @@
 	
 	onUnmounted(() => removeRunProcessHandlers());
 
-	watch(() => route.name, async () => await get(true))
+	watch(() => route.path, async () => await get(true))
 
 	defineExpose({
 		get
@@ -385,7 +385,7 @@
 					</tr>
 				</tbody>
 				<tbody v-else>
-					<tr v-if="data.items.length < 1">
+					<tr v-if="!data.items || data.items.length < 1">
 						<td :colspan="headerCount" class="text-center text-medium-emphasis py-6">
 							<em>No data available. {{ !props.hideCreate && formatters.isNullOrEmpty(table.filter) ? 'Use the button at the bottom of this page to create a new record.' : '' }}</em>
 						</td>
@@ -411,6 +411,12 @@
 								</router-link>
 								<span v-else>
 									{{ item[header.key][header.objectTextField||'name'] }}
+								</span>
+							</div>
+							<div v-else-if="header.type === 'file'">
+								<span v-if="formatters.isNullOrEmpty(item[header.key])">{{ header.defaultIfNull }}</span>
+								<span v-else>
+									<open-file :file-path="`${header.filePath}\\${item[header.key]}`" class="text-primary text-decoration-none">{{ item[header.key] }}</open-file>
 								</span>
 							</div>
 							<div v-else-if="header.formatter !== undefined">
