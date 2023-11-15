@@ -19,7 +19,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'ReservoirsWetlands'">
-			<file-header input-file="wetlands.wet" docs-path="connections/reservoirs">
+			<file-header input-file="wetlands.wet" docs-path="wetlands/wetland.wet" use-io>
 				<router-link to="/edit/cons/reservoirs">Reservoirs</router-link> 
 				/ Wetlands
 			</file-header>

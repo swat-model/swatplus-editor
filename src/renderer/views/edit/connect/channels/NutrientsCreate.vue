@@ -45,7 +45,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="nutrients.cha" docs-path="connections/channels">
+		<file-header input-file="nutrients.cha" docs-path="channels/nutrients.cha" use-io>
 			<router-link to="/edit/cons/channels">Channels</router-link> / 
 			<router-link to="/edit/cons/channels/nutrients">Nutrients</router-link>
 			/ Create

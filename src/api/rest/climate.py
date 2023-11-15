@@ -8,6 +8,7 @@ from .defaults import DefaultRestMethods, RestHelpers
 from database.project import base as project_base
 from database.project.config import Project_config
 from database.project.climate import Weather_sta_cli, Weather_file, Weather_wgn_cli, Weather_wgn_cli_mon, Atmo_cli, Atmo_cli_sta, Atmo_cli_sta_value
+from database.project.simulation import Time_sim
 from database import lib as db_lib
 from helpers import utils
 import sqlite3
@@ -337,10 +338,19 @@ def atmo():
 		atmoCount = Atmo_cli.select().count()
 		if m is None:
 			m = Atmo_cli.create(filename='atmo.cli', timestep='aa', mo_init=0, yr_init=0, num_aa=0)
+
+		startYear = 0
+		numYears = 0
+		t = Time_sim.get_or_none()
+		if t is not None:
+			startYear = t.yrc_start
+			numYears = t.yrc_end - t.yrc_start + 1
 			
 		m = model_to_dict(m, recurse=False)
 		m['has_weather_stations'] = staCount > 0
 		m['has_atmo_stations'] = atmoCount > 0
+		m['sim_yr_init'] = startYear
+		m['sim_num_yrs'] = numYears
 		rh.close()
 		return m
 	elif request.method == 'PUT':
@@ -387,7 +397,7 @@ def atmoStations():
 @bp.route('/atmo/stations/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def atmoStationsId(id):
 	if request.method == 'GET':
-		return DefaultRestMethods.get(id, Atmo_cli_sta, 'Station')
+		return DefaultRestMethods.get(id, Atmo_cli_sta, 'Station', True, 2)
 	elif request.method == 'DELETE':
 		return DefaultRestMethods.delete(id, Atmo_cli_sta, 'Station')
 	elif request.method == 'PUT':

@@ -15,7 +15,7 @@
 
 <template>
 	<project-container>
-		<file-header input-file="initial.aqu" docs-path="connections/aquifers">
+		<file-header input-file="initial.aqu" docs-path="aquifers/initial.aqu" use-io>
 			<router-link to="/edit/cons/aquifers">Aquifers</router-link> / 
 			<router-link to="/edit/cons/aquifers/initial">Initial</router-link>
 			/ Create

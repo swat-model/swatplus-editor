@@ -272,7 +272,7 @@
 			</v-dialog>
 
 			<v-dialog v-model="page.import.show" :max-width="constants.dialogSizes.lg" persistent>
-				<v-card title="Import Weather Generator Data">
+				<v-card title="Import Weather Stations">
 					<v-card-text>
 						<error-alert :text="page.import.error"></error-alert>
 						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing your data." :stack-trace="task.error.toString()" />

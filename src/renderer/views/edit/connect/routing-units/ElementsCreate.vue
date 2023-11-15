@@ -37,7 +37,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="rout_unit.ele" docs-path="connections/routing-units">
+		<file-header input-file="rout_unit.ele" docs-path="routing-units/untitled-2" use-io>
 			<router-link to="/edit/cons/routing-units">Routing Units</router-link> / 
 			<router-link to="/edit/cons/routing-units/elements">Elements</router-link>
 			/ Create

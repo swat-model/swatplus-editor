@@ -17,7 +17,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'RoutingUnitsElements'">
-			<file-header input-file="rout_unit.ele" docs-path="connections/routing-units">
+			<file-header input-file="rout_unit.ele" docs-path="routing-units/untitled-2" use-io>
 				<router-link to="/edit/cons/routing-units">Routing Units</router-link>
 				/ Elements
 			</file-header>

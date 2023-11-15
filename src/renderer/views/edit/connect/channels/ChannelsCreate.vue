@@ -21,7 +21,7 @@
 
 <template>
 	<project-container>
-		<file-header input-file="chandeg.con" docs-path="connections/channels">
+		<file-header input-file="chandeg.con" docs-path="channels/channel-lte.cha" use-io>
 			<router-link to="/edit/cons/channels">Channels</router-link>
 			/ Create
 		</file-header>

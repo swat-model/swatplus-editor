@@ -6,9 +6,9 @@ import Stations from '../views/edit/climate/Stations.vue';
 import StationsEdit from '../views/edit/climate/StationsEdit.vue';
 import StationsCreate from '../views/edit/climate/StationsCreate.vue';
 
-/*import Atmo from '../views/edit/climate/Atmo.vue';
+import Atmo from '../views/edit/climate/Atmo.vue';
 import AtmoEdit from '../views/edit/climate/AtmoEdit.vue';
-import AtmoCreate from '../views/edit/climate/AtmoCreate.vue';*/
+import AtmoCreate from '../views/edit/climate/AtmoCreate.vue';
 
 export default [
 	{ 
@@ -23,13 +23,13 @@ export default [
 		children: [
 			{ path: 'edit/:id', name: 'StationsEdit', component: StationsEdit },
 			{ path: 'create', name: 'StationsCreate', component: StationsCreate },
-			/*{ 
+			{ 
 				path: 'atmo', name: 'StationsAtmo', component: Atmo,
 				children: [
 					{ path: 'edit/:id', name: 'StationsAtmoEdit', component: AtmoEdit },
 					{ path: 'create', name: 'StationsAtmoCreate', component: AtmoCreate }
 				]
-			}*/
+			}
 		]
 	}
 ];

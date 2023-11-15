@@ -35,7 +35,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'Aquifers'">
-			<file-header input-file="aquifer.con" docs-path="connections/aquifers">
+			<file-header input-file="aquifer.con" docs-path="aquifers/aquifer.aqu" use-io>
 				Aquifers
 			</file-header>
 

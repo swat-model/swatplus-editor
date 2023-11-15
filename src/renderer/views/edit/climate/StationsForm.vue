@@ -222,7 +222,7 @@
 								:value="item.atmo_dep"
 								table-name="atmo_sta" route-name="StationsAtmoEdit"
 								section="Climate / Weather Stations / Atmospheric Deposition" help-file="atmo.cli" help-db="atmo_cli"
-								api-url="climate/atmo"></auto-complete>
+								api-url="climate/atmo/stations"></auto-complete>
 						</td>
 					</tr>
 				</tbody>

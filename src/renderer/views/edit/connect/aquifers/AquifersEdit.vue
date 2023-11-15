@@ -65,7 +65,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="aquifer.con" docs-path="connections/aquifers">
+		<file-header input-file="aquifer.con" docs-path="aquifers/aquifer.aqu" use-io>
 			<router-link to="/edit/cons/aquifers">Aquifers</router-link>
 			/ Edit
 		</file-header>

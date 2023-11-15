@@ -45,7 +45,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="nutrients.res" docs-path="connections/reservoirs">
+		<file-header input-file="nutrients.res" docs-path="reservoirs/nutrients.res" use-io>
 			<router-link to="/edit/cons/reservoirs">Reservoirs</router-link> / 
 			<router-link to="/edit/cons/reservoirs/nutrients">Nutrients</router-link>
 			/ Edit

@@ -21,7 +21,7 @@
 
 <template>
 	<project-container>
-		<file-header input-file="rout_unit.con" docs-path="connections/routing-units">
+		<file-header input-file="rout_unit.con" docs-path="routing-units/untitled" use-io>
 			<router-link to="/edit/cons/routing-units">Routing Units</router-link>
 			/ Create
 		</file-header>

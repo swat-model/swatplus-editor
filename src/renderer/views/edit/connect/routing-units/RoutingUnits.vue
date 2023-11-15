@@ -21,7 +21,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'RoutingUnits'">
-			<file-header input-file="rout_unit.con" docs-path="connections/routing-units">
+			<file-header input-file="rout_unit.con" docs-path="routing-units/untitled" use-io>
 				Routing Units
 			</file-header>
 

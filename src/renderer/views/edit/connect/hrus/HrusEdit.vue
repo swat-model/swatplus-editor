@@ -70,7 +70,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="hru.con" docs-path="connections/hrus">
+		<file-header input-file="hru.con" docs-path="hydrologic-response-units/hru-data.hru" use-io>
 			<router-link to="/edit/cons/hrus">HRUs</router-link>
 			/ Edit
 		</file-header>

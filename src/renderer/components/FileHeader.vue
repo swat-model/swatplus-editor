@@ -1,4 +1,5 @@
 <script setup lang="ts">
+	import { computed } from 'vue';
 	import { useFormatters } from '@/helpers/formatters';
 	const formatters = useFormatters();
 	const electron = window.electronApi;
@@ -15,13 +16,15 @@
 		useIo: false
 	});
 
+	const docsUrl = computed(() => {
+		if (props.useIo) return 'https://swatplus.gitbook.io/io-docs/introduction/' + props.docsPath;		
+		return 'https://swatplus.gitbook.io/docs/user/editor/inputs/' + props.docsPath;
+	})
+
 	function open(e:any) {
 		if (!formatters.isNullOrEmpty(props.docsPath)) {
 			e.preventDefault();
-			if (props.useIo)
-				electron.openUrl('https://swatplus.gitbook.io/io-docs/introduction/' + props.docsPath);
-			else
-				electron.openUrl('https://swatplus.gitbook.io/docs/user/editor/inputs/' + props.docsPath);
+			electron.openUrl(docsUrl.value);
 		}
 	}
 </script>
@@ -32,8 +35,8 @@
 			<slot></slot>
 		</span>
 		<span class="info ml-auto">
-			{{inputFile}}
-			<a @click.prevent="open" v-if="props.docsPath != ''">
+			<a @click.prevent="open" v-if="props.docsPath != ''" :title="docsUrl" href="#" class="text-decoration-none text-medium-emphasis">
+				{{inputFile}}
 				<font-awesome-icon :icon="['fas', 'book']" class="ml-2 pointer" />
 			</a>
 		</span>

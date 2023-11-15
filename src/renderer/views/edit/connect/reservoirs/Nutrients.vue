@@ -1,7 +1,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'ReservoirsNutrients'">
-			<file-header input-file="nutrients.res" docs-path="connections/reservoirs">
+			<file-header input-file="nutrients.res" docs-path="reservoirs/nutrients.res" use-io>
 				<router-link to="/edit/reservoirs">Reservoirs</router-link> 
 				/ Nutrients
 			</file-header>

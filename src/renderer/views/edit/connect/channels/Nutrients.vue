@@ -5,7 +5,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'ChannelsNutrients'">
-			<file-header input-file="nutrients.cha" docs-path="connections/channels">
+			<file-header input-file="nutrients.cha" docs-path="channels/nutrients.cha" use-io>
 				<router-link to="/edit/cons/channels">Channels</router-link> 
 				/ Nutrients
 			</file-header>

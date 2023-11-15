@@ -15,7 +15,7 @@
 
 <template>
 	<project-container>
-		<file-header input-file="initial.res" docs-path="connections/reservoirs">
+		<file-header input-file="initial.res" docs-path="reservoirs/initial.res" use-io>
 			<router-link to="/edit/cons/reservoirs">Reservoirs</router-link> / 
 			<router-link to="/edit/cons/reservoirs/initial">Initial</router-link>
 			/ Create

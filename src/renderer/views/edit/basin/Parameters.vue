@@ -39,7 +39,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="parameters.bsn" docs-path="basin">
+		<file-header input-file="parameters.bsn" docs-path="basin-1/parameters.bsn" use-io>
 			Basin Parameters
 		</file-header>
 

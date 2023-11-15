@@ -24,7 +24,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'Reservoirs'">
-			<file-header input-file="reservoir.con" docs-path="connections/reservoirs">
+			<file-header input-file="reservoir.con" docs-path="reservoirs/reservoir.res" use-io>
 				Reservoirs
 			</file-header>
 

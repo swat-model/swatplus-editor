@@ -64,7 +64,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="rout_unit.con" docs-path="connections/routing-units">
+		<file-header input-file="rout_unit.con" docs-path="routing-units/untitled" use-io>
 			<router-link to="/edit/cons/routing-units">Routing Units</router-link>
 			/ Edit
 		</file-header>

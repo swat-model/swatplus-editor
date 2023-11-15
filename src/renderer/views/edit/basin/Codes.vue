@@ -41,14 +41,14 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="codes.bsn" docs-path="basin">
+		<file-header input-file="codes.bsn" docs-path="basin-1/codes.bsn" use-io>
 			Basin Codes
 		</file-header>
 
 		<p>
 			To use your own potential ET file, select "pet.cli" followed by "3 - Read in potential ET values" from the form below.
 			Copy your pet.cli file to your <open-file :file-path="currentProject.txtInOutPath" class="text-primary">input files directory</open-file>. 
-			See the <open-in-browser url="https://swatplus.gitbook.io/docs/user/editor/inputs/basin" text="basin documentation" class="text-primary"></open-in-browser> 
+			See the <open-in-browser url="https://swatplus.gitbook.io/io-docs/introduction/basin-1/codes.bsn/pet" text="basin documentation" class="text-primary"></open-in-browser> 
 			for formatting.
 		</p>
 

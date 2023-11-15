@@ -65,7 +65,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="chandeg.con" docs-path="connections/channels">
+		<file-header input-file="chandeg.con" docs-path="channels/channel-lte.cha" use-io>
 			<router-link to="/edit/cons/channels">Channels</router-link>
 			/ Edit
 		</file-header>

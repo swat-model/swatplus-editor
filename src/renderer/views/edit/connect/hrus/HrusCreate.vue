@@ -21,7 +21,7 @@
 
 <template>
 	<project-container>
-		<file-header input-file="hru.con" docs-path="connections/hrus">
+		<file-header input-file="hru.con" docs-path="hydrologic-response-units/hru-data.hru" use-io>
 			<router-link to="/edit/cons/hrus">HRUs</router-link>
 			/ Create
 		</file-header>

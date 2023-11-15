@@ -45,7 +45,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="hyd-sed-lte.cha" docs-path="connections/channels">
+		<file-header input-file="hyd-sed-lte.cha" docs-path="channels/hyd-sed-lte.cha" use-io>
 			<router-link to="/edit/cons/channels">Channels</router-link> / 
 			<router-link to="/edit/cons/channels/hydsed">Hydrology &amp; Sediment</router-link>
 			/ Create

@@ -228,6 +228,14 @@ export function useUtilities() {
 		electron.quitApp();
 	}
 
+	//Vuelidate doesn't like if you replace the entire object received from the API
+	//This function loops each property of the reactive object and assigns it to the same propery from the object received from the API
+	function assignReactiveObject(assignTo:any, assignFrom:any) {
+		for (let key of Object.keys(assignTo)) {
+			assignTo[key] = assignFrom[key];
+		}
+	}
+
 	return {
 		appPath, appPathUrl, appendRoute, pathExists, joinPaths,
 		getAutoComplete, getAutoCompleteId,
@@ -236,6 +244,7 @@ export function useUtilities() {
 		getDatabaseInstallPath,
 		getObjTypeRoute, getMeta, getRecTypDescription, setToNameProp, setVars, openUrl,
 		setColorTheme, getColorTheme, setWindowTitle,
-		exit
+		exit,
+		assignReactiveObject
 	}
 }

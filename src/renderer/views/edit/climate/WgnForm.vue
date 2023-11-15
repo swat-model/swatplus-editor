@@ -327,7 +327,7 @@
 			</v-row>
 
 			<div v-if="props.isUpdate">
-				<h2 class="my-3">Monthly Values</h2>
+				<h2 class="text-h5 my-3">Monthly Values</h2>
 				<div v-if="!page.values.list || page.values.list.length < 1" class="alert alert-primary">
 					This weather generator does not have any monthly values. 
 					<a href="#" @click.prevent="add">Add now.</a>

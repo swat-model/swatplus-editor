@@ -54,7 +54,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="hru-lte.con" docs-path="connections/hrus">
+		<file-header input-file="hru-lte.con" docs-path="hydrologic-response-units/hru-lte.hru" use-io>
 			<router-link to="/edit/cons/hrus-lte">HRUs</router-link>
 			/ Create
 		</file-header>

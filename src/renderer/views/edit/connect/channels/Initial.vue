@@ -19,7 +19,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'ChannelsInitial'">
-			<file-header input-file="initial.cha" docs-path="connections/channels">
+			<file-header input-file="initial.cha" docs-path="channels/initial.cha" use-io>
 				<router-link to="/edit/cons/channels">Channels</router-link> 
 				/ Initial
 			</file-header>

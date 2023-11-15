@@ -15,7 +15,7 @@
 
 <template>
 	<project-container>
-		<file-header input-file="wetland.wet" docs-path="connections/reservoirs">
+		<file-header input-file="wetland.wet" docs-path="wetlands/wetland.wet" use-io>
 			<router-link to="/edit/cons/reservoirs">Reservoirs</router-link> / 
 			<router-link to="/edit/cons/reservoirs/wetlands">Wetlands</router-link>
 			/ Create

@@ -27,7 +27,7 @@
 <template>
 	<project-container>
 		<div v-if="$route.name == 'Hrus'">
-			<file-header input-file="hru.con" docs-path="connections/hrus">
+			<file-header input-file="hru.con" docs-path="hydrologic-response-units/hru-data.hru" use-io>
 				HRUs
 			</file-header>
 
