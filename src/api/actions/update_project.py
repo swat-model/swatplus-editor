@@ -8,7 +8,7 @@ from database.datasets.setup import SetupDatasetsDatabase
 
 from database.datasets.hru_parm_db import Plants_plt as dataset_plants
 from database.datasets.definitions import File_cio as dataset_file_cio, Var_range, Version, Print_prt as dataset_print_prt, Print_prt_object as dataset_print_prt_object
-from database.datasets import change as datasets_change, init as datasets_init, lum as datasets_lum, basin as datasets_basin, ops as datasets_ops
+from database.datasets import change as datasets_change, init as datasets_init, lum as datasets_lum, basin as datasets_basin, ops as datasets_ops, decision_table as datasets_decision_table
 from actions.import_gis import GisImport
 
 from .reimport_gis import ReimportGis
@@ -145,6 +145,23 @@ class UpdateProject(ExecutableApi):
 			sys.exit("Unable to update this project to {new_version}. Updates from {current_version} unavailable.".format(new_version=new_version, current_version=m.editor_version))
 			
 		return m
+	
+	def updates_for_3_0_0(self, project_db, datasets_db, rollback_db):
+		try:
+			self.emit_progress(15, 'Updating database with new defaults...')
+
+			#decision table changes
+			decision_table.D_table_dtl_act.update({decision_table.D_table_dtl_act.fp: 'grain'}).where(decision_table.D_table_dtl_act.act_typ == 'harvest_kill').execute()
+			datasets_decision_table.D_table_dtl_act.update({datasets_decision_table.D_table_dtl_act.fp: 'grain'}).where(datasets_decision_table.D_table_dtl_act.act_typ == 'harvest_kill').execute()
+			
+			Version.update({Version.value: '3.0.0', Version.release_date: datetime.datetime.now()}).execute()
+			
+		except Exception as ex:
+			if rollback_db is not None:
+				self.emit_progress(50, "Error occurred. Rolling back database...")
+				SetupProjectDatabase.rollback(project_db, rollback_db)
+				self.emit_progress(100, "Error occurred.")
+			sys.exit(str(ex))
 	
 	def updates_for_2_3_0(self, project_db, datasets_db, rollback_db):
 		try:

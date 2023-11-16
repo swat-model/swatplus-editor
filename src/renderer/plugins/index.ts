@@ -13,6 +13,7 @@ import { FontAwesomeIcon, FontAwesomeLayers, FontAwesomeLayersText } from '@fort
 import HighchartsVue from 'highcharts-vue';
 import Highcharts from 'highcharts';
 import HighchartsMore from 'highcharts/highcharts-more';
+import accessibilityInit from 'highcharts/modules/accessibility';
 import exportingInit from 'highcharts/modules/exporting';
 import exportDataInit from 'highcharts/modules/export-data';
 import offlineExportInit from 'highcharts/modules/offline-exporting';
@@ -80,6 +81,7 @@ export function registerPlugins(app: App) {
 		}
 	});
 	HighchartsMore(Highcharts);
+	accessibilityInit(Highcharts);
 	exportingInit(Highcharts);
 	exportDataInit(Highcharts);
 	offlineExportInit(Highcharts);
