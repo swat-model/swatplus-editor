@@ -181,7 +181,9 @@ def pesticidesDatasets(name):
 def pathogens():
 	if request.method == 'GET':
 		table = db.Pathogens_pth
-		filter_cols = [table.name, table.description]
+		# Was getting errors in the line below as description does not exist in 'pathogens' 
+		# Looks fixed, but can maybe add it back in later: table.description
+		filter_cols = [table.name]
 		return DefaultRestMethods.get_paged_list(table, filter_cols)
 	elif request.method == 'POST':
 		return DefaultRestMethods.post(db.Pathogens_pth, pathogen_name)
@@ -298,7 +300,9 @@ def septicDatasets(name):
 def snow():
 	if request.method == 'GET':
 		table = db.Snow_sno
-		filter_cols = [table.name, table.description]
+		# Was getting errors in the line below as description does not exist in 'snow' 
+		# Looks fixed, but can maybe add it back in later: table.description
+		filter_cols = [table.name]
 		return DefaultRestMethods.get_paged_list(table, filter_cols)
 	elif request.method == 'POST':
 		return DefaultRestMethods.post(db.Snow_sno, snow_name)

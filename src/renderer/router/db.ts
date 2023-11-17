@@ -2,9 +2,10 @@ import Plants from '../views/edit/db/Plants.vue';
 import PlantsEdit from '../views/edit/db/PlantsEdit.vue';
 import PlantsCreate from '../views/edit/db/PlantsCreate.vue';
 
-/*import Fertilizer from '../views/edit/db/Fertilizer.vue';
+import Fertilizer from '../views/edit/db/Fertilizer.vue';
 import FertilizerEdit from '../views/edit/db/FertilizerEdit.vue';
 import FertilizerCreate from '../views/edit/db/FertilizerCreate.vue';
+
 
 import Pesticides from '../views/edit/db/Pesticides.vue';
 import PesticidesEdit from '../views/edit/db/PesticidesEdit.vue';
@@ -28,7 +29,7 @@ import TillageCreate from '../views/edit/db/TillageCreate.vue';
 
 import Urban from '../views/edit/db/Urban.vue';
 import UrbanEdit from '../views/edit/db/UrbanEdit.vue';
-import UrbanCreate from '../views/edit/db/UrbanCreate.vue';*/
+import UrbanCreate from '../views/edit/db/UrbanCreate.vue';
 
 export default [
 	{ 
@@ -38,14 +39,14 @@ export default [
 			{ path: 'create', name: 'PlantsCreate', component: PlantsCreate }
 		]
 	},
-	/*{ 
+	{ 
 		path: 'db/fertilizer', name: 'Fertilizer', component: Fertilizer,
 		children: [
 			{ path: 'edit/:id', name: 'FertilizerEdit', component: FertilizerEdit },
 			{ path: 'create', name: 'FertilizerCreate', component: FertilizerCreate }
 		] 
 	},
-
+	
 	{ 
 		path: 'db/pesticides', name: 'Pesticides', component: Pesticides ,
 		children: [
@@ -89,5 +90,5 @@ export default [
 			{ path: 'edit/:id', name: 'UrbanEdit', component: UrbanEdit },
 			{ path: 'create', name: 'UrbanCreate', component: UrbanCreate }
 		]  
-	}*/
+	}
 ];
