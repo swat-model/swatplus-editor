@@ -43,7 +43,8 @@
 		importExportDescription?: string,
 		importExportNotes?: string,
 		importExportDeleteExisting?: boolean,
-		autoHeight?: boolean
+		autoHeight?: boolean,
+		editPathPrefix?: string
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -68,7 +69,8 @@
 		importExportDescription: 'CSV',
 		importExportNotes: '',
 		importExportDeleteExisting: false,
-		autoHeight: false
+		autoHeight: false,
+		editPathPrefix: ''
 	});
 
 	const loaderArray = computed(() => {
@@ -334,6 +336,10 @@
 		page.import.show = false;
 	}
 
+	function getEditRoute(item:any) {
+		return formatters.isNullOrEmpty(props.editPathPrefix) ? utilities.appendRoute(`edit/${item.id}`) : `${props.editPathPrefix}edit/${item.id}`
+	}
+
 	onMounted(async () => {
 		page.loading = true;
 		initRunProcessHandlers();
@@ -392,7 +398,8 @@
 					</tr>
 					<tr v-for="item in data.items">
 						<td v-if="!props.hideEdit" class="min">
-							<router-link :to="utilities.appendRoute(`edit/${item.id}`)" class="text-decoration-none text-primary" :title="`Edit/View (${utilities.appendRoute(`edit/${item.id}`)})`">
+							<router-link :to="getEditRoute(item)" class="text-decoration-none text-primary" 
+								:title="`Edit/View (${getEditRoute(item)})`">
 								<font-awesome-icon :icon="['fas', 'edit']"></font-awesome-icon>
 							</router-link>
 						</td>
@@ -417,6 +424,16 @@
 								<span v-if="formatters.isNullOrEmpty(item[header.key])">{{ header.defaultIfNull }}</span>
 								<span v-else>
 									<open-file :file-path="`${header.filePath}\\${item[header.key]}`" class="text-primary text-decoration-none">{{ item[header.key] }}</open-file>
+								</span>
+							</div>
+							<div v-else-if="header.type === 'variable-object'">
+								<span v-if="formatters.isNullOrEmpty(item[header.key])">-</span>
+								<router-link v-else-if="utilities.getObjTypeRoute(item) !== '#'" class="text-primary text-decoration-none" 
+									:to="utilities.getObjTypeRoute(item)">
+									{{ item[header.key] }}
+								</router-link>
+								<span v-else>
+									{{ item[header.key] }}
 								</span>
 							</div>
 							<div v-else-if="header.formatter !== undefined">

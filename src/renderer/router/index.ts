@@ -9,9 +9,10 @@ import connect from './connect';
 import basin from './basin';
 import climate from './climate';
 import db from './db';
+import regions from './regions';
 import structural from './structural';
 
-const editRoutes = connect.concat(basin, climate, db, structural);
+const editRoutes = connect.concat(basin, climate, db, regions, structural);
 
 export default createRouter({
 	history: createWebHashHistory(),

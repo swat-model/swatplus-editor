@@ -202,13 +202,13 @@ class DefaultRestMethods:
 		return [{'id': v.id, 'name': v.name} for v in m]
 
 	@staticmethod
-	def post(table, item_description, extra_args=[]) -> Response:
+	def post(table, item_description, extra_args=[], lookup_fields=[]) -> Response:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
 		if not has_db: abort(400, error)
 
 		try:
-			result = RestHelpers.save_args(table, request.json, is_new=True, extra_args=extra_args)
+			result = RestHelpers.save_args(table, request.json, is_new=True, extra_args=extra_args, lookup_fields=lookup_fields)
 
 			rh.close()
 			if result > 0:
@@ -223,13 +223,13 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 	
 	@staticmethod
-	def put(id, table, item_description) -> Response:
+	def put(id, table, item_description, lookup_fields=[]) -> Response:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
 		if not has_db: abort(400, error)
 
 		try:
-			result = RestHelpers.save_args(table, request.json, id=id)
+			result = RestHelpers.save_args(table, request.json, id=id, lookup_fields=lookup_fields)
 
 			rh.close()
 			if result > 0:
@@ -247,7 +247,7 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 
 	@staticmethod
-	def put_many(table, item_description) -> Response:
+	def put_many(table, item_description, lookup_fields=[]) -> Response:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
 		if not has_db: abort(400, error)
@@ -257,7 +257,12 @@ class DefaultRestMethods:
 			param_dict = {}
 			for key in args.keys():
 				if args[key] is not None and key != 'selected_ids':
-					param_dict[key] = args[key]
+					if key in lookup_fields:
+						d = ast.literal_eval(args[key])
+						if int(d['id']) != 0:
+							param_dict[key] = int(d['id'])
+					else:
+						param_dict[key] = args[key]
 
 			result = db_lib.bulk_update_ids(project_base.db, table, param_dict, args['selected_ids'])
 

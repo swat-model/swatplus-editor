@@ -26,7 +26,7 @@ export interface GridViewHeader {
 	label?: string|null;
 	noSort?: boolean|null;
 	class?: string|null;
-	type?: 'string'|'int'|'number'|'boolean'|'object'|'file'|null;
+	type?: 'string'|'int'|'number'|'boolean'|'object'|'file'|'variable-object'|null;
 	decimals?: number|null;
 	objectValueField?: string|null;
 	objectTextField?: string|null;
