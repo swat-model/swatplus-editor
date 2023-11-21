@@ -234,7 +234,7 @@
 									</p>
 									<p class="mb-0">
 										To get templates for the time step you desire, we recommend clicking a row in the recall table, change the time step as needed,
-										save changes, then return to this form and export the data to CSV. For additional help,
+										save changes, then return to this form and export the data to CSV. You may also <open-in-browser class="text-primary" url="https://plus.swat.tamu.edu/downloads/sample_files/point-source/swatplus-editor-point-source.zip" text="download an example here" />. For additional help,
 										<open-in-browser class="text-primary" url="https://swatplus.gitbook.io/docs/user/editor/inputs/connections/recall" text="view the documentation online" />.
 									</p>
 								</v-alert>

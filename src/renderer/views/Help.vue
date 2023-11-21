@@ -108,7 +108,7 @@
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-book</v-icon></template>
 								SWAT+ Editor Documentation
 							</v-list-item>
-							<v-list-item @click="utilities.openUrl('https://swatplus.gitbook.io/swat+-documentation/')" border="t" class="text-primary">
+							<v-list-item @click="utilities.openUrl('https://swatplus.gitbook.io/io-docs/')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-book</v-icon></template>
 								SWAT+ Input/Output Documentation
 							</v-list-item>
@@ -117,18 +117,32 @@
 
 					<v-card class="mb-6">
 						<v-list>
-							<v-list-subheader class="text-uppercase">User Groups</v-list-subheader>
-							<v-list-item @click="utilities.openUrl('https://groups.google.com/d/forum/swatplus-editor')" border="t" class="text-primary">
-								<template #prepend><v-icon class="text-medium-emphasis">fas fa-users</v-icon></template>
-								SWAT+ Editor user group (this interface)
+							<v-list-subheader class="text-uppercase">Sample Data</v-list-subheader>
+							<v-list-item @click="utilities.openUrl('https://swatplus.gitbook.io/docs/user/editor/inputs/sample-data')" border="t" class="text-primary">
+								<template #prepend><v-icon class="text-medium-emphasis">fas fa-database</v-icon></template>
+								Example Data Formats for SWAT+ Editor
 							</v-list-item>
+							<v-list-item @click="utilities.openUrl('https://swatplus.gitbook.io/docs/getting-started')" border="t" class="text-primary">
+								<template #prepend><v-icon class="text-medium-emphasis">fas fa-database</v-icon></template>
+								Demo Project for SWAT+ Editor
+							</v-list-item>
+						</v-list>
+					</v-card>
+
+					<v-card class="mb-6">
+						<v-list>
+							<v-list-subheader class="text-uppercase">User Groups</v-list-subheader>
 							<v-list-item @click="utilities.openUrl('https://groups.google.com/d/forum/swatplus')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-users</v-icon></template>
-								SWAT+ Model user group (the model itself)
+								SWAT+ Model User Group (the model itself)
+							</v-list-item>
+							<v-list-item @click="utilities.openUrl('https://groups.google.com/d/forum/swatplus-editor')" border="t" class="text-primary">
+								<template #prepend><v-icon class="text-medium-emphasis">fas fa-users</v-icon></template>
+								SWAT+ Editor User Group (this interface)
 							</v-list-item>
 							<v-list-item @click="utilities.openUrl('https://groups.google.com/d/forum/qswatplus')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-users</v-icon></template>
-								QSWAT+ user group (GIS interface)
+								QSWAT+ User Group (GIS interface)
 							</v-list-item>
 						</v-list>
 					</v-card>
@@ -140,9 +154,13 @@
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-globe</v-icon></template>
 								SWAT+ Website
 							</v-list-item>
+							<v-list-item @click="utilities.openUrl('https://github.com/swat-model/swatplus')" border="t" class="text-primary">
+								<template #prepend><v-icon class="text-medium-emphasis">fab fa-github</v-icon></template>
+								SWAT+ Source Code Repository
+							</v-list-item>
 							<v-list-item @click="utilities.openUrl('https://github.com/swat-model/swatplus-editor')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fab fa-github</v-icon></template>
-								SWAT+ Editor source code repository
+								SWAT+ Editor Source Code Repository
 							</v-list-item>
 							<v-list-item @click="utilities.openUrl('https://plus.swat.tamu.edu')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-box-archive</v-icon></template>

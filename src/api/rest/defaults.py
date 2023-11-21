@@ -4,7 +4,7 @@ from .config import RequestHeaders as rh
 from playhouse.shortcuts import model_to_dict
 from playhouse.migrate import *
 
-from helpers import table_mapper
+from helpers import table_mapper, utils
 from database import lib as db_lib
 from database.project import base as project_base, climate
 
@@ -202,13 +202,13 @@ class DefaultRestMethods:
 		return [{'id': v.id, 'name': v.name} for v in m]
 
 	@staticmethod
-	def post(table, item_description, extra_args=[], lookup_fields=[]) -> Response:
+	def post(table, item_description, extra_args=[], lookup_fields=[], remove_spaces=[]) -> Response:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
 		if not has_db: abort(400, error)
 
 		try:
-			result = RestHelpers.save_args(table, request.json, is_new=True, extra_args=extra_args, lookup_fields=lookup_fields)
+			result = RestHelpers.save_args(table, request.json, is_new=True, extra_args=extra_args, lookup_fields=lookup_fields, remove_spaces=remove_spaces)
 
 			rh.close()
 			if result > 0:
@@ -223,13 +223,13 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 	
 	@staticmethod
-	def put(id, table, item_description, lookup_fields=[]) -> Response:
+	def put(id, table, item_description, lookup_fields=[], remove_spaces=[]) -> Response:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
 		if not has_db: abort(400, error)
 
 		try:
-			result = RestHelpers.save_args(table, request.json, id=id, lookup_fields=lookup_fields)
+			result = RestHelpers.save_args(table, request.json, id=id, lookup_fields=lookup_fields, remove_spaces=remove_spaces)
 
 			rh.close()
 			if result > 0:
@@ -247,7 +247,7 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 
 	@staticmethod
-	def put_many(table, item_description, lookup_fields=[]) -> Response:
+	def put_many(table, item_description, lookup_fields=[], remove_spaces=[]) -> Response:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
 		if not has_db: abort(400, error)
@@ -262,7 +262,8 @@ class DefaultRestMethods:
 						if int(d['id']) != 0:
 							param_dict[key] = int(d['id'])
 					else:
-						param_dict[key] = args[key]
+						val = args[key] if key not in remove_spaces else utils.remove_space(args[key])
+						param_dict[key] = val
 
 			result = db_lib.bulk_update_ids(project_base.db, table, param_dict, args['selected_ids'])
 
@@ -514,7 +515,7 @@ class RestHelpers:
 		return default if not RestHelpers.has_arg(args, name) else args[name]
 	
 	@staticmethod
-	def save_args(table, args, id=0, is_new=False, lookup_fields=[], extra_args=[]):
+	def save_args(table, args, id=0, is_new=False, lookup_fields=[], extra_args=[], remove_spaces=[]):
 		params = {}
 		for field in table._meta.sorted_fields:
 			if field.column_name in args or field.name in args:
@@ -527,7 +528,8 @@ class RestHelpers:
 					d = args[field.column_name]
 					params[field.column_name] = int(d['id'])
 				else:
-					params[field.column_name] = args[field.column_name]
+					val = args[field.column_name] if field.column_name not in remove_spaces else utils.remove_space(args[field.column_name])
+					params[field.column_name] = val
 
 		for extra in extra_args:
 			params[extra['name']] = args[extra['name']]
