@@ -1,4 +1,4 @@
-/*import TiledrainStr from '../views/edit/structural/Tiledrain.vue';
+import TiledrainStr from '../views/edit/structural/Tiledrain.vue';
 import TiledrainStrEdit from '../views/edit/structural/TiledrainStrEdit.vue';
 import TiledrainStrCreate from '../views/edit/structural/TiledrainStrCreate.vue';
 
@@ -16,11 +16,11 @@ import GrassedwwStrCreate from '../views/edit/structural/GrassedwwStrCreate.vue'
 
 import BmpuserStr from '../views/edit/structural/Bmpuser.vue';
 import BmpuserStrEdit from '../views/edit/structural/BmpuserStrEdit.vue';
-import BmpuserStrCreate from '../views/edit/structural/BmpuserStrCreate.vue';*/
+import BmpuserStrCreate from '../views/edit/structural/BmpuserStrCreate.vue';
 
 
 export default [
-	/*{ 
+	{ 
 		path: 'structural/tiledrain', name: 'TiledrainStr', component: TiledrainStr,
 		children: [
 			{ path: 'edit/:id', name: 'TiledrainStrEdit', component: TiledrainStrEdit },
@@ -54,5 +54,5 @@ export default [
 			{ path: 'edit/:id', name: 'BmpuserStrEdit', component: BmpuserStrEdit },
 			{ path: 'create', name: 'BmpuserStrCreate', component: BmpuserStrCreate }
 		]
-	},*/
+	},
 ];
