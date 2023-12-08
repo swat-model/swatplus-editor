@@ -30,6 +30,7 @@ import OpenFile from '@/components/OpenFile.vue';
 import OpenInBrowser from '@/components/OpenInBrowser.vue';
 import PageLoading from '@/components/PageLoading.vue';
 import ProjectContainer from '@/components/ProjectContainer.vue';
+import ReferencePopup from '@/components/ReferencePopup.vue';
 import SelectFolderInput from '@/components/SelectFolderInput.vue';
 import SelectFileInput from '@/components/SelectFileInput.vue';
 import StackTraceError from '@/components/StackTraceError.vue';
@@ -57,6 +58,7 @@ export function registerPlugins(app: App) {
 		.component('open-in-browser', OpenInBrowser)
 		.component('page-loading', PageLoading)
 		.component('project-container', ProjectContainer)
+		.component('reference-popup', ReferencePopup)
 		.component('select-folder-input', SelectFolderInput)
 		.component('select-file-input', SelectFileInput)
 		.component('stack-trace-error', StackTraceError)

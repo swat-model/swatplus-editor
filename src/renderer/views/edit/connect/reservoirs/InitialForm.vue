@@ -8,11 +8,11 @@
 
 	interface Props {
 		item: any,
-		isUpdate?: boolean
+		isUpdate?: boolean,
+		allowBulkEdit?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
-		apiUrl: '',
 		item: { id: 0 },
 		isUpdate: false,
 		allowBulkEdit: false

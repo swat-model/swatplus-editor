@@ -175,7 +175,7 @@ def landuseId(id):
 
 	abort(405, 'HTTP Method not allowed.')
 
-@bp.route('/landuse/many', methods=['GET', 'PUT'])
+@bp.route('/landuse-many', methods=['GET', 'PUT'])
 def landuseMany():
 	if request.method == 'GET':
 		return DefaultRestMethods.get_name_id_list(lum.Landuse_lum)

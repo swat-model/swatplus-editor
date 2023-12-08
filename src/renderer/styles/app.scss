@@ -209,6 +209,18 @@ mark {
 	}
 }
 
+ul.list-group {
+	list-style: none;
+	padding-left: 0;
+
+	li {
+		border: 1px solid $border-color;
+		border-radius: 0.3rem;
+		padding: 0.75rem 1rem;
+		margin: 1px 0;
+	}
+}
+
 .v-theme--light {
 	&#mainContainer {
 		background-color: #fafafa;
@@ -221,6 +233,10 @@ mark {
 		background-color: $swat-gray;
 	}
 	.page-action-bar {
+		background-color: $swat-gray;
+	}
+
+	ul.list-group li {
 		background-color: $swat-gray;
 	}
 
