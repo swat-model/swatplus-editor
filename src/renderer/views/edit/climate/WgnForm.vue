@@ -1,6 +1,5 @@
 <script setup lang="ts">
 	import { reactive, computed } from 'vue';
-	import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader';
 	import { useVuelidate } from '@vuelidate/core';
 	import { numeric, required, maxLength } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';

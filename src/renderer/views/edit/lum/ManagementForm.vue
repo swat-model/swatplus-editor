@@ -213,17 +213,19 @@
 			errors.log(props.item);
 			page.form.name = props.item.name;
 
-			for (let i = 0; i < props.item.auto_ops.length; i++) {
-				page.form.auto_ops.push({
-					name: props.item.auto_ops[i].d_table.name,
-					description: props.item.auto_ops[i].d_table.description,
-					plant1: props.item.auto_ops[i].plant1,
-					plant2: props.item.auto_ops[i].plant2
-				});
+			if (props.item.auto_ops) {
+				for (let i = 0; i < props.item.auto_ops.length; i++) {
+					page.form.auto_ops.push({
+						name: props.item.auto_ops[i].d_table.name,
+						description: props.item.auto_ops[i].d_table.description,
+						plant1: props.item.auto_ops[i].plant1,
+						plant2: props.item.auto_ops[i].plant2
+					});
+				}
 			}
 
 			page.form.operations = props.item.operations;
-			page.tabIndex = page.form.operations.length > 0 ? 1 : 0;
+			page.tabIndex = page.form.operations && page.form.operations.length > 0 ? 1 : 0;
 		}
 
 		try {
@@ -640,7 +642,7 @@
 	async function goToAutoOp(name:string) {
 		try {
 			const response = await utilities.getAutoCompleteId('dtl', name);
-			var id = response.data.id;
+			let id = response.data.id;
 			
 			router.push({ name: 'DecisionsEdit', params: { id: id, dbtype: 'project' }});
 		} catch (error) {
@@ -1213,9 +1215,9 @@
 										<div>
 											<ul class="list-group">
 												<li class="list-group-item bg-light d-flex justify-content-between align-items-center" v-for="element in page.form.auto_ops" :key="element.name">
-													<a @click.prevent="goToAutoOp(element.name)"><font-awesome-icon :icon="['fas', 'edit']" class="mr-2 text-primary pointer" v-b-tooltip.hover.right="constants.commonMessages.leaveWarning" /></a>
+													<a @click.prevent="goToAutoOp(element.name)"><font-awesome-icon :icon="['fas', 'edit']" class="mr-2 text-primary pointer" :title="constants.commonMessages.leaveWarning" /></a>
 													<div>{{element.name}} {{autoOpPlantLabel(element)}}</div>
-													<a @click.prevent="removeAutoOp(element)" class="ml-auto"><font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" v-b-tooltip.hover.right="'Delete'" /></a>
+													<a @click.prevent="removeAutoOp(element)" class="ml-auto"><font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" title="Delete" /></a>
 												</li>
 											</ul>
 										</div>

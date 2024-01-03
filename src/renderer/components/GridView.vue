@@ -2,7 +2,6 @@
 	import { reactive, onMounted, onUnmounted, computed, watch } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useDisplay } from 'vuetify';
-	import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader';
 	// @ts-ignore
 	import _ from 'underscore';
 	import { useHelpers } from '@/helpers';

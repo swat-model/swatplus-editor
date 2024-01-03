@@ -16,11 +16,11 @@ import OvntableCreate from '../views/edit/lum/OvntableCreate.vue';
 
 import ConsPractice from '../views/edit/lum/ConsPractice.vue';
 import ConsPracticeEdit from '../views/edit/lum/ConsPracticeEdit.vue';
-import ConsPracticeCreate from '../views/edit/lum/ConsPracticeCreate.vue';
+import ConsPracticeCreate from '../views/edit/lum/ConsPracticeCreate.vue';*/
 
 import Operations from '../views/edit/lum/ops/Operations.vue';
 
-import OperationsChemApp from '../views/edit/lum/ops/ChemApp.vue';
+/*import OperationsChemApp from '../views/edit/lum/ops/ChemApp.vue';
 import OperationsChemAppEdit from '../views/edit/lum/ops/ChemAppEdit.vue';
 import OperationsChemAppCreate from '../views/edit/lum/ops/ChemAppCreate.vue';
 
@@ -59,9 +59,9 @@ export default [
 			{ path: 'create', name: 'ManagementCreate', component: ManagementCreate }
 		]
 	},
-	/*{ 
+	{ 
 		path: 'lum/ops', name: 'Operations', component: Operations,
-		children: [
+		/*children: [
 			{ path: 'chemapp', name: 'OperationsChemApp', component: OperationsChemApp,
 				children: [
 					{ path: 'edit/:id', name: 'OperationsChemAppEdit', component: OperationsChemAppEdit },
@@ -99,9 +99,9 @@ export default [
 					{ path: 'create', name: 'OperationsSweepCreate', component: OperationsSweepCreate }
 				] 
 			}
-		]
+		]*/
 	},
-	{ 
+	/*{ 
 		path: 'lum/cntable', name: 'Cntable', component: Cntable,
 		children: [
 			{ path: 'edit/:id', name: 'CntableEdit', component: CntableEdit },
