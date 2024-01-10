@@ -27,8 +27,9 @@ def getConfig():
 	if m is None:
 		abort(400, 'Could not retrieve project configuration table.')
 	else:
-		if m.gis_version is not None and not import_gis.is_supported_version(m.gis_version): #and not import_gis_legacy.is_supported_version(m.gis_version):
-			abort(400, 'This version of SWAT+ Editor does not support QSWAT+ {uv}.'.format(uv=m.gis_version))
+		if m.gis_version is not None and not import_gis.is_supported_version(m.gis_version, m.gis_type): #and not import_gis_legacy.is_supported_version(m.gis_version):
+			gis_type = 'ArcSWAT+' if m.gis_type == 'arcgis' else 'QSWAT+'
+			abort(400, 'This version of SWAT+ Editor does not support {gt} {uv}.'.format(gt=gis_type, uv=m.gis_version))
 
 		d = get_model_to_dict_dates(m, project_db)
 
@@ -95,8 +96,13 @@ def getInfo():
 		rh.close()
 		abort(400, 'Could not retrieve project configuration table.')
 	else:
-		gis_type = 'QSWAT+ ' if m.gis_type == 'qgis' else 'GIS '
-		gis_text = '' if m.gis_version is None else gis_type + m.gis_version
+		gis_type = 'GIS'
+		if m.gis_type == 'qgis':
+			gis_type = 'QSWAT+'
+		elif m.gis_type == 'arcgis':
+			gis_type = 'ArcSWAT+'
+
+		gis_text = '' if m.gis_version is None else gis_type + ' ' + m.gis_version
 
 		landuse_distrib = []
 		if m.gis_version is not None:
@@ -160,6 +166,137 @@ def getInfo():
 
 		rh.close()
 		return jsonify(info)
+	
+@bp.route('/run-settings', methods=['GET'])
+def getRunSettings():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	try:
+		c = config.Project_config.get()
+		conf = get_model_to_dict_dates(c, project_db)
+
+		t = simulation.Time_sim.get_or_create_default()
+		time =  model_to_dict(t)
+
+		m = simulation.Print_prt.get()
+		prt = model_to_dict(m, recurse=False)
+
+		o = simulation.Print_prt_object.select()
+		objects = [model_to_dict(v, recurse=False) for v in o]
+
+		prt = {'prt': prt, 'objects': objects}
+
+		model = {
+			'config': conf,
+			'time': time,
+			'print': prt,
+			'imported_weather': climate.Weather_sta_cli.select().count() > 0 and climate.Weather_wgn_cli.select().count() > 0,
+			'has_observed_weather': climate.Weather_sta_cli.observed_count() > 0
+		}
+
+		rh.close()
+		return model
+	except config.Project_config.DoesNotExist:
+		rh.close()
+		abort(404, "Could not retrieve project configuration data.")
+	except simulation.Print_prt.DoesNotExist:
+		rh.close()
+		abort(404, "Could not retrieve print_prt data.")
+
+@bp.route('/run-settings', methods=['PUT'])
+def putRunSettings():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	args = request.json
+	try:
+		m = config.Project_config.get()			
+		m.input_files_dir = utils.rel_path(project_db, args['input_files_dir'])
+		result = m.save()
+
+		time = args['time']
+		result = simulation.Time_sim.update_and_exec(time['day_start'], time['yrc_start'], time['day_end'], time['yrc_end'], time['step'])
+
+		prt = args['print']
+		q = simulation.Print_prt.update(
+			nyskip=prt['nyskip'],
+			day_start=prt['day_start'],
+			day_end=prt['day_end'],
+			yrc_start=prt['yrc_start'],
+			yrc_end=prt['yrc_end'],
+			interval=prt['interval'],
+			csvout=prt['csvout'],
+			dbout=prt['dbout'],
+			cdfout=prt['cdfout'],
+			crop_yld=prt['crop_yld'],
+			mgtout=prt['mgtout'],
+			hydcon=prt['hydcon'],
+			fdcout=prt['fdcout']
+		)
+		result = q.execute()
+
+		prtObj = args['print_objects']
+		if prtObj is not None:
+			for o in prtObj:
+				simulation.Print_prt_object.update(
+					daily=o['daily'],
+					monthly=o['monthly'],
+					yearly=o['yearly'],
+					avann=o['avann']
+				).where(simulation.Print_prt_object.id == o['id']).execute()
+
+		rh.close()
+		if result > 0:
+			return '',200
+
+		abort(400, "Unable to update project configuration table.")
+	except config.Project_config.DoesNotExist:
+		rh.close()
+		abort(404, "Could not retrieve project configuration data.")
+
+@bp.route('/save-model-run', methods=['PUT'])
+def putModelRun():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	try:
+		m = config.Project_config.get()
+		m.swat_last_run = datetime.now()
+		m.output_last_imported = None
+		result = m.save()
+
+		rh.close()
+		if result > 0:
+			return '',200
+
+		abort(400, "Unable to update project configuration table.")
+	except config.Project_config.DoesNotExist:
+		rh.close()
+		abort(404, "Could not retrieve project configuration data.")
+
+@bp.route('/save-output-read', methods=['PUT'])
+def putOutputRead():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	try:
+		m = config.Project_config.get()
+		m.output_last_imported = datetime.now()
+		result = m.save()
+
+		rh.close()
+		if result > 0:
+			return '',200
+
+		abort(400, "Unable to update project configuration table.")
+	except config.Project_config.DoesNotExist:
+		rh.close()
+		abort(404, "Could not retrieve project configuration data.")
 
 """
 Helper functions

@@ -12,7 +12,7 @@ Read the documentation at [swatplus.gitbook.io/docs](https://swatplus.gitbook.io
 
 1. Install [Python 3](https://www.python.org/) (version 3.10 and up)
 2. Set up virtual environment
-    * Install `pipenv` following the [instructions here](https://pipenv.pypa.io/en/latest/installation/#installing-pipenv).
+    * Install `pipenv` following the [instructions here](https://pipenv.pypa.io/en/latest/installation.html).
     * From command prompt, go to source code `/src/api` directory
 	* Create a directory `.venv` if it does not already exist
 	* Run `pipenv install`

@@ -8,12 +8,13 @@ import TableBrowser from '../views/TableBrowser.vue';
 import connect from './connect';
 import basin from './basin';
 import climate from './climate';
+import decision_table from './decision_table';
 import db from './db';
 import lum from './lum';
 import regions from './regions';
 import structural from './structural';
 
-const editRoutes = connect.concat(basin, climate, db, lum, regions, structural);
+const editRoutes = connect.concat(basin, climate, decision_table, db, lum, regions, structural);
 
 export default createRouter({
 	history: createWebHashHistory(),

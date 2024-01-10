@@ -127,10 +127,10 @@
 		{
 			name: 'Decision Tables', routeName: 'Dtl', show: true,
 			items: [
-				{ name: 'Land Use Management', path: '/edit/decision_table/lum', show: true, routeName: '', subItems: [] },
-				{ name: 'Reservoir Release', path: '/edit/decision_table/res_rel', show: !currentProject.isLte, routeName: '', subItems: [] },
-				{ name: 'Scenario Land Use', path: '/edit/decision_table/scen_lu', show: !currentProject.isLte, routeName: '', subItems: [] },
-				{ name: 'Flow Conditions', path: '/edit/decision_table/flo_con', show: !currentProject.isLte, routeName: '', subItems: [] }
+				{ name: 'Land Use Management', path: '/edit/decision-table/lum', show: true, routeName: '', subItems: [] },
+				{ name: 'Reservoir Release', path: '/edit/decision-table/res_rel', show: !currentProject.isLte, routeName: '', subItems: [] },
+				{ name: 'Scenario Land Use', path: '/edit/decision-table/scen_lu', show: !currentProject.isLte, routeName: '', subItems: [] },
+				{ name: 'Flow Conditions', path: '/edit/decision-table/flo_con', show: !currentProject.isLte, routeName: '', subItems: [] }
 			]
 		},
 		{

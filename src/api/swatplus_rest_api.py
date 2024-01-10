@@ -8,7 +8,7 @@ import os
 import werkzeug
 import traceback
 
-from rest import setup, aquifer, auto_complete, basin, channel, climate, decision_table, definitions, hru, hru_lte, hru_parm_db, hydrology, init, lum, ops, recall, regions, reservoir, routing_unit, structural
+from rest import setup, aquifer, auto_complete, basin, channel, climate, decision_table, definitions, hru, hru_lte, hru_parm_db, hydrology, init, lum, ops, recall, regions, reservoir, routing_unit, soils, structural, water_rights
 
 app = Flask(__name__)
 CORS(app)
@@ -35,7 +35,9 @@ app.register_blueprint(recall.bp)
 app.register_blueprint(regions.bp)
 app.register_blueprint(reservoir.bp)
 app.register_blueprint(routing_unit.bp)
+app.register_blueprint(soils.bp)
 app.register_blueprint(structural.bp)
+app.register_blueprint(water_rights.bp)
 
 @app.route('/', methods=['GET'])
 def default():

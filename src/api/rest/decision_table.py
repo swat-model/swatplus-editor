@@ -39,7 +39,7 @@ def get_dtable_list(table, table_type, sort, reverse, page, per_page, filter_val
 		sort_val = SQL('[{}]'.format(sort)).desc()
 
 	m = s.order_by(sort_val).paginate(int(page), int(per_page))
-	ml = [{'id': v.id, 'name': v.name, 'conditions': len(v.conditions), 'actions': len(v.actions)} for v in m]
+	ml = [{'id': v.id, 'name': v.name, 'description': v.description, 'conditions': len(v.conditions), 'actions': len(v.actions)} for v in m]
 
 	return {
 		'total': total,
@@ -75,7 +75,7 @@ def save_dtable(args, table_name):
 			cond.description = None if 'description' not in args else c['description']
 			cond.save()
 
-			if 'alts' in args:
+			if 'alts' in c:
 				for l in c['alts']:
 					alt = db.D_table_dtl_cond_alt()
 					alt.cond = cond
@@ -96,7 +96,7 @@ def save_dtable(args, table_name):
 			act.fp = a['fp']
 			act.save()
 
-			if 'outcomes' in args:
+			if 'outcomes' in a:
 				for o in a['outcomes']:
 					oc = db.D_table_dtl_act_out()
 					oc.act = act

@@ -30,7 +30,7 @@ $swat-gray: #F4F5F7;
 
 $border-color: rgba(var(--v-border-color), var(--v-border-opacity));
 
-code {
+code, .code {
 	font-family: $font-family-monospace;
 }
 

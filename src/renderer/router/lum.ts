@@ -61,6 +61,7 @@ export default [
 	},
 	{ 
 		path: 'lum/ops', name: 'Operations', component: Operations,
+		children: []
 		/*children: [
 			{ path: 'chemapp', name: 'OperationsChemApp', component: OperationsChemApp,
 				children: [

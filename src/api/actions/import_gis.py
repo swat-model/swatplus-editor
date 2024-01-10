@@ -22,16 +22,19 @@ import sys, traceback
 import argparse
 import math
 
-min_gis_version = 13
+min_qgis_version = 13
+min_arcgis_version = 10
 
 
-def is_supported_version(version):
+def is_supported_version(version, type):
 	ver = version
 	if len(ver) >= 3:
 		ver = version[:3]
 
 	ver = ver.replace('.', '')
-	if int(ver) < min_gis_version:
+	if type == 'qgis' and int(ver) < min_qgis_version:
+		return False
+	elif type == 'arcgis' and int(ver) < min_arcgis_version:
 		return False
 	return True
 
@@ -89,7 +92,7 @@ class GisImport(ExecutableApi):
 			self.delete_existing()
 
 	def insert_default(self):
-		if not is_supported_version(self.config.gis_version):
+		if not is_supported_version(self.config.gis_version, self.config.gis_type):
 			legacy_api = GisImportLegacy(self.project_db_file, False, self.constant_ps, self.rollback_db)
 			legacy_api.insert_default()
 		elif not self.config.imported_gis:
