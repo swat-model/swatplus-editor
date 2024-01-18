@@ -6,7 +6,7 @@ import Management from '../views/edit/lum/Management.vue';
 import ManagementEdit from '../views/edit/lum/ManagementEdit.vue';
 import ManagementCreate from '../views/edit/lum/ManagementCreate.vue';
 
-/*import Cntable from '../views/edit/lum/Cntable.vue';
+import Cntable from '../views/edit/lum/Cntable.vue';
 import CntableEdit from '../views/edit/lum/CntableEdit.vue';
 import CntableCreate from '../views/edit/lum/CntableCreate.vue';
 
@@ -16,11 +16,11 @@ import OvntableCreate from '../views/edit/lum/OvntableCreate.vue';
 
 import ConsPractice from '../views/edit/lum/ConsPractice.vue';
 import ConsPracticeEdit from '../views/edit/lum/ConsPracticeEdit.vue';
-import ConsPracticeCreate from '../views/edit/lum/ConsPracticeCreate.vue';*/
+import ConsPracticeCreate from '../views/edit/lum/ConsPracticeCreate.vue';
 
 import Operations from '../views/edit/lum/ops/Operations.vue';
 
-/*import OperationsChemApp from '../views/edit/lum/ops/ChemApp.vue';
+import OperationsChemApp from '../views/edit/lum/ops/ChemApp.vue';
 import OperationsChemAppEdit from '../views/edit/lum/ops/ChemAppEdit.vue';
 import OperationsChemAppCreate from '../views/edit/lum/ops/ChemAppCreate.vue';
 
@@ -42,7 +42,7 @@ import OperationsIrrigationCreate from '../views/edit/lum/ops/IrrigationCreate.v
 
 import OperationsSweep from '../views/edit/lum/ops/Sweep.vue';
 import OperationsSweepEdit from '../views/edit/lum/ops/SweepEdit.vue';
-import OperationsSweepCreate from '../views/edit/lum/ops/SweepCreate.vue';*/
+import OperationsSweepCreate from '../views/edit/lum/ops/SweepCreate.vue';
 
 export default [
 	{ 
@@ -61,8 +61,7 @@ export default [
 	},
 	{ 
 		path: 'lum/ops', name: 'Operations', component: Operations,
-		children: []
-		/*children: [
+		children: [
 			{ path: 'chemapp', name: 'OperationsChemApp', component: OperationsChemApp,
 				children: [
 					{ path: 'edit/:id', name: 'OperationsChemAppEdit', component: OperationsChemAppEdit },
@@ -100,9 +99,9 @@ export default [
 					{ path: 'create', name: 'OperationsSweepCreate', component: OperationsSweepCreate }
 				] 
 			}
-		]*/
+		]
 	},
-	/*{ 
+	{ 
 		path: 'lum/cntable', name: 'Cntable', component: Cntable,
 		children: [
 			{ path: 'edit/:id', name: 'CntableEdit', component: CntableEdit },
@@ -122,5 +121,5 @@ export default [
 			{ path: 'edit/:id', name: 'ConsPracticeEdit', component: ConsPracticeEdit },
 			{ path: 'create', name: 'ConsPracticeCreate', component: ConsPracticeCreate }
 		] 
-	}*/
+	}
 ];

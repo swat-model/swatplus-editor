@@ -533,6 +533,10 @@ const template: Electron.MenuItemConstructorOptions[] = [
 				click () { shell.openExternal('https://swatplus.gitbook.io/docs/') }
 			},
 			{
+				label: 'SWAT+ Input/Output Documentation',
+				click () { shell.openExternal('https://swatplus.gitbook.io/io-docs/') }
+			},
+			{
 				label: 'SWAT+ Release Notes',
 				click () { shell.openExternal('https://swatplus.gitbook.io/docs/release-notes') }
 			},

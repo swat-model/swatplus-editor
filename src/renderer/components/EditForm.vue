@@ -82,9 +82,9 @@
 		doHru: null
 	})
 
-	function putDb(formData:any) {
+	function putDb(formData:any, manySep:string = '/') {
 		if (data.page.bulk.show)
-			return api.put(props.apiUrl + '/many', formData, currentProject.getApiHeader());
+			return api.put(props.apiUrl + manySep + 'many', formData, currentProject.getApiHeader());
 		else if (props.isUpdate)
 			if (props.noId)
 				return api.put(props.apiUrl, formData, currentProject.getApiHeader());
@@ -166,8 +166,18 @@
 					else router.push({ name: props.redirectRoute});
 				}
 			} catch (error) {
-				data.page.error = errors.logError(error, 'Unable to save changes to database.');
-				data.page.saveError = true;
+				if (data.page.bulk.show && (props.isUpdate || props.updateMany)) {
+					try {
+						const response = await putDb(item, '-');
+						data.page.saveSuccess = true;
+					} catch (error) {
+						data.page.error = errors.logError(error, 'Unable to save changes to database.');
+						data.page.saveError = true;
+					}
+				} else {
+					data.page.error = errors.logError(error, 'Unable to save changes to database.');
+					data.page.saveError = true;
+				}
 			}
 		}
 		
