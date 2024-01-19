@@ -13,9 +13,10 @@ import db from './db';
 import hydrology from './hydrology';
 import lum from './lum';
 import regions from './regions';
+import soils from './soils';
 import structural from './structural';
 
-const editRoutes = connect.concat(basin, climate, decision_table, db, hydrology, lum, regions, structural);
+const editRoutes = connect.concat(basin, climate, decision_table, db, hydrology, lum, regions, soils, structural);
 
 export default createRouter({
 	history: createWebHashHistory(),
