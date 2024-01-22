@@ -8,7 +8,7 @@ import { fileURLToPath, URL } from 'node:url'
 /**
  * https://vitejs.dev/config
  */
-const config = defineConfig({
+export default defineConfig({
     root: path.join(__dirname, 'src', 'renderer'),
     publicDir: 'public',
     server: {
@@ -43,5 +43,3 @@ const config = defineConfig({
         ],
     }
 });
-
-module.exports = config;

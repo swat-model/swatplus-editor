@@ -42,6 +42,7 @@ Read the documentation at [swatplus.gitbook.io/docs](https://swatplus.gitbook.io
 	* MacOS: `sh python-build-mac.sh`
 2. From the root of the source code directory run the following depending on your OS:
 	* Windows: `npm run build:win`
+		* NOTE: If you encounter errors during this step, be sure to enable [Developer Mode](https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) on your PC
 	* Linux: `npm run build:linux`
 	* MacOS: `npm run build:mac`
 3. Program will be in `/release/dist`

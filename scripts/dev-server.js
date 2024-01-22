@@ -1,6 +1,7 @@
 process.env.NODE_ENV = 'development';
 
-const Vite = require('vite');
+//const Vite = require('vite');
+//const { createServer } = await import('vite');
 const ChildProcess = require('child_process');
 const Path = require('path');
 const Chalk = require('chalk');
@@ -15,8 +16,9 @@ let electronProcessLocker = false;
 let rendererPort = 0;
 
 async function startRenderer() {
-    viteServer = await Vite.createServer({
-        configFile: Path.join(__dirname, '..', 'vite.config.js'),
+    const { createServer } = await import('vite');
+    viteServer = await createServer({
+        configFile: Path.join(__dirname, '..', 'vite.config.mjs'),
         mode: 'development',
     });
 
