@@ -12,7 +12,7 @@
 <template>
 	<project-container>
 		<file-header input-file="water_allocation.wro" docs-path="water-allocation/water_allocation.wro" use-io>
-			<router-link to="/edit/water-rights/water-allocation">Water Allocation</router-link>
+			<router-link to="/edit/water-rights/allocation">Water Allocation</router-link>
 			/ Create
 		</file-header>
 

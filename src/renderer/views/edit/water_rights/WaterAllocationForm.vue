@@ -81,10 +81,10 @@
 			},
 			obj_name: null,
 			obj_typs: [
-				{ value: 'cha', text: 'Channel' },
-				{ value: 'res', text: 'Reservoir' },
-				{ value: 'aqu', text: 'Aquifer' },
-				{ value: 'unl', text: 'Unlimited' }
+				{ value: 'cha', title: 'Channel' },
+				{ value: 'res', title: 'Reservoir' },
+				{ value: 'aqu', title: 'Aquifer' },
+				{ value: 'unl', title: 'Unlimited' }
 			]
 		},
 		demands: {
@@ -148,16 +148,25 @@
 				{ value: 'res', title: 'Reservoir' },
 				{ value: 'aqu', title: 'Aquifer' }
 			],
-			isEdit: false
+			isEdit: false,
+			objRights: [
+				{ value: 'sr', title: 'Senior' },
+				{ value: 'jr', title: 'Junior' }
+			],
+			objTreatTyps: [
+				{ value: null, title: 'None' },
+				{ value: 'recall', title: 'Recall' },
+				{ value: 'treat', title: 'Treatment' }
+			],
 		},
 		demandSources: {
 			loading: false,
 			sortBy: 'id',
 			fields: [
 				{ key: 'edit', title: '', class: 'min' },
-				{ key: 'src', title: 'Source', sortable: true },
-				{ key: 'frac', sortable: true, class: 'text-right' },
-				{ key: 'comp', sortable: true, class: 'text-right' },
+				{ value: 'src', title: 'Source', sortable: true },
+				{ value: 'frac', title: 'Frac.', sortable: true, class: 'text-right' },
+				{ value: 'comp', title: 'Comp.', sortable: true, class: 'text-right' },
 				{ key: 'delete', title: '' }
 			],
 			list: [],
@@ -221,15 +230,15 @@
 		if (props.isUpdate)
 			return api.put('water_rights/allocation/' + props.item.id, formData, currentProject.getApiHeader());
 		else
-			return api.post('water_rights/allocation/', formData, currentProject.getApiHeader());
+			return api.post('water_rights/allocation', formData, currentProject.getApiHeader());
 	}
 
 	function getDb() {
-		return api.get('water_allocation/' + props.item.id, currentProject.getApiHeader());
+		return api.get('water_rights/allocation/' + props.item.id, currentProject.getApiHeader());
 	}
 	
 	function postSourceDb(formData:any) {
-		return api.post('water_rights/source/', formData, currentProject.getApiHeader());
+		return api.post('water_rights/source', formData, currentProject.getApiHeader());
 	}
 	
 	function putSourceDb(id:any, formData:any) {
@@ -241,7 +250,7 @@
 	}
 	
 	function postDemandDb(formData:any) {
-		return api.post('water_rights/demand/post/', formData, currentProject.getApiHeader());
+		return api.post('water_rights/demand', formData, currentProject.getApiHeader());
 	}
 	
 	function putDemandDb(id:any, formData:any) {
@@ -253,7 +262,7 @@
 	}
 	
 	function postDemandSourceDb(formData:any) {
-		return api.post('water_rights/demand-source/post/', formData, currentProject.getApiHeader());
+		return api.post('water_rights/demand-source', formData, currentProject.getApiHeader());
 	}
 	
 	function putDemandSourceDb(id:any, formData:any) {
@@ -318,7 +327,7 @@
 			}
 			
 			try {
-				let response = await putDb(data);
+				let response = await putDb(formData);
 				errors.log(response.data);
 				
 				if (props.isUpdate)
@@ -666,10 +675,10 @@
 
 			<div v-if="isUpdate">
 				<h2 class="text-h5 my-3">Source Objects</h2>
-				<div v-if="!data.sources.list || data.sources.list.length < 1" class="alert alert-primary">
-					This table does not have any sources defined.  
-					<a href="#" @click.prevent="addSource">Add now.</a>
-				</div>
+				<v-alert v-if="!data.sources.list || data.sources.list.length < 1" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+					This table does not have any sources defined.
+					<a href="#" @click.prevent="addSource" class="text-primary">Add now.</a>
+				</v-alert>
 				<div v-if="data.sources.list && data.sources.list.length > 0">
 					<v-card>
 						<v-data-table class="data-table" density="compact"
@@ -709,10 +718,10 @@
 					</v-col>
 				</v-row>
 
-				<div v-if="!data.demands.list || data.demands.list.length < 1" class="alert alert-primary">
-					This table does not have any demands defined.  
-					<a href="#" @click.prevent="addSource">Add now.</a>
-				</div>
+				<v-alert v-if="!data.demands.list || data.demands.list.length < 1" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+					This table does not have any demands defined.
+					<a href="#" @click.prevent="addDemand" class="text-primary">Add now.</a>
+				</v-alert>
 				<div v-if="data.demands.list && data.demands.list.length > 0">
 					<v-card>
 						<v-data-table class="data-table" density="compact"
@@ -763,9 +772,9 @@
 							</v-col>
 							<v-col cols="12" md="6">
 								<div class="form-group" v-show="data.sources.obj.obj_typ !== 'unl'">
-									<auto-complete label="Object name" class="flex-grow-1 flex-shrink-0"
+									<auto-complete label="Object name"
 										v-model="data.sources.obj_name" :value="data.sources.obj_name" :show-item-link="false" :required="data.sources.obj.obj_typ !== 'unl'"
-										:table-name="constants.objTypeToConTable[data.sources.obj.obj_typ]" :route-name="constants.objTypeRouteTable[data.sources.obj.obj_typ].name"></auto-complete>
+										:table-name="data.objTypeToConWaterAllocation[data.sources.obj.obj_typ]" :route-name="data.objTypeRouteWaterAllocation[data.sources.obj.obj_typ].name"></auto-complete>
 								</div>
 							</v-col>
 						</v-row>
@@ -875,42 +884,124 @@
 			</v-card>
 		</v-dialog>
 
-		<v-dialog v-model="data.demands.form.show" :max-width="constants.dialogSizes.lg">
+		<v-dialog v-model="data.demands.form.show" :max-width="data.demands.isEdit ? '100%' : constants.dialogSizes.lg">
 			<v-card :title="(data.demands.form.update ? 'Update' : 'Add') + ' Demand Object'">
 				<v-card-text>
 					<error-alert :text="data.demands.form.error"></error-alert>
-					
-					<v-form :validated="data.demands.form.validated">
-						<div class="form-group">
-							<v-text-field v-model="data.demands.obj.description" label="Name/Description of demand object" required></v-text-field>
-						</div>
+					<v-row>
+						<v-col cols="12" :md="data.demands.isEdit ? 7 : 12">
+							<v-form :validated="data.demands.form.validated">
+								<div class="form-group">
+									<v-text-field v-model="data.demands.obj.description" label="Name/Description of demand object" required></v-text-field>
+								</div>
 
-						<v-row>
-							<v-col cols="12" md="6">
+								<v-row>
+									<v-col cols="12" md="6">
+										<div class="form-group">
+											<v-select label="Object type" 
+												v-model="data.demands.obj.obj_typ" :items="data.demands.obj_typs" 
+												required @update:model-value="data.demands.obj_name = null"></v-select>
+										</div>
+									</v-col>
+									<v-col cols="12" md="6">
+										<div class="form-group" v-show="data.demands.obj.obj_typ === 'hru'">
+											<auto-complete label="Object name"
+												v-model="data.demands.obj_name" :value="data.demands.obj_name" :show-item-link="false" :required="data.demands.obj.obj_typ === 'hru'"
+												:table-name="data.objTypeToConWaterAllocation[data.demands.obj.obj_typ]" :route-name="data.objTypeRouteWaterAllocation[data.demands.obj.obj_typ].name"></auto-complete>
+										</div>
+										<div class="form-group" v-show="data.demands.obj.obj_typ === 'hru'">
+											<v-text-field type="number" label="Object number" v-model="data.demands.obj.obj_id" :required="data.demands.obj.obj_typ !== 'hru'"></v-text-field>
+										</div>
+									</v-col>
+								</v-row>
+
+								<div class="form-group">
+									<v-text-field v-model="data.demands.obj.withdr" label="Withdrawal type - average day or recall for municipal and divert; irrigation decision table for HRU" required></v-text-field>
+								</div>
+
+								<div class="form-group">
+									<v-text-field v-model.number="data.demands.obj.amount" label="Amount - m3/day for municipal, mm for HRU" type="number" step="any" required></v-text-field>
+								</div>
+
+								<div class="form-group">
+									<v-select label="Water right" 
+										v-model="data.demands.obj.right" :items="data.demands.objRights" required></v-select>
+								</div>
+
 								<div class="form-group">
 									<v-select label="Object type" 
-										v-model="data.demands.obj.obj_typ" :items="data.demands.obj_typs" 
-										required @update:model-value="data.demands.obj_name = null"></v-select>
+										v-model="data.demands.obj.treat_typ" :items="data.demands.objTreatTyps" required></v-select>
 								</div>
-							</v-col>
-							<v-col cols="12" md="6">
-								<div class="form-group" v-show="data.demands.obj.obj_typ === 'hru'">
-									<auto-complete label="Object name" class="flex-grow-1 flex-shrink-0"
-										v-model="data.demands.obj_name" :value="data.demands.obj_name" :show-item-link="false" :required="data.demands.obj.obj_typ === 'hru'"
-										:table-name="constants.objTypeToConTable[data.demands.obj.obj_typ]" :route-name="constants.objTypeRouteTable[data.demands.obj.obj_typ].name"></auto-complete>
-								</div>
-								<div class="form-group" v-show="data.demands.obj.obj_typ === 'hru'">
-									<v-text-field type="number" v-model="data.demands.obj.obj_id" :required="data.demands.obj.obj_typ !== 'hru'"></v-text-field>
-								</div>
-							</v-col>
-						</v-row>
 
-						<v-divider class="my-3"></v-divider>
-					</v-form>
+								<div class="form-group">
+									<v-text-field v-model="data.demands.obj.treatment" label="Treatment - pointer to the recall or delivery ratio file (optional)"></v-text-field>
+								</div>
+
+								<v-row>
+									<v-col cols="12" md="6">
+										<div class="form-group">
+											<v-select label="Receiving object type" 
+												v-model="data.demands.obj.rcv_obj" :items="data.demands.rcv_objs" 
+												required @update:model-value="data.demands.rcv_obj_name = null"></v-select>
+										</div>
+									</v-col>
+									<v-col cols="12" md="6">
+										<div class="form-group" v-show="data.demands.obj.rcv_obj !== null">
+											<auto-complete label="Object name"
+												v-model="data.demands.rcv_obj_name" :value="data.demands.rcv_obj_name" :show-item-link="false" :required="data.demands.obj.rcv_obj !== null"
+												:table-name="data.objTypeToConWaterAllocation[data.demands.obj.rcv_obj]" 
+												:route-name="data.demands.obj.rcv_obj === null ? '' : data.objTypeRouteWaterAllocation[data.demands.obj.rcv_obj].name"></auto-complete>
+										</div>
+									</v-col>
+								</v-row>
+
+								<div class="form-group">
+									<v-text-field v-model="data.demands.obj.rcv_dtl" label="Receiving object decision table name - to condition water transfers and diversions (optional)"></v-text-field>
+								</div>
+
+								<v-alert v-if="!data.demands.isEdit" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+									Want to add source objects to this demand object? Click the Save Changes button below first, then from the demand table click edit next to the row to add sources.
+								</v-alert>
+							</v-form>
+						</v-col>
+
+						<v-col v-if="data.demands.isEdit" cols="12" md="5">
+							<v-alert v-if="data.demandSources.list && data.demandSources.list.length < 1" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+								This demand does not have any sources. 
+								<a href="#" @click.prevent="addDemandSource" class="text-primary">Add now.</a>
+							</v-alert>
+							<div v-if="data.demandSources.list && data.demandSources.list.length > 0">
+								<v-card>
+									<v-data-table class="data-table" density="compact"
+										:items="data.demandSources.list" :items-per-page="-1"
+										:headers="data.demandSources.fields">
+										<template v-slot:item.src="{ value }">
+											{{ value.description }}
+										</template>
+										<template v-slot:item.comp="{ value }">
+											{{ value ? 'Y' : 'N' }}
+										</template>
+										<template v-slot:item.edit="{ item }">
+											<a href="#" class="text-decoration-none text-primary" title="Edit" @click.prevent="editDemandSource(item)">
+												<font-awesome-icon :icon="['fas', 'edit']"></font-awesome-icon>
+											</a>
+										</template>
+										<template v-slot:item.delete="{ item }">
+											<font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" title="Delete" 
+														@click="askDemandSourceDelete(item)"></font-awesome-icon>
+										</template>
+										<template v-slot:bottom></template>
+									</v-data-table>
+								</v-card>
+							</div>
+						</v-col>
+					</v-row>
+					
 				</v-card-text>
 				<v-divider></v-divider>
 				<v-card-actions>
 					<v-btn @click="saveDemand" :loading="data.demands.form.saving" color="primary" variant="text">Save Changes</v-btn>
+					<v-btn type="button" variant="text" color="info" v-if="data.demands.isEdit" @click="addDemandSource">Add Demand Source</v-btn>
 					<v-btn @click="data.demands.form.show = false">Cancel</v-btn>
 				</v-card-actions>
 			</v-card>
@@ -940,7 +1031,15 @@
 					<error-alert :text="data.demandSources.form.error"></error-alert>
 					
 					<v-form :validated="data.demandSources.form.validated">
-						
+						<div class="form-group">
+							<v-select label="Source object" v-model="data.demandSources.obj.src_id" :items="sourceOptions" required></v-select>
+						</div>
+
+						<div class="form-group">
+							<v-text-field v-model.number="data.demandSources.obj.frac" label="Fraction allocated from this source" type="number" step="any" required></v-text-field>
+						</div>
+
+						<v-checkbox hide-details v-model="data.demandSources.obj.comp" label="Allow compensation?"></v-checkbox>
 					</v-form>
 				</v-card-text>
 				<v-divider></v-divider>

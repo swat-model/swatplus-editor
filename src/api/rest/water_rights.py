@@ -73,7 +73,7 @@ def demand():
 @bp.route('/demand/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def demandId(id):
 	if request.method == 'GET':
-		return DefaultRestMethods.get(id, db.Water_allocation_dmd_ob, wa_dmd_name)
+		return DefaultRestMethods.get(id, db.Water_allocation_dmd_ob, wa_dmd_name, back_refs=True, max_depth=2)
 	elif request.method == 'DELETE':
 		return DefaultRestMethods.delete(id, db.Water_allocation_dmd_ob, wa_dmd_name)
 	elif request.method == 'PUT':
@@ -97,7 +97,7 @@ def demandSource():
 @bp.route('/demand-source/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def demandSourceId(id):
 	if request.method == 'GET':
-		return DefaultRestMethods.get(id, db.Water_allocation_dmd_ob_src, wa_dmd_src_name)
+		return DefaultRestMethods.get(id, db.Water_allocation_dmd_ob_src, wa_dmd_src_name, back_refs=True)
 	elif request.method == 'DELETE':
 		return DefaultRestMethods.delete(id, db.Water_allocation_dmd_ob_src, wa_dmd_src_name)
 	elif request.method == 'PUT':

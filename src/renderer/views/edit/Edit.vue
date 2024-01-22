@@ -214,7 +214,7 @@
 		{
 			name: 'Water Rights', routeName: 'WaterRights', show: !currentProject.isLte,
 			items: [
-				{ name: 'Water Allocation', path: '/edit/water-rights/water-allocation', show: true, routeName: '', subItems: [] }
+				{ name: 'Water Allocation', path: '/edit/water-rights/allocation', show: true, routeName: '', subItems: [] }
 			]
 		}
 	])
