@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'InitOMWater'">
+		<div v-if="$route.name == 'ConstituentsOMWater'">
 			<file-header input-file="om_water.ini" docs-path="constituents/om_water.ini" use-io>
 				Organic Mineral Water
 			</file-header>

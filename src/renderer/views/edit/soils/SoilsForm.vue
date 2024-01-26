@@ -355,10 +355,10 @@
 
 			<div v-if="isUpdate">
 				<h2 class="text-h5 my-3">Soil Layers</h2>
-				<div v-if="!data.layers.list || data.layers.list.length < 1" class="alert alert-primary">
+				<v-alert type="info" variant="tonal" class="mb-4" v-if="!data.layers.list || data.layers.list.length < 1">
 					This soil does not have any layers. 
 					<a href="#" @click.prevent="add">Add now.</a>
-				</div>
+				</v-alert>
 				<div v-if="data.layers.list && data.layers.list.length > 0">
 					<v-card>
 						<v-data-table class="data-table" density="compact"

@@ -41,7 +41,7 @@
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<file-header input-file="om_water.ini" docs-path="constituents/om_water.ini" use-io>
-			<router-link to="/edit/init/om_water">Organic Mineral Water</router-link>
+			<router-link to="/edit/constituents/om_water">Organic Mineral Water</router-link>
 			/ Create
 		</file-header>
 
@@ -49,6 +49,6 @@
 			:item="data.item" 
 			:vars="data.vars" 
 			api-url="init/om_water"
-			redirect-route="InitOMWater" />
+			redirect-route="ConstituentsOMWater" />
 	</project-container>
 </template>

@@ -62,12 +62,18 @@ class Constituents_cs(BaseFileModel):
 
 		if table.select().count() > 0:
 			row = table.select().first()
-			with open(self.file_name, 'w') as file:
-				self.write_meta_line(file)
-				self.write_constit(file, row.pest_coms, "pesticides")
-				self.write_constit(file, row.path_coms, "pathogens")
-				self.write_constit(file, row.hmet_coms, "metals")
-				self.write_constit(file, row.salt_coms, "salts")
+			has_pests = row.pest_coms is not None and len(row.pest_coms) > 0
+			has_paths = row.path_coms is not None and len(row.path_coms) > 0
+			has_hmets = row.hmet_coms is not None and len(row.hmet_coms) > 0
+			has_salts = row.salt_coms is not None and len(row.salt_coms) > 0
+
+			if has_pests or has_paths or has_hmets or has_salts:
+				with open(self.file_name, 'w') as file:
+					self.write_meta_line(file)
+					self.write_constit(file, row.pest_coms, "pesticides")
+					self.write_constit(file, row.path_coms, "pathogens")
+					self.write_constit(file, row.hmet_coms, "metals")
+					self.write_constit(file, row.salt_coms, "salts")
 
 	def write_constit(self, file, values, label):
 		items = [] if values is None else values.split(",")

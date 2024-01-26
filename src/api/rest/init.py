@@ -11,6 +11,7 @@ from database.project.simulation import Constituents_cs
 from database.project.hru_parm_db import Pesticide_pst, Pathogens_pth
 from database.project import base as project_base
 from database import lib as db_lib
+import sys
 
 bp = Blueprint('init', __name__, url_prefix='/init')
 
@@ -40,7 +41,7 @@ def soil_plant():
 	if request.method == 'GET':
 		table = db.Soil_plant_ini
 		filter_cols = [table.name]
-		return DefaultRestMethods.get_paged_list(table, filter_cols)
+		return DefaultRestMethods.get_paged_list(table, filter_cols, back_refs=True)
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
@@ -82,7 +83,7 @@ def soil_plant():
 @bp.route('/soil_plant/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def soil_plantId(id):
 	if request.method == 'GET':
-		return DefaultRestMethods.get(id, db.Soil_plant_ini, soil_plant_name)
+		return DefaultRestMethods.get(id, db.Soil_plant_ini, soil_plant_name, back_refs=True)
 	elif request.method == 'DELETE':
 		return DefaultRestMethods.delete(id, db.Soil_plant_ini, soil_plant_name)
 	elif request.method == 'PUT':
@@ -327,35 +328,37 @@ def constituents():
 		rh.close()
 		return '', 204
 	if request.method == 'PUT':
-		args = request.args
+		args = request.json
 		try:
-			pest_coms = None if 'pests' not in args or len(args['pests']) < 1 else ','.join(args['pests'])
-			path_coms = None if 'paths' not in args or len(args['paths']) < 1 else ','.join(args['paths'])
-			hmet_coms = None if 'hmets' not in args or len(args['hmets']) < 1 else ','.join(args['hmets'])
-			salt_coms = None if 'salts' not in args or len(args['salts']) < 1 else ','.join(args['salts'])
+			result = 1
+			if Constituents_cs.select().count() < 1:
+				Constituents_cs.create(id=1, name='Constituents')
 
-			pest_ids = Pesticide_pst.select().where(Pesticide_pst.name.in_(args['pests']))
-			db.Pest_hru_ini_item.delete().where(db.Pest_hru_ini_item.name.not_in(pest_ids)).execute()
-			db.Pest_water_ini_item.delete().where(db.Pest_water_ini_item.name.not_in(pest_ids)).execute()
-
-			path_ids = Pathogens_pth.select().where(Pathogens_pth.name.in_(args['paths']))
-			db.Path_hru_ini_item.delete().where(db.Path_hru_ini_item.name.not_in(path_ids)).execute()
-			db.Path_water_ini_item.delete().where(db.Path_water_ini_item.name.not_in(path_ids)).execute()
-
-			"""hmet_ids = Metals_mtl.select().where(Metals_mtl.name.in_(args['hmets']))
-			db.Hmet_hru_ini_item.delete().where(Hmet_hru_ini_item.name.not_in(hmet_ids)).execute()
-			db.Hmet_water_ini_item.delete().where(Hmet_water_ini_item.name.not_in(hmet_ids)).execute()
-
-			salt_ids = Salts_slt.select().where(Salts_slt.name.in_(args['salts']))
-			db.Salt_hru_ini_item.delete().where(db.Salt_hru_ini_item.name.not_in(path_ids)).execute()
-			db.Salt_water_ini_item.delete().where(db.Salt_water_ini_item.name.not_in(path_ids)).execute()"""
-
-			if Constituents_cs.select().count() > 0:
-				q = Constituents_cs.update(pest_coms=pest_coms, path_coms=path_coms, hmet_coms=hmet_coms, salt_coms=salt_coms)
-				result = q.execute()
-			else:
-				v = Constituents_cs.create(id=1, name='Constituents', pest_coms=pest_coms, path_coms=path_coms, hmet_coms=hmet_coms, salt_coms=salt_coms)
-				result = 1 if v is not None else 0
+			if 'pests' in args:
+				if len(args['pests']) < 1:
+					db.Pest_hru_ini_item.delete().execute()
+					db.Pest_water_ini_item.delete().execute()
+					result = Constituents_cs.update(pest_coms=None).execute()
+				else:
+					pest_coms = None if len(args['pests']) < 1 else ','.join(args['pests'])
+					pest_ids = Pesticide_pst.select().where(Pesticide_pst.name.in_(args['pests']))
+					db.Pest_hru_ini_item.delete().where(db.Pest_hru_ini_item.name.not_in(pest_ids)).execute()
+					db.Pest_water_ini_item.delete().where(db.Pest_water_ini_item.name.not_in(pest_ids)).execute()
+					result = Constituents_cs.update(pest_coms=pest_coms).execute()
+			if 'paths' in args:
+				if len(args['paths']) < 1:
+					db.Path_hru_ini_item.delete().execute()
+					db.Path_water_ini_item.delete().execute()
+					result = Constituents_cs.update(path_coms=None).execute()
+				else:
+					path_coms = None if 'paths' not in args or len(args['paths']) < 1 else ','.join(args['paths'])
+					path_ids = Pathogens_pth.select().where(Pathogens_pth.name.in_(args['paths']))
+					db.Path_hru_ini_item.delete().where(db.Path_hru_ini_item.name.not_in(path_ids)).execute()
+					db.Path_water_ini_item.delete().where(db.Path_water_ini_item.name.not_in(path_ids)).execute()
+					result = Constituents_cs.update(path_coms=path_coms).execute()
+			if 'enable_salts' in args:
+				salt_coms = 'so4,ca,mg,na,k,cl,co3,hco3'
+				result = Constituents_cs.update(salt_coms=salt_coms).execute()
 
 			rh.close()
 			if result > 0:
@@ -390,25 +393,26 @@ def save_constituents_ini(ini_table, ini_item_table, rel_col_name, row1='plant',
 	has_db,error = rh.init(project_db)
 	if not has_db: abort(400, error)
 	
-	args = request.args
+	args = request.json
 	
 	ini_item_table.delete().execute()
 	ini_table.delete().execute()
 
-	for item in args['items']:
-		m = ini_table(name = item['name'])
-		m.save()
+	if 'items' in args and len(args['items']) > 0:
+		for item in args['items']:
+			m = ini_table(name = item['name'])
+			m.save()
 
-		rows = []
-		for row in item['rows']:
-			rows.append({
-				rel_col_name: m.id,
-				'name_id': row['name_id'],
-				row1: row[row1],
-				row2: row[row2]
-			})
+			rows = []
+			for row in item['rows']:
+				rows.append({
+					rel_col_name: m.id,
+					'name_id': row['name_id'],
+					row1: row[row1],
+					row2: row[row2]
+				})
 
-		db_lib.bulk_insert(project_base.db, ini_item_table, rows)
+			db_lib.bulk_insert(project_base.db, ini_item_table, rows)
 	rh.close()
 
 @bp.route('/constituents/pest-hru', methods=['GET','PUT'])

@@ -130,8 +130,8 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="plnt_com_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Plant Community" class="flex-grow-1 flex-shrink-0"
 							v-model="item.plnt_com_name" :value="item.plnt_com_name" :show-item-link="props.isUpdate"
-							table-name="plant_ini" route-name="InitPlantEdit"
-							section="Initialization Data / Plant Communities" help-file="plant.ini" help-db="plant_ini"
+							table-name="plant_ini" route-name="PlantCommEdit"
+							section="Land Use Management / Plant Communities" help-file="plant.ini" help-db="plant_ini"
 							api-url="init/plant_ini"></auto-complete>
 					</div>
 				</v-col>

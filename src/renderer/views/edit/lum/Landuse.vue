@@ -7,7 +7,7 @@
 		headers: [
 			{ key: 'name', label: 'Name' },
 			{ key: 'cal_group', label: 'Calibration Group' },
-			{ key: 'plnt_com', label: 'Plant Comm.', type: 'object', objectRoutePath: '/edit/init/plant/edit/' },
+			{ key: 'plnt_com', label: 'Plant Comm.', type: 'object', objectRoutePath: '/edit/lum/plant/edit/' },
 			{ key: 'mgt', label: 'Management Sch.', type: 'object', objectRoutePath: '/edit/lum/mgt/edit/' },
 			{ key: 'cn2', label: 'CN2', type: 'object', objectRoutePath: '/edit/lum/cntable/edit/' },
 			{ key: 'cons_prac', label: 'Cons. Prac.', type: 'object', objectRoutePath: '/edit/lum/conspractice/edit/' },

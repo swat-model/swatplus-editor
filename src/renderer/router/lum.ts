@@ -2,6 +2,10 @@ import Landuse from '../views/edit/lum/Landuse.vue';
 import LanduseEdit from '../views/edit/lum/LanduseEdit.vue';
 import LanduseCreate from '../views/edit/lum/LanduseCreate.vue';
 
+import PlantComm from '../views/edit/lum/PlantComm.vue';
+import PlantCommEdit from '../views/edit/lum/PlantCommEdit.vue';
+import PlantCommCreate from '../views/edit/lum/PlantCommCreate.vue';
+
 import Management from '../views/edit/lum/Management.vue';
 import ManagementEdit from '../views/edit/lum/ManagementEdit.vue';
 import ManagementCreate from '../views/edit/lum/ManagementCreate.vue';
@@ -51,6 +55,13 @@ export default [
 			{ path: 'edit/:id', name: 'LanduseEdit', component: LanduseEdit },
 			{ path: 'create', name: 'LanduseCreate', component: LanduseCreate }
 		]  
+	},
+	{ 
+		path: 'lum/plant', name: 'PlantComm', component: PlantComm,
+		children: [
+			{ path: 'edit/:id', name: 'PlantCommEdit', component: PlantCommEdit },
+			{ path: 'create', name: 'PlantCommCreate', component: PlantCommCreate }
+		]
 	},
 	{ 
 		path: 'lum/mgt', name: 'Management', component: Management,

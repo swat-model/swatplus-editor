@@ -36,11 +36,11 @@
 
 	function putDb(data:any) {
 		if (page.bulk.show)
-			return api.put('reservoirs/initial/many', data, currentProject.getApiHeader());
+			return api.put('init/soil_plant/many', data, currentProject.getApiHeader());
 		else if (props.isUpdate)
-			return api.put(`reservoirs/initial/${props.item.id}`, data, currentProject.getApiHeader());
+			return api.put(`init/soil_plant/${props.item.id}`, data, currentProject.getApiHeader());
 		else
-			return api.post(`reservoirs/initial`, data, currentProject.getApiHeader());
+			return api.post(`init/soil_plant`, data, currentProject.getApiHeader());
 	}
 
 	async function save() {
@@ -112,21 +112,25 @@
 				</div>
             </div>
             <div v-else>
-                <object-selector name="Reservoirs" table="init_res" @change="bulkSelectionChange"></object-selector>
+                <object-selector name="Soil Plant" table="soil_plant_ini" @change="bulkSelectionChange"></object-selector>
             </div>
 
 			<div class="form-group d-flex">
-				<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="org_min_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
-				<auto-complete label="Organic Mineral Properties" class="flex-grow-1 flex-shrink-0"
-					v-model="item.org_min_name" :value="item.org_min_name" :show-item-link="props.isUpdate"
+				<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="sw_frac" class="flex-shrink-1 flex-grow-0"></v-checkbox>
+				<v-text-field v-model.number="item.sw_frac" label="Soil Water Fraction" type="number" step="any" class="flex-grow-1 flex-shrink-0"></v-text-field>
+			</div>
+
+			<div class="form-group d-flex">
+				<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="nutrients_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
+				<auto-complete label="Nutrients" class="flex-grow-1 flex-shrink-0"
+					v-model="item.nutrients_name" :value="item.nutrients_name" :show-item-link="props.isUpdate"
 					table-name="om_water_ini" route-name="InitOMWaterEdit"
-					section="Initialization Data / Organic Mineral" help-file="om_water.ini" help-db="om_water_ini"
-					api-url="init/om_water"></auto-complete>
+					section="Soils / Nutrients" help-file="nutrients.sol" help-db="nutrients_sol"
+					api-url="soils/nutrients"></auto-complete>
 			</div>
 
 			<v-alert type="info" variant="tonal" class="mb-4">
-				For the fields below, you must enable and set up your data in the 
-				<router-link to="/edit/init/constituents" class="text-primary">Initialization / Constituents</router-link> section.
+				For the fields below, you must enable and set up your data in the <b>Constituents</b> section.
 			</v-alert>
 
 			<v-row>
@@ -136,7 +140,7 @@
 						<auto-complete label="Pesticide Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.pest_name" :value="item.pest_name" :show-item-link="props.isUpdate"
 							table-name="pest_water_ini" route-name="InitPestWaterEdit"
-							section="Initialization Data / Pesticides Water" help-file="pest_water.ini" help-db="pest_water_ini"
+							section="Constituents / Pesticides" help-file="pest_water.ini" help-db="pest_water_ini"
 							api-url="init/constituents/pest-water"></auto-complete>
 					</div>
 				</v-col>
@@ -146,31 +150,31 @@
 						<auto-complete label="Pathogen Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.path_name" :value="item.path_name" :show-item-link="props.isUpdate"
 							table-name="path_water_ini" route-name="InitPathWaterEdit"
-							section="Initialization Data / Pathogens Water" help-file="path_water.ini" help-db="path_water_ini"
+							section="Constituents / Pathogens" help-file="path_water.ini" help-db="path_water_ini"
 							api-url="init/constituents/path-water"></auto-complete>
 					</div>
 				</v-col>
 			</v-row>
 
-			<!--Not currently active!-->
-			<v-row v-if="false">
-				<v-col cols="12" md="6">
+			<v-row>
+				<v-col v-if="false" cols="12" md="6">
+					<!--Not currently active!-->
 					<div class="form-group d-flex">
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="hmet_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Heavy Metal Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.hmet_name" :value="item.hmet_name" :show-item-link="props.isUpdate"
 							table-name="hmet_water_ini" route-name="InitHmetWaterEdit"
-							section="Initialization Data / Heavy Metals Water" help-file="hmet_water.ini" help-db="hmet_water_ini"
+							section="Constituents / Heavy Metals" help-file="hmet_water.ini" help-db="hmet_water_ini"
 							api-url="init/constituents/hmet-water"></auto-complete>
 					</div>
 				</v-col>
 				<v-col cols="12" md="6">
 					<div class="form-group d-flex">
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="salt_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
-						<auto-complete label="Pathogen Properties" class="flex-grow-1 flex-shrink-0"
+						<auto-complete label="Salt Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.salt_name" :value="item.salt_name" :show-item-link="props.isUpdate"
 							table-name="salt_water_ini" route-name="InitSaltWaterEdit"
-							section="Initialization Data / Salt Water" help-file="salt_water.ini" helpdb="salt_water_ini"
+							section="Constituents / Salts" help-file="salt_water.ini" helpdb="salt_water_ini"
 							api-url="init/constituents/salt-water"></auto-complete>
 					</div>
 				</v-col>

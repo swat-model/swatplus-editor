@@ -8,6 +8,7 @@ import TableBrowser from '../views/TableBrowser.vue';
 import connect from './connect';
 import basin from './basin';
 import climate from './climate';
+import constituents from './constituents';
 import decision_table from './decision_table';
 import db from './db';
 import hydrology from './hydrology';
@@ -17,7 +18,7 @@ import soils from './soils';
 import structural from './structural';
 import water_rights from './water_rights';
 
-const editRoutes = connect.concat(basin, climate, decision_table, db, hydrology, lum, regions, soils, structural, water_rights);
+const editRoutes = connect.concat(basin, climate, constituents, decision_table, db, hydrology, lum, regions, soils, structural, water_rights);
 
 export default createRouter({
 	history: createWebHashHistory(),

@@ -107,6 +107,7 @@
 			name: 'Land Use Management', routeName: 'Lum', show: !currentProject.isLte,
 			items: [
 				{ name: 'Land Use Management', path: '/edit/lum/landuse', show: true, routeName: '', subItems: [] },
+				{ name: 'Plant Communities', path: '/edit/lum/plant', show: true, routeName: '', subItems: [] },
 				{ name: 'Management Schedules', path: '/edit/lum/mgt', show: true, routeName: '', subItems: [] },
 				{ 
 					name: 'Operations Databases', path: '/edit/lum/ops', show: true, routeName: 'Operations', 
@@ -156,18 +157,21 @@
 			]
 		},
 		{
-			name: 'Initialization Data', routeName: 'Init', show: true,
+			name: 'Constituents', routeName: 'Constituents', show: true,
 			items: [
-				{ name: 'Plant Communities', path: '/edit/init/plant', show: !currentProject.isLte, routeName: '', subItems: [] },
-				{ name: 'Soil Plant', path: '/edit/init/soil_plant', show: !currentProject.isLte, routeName: '', subItems: [] },
-				{ name: 'Organic Mineral', path: '/edit/init/om_water', show: true, routeName: '', subItems: [] },
+				{ name: 'Soil Plant', path: '/edit/constituents/soil_plant', show: !currentProject.isLte, routeName: '', subItems: [] },
+				{ name: 'Organic Mineral', path: '/edit/constituents/om_water', show: true, routeName: '', subItems: [] },
+				{ name: 'Pesticides', path: '/edit/constituents/pest', show: !currentProject.isLte, routeName: '', subItems: [] },
+				{ name: 'Pathogens', path: '/edit/constituents/path', show: !currentProject.isLte, routeName: '', subItems: [] },
 				{ 
-					name: 'Constituents', path: '/edit/init/constituents', show: !currentProject.isLte, routeName: 'Constituents', 
+					name: 'Salts', path: '/edit/constituents/salt', show: !currentProject.isLte, routeName: 'Salts', 
 					subItems: [
-						{ name: 'Pesticides (HRU)', path: '/edit/init/constituents/pest-hru', show: true, routeName: '', subItems: [] },
-						{ name: 'Pesticides (Water)', path: '/edit/init/constituents/pest-water', show: true, routeName: '', subItems: [] },
-						{ name: 'Pathogens (HRU)', path: '/edit/init/constituents/path-hru', show: true, routeName: '', subItems: [] },
-						{ name: 'Pathogens (Water)', path: '/edit/init/constituents/path-water', show: true, routeName: '', subItems: [] }
+						{ name: 'Point Sources', path: '/edit/constituents/salt/recall', show: true, routeName: '', subItems: [] },
+						{ name: 'Atmospheric Deposition', path: '/edit/constituents/salt/atmo', show: true, routeName: '', subItems: [] },
+						{ name: 'Road Salt', path: '/edit/constituents/salt/road', show: true, routeName: '', subItems: [] },
+						{ name: 'Fertilizer & Soil Amendments', path: '/edit/constituents/salt/fert', show: true, routeName: '', subItems: [] },
+						{ name: 'Irrigation', path: '/edit/constituents/salt/irr', show: true, routeName: '', subItems: [] },
+						{ name: 'Urban Runoff', path: '/edit/constituents/salt/urban', show: true, routeName: '', subItems: [] }
 					]
 				}
 			]
