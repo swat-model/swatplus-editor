@@ -7,6 +7,7 @@ import ConstituentsOMWaterEdit from '../views/edit/constituents/OMWaterEdit.vue'
 import ConstituentsOMWaterCreate from '../views/edit/constituents/OMWaterCreate.vue';
 
 import ConstituentsPesticides from '../views/edit/constituents/Pesticides.vue';
+import ConstituentsPathogens from '../views/edit/constituents/Pathogens.vue';
 
 export default [
 	{ 
@@ -25,6 +26,10 @@ export default [
 	},
 	{ 
 		path: 'constituents/pest', name: 'ConstituentsPesticides', component: ConstituentsPesticides,
+		children: []
+	},
+	{ 
+		path: 'constituents/path', name: 'ConstituentsPathogens', component: ConstituentsPathogens,
 		children: []
 	},
 ];

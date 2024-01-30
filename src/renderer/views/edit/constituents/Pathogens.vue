@@ -16,7 +16,7 @@
 			showError: false
 		},
 		add: {
-			pest: null
+			path: null
 		},
 		constituents: {
 			using: false,
@@ -36,13 +36,13 @@
 	});
 
 	async function add() {
-		if (!formatters.isNullOrEmpty(data.add.pest) && !data.constituents.pests.includes(data.add.pest)) data.constituents.pests.push(data.add.pest);
-		data.add.pest = null;
+		if (!formatters.isNullOrEmpty(data.add.path) && !data.constituents.paths.includes(data.add.path)) data.constituents.paths.push(data.add.path);
+		data.add.path = null;
 		await saveConstituents();
 	}
 
 	async function remove(name:string) {
-		data.constituents.pests.splice(data.constituents.pests.indexOf(name), 1);
+		data.constituents.paths.splice(data.constituents.paths.indexOf(name), 1);
 		await saveConstituents();
 	}
 
@@ -70,12 +70,12 @@
 		data.page.showError = false;
 
 		try {
-			const response2 = await api.get(`init/constituents/pest-hru`, currentProject.getApiHeader());
+			const response2 = await api.get(`init/constituents/path-hru`, currentProject.getApiHeader());
 			data.hru.constituents = response2.data.constituents;
 			checkHruItems(response2.data.items);
 			if (data.hru.items.length < 1) addHruItem();
 
-			const response3 = await api.get(`init/constituents/pest-water`, currentProject.getApiHeader());
+			const response3 = await api.get(`init/constituents/path-water`, currentProject.getApiHeader());
 			data.water.constituents = response2.data.constituents;
 			checkWaterItems(response3.data.items);
 			if (data.water.items.length < 1) addWaterItem();
@@ -96,7 +96,7 @@
 			await saveItems(false);
 
 			let constituentsData = {
-				pests: data.constituents.pests
+				paths: data.constituents.paths
 			};
 			const response = await api.put(`init/constituents`, constituentsData, currentProject.getApiHeader());
 			
@@ -125,13 +125,13 @@
 				for (let item of hruItems) {
 					item.name = formatters.toValidName(item.name);
 				}
-				await api.put(`init/constituents/pest-hru`, { 'items': hruItems }, currentProject.getApiHeader());
+				await api.put(`init/constituents/path-hru`, { 'items': hruItems }, currentProject.getApiHeader());
 
 				let waterItems = data.water.items.filter(function(el:any) { return !formatters.isNullOrEmpty(el.name) });
 				for (let item of waterItems) {
 					item.name = formatters.toValidName(item.name);
 				}
-				await api.put(`init/constituents/pest-water`, { 'items': waterItems }, currentProject.getApiHeader());
+				await api.put(`init/constituents/path-water`, { 'items': waterItems }, currentProject.getApiHeader());
 				
 				if (showSaveSuccess) data.page.saveSuccess = true;
 			} catch (error) {
@@ -170,7 +170,7 @@
 	}
 
 	function checkHruItems(items:any[]) {
-		let relatedKey = 'pest_hrus';
+		let relatedKey = 'path_hrus';
 		data.hru.items = [];
 		for (let item of items) {
 			let newItem:any = {
@@ -236,7 +236,7 @@
 	}
 
 	function checkWaterItems(items:any[]) {
-		let relatedKey = 'pest_waters';
+		let relatedKey = 'path_waters';
 		data.water.items = [];
 		for (let item of items) {
 			let newItem:any = {
@@ -306,38 +306,38 @@
 <template>
 	<project-container :loading="data.page.loading">
 		<file-header input-file="pest_water/hru.ini" docs-path="constituents" use-io>
-			Pesticide Constituents
+			Pathogen Constituents
 		</file-header>
 		
 		<v-form @submit.prevent="saveItems(true)" ref="form">
 			<error-alert as-popup v-model="data.page.showError" :show="data.page.showError" :text="data.page.error" :timeout="-1"></error-alert>
 			<success-alert v-model="data.page.saveSuccess" :show="data.page.saveSuccess"></success-alert>
 
-			<h2 class="text-h5 my-3">1) Add Pesticides</h2>
+			<h2 class="text-h5 my-3">1) Add Pathogens</h2>
 
-			<div class="my-4" v-if="data.constituents.pests.length > 0">
+			<div class="my-4" v-if="data.constituents.paths.length > 0">
 				<v-chip-group>
-					<v-chip v-for="d in data.constituents.pests" :key="d" closable @click:close="remove(d)">{{ d }}</v-chip>
+					<v-chip v-for="d in data.constituents.paths" :key="d" closable @click:close="remove(d)">{{ d }}</v-chip>
 				</v-chip-group>
 			</div>
 
 			<div class="form-group mb-0">
-				<auto-complete label="Add a pesticide"
-					v-model="data.add.pest" :value="data.add.pest"
-					table-name="pest"
-					section="Databases / Pesticides" help-file="pesticide.pes" help-db="pesticide_pst"
-					api-url="db/pesticides"></auto-complete>
+				<auto-complete label="Add a pathogen"
+					v-model="data.add.path" :value="data.add.path"
+					table-name="path"
+					section="Databases / Pathogens" help-file="pathogen.pth" help-db="pathogens_pth"
+					api-url="db/pathogens"></auto-complete>
 			</div>
 			<div class="mb-4">
-				<v-btn variant="flat" color="primary" class="wide ml-1" :disabled="formatters.isNullOrEmpty(data.add.pest)" @click="add">Add Pesticide</v-btn>
+				<v-btn variant="flat" color="primary" class="wide ml-1" :disabled="formatters.isNullOrEmpty(data.add.path)" @click="add">Add Pathogen</v-btn>
 			</div>
 
 			<page-loading :loading="data.page.itemsLoading"></page-loading>
-			<div v-if="!data.page.itemsLoading && data.constituents.pests.length > 0">
+			<div v-if="!data.page.itemsLoading && data.constituents.paths.length > 0">
 				<v-divider class="my-4"></v-divider>
 
 				<p>
-					Add HRU and water initialization values for each pesticide.
+					Add HRU and water initialization values for each pathogen.
 					Initializations must be given a name in order to be saved.
 				</p>
 
@@ -363,14 +363,14 @@
 							</td>
 						</tr>
 						<tr>
-							<td>Amount of pesticide on plant at start of simulation (kg/ha)</td>
+							<td>Amount of pathogen on plant at start of simulation (kg/ha)</td>
 							<td v-for="(c, j) in data.hru.constituents" :key="j">
 								<v-text-field type="number" step="any" v-model.number="data.hru.items[i].rows[j].plant" hide-details="auto" density="compact"></v-text-field>
 							</td>
 							<td></td>
 						</tr>
 						<tr>
-							<td>Amount of pesticide in soil at start of simulation (kg/ha)</td>
+							<td>Amount of pathogen in soil at start of simulation (kg/ha)</td>
 							<td v-for="(c, j) in data.hru.constituents" :key="j">
 								<v-text-field type="number" step="any" v-model.number="data.hru.items[i].rows[j].soil" hide-details="auto" density="compact"></v-text-field>
 							</td>
@@ -406,14 +406,14 @@
 							</td>
 						</tr>
 						<tr>
-							<td>Amount of pesticide in water at start of simulation (kg/ha)</td>
+							<td>Amount of pathogen in water at start of simulation (kg/ha)</td>
 							<td v-for="(c, j) in data.water.constituents" :key="j">
 								<v-text-field type="number" step="any" v-model.number="data.water.items[i].rows[j].water" hide-details="auto" density="compact"></v-text-field>
 							</td>
 							<td></td>
 						</tr>
 						<tr>
-							<td>Amount of pesticide in the benthic zone at start of simulation (kg/ha)</td>
+							<td>Amount of pathogen in the benthic zone at start of simulation (kg/ha)</td>
 							<td v-for="(c, j) in data.water.constituents" :key="j">
 								<v-text-field type="number" step="any" v-model.number="data.water.items[i].rows[j].benthic" hide-details="auto" density="compact"></v-text-field>
 							</td>

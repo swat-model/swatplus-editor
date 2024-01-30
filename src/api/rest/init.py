@@ -11,7 +11,6 @@ from database.project.simulation import Constituents_cs
 from database.project.hru_parm_db import Pesticide_pst, Pathogens_pth
 from database.project import base as project_base
 from database import lib as db_lib
-import sys
 
 bp = Blueprint('init', __name__, url_prefix='/init')
 

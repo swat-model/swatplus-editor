@@ -138,7 +138,7 @@
 			name: 'Calibration', routeName: 'Change', show: !currentProject.isLte,
 			items: [
 				{ 
-					name: 'Hard Calibration', path: '/edit/change/hard', show: true, routeName: 'Hard', 
+					name: 'Hard Calibration', path: '/edit/change/hard', show: true, routeName: 'HardCalibration', 
 					subItems: [
 						{ name: 'Parameters', path: '/edit/change/hard/parms', show: true, routeName: '', subItems: [] }
 					]
@@ -147,11 +147,7 @@
 					name: 'Soft Calibration', path: '/edit/change/soft', show: true, routeName: 'Hard', 
 					subItems: [
 						{ name: 'Water Balance', path: '/edit/change/soft/wb', show: true, routeName: '', subItems: [] },
-						{ name: 'Water Balance Parameters', path: '/edit/change/soft/wbparms', show: true, routeName: '', subItems: [] },
-						{ name: 'Channel Sediment Budget', path: '/edit/change/soft/chsed', show: true, routeName: '', subItems: [] },
-						{ name: 'Channel Parameters', path: '/edit/change/soft/chsedparms', show: true, routeName: '', subItems: [] },
-						{ name: 'Plant Growth', path: '/edit/change/soft/plant', show: true, routeName: '', subItems: [] },
-						{ name: 'Plant Parameters', path: '/edit/change/soft/plantparms', show: true, routeName: '', subItems: [] }
+						{ name: 'Plant Growth', path: '/edit/change/soft/plant', show: true, routeName: '', subItems: [] }
 					]
 				}
 			]

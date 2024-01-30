@@ -49,7 +49,7 @@
 			/ Edit
 		</file-header>
 
-		<edit-form sshow-range is-update allow-bulk-edit
+		<edit-form show-range is-update allow-bulk-edit
 			:item="data.item"
 			name="Hydrology" table="hyd" is-hru
 			:vars="data.vars" 

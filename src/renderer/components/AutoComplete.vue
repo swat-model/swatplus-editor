@@ -22,7 +22,8 @@
 		helpDb?: string,
 		showItemLink?: boolean,
 		customSearchUrl?: string,
-		hideDetails?: boolean
+		hideDetails?: boolean,
+		disabled?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -40,7 +41,8 @@
 		helpDb: '',
 		showItemLink: false,
 		customSearchUrl: '',
-		hideDetails: false
+		hideDetails: false,
+		disabled: false
 	});
 
 	let model = ref(props.value);
@@ -115,7 +117,7 @@
 
 <template>
 	<div>
-		<v-autocomplete v-model="model" :label="props.label" :rules="appliedRules" :hide-details="props.hideDetails"
+		<v-autocomplete v-model="model" :label="props.label" :rules="appliedRules" :hide-details="props.hideDetails" :readonly="props.disabled"
 			:hint="props.hint" :persistent-hint="props.persistentHint" :no-data-text="data.loading ? 'Loading...' : 'No data available'"
 			:loading="data.loading" v-model:search.sync="data.search" :items="data.items" auto-select-first>
 			<template v-slot:append>

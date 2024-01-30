@@ -7,14 +7,23 @@
 		table: string,
 		name: string,
 		isHru?: boolean,
-		noGis?: boolean
+		noGis?: boolean,
+		hideAlert?: boolean, 
+		initialSelection?: any
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
 		table: '',
 		name: '',
 		isHru: false,
-		noGis: false
+		noGis: false,
+		hideAlert: false,
+		initialSelection: {
+			subbasins: [],
+			landuse: [],
+			soils: [],
+			objects: [],
+		}
 	});
 
 	let page:any = reactive({
@@ -31,14 +40,14 @@
 		subbasins: [],
 		landuse: [],
 		soils: [],
-		objects: []
+		objects: [],
 	});
 
 	let selection:any = reactive({
-		subbasins: [],
-		landuse: [],
-		soils: [],
-		objects: [],
+		subbasins: props.initialSelection.subbasins,
+		landuse: props.initialSelection.landuse,
+		soils: props.initialSelection.soils,
+		objects: props.initialSelection.objects,
 		all: {
 			subbasins: false,
 			landuse: false,
@@ -59,7 +68,11 @@
 				errors.log(response.data);
 				options.subbasins = response.data;
 
-				if (options.subbasins.length < 1) await getObjects();
+				if (props.initialSelection.subbasins.length > 0) {
+					await getLanduse(false);
+					await getSoils(false);
+					await getObjects(false);
+				} else if (options.subbasins.length < 1) await getObjects(false);
 			}
 		} catch (error) {
 			page.error = errors.logError(error, 'Unable to get objects from database.');
@@ -68,15 +81,17 @@
 		page.loading.subbasins = false;
 	}
 
-	async function getLanduse() {
+	async function getLanduse(reset:boolean = true) {
 		page.error = null;
 		page.loading.landuse = true;
 		options.landuse = [];
-		selection.landuse = [];
 		options.soils = [];
-		selection.soils = [];
 		options.objects = [];
-		selection.objects = [];
+		if (reset) {
+			selection.landuse = [];
+			selection.soils = [];
+			selection.objects = [];
+		}
 
 		try {
 			let data = {
@@ -91,13 +106,15 @@
 		page.loading.landuse = false;
 	}
 
-	async function getSoils() {
+	async function getSoils(reset:boolean = true) {
 		page.error = null;
 		page.loading.soils = true;
 		options.soils = [];
-		selection.soils = [];
 		options.objects = [];
-		selection.objects = [];
+		if (reset) {
+			selection.soils = [];
+			selection.objects = [];
+		}
 
 		try {
 			let data = {
@@ -113,11 +130,13 @@
 		page.loading.soils = false;
 	}
 
-	async function getObjects() {
+	async function getObjects(reset:boolean = true) {
 		page.error = null;
 		page.loading.objects = true;
 		options.objects = [];
-		selection.objects = [];
+		if (reset) {
+			selection.objects = [];
+		}
 
 		try {
 			let data = {
@@ -128,6 +147,7 @@
 			errors.log(data);
 			const response = await api.post(`auto_complete/objects/${props.table}`, data, currentProject.getApiHeader());
 			options.objects = response.data;
+			errors.log(options.objects);
 		} catch (error) {
 			page.error = errors.logError(error, 'Unable to get subbasins from database.');
 		}
@@ -198,7 +218,7 @@
 
 <template>
 	<div>
-		<v-alert type="info" variant="tonal">
+		<v-alert type="info" variant="tonal" v-if="!hideAlert">
 			You are in bulk edit mode. Select the objects you want to edit then check the fields to which you 
 			want to apply to the selected.
 		</v-alert>
@@ -209,7 +229,7 @@
 				<page-loading :loading="page.loading.subbasins"></page-loading>
 				<div v-if="!page.loading.subbasins && options.subbasins.length > 0" class="scroll-check mb-4">
 					<div class="check-all">
-						<v-checkbox v-model="selection.all.subbasins" @change="toggleAllSubbasins" class="d-inline" hide-details>
+						<v-checkbox v-model="selection.all.subbasins" @change="toggleAllSubbasins" class="d-inline" hide-details density="comfortable">
 							<template #label>
 								Select Subbasins
 								<v-tooltip :text="`Filter ${name.toLowerCase()} by subbasin.`">
@@ -223,7 +243,7 @@
 					</div>
 					<div class="items">
 						<div class="item" v-for="o in options.subbasins" :key="o.value">
-							<v-checkbox v-model="selection.subbasins" :value="o.value" :label="o.text" hide-details></v-checkbox>
+							<v-checkbox v-model="selection.subbasins" :value="o.value" :label="o.text" hide-details density="comfortable"></v-checkbox>
 						</div>
 					</div>
 				</div>
@@ -232,11 +252,11 @@
 				<page-loading :loading="page.loading.landuse"></page-loading>
 				<div v-if="!page.loading.landuse && options.landuse.length > 0" class="scroll-check mb-4 ml-3">
 					<div class="check-all">
-						<v-checkbox v-model="selection.all.landuse" @change="toggleAllLanduse" class="d-inline" label="Select Land Use" hide-details></v-checkbox>
+						<v-checkbox v-model="selection.all.landuse" @change="toggleAllLanduse" class="d-inline" label="Select Land Use" hide-details density="comfortable"></v-checkbox>
 					</div>
 					<div class="items">
 						<div class="item" v-for="o in options.landuse" :key="o.value">
-							<v-checkbox v-model="selection.landuse" :value="o.value" :label="o.text" hide-details></v-checkbox>
+							<v-checkbox v-model="selection.landuse" :value="o.value" :label="o.text" hide-details density="comfortable"></v-checkbox>
 						</div>
 					</div>
 				</div>
@@ -245,11 +265,11 @@
 				<page-loading :loading="page.loading.soils"></page-loading>
 				<div v-if="!page.loading.soils && options.landuse.length > 0 && options.soils.length > 0" class="scroll-check mb-4 ml-3">
 					<div class="check-all">
-						<v-checkbox v-model="selection.all.soils" @change="toggleAllSoils" class="d-inline" label="Select Soils" hide-details></v-checkbox>
+						<v-checkbox v-model="selection.all.soils" @change="toggleAllSoils" class="d-inline" label="Select Soils" hide-details density="comfortable"></v-checkbox>
 					</div>
 					<div class="items">
 						<div class="item" v-for="o in options.soils" :key="o.value">
-							<v-checkbox v-model="selection.soils" :value="o.value" :label="o.text" hide-details></v-checkbox>
+							<v-checkbox v-model="selection.soils" :value="o.value" :label="o.text" hide-details density="comfortable"></v-checkbox>
 						</div>
 					</div>
 				</div>
@@ -259,7 +279,7 @@
 				<div v-if="!page.loading.objects && options.objects.length > 0 && (noGis || !isHru || (options.landuse.length > 0 && options.soils.length > 0))" 
 					:class="noGis || options.subbasins.length < 1 ? 'scroll-check mb-4' : 'scroll-check mb-4 ml-3'">
 					<div class="check-all">
-						<v-checkbox v-model="selection.all.objects" @change="toggleAllObjects" class="d-inline" hide-details>
+						<v-checkbox v-model="selection.all.objects" @change="toggleAllObjects" class="d-inline" hide-details density="comfortable">
 							<template #label>
 								Select {{ name }}
 								<v-tooltip :text="`${name} in this list are based on your ${isHru ? 'subbasin/landuse/soil' : 'subbasin'} selections. Check the ${name.toLowerCase()} to which to apply your changes.`">
@@ -273,7 +293,7 @@
 					</div>
 					<div class="items">
 						<div class="item" v-for="o in options.objects" :key="o.value">
-							<v-checkbox v-model="selection.objects" :value="o.value" :label="o.text" hide-details></v-checkbox>
+							<v-checkbox v-model="selection.objects" :value="o.value" :label="o.text" hide-details density="comfortable"></v-checkbox>
 						</div>
 					</div>
 				</div>
