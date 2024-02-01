@@ -453,6 +453,7 @@
 			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" class="mr-2" :to="utilities.appendRoute('create')">Create Record</v-btn>
 			<v-btn v-if="props.showImportExport" variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import/Export</v-btn>
 			<slot name="actions"></slot>
+			<back-button></back-button>
 			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="6"
 				:length="getNumPages()" class="ml-auto" size="small"></v-pagination>
 		</action-bar>

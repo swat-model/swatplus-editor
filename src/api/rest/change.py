@@ -198,3 +198,165 @@ def calibrationId(id):
 			abort(400, message="Unexpected error {ex}".format(ex=ex))
 
 	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/water_balance', methods=['GET', 'PUT'])
+def water_balance():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+	
+	if request.method == 'GET':
+		codes = db.Codes_sft.get_or_none()
+		if codes is None:
+			codes = db.Codes_sft.create()
+
+		# Reset tables
+		if db.Wb_parms_sft.select().count() != 10:
+			db.Wb_parms_sft.delete().execute()
+			db.Wb_parms_sft.create_defaults()
+		if db.Water_balance_sft.select().count() != 1 or db.Water_balance_sft_item.select().count() != 1:
+			db.Water_balance_sft_item.delete().execute()
+			db.Water_balance_sft.delete().execute()
+			wb = db.Water_balance_sft.create(name='basin')
+			db.Water_balance_sft_item.create(water_balance_sft=wb, name='basin')
+
+		enabled = codes.hyd
+		params = [model_to_dict(v, recurse=False) for v in db.Wb_parms_sft.select()]
+		balance = model_to_dict(db.Water_balance_sft_item.get(), recurse=False)
+
+		rh.close()
+		return {
+			'enabled': enabled,
+			'params': params,
+			'balance': balance
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		codes = db.Codes_sft.get_or_none()
+		if codes is None:
+			codes = db.Codes_sft.create()
+
+		balance = db.Water_balance_sft_item.get_or_none()
+		if balance is None:
+			db.Water_balance_sft.delete().execute()
+			wb = db.Water_balance_sft.create(name='basin')
+			balance = db.Water_balance_sft_item.create(water_balance_sft=wb, name='basin')
+
+		if 'enabled' not in args or 'balance' not in args:
+			rh.close()
+			abort(400, 'Invalid request.')
+
+		if args['enabled'] == 'n':				
+			codes.hyd = 'n'
+			codes.save()
+		elif args['enabled'] == 'a':
+			codes.hyd = 'a'
+			codes.save()
+			balance.surq_rto = args['balance']['surq_rto'];
+			balance.latq_rto = args['balance']['latq_rto'];
+			balance.perc_rto = args['balance']['perc_rto'];
+			balance.et_rto = args['balance']['et_rto'];
+			balance.tileq_rto = args['balance']['tileq_rto'];
+			balance.pet = args['balance']['pet'];
+			balance.sed = 0;
+			balance.wyr = 0;
+			balance.bfr = 0;
+			balance.solp = 0;
+			balance.save()
+		elif args['enabled'] == 'b':
+			codes.hyd = 'b'
+			codes.save()
+			balance.surq_rto = 0;
+			balance.latq_rto = 0;
+			balance.perc_rto = 0;
+			balance.et_rto = 0;
+			balance.tileq_rto = 0;
+			balance.pet = 0;
+			balance.sed = 0;
+			balance.wyr = args['balance']['wyr'];
+			balance.bfr = args['balance']['bfr'];
+			balance.solp = 0;
+			balance.save()
+		
+		rh.close()
+		return '', 200
+			
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/water_balance/parms/<int:id>', methods=['PUT'])
+def waterBalanceParmsId(id):
+	if request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Wb_parms_sft, 'Water balance parameter')
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/plant_growth', methods=['GET', 'PUT'])
+def plant_growth():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+	
+	if request.method == 'GET':
+		codes = db.Codes_sft.get_or_none()
+		if codes is None:
+			codes = db.Codes_sft.create()
+
+		# Reset tables
+		if db.Plant_parms_sft.select().count() != 1 or db.Plant_gro_sft.select().count() != 1:
+			db.Plant_parms_sft_item.delete().execute()
+			db.Plant_parms_sft.delete().execute()
+			db.Plant_parms_sft.create(name='basin')
+			db.Plant_gro_sft_item.delete().execute()
+			db.Plant_gro_sft.delete().execute()
+			db.Plant_gro_sft.create(name='basin')
+
+		enabled = codes.plnt
+		plants = db.Plant_gro_sft_item.select()
+		req_pvars = ['pest_stress', 'epco', 'lai_pot', 'harv_idx']
+
+		param_parent = db.Plant_parms_sft.get()
+
+		plant_data = []
+		for p in plants:
+			params = db.Plant_parms_sft_item.select().where(db.Plant_parms_sft_item.name == p.name)
+			pvars = [v.var for v in params]
+			if set(pvars) != set(req_pvars):
+				params.delete().execute()
+				db.Plant_parms_sft_item.create(plant_parms_sft=param_parent, name=p.name, var='pest_stress', init=0, chg_typ='abschg', neg=0, pos=0, lo=0, up=0)
+				db.Plant_parms_sft_item.create(plant_parms_sft=param_parent, name=p.name, var='epco', init=0, chg_typ='abschg', neg=0, pos=0, lo=0, up=0)
+				db.Plant_parms_sft_item.create(plant_parms_sft=param_parent, name=p.name, var='lai_pot', init=0, chg_typ='abschg', neg=0, pos=0, lo=0, up=0)
+				db.Plant_parms_sft_item.create(plant_parms_sft=param_parent, name=p.name, var='harv_idx', init=0, chg_typ='abschg', neg=0, pos=0, lo=0, up=0)
+				params = db.Plant_parms_sft_item.select().where(db.Plant_parms_sft_item.name == p.name)
+			
+			param_data = [{ 'var': v.var, 'init': v.init, 'chg_typ': v.chg_typ, 'neg': v.neg, 'pos': v.pos, 'lo': v.lo, 'up': v.up } for v in params]
+			plant_data.append({ 'name': p.name, 'yld': p.yld, 'params': param_data })
+
+		rh.close()
+		return {
+			'enabled': enabled,
+			'plants': plant_data
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		codes = db.Codes_sft.get_or_none()
+		if codes is None:
+			codes = db.Codes_sft.create()
+
+		codes.plnt = args['enabled']
+		codes.save()
+
+		db.Plant_gro_sft_item.delete().execute()
+		db.Plant_parms_sft_item.delete().execute()
+
+		gro_parent = db.Plant_gro_sft.get()
+		param_parent = db.Plant_parms_sft.get()
+
+		for p in args['plants']:
+			db.Plant_gro_sft_item.create(plant_gro_sft=gro_parent, name=p['name'], yld=p['yld'])
+			for param in p['params']:
+				db.Plant_parms_sft_item.create(plant_parms_sft=param_parent, name=p['name'], var=param['var'], init=param['init'], chg_typ=param['chg_typ'], neg=param['neg'], pos=param['pos'], lo=param['lo'], up=param['up'])	
+		
+		rh.close()
+		return '', 200
+			
+	abort(405, 'HTTP Method not allowed.')

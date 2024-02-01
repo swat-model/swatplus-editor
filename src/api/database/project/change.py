@@ -1,5 +1,6 @@
 from peewee import *
 from . import base
+from database import lib as db_lib
 
 
 class Cal_parms_cal(base.BaseModel):
@@ -39,14 +40,14 @@ class Calibration_cal_elem(base.BaseModel):
 class Codes_sft(base.BaseModel):
 	#hyd_hru = BooleanField()
 	#hyd_hrulte = BooleanField()
-	landscape = BooleanField()
+	landscape = BooleanField(default=False)
 	hyd = CharField(default='n')
-	plnt = BooleanField()
-	sed = BooleanField()
-	nut = BooleanField()
-	ch_sed = BooleanField()
-	ch_nut = BooleanField()
-	res = BooleanField()
+	plnt = BooleanField(default=False)
+	sed = BooleanField(default=False)
+	nut = BooleanField(default=False)
+	ch_sed = BooleanField(default=False)
+	ch_nut = BooleanField(default=False)
+	res = BooleanField(default=False)
 
 
 class Wb_parms_sft(base.BaseModel):
@@ -57,6 +58,23 @@ class Wb_parms_sft(base.BaseModel):
 	lo = DoubleField()
 	up = DoubleField()
 
+	@classmethod
+	def create_defaults(cls):
+		items = [
+			{ 'name': 'cn2', 'chg_typ': 'abschg', 'neg': -6, 'pos': 6, 'lo': 35, 'up': 95 },
+			{ 'name': 'esco', 'chg_typ': 'abschg', 'neg': -1, 'pos': 1, 'lo': 0, 'up': 1 },
+			{ 'name': 'latq_co', 'chg_typ': 'abschg', 'neg': -1, 'pos': 1, 'lo': 0, 'up': 1 },
+			{ 'name': 'petco', 'chg_typ': 'abschg', 'neg': 0.54, 'pos': 1.85, 'lo': 0.7, 'up': 1.2 },
+			{ 'name': 'slope', 'chg_typ': 'pctchg', 'neg': -25, 'pos': 25, 'lo': 0.0001, 'up': 0.9 },
+			{ 'name': 'tconc', 'chg_typ': 'pctchg', 'neg': -30, 'pos': 30, 'lo': 5, 'up': 960 },
+			{ 'name': 'etco', 'chg_typ': 'abschg', 'neg': -0.4, 'pos': 0.4, 'lo': 0.8, 'up': 1.2 },
+			{ 'name': 'perco', 'chg_typ': 'abschg', 'neg': -0.7, 'pos': 0.7, 'lo': 0.001, 'up': 1 },
+			{ 'name': 'revapc', 'chg_typ': 'abschg', 'neg': -0.4, 'pos': 0.4, 'lo': 0, 'up': 0.4 },
+			{ 'name': 'cn3_swf', 'chg_typ': 'abschg', 'neg': -1.2, 'pos': 1.2, 'lo': 0, 'up': 1 },
+		]
+
+		db_lib.bulk_insert(base.db, cls, items)
+
 
 class Water_balance_sft(base.BaseModel):
 	name = CharField(unique=True)
@@ -65,16 +83,16 @@ class Water_balance_sft(base.BaseModel):
 class Water_balance_sft_item(base.BaseModel):
 	water_balance_sft = ForeignKeyField(Water_balance_sft, on_delete='CASCADE', related_name='items')
 	name = CharField()
-	surq_rto = DoubleField()
-	latq_rto = DoubleField()
-	perc_rto = DoubleField()
-	et_rto = DoubleField()
-	tileq_rto = DoubleField()
-	pet = DoubleField()
-	sed = DoubleField()
-	wyr = DoubleField()
-	bfr = DoubleField()
-	solp = DoubleField()
+	surq_rto = DoubleField(default=0)	#a
+	latq_rto = DoubleField(default=0)	#a
+	perc_rto = DoubleField(default=0)	#a
+	et_rto = DoubleField(default=0)		#a
+	tileq_rto = DoubleField(default=0)	#a
+	pet = DoubleField(default=0)		#a
+	sed = DoubleField(default=0)		#not used
+	wyr = DoubleField(default=0)		#b
+	bfr = DoubleField(default=0)		#b
+	solp = DoubleField(default=0)		#not used
 
 
 class Ch_sed_budget_sft(base.BaseModel):
@@ -106,12 +124,12 @@ class Plant_parms_sft_item(base.BaseModel):
 	plant_parms_sft = ForeignKeyField(Plant_parms_sft, on_delete='CASCADE', related_name='items')
 	var = CharField()
 	name = CharField()
-	init = DoubleField()
+	init = DoubleField(default=0)
 	chg_typ = CharField()  # absval, abschg, pctchg
-	neg = DoubleField()
-	pos = DoubleField()
-	lo = DoubleField()
-	up = DoubleField()
+	neg = DoubleField(default=0)
+	pos = DoubleField(default=0)
+	lo = DoubleField(default=0)
+	up = DoubleField(default=0)
 
 
 class Plant_gro_sft(base.BaseModel):
@@ -121,9 +139,9 @@ class Plant_gro_sft(base.BaseModel):
 class Plant_gro_sft_item(base.BaseModel):
 	plant_gro_sft = ForeignKeyField(Plant_gro_sft, on_delete='CASCADE', related_name='items')
 	name = CharField()
-	yld = DoubleField()
-	npp = DoubleField()
-	lai_mx = DoubleField()
-	wstress = DoubleField()
-	astress = DoubleField()
-	tstress = DoubleField()
+	yld = DoubleField(default=0)
+	npp = DoubleField(default=0)
+	lai_mx = DoubleField(default=0)
+	wstress = DoubleField(default=0)
+	astress = DoubleField(default=0)
+	tstress = DoubleField(default=0)

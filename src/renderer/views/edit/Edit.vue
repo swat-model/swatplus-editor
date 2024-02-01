@@ -144,7 +144,7 @@
 					]
 				},
 				{ 
-					name: 'Soft Calibration', path: '/edit/change/soft', show: true, routeName: 'Hard', 
+					name: 'Soft Calibration', path: '/edit/change/soft', show: true, routeName: 'SoftCalibration', 
 					subItems: [
 						{ name: 'Water Balance', path: '/edit/change/soft/wb', show: true, routeName: '', subItems: [] },
 						{ name: 'Plant Growth', path: '/edit/change/soft/plant', show: true, routeName: '', subItems: [] }
@@ -160,7 +160,7 @@
 				{ name: 'Pesticides', path: '/edit/constituents/pest', show: !currentProject.isLte, routeName: '', subItems: [] },
 				{ name: 'Pathogens', path: '/edit/constituents/path', show: !currentProject.isLte, routeName: '', subItems: [] },
 				{ 
-					name: 'Salts', path: '/edit/constituents/salt', show: !currentProject.isLte, routeName: 'Salts', 
+					name: 'Salts', path: '/edit/constituents/salt', show: false && !currentProject.isLte, routeName: 'Salts', 
 					subItems: [
 						{ name: 'Point Sources', path: '/edit/constituents/salt/recall', show: true, routeName: '', subItems: [] },
 						{ name: 'Atmospheric Deposition', path: '/edit/constituents/salt/atmo', show: true, routeName: '', subItems: [] },

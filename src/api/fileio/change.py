@@ -66,8 +66,8 @@ class Codes_sft(BaseFileModel):
 
 			with open(self.file_name, 'w') as file:
 				self.write_meta_line(file)
-				header_cols = [col(table.landscape, direction="left"),
-							   col(table.hyd, direction="left", padding_override=utils.DEFAULT_CODE_PAD),
+				header_cols = [col(table.hyd, direction="left", padding_override=utils.DEFAULT_CODE_PAD),
+							   col(table.landscape, direction="left"),
 							   col(table.plnt, direction="left"),
 							   col(table.sed, direction="left"),
 							   col(table.nut, direction="left"),
@@ -77,8 +77,8 @@ class Codes_sft(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write("\n")
 
-				utils.write_bool_yn(file, row.landscape, direction="left")
 				utils.write_code(file, row.hyd, direction="left")
+				utils.write_bool_yn(file, row.landscape, direction="left")
 				utils.write_bool_yn(file, row.plnt, direction="left")
 				utils.write_bool_yn(file, row.sed, direction="left")
 				utils.write_bool_yn(file, row.nut, direction="left")
