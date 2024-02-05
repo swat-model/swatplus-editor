@@ -294,7 +294,8 @@ ipcMain.on('globals', (event, arg) => {
 		dev_mode: DEV_MODE,
 		platform: process.platform,
 		project_db: global.project_db,
-		api_port: global.api_port
+		api_port: global.api_port,
+		locale: app.getLocale()
 	};
 })
 

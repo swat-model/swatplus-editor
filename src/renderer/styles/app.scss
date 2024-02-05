@@ -135,8 +135,8 @@ mark {
 	z-index: 450;
 
 	&.full {
-		left: 0;
-		width: 100%;
+		left: 56px;
+		width: calc(100% - 56px);
 	}
 
 	button {

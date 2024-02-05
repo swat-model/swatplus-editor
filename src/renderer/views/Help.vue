@@ -65,6 +65,7 @@
 								<tr><th class="min">API Check</th><td>{{ apiCheck.editor }}</td></tr>
 								<tr><th class="min">API Port</th><td>{{ constants.globals.api_port }}</td></tr>
 								<tr><th class="min">Development Mode</th><td>{{ constants.globals.dev_mode ? 'Yes' : 'No' }}</td></tr>
+								<tr><th class="min">Locale</th><td>{{ constants.globals.locale }}</td></tr>
 							</tbody>
 						</v-table>
 					</v-card>

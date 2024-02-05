@@ -551,7 +551,7 @@
 				<v-list-item prepend-icon="fas fa-play" to="/run">
 					<v-tooltip activator="parent" location="end">Run SWAT+</v-tooltip>
 				</v-list-item>
-				<v-list-item prepend-icon="fas fa-check" to="/output">
+				<v-list-item prepend-icon="fas fa-check" to="/check">
 					<v-tooltip activator="parent" location="end">SWAT+ Output Check</v-tooltip>
 				</v-list-item>
 			</v-list>

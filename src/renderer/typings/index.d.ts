@@ -3,6 +3,7 @@ export interface ElectronGlobals {
 	platform: string|null;
 	project_db: string|null;
 	api_port: number|null;
+	locale: string|null;
 }
 
 export interface ElectronAppSettings {
