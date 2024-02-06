@@ -175,7 +175,7 @@ def propertiesMany():
 def initial():
 	if request.method == 'GET':
 		table = Initial_aqu
-		filter_cols = [table.name, table.rtu, table.obj_typ, table.dlr]
+		filter_cols = [table.name]
 		return DefaultRestMethods.get_paged_list(table, filter_cols, True)
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)

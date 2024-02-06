@@ -4,6 +4,7 @@ import Setup from '../views/Setup.vue';
 import Help from '../views/Help.vue';
 import Edit from '../views/edit/Edit.vue';
 import Run from '../views/Run.vue';
+import Check from '../views/Check.vue';
 import TableBrowser from '../views/TableBrowser.vue';
 
 import connect from './connect';
@@ -32,6 +33,7 @@ export default createRouter({
 			children: [
 				{ path: 'help', name: 'Help', component: Help },
 				{ path: 'run', name: 'Run', component: Run },
+				{ path: 'check', name: 'Check', component: Check },
 				{ 
 					path: 'edit', name: 'Edit', component: Edit,
 					children: editRoutes

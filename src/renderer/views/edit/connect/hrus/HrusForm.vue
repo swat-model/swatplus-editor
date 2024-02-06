@@ -39,7 +39,7 @@
 			{ name: 'hyd_name', label: 'Hydrology Properties', section: 'Hydrology', file: 'hydrology.hyd', db: 'hydrology_hyd', tableName: 'hyd', routeName: 'HydrologyEdit', apiUrl: 'hydrology/hydrology'},
 			{ name: 'soil_name', label: 'Soil Properties', section: 'Soils', file: 'soils.sol', db: 'soils_sol', tableName: 'soil', routeName: 'SoilsEdit', apiUrl: 'soils/soils'},
 			{ name: 'lu_mgt_name', label: 'Land Use Management Properties', section: 'Land Use Management', file: 'landuse.lum', db: 'landuse_lum', tableName: 'lu_mgt', routeName: 'LanduseEdit', apiUrl: 'lum/landuse'},
-			{ name: 'soil_plant_init_name', label: 'Soil Plant Properties', section: 'Initialization Data / Soil Plant', file: 'soil_plant.ini', db: 'soil_plant_ini', tableName: 'soil_plant_ini', routeName: 'InitSoilPlantEdit', apiUrl: 'init/soil_plant'},
+			{ name: 'soil_plant_init_name', label: 'Soil Plant Properties', section: 'Constituents / Soil Plant', file: 'soil_plant.ini', db: 'soil_plant_ini', tableName: 'soil_plant_ini', routeName: 'ConstituentsSoilPlantEdit', apiUrl: 'init/soil_plant'},
 			{ name: 'surf_stor', label: 'Surface Storage Properties', section: 'Connections / Reservoirs / Wetlands', file: 'wetlands.wet', db: 'wetlands_wet', tableName: 'wet_res', routeName: 'ReservoirsWetlandsEdit', apiUrl: 'reservoirs/wetlands'},
 			{ name: 'snow_name', label: 'Snow Properties', section: 'Databases / Snow', file: 'snow.sno', db: 'snow_sno', tableName: 'snow', routeName: 'SnowEdit', apiUrl: 'db/snow'},
 			{ name: 'field_name', label: 'Field Properties', section: 'Hydrology / Fields', file: 'field.fld', db: 'field_fld', tableName: 'fld', routeName: 'FieldsEdit', apiUrl: 'hydrology/fields'}

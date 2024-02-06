@@ -9,6 +9,7 @@
 		variant?: "text" | "elevated" | "flat" | "tonal" | "outlined" | "plain" | undefined
 		block?: boolean,
 		icon?: string,
+		rounded?: string | number | boolean | undefined,
 		size?: string
 	}
 
@@ -21,6 +22,7 @@
 		variant: 'flat',
 		block: false,
 		icon: undefined,
+		rounded: undefined,
 		size: undefined
 	});
 
@@ -32,6 +34,6 @@
 
 <template>
 	<v-btn v-if="props.button && props.icon" @click="open" :title="filePath" :color="props.color" :variant="variant" :icon="icon" :size="size"></v-btn>
-	<v-btn v-else-if="props.button" @click="open" :title="filePath" :color="props.color" :variant="variant" :block="block" :size="size">{{ text }}<slot></slot></v-btn>
+	<v-btn v-else-if="props.button" @click="open" :title="filePath" :color="props.color" :variant="variant" :block="block" :size="size" :rounded="rounded">{{ text }}<slot></slot></v-btn>
 	<a v-else :href="filePath" @click="open" :class="class" :title="filePath">{{ text }}<slot></slot></a>
 </template>

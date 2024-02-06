@@ -6,9 +6,9 @@
 		apiUrl: 'channels/initial',
 		headers: [
 			{ key: 'name', label: 'Name' },
-			{ key: 'org_min', label: 'Organic Mineral', type: 'object', class: 'text-right', objectRoutePath: '/edit/init/om_water/edit/' },
-			{ key: 'pest', label: 'Pesticide', type: 'object', class: 'text-right', objectRoutePath: '/edit/init/constituents/pest-water/edit/' },
-			{ key: 'path', label: 'Pathogen', type: 'object', class: 'text-right', objectRoutePath: '/edit/init/constituents/path-water/edit/' },
+			{ key: 'org_min', label: 'Organic Mineral', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/om_water/edit/' },
+			{ key: 'pest', label: 'Pesticide', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/pest/', ignoreObjectRouteId: true },
+			{ key: 'path', label: 'Pathogen', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/path/', ignoreObjectRouteId: true },
 			//{ key: 'hmet', label: 'Heavy Metal', type: 'object', class: 'text-right' }, 
 			//{ key: 'salt', label: 'Salt', type: 'object', class: 'text-right' }, 
 			{ key: 'description', label: 'Description' }

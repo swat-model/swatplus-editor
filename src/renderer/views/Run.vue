@@ -425,41 +425,48 @@
 	let listeners:any = {
 		stdout: undefined,
 		stderr: undefined,
-		close: undefined
+		close: undefined,
+		stdoutSwat: undefined,
+		stderrSwat: undefined,
+		closeSwat: undefined
 	}
 
 	function initRunProcessHandlers() {
 		listeners.stdout = runProcess.processStdout('runmodel', (stdData:any) => {
-			if (data.status.model) {
-				let str = stdData.toString().trim();
-				if (!str.startsWith('Original Simulation')) {
-					data.task.progress = { percent: 5, message: 'Running SWAT+' };
-				} else {
-					let arr = str.split(' ').filter(function(el:any) { return el !== '' });
-					let yrIdx = arr.indexOf('Yr');
-					if (yrIdx > -1) {
-						let thisYr = arr[yrIdx + 1];
-						if (thisYr !== data.task.modelYear) {
-							let totalYears = data.time.yrc_end - data.time.yrc_start + 1;
-							let yrProg = data.time.yrc_start + Number(thisYr) - 1;
-							data.task.modelYear = thisYr;
-							data.task.progress = { percent: thisYr / totalYears * 100, message: `Executing model year ${yrProg} (${thisYr} of ${totalYears})` };
-						}
+			data.task.progress = runProcess.getApiOutput(stdData);
+		});
+
+		listeners.stdoutSwat = runProcess.processStdout('run-swat', (stdData:any) => {
+			let str = stdData.toString().trim();
+			if (!str.startsWith('Original Simulation')) {
+				data.task.progress = { percent: 5, message: 'Running SWAT+' };
+			} else {
+				let arr = str.split(' ').filter(function(el:any) { return el !== '' });
+				let yrIdx = arr.indexOf('Yr');
+				if (yrIdx > -1) {
+					let thisYr = arr[yrIdx + 1];
+					if (thisYr !== data.task.modelYear) {
+						let totalYears = data.time.yrc_end - data.time.yrc_start + 1;
+						let yrProg = data.time.yrc_start + Number(thisYr) - 1;
+						data.task.modelYear = thisYr;
+						data.task.progress = { percent: thisYr / totalYears * 100, message: `Executing model year ${yrProg} (${thisYr} of ${totalYears})` };
 					}
 				}
 			}
-			else data.task.progress = runProcess.getApiOutput(stdData);
 		});
 		
 		listeners.stderr = runProcess.processStderr('runmodel', async (stdData:any) => {
 			console.log(`stderr: ${stdData}`);
-			if (data.status.model) {
-				data.task.error = 'There was an error running SWAT+';
-				if (data.task.modelMessages.length > 500) data.task.modelMessages = [];
-				data.task.modelMessages.push(stdData);
-				await get();
-			}
-			else data.task.error = stdData;
+			data.task.error = stdData;
+			data.task.running = false;
+		});
+
+		listeners.stderrSwat = runProcess.processStderr('run-swat', async (stdData:any) => {
+			console.log(`stderr: ${stdData}`);
+			data.task.error = 'There was an error running SWAT+';
+			if (data.task.modelMessages.length > 500) data.task.modelMessages = [];
+			data.task.modelMessages.push(stdData);
+			await get();
 			data.task.running = false;
 		});
 		
@@ -470,7 +477,7 @@
 					runModel();
 				} else if (data.status.model) {
 					errors.log('Done model');
-					await api.put(`setup/swatrun`, {}, currentProject.getApiHeader());
+					await api.put(`setup/save-model-run`, {}, currentProject.getApiHeader());
 					if (data.selection.output) {
 						runOutput();
 					} else {
@@ -482,7 +489,7 @@
 					}
 				} else if (data.status.output) {
 					errors.log('Done output');
-					await api.put(`setup/outputread`, {}, currentProject.getApiHeader());
+					await api.put(`setup/save-output-read`, {}, currentProject.getApiHeader());
 					data.task.running = false;
 					closeTaskModals();
 					await get();
@@ -503,12 +510,31 @@
 				}
 			}
 		});
+
+		listeners.closeSwat = runProcess.processClose('run-swat', async (code:any) => {
+			if (formatters.isNullOrEmpty(data.task.error)) {
+				errors.log('Done model');
+				await api.put(`setup/save-model-run`, {}, currentProject.getApiHeader());
+				if (data.selection.output) {
+					runOutput();
+				} else {
+					data.task.running = false;
+					closeTaskModals();
+					await get();
+					data.page.completed.show = true;
+					data.task.currentPids = [];
+				}
+			}
+		});
 	}
 
 	function removeRunProcessHandlers() {
 		if (listeners.stdout) listeners.stdout();
 		if (listeners.stderr) listeners.stderr();
 		if (listeners.close) listeners.close();
+		if (listeners.stdoutSwat) listeners.stdoutSwat();
+		if (listeners.stderrSwat) listeners.stderrSwat();
+		if (listeners.closeSwat) listeners.closeSwat();
 	}
 
 	function cancelTask() {
@@ -918,12 +944,128 @@
 						<v-btn type="submit" :loading="data.page.saving" :disabled="data.page.saving || noneSelected" variant="flat" color="primary" class="mr-2">
 							Save Settings &amp; Run Selected
 						</v-btn>
-						<v-btn v-if="!formatters.isNullOrEmpty(data.config.output_last_imported) && !currentProject.isLte" type="button" variant="flat" color="primary" to="/check" class="mr-1">Run SWAT+ Check</v-btn>
-						<v-btn type="button" variant="flat" color="primary" class="mr-1" @click="data.page.saveScenario.show = true">Save Scenario</v-btn>
+						<v-btn v-if="!formatters.isNullOrEmpty(data.config.output_last_imported) && !currentProject.isLte" type="button" variant="flat" color="primary" to="/check" class="mr-2">Run SWAT+ Check</v-btn>
+						<v-btn type="button" variant="flat" color="primary" class="mr-2" @click="data.page.saveScenario.show = true">Save Scenario</v-btn>
 						<v-btn type="button" variant="flat" color="secondary" @click="utilities.exit" class="ml-auto">Exit SWAT+ Editor</v-btn>
 					</action-bar>
 				</v-form>
+
+				<v-dialog v-model="data.page.run.show" :max-width="constants.dialogSizes.lg" persistent>
+					<v-card :title="modalTitle">
+						<v-card-text>
+							<error-alert :text="data.page.run.error"></error-alert>
+							<stack-trace-error v-if="!formatters.isNullOrEmpty(data.task.error) && !data.status.model" :error-title="errorTitle" :stack-trace="data.task.error.toString()" />
+
+							<v-alert variant="tonal" type="error" icon="$error" border="start" v-if="!formatters.isNullOrEmpty(data.task.error) && data.status.model" class="mb-4">
+								{{data.task.error}}
+								<span v-if="!data.selection.debug">Please run the model in debug mode to get a detailed error report.</span>
+								<span v-else>
+									If you cannot determine the cause of the error, please copy and paste the output log below to the 
+									<open-in-browser url="https://groups.google.com/d/forum/swatplus" text="SWAT+ model user group" />.
+								</span>
+							</v-alert>
+							
+							<div v-if="data.task.running">
+								<v-progress-linear :model-value="data.task.progress.percent" color="primary" height="15" striped></v-progress-linear>
+								<p>
+									{{data.task.progress.message}}
+								</p>
+							</div>
+							<div v-if="data.status.model && !formatters.isNullOrEmpty(data.task.error)" class="scroll-bottom mt-2">
+								<pre><div v-for="(message, i) in data.task.modelMessages" :key="i">{{message}}</div></pre>
+							</div>
+						</v-card-text>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<v-btn @click="cancelTask">Cancel</v-btn>
+						</v-card-actions>
+					</v-card>
+				</v-dialog>
+
+				<v-dialog v-model="data.page.completed.show" :max-width="constants.dialogSizes.sm">
+					<v-card title="All selected tasks have completed">
+						<v-card-item>
+							<div class="mb-8">
+								<v-btn v-if="!formatters.isNullOrEmpty(data.config.output_last_imported) && !currentProject.isLte" type="button" variant="flat" color="primary" size="large" rounded="xl" to="/check" block class="my-2">Run SWAT+ Check</v-btn>
+								<swat-plus-toolbox-button v-if="!formatters.isNullOrEmpty(data.config.swat_last_run) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.swat_last_run)" variant="flat" color="primary" size="large" rounded="xl" block class="my-2" no-icon text="Open SWAT+ Toolbox"></swat-plus-toolbox-button>
+								<v-btn type="button" block variant="flat" color="primary" size="large" rounded="xl" @click="data.page.completed.show = false; data.page.saveScenario.show = true" class="my-2">Save Scenario</v-btn>
+								<open-file button block variant="flat" color="primary" size="large" rounded="xl" :file-path="currentResultsPath" class="my-2">Open Results Directory</open-file>
+								<v-row class="mt-2" no-gutters>
+									<v-col md class="mr-2"><v-btn type="button" variant="flat" color="secondary" size="large" rounded="xl" @click="data.page.completed.show = false" block class="mr-1">Back to Editor</v-btn></v-col>
+									<v-col md><v-btn type="button" variant="flat" color="secondary" size="large" rounded="xl" @click="utilities.exit" block>Exit SWAT+ Editor</v-btn></v-col>
+								</v-row>
+							</div>
+						</v-card-item>
+					</v-card>
+				</v-dialog>
+
+				<v-dialog v-model="data.page.saveScenario.show" :max-width="constants.dialogSizes.lg" persistent>
+					<v-card :title="modalTitle">
+						<v-card-text>
+							<error-alert :text="data.page.saveScenario.error"></error-alert>
+							<stack-trace-error v-if="!formatters.isNullOrEmpty(data.task.error)" error-title="There was an error saving your scenario" :stack-trace="data.task.error.toString()" />
+
+							<div v-if="data.task.running">
+								<v-progress-linear :model-value="data.task.progress.percent" color="primary" height="15" striped></v-progress-linear>
+								<p>
+									{{data.task.progress.message}}
+								</p>
+							</div>
+							<div v-else>
+								<p>
+									Saving a scenario will make a copy your project database as well as all model input and output text files.
+									We recommend running the model before saving your scenario. After saving completes, any additional changes
+									made to your project will not affect the saved scenario. 
+									You may load the saved scenario back to the editor from the 
+									<router-link to="/">project setup screen</router-link>.
+								</p>
+
+								<div class="form-group">
+									<v-text-field type="text" required v-model="data.page.saveScenario.name"
+										label="Give your scenario a unique name" 
+										hint="Will create a new folder with this name under your project's Scenarios directory. Cannot be the same name as an existing scenario." persistent-hint></v-text-field>
+								</div>
+							</div>
+
+						</v-card-text>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<v-btn v-if="formatters.isNullOrEmpty(data.task.error)" :loading="data.task.running" @click="saveScenario" color="primary" variant="text">
+								Save Scenario
+							</v-btn>
+							<v-btn @click="cancelTask">Cancel</v-btn>
+						</v-card-actions>
+					</v-card>
+				</v-dialog>
+
+				<v-dialog v-model="data.page.savedScenario.show" :max-width="constants.dialogSizes.sm">
+					<v-card title="Scenario Saved">
+						<v-card-text>
+							<p>
+								<b>Your scenario has been saved.</b>
+								Any additional changes made to your project will not affect the saved scenario. 
+								You may load the saved scenario back to the editor from the <router-link to="/">project setup screen</router-link>.
+							</p>
+						</v-card-text>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<open-file button color="primary" variant="text" :file-path="newScenarioPath">Open Scenario Directory</open-file>
+							<v-btn @click="cancelTask">Cancel</v-btn>
+						</v-card-actions>
+					</v-card>
+				</v-dialog>
 			</div>
 		</v-main>
 	</project-container>
 </template>
+
+<style scoped>
+.scroll-bottom {
+	width: 100%;
+	height: 350px;
+	border: 1px solid #ccc;
+	overflow:auto;
+	padding: 5px;
+	font-size: 0.8rem;
+}
+</style>

@@ -124,7 +124,7 @@
 				<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="nutrients_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 				<auto-complete label="Nutrients" class="flex-grow-1 flex-shrink-0"
 					v-model="item.nutrients_name" :value="item.nutrients_name" :show-item-link="props.isUpdate"
-					table-name="om_water_ini" route-name="InitOMWaterEdit"
+					table-name="om_water_ini" route-name="ConstituentsOMWaterEdit"
 					section="Soils / Nutrients" help-file="nutrients.sol" help-db="nutrients_sol"
 					api-url="soils/nutrients"></auto-complete>
 			</div>
@@ -139,7 +139,7 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="pest_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Pesticide Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.pest_name" :value="item.pest_name" :show-item-link="props.isUpdate"
-							table-name="pest_water_ini" route-name="InitPestWaterEdit"
+							table-name="pest_water_ini" route-name="ConstituentsPesticides" no-route-id
 							section="Constituents / Pesticides" help-file="pest_water.ini" help-db="pest_water_ini"
 							api-url="init/constituents/pest-water"></auto-complete>
 					</div>
@@ -149,7 +149,7 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="path_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Pathogen Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.path_name" :value="item.path_name" :show-item-link="props.isUpdate"
-							table-name="path_water_ini" route-name="InitPathWaterEdit"
+							table-name="path_water_ini" route-name="ConstituentsPathogens" no-route-id
 							section="Constituents / Pathogens" help-file="path_water.ini" help-db="path_water_ini"
 							api-url="init/constituents/path-water"></auto-complete>
 					</div>
@@ -173,7 +173,7 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="salt_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Salt Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.salt_name" :value="item.salt_name" :show-item-link="props.isUpdate"
-							table-name="salt_water_ini" route-name="InitSaltWaterEdit"
+							table-name="salt_water_ini" route-name="ConstituentsSalts" no-route-id
 							section="Constituents / Salts" help-file="salt_water.ini" helpdb="salt_water_ini"
 							api-url="init/constituents/salt-water"></auto-complete>
 					</div>

@@ -5,6 +5,7 @@ from playhouse.shortcuts import model_to_dict
 from playhouse.migrate import *
 
 from actions import import_gis
+from actions.get_swatplus_check import GetSwatplusCheck
 from database.project import config, gis, climate, connect, simulation, regions
 from database import lib
 
@@ -297,6 +298,18 @@ def putOutputRead():
 	except config.Project_config.DoesNotExist:
 		rh.close()
 		abort(404, "Could not retrieve project configuration data.")
+
+@bp.route('/swatplus-check', methods=['PUT'])
+def putSwatplusCheck():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	args = request.json
+	if 'output_db' not in args: abort(400, 'Output database file was omitted from the request.')
+
+	api = GetSwatplusCheck(project_db, args['output_db'])
+	return api.get(), 200
 
 """
 Helper functions

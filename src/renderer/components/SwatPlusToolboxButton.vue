@@ -5,10 +5,30 @@
 	const { constants, formatters, currentProject, utilities } = useHelpers();
 
 	const electron = window.electronApi;
-	const props = defineProps({
-		text: { type: String, required: false, default: 'SWAT+ Toolbox' },
-		ranSwat: { type: Boolean, required: false, default: false }
-	})
+
+	interface Props {
+		text?: string | null,
+		ranSwat?: boolean,
+		noIcon?: boolean,
+		variant?: "text" | "elevated" | "flat" | "tonal" | "outlined" | "plain" | undefined,
+		color?: string | undefined,
+		block?: boolean,
+		rounded?: string | number | boolean | undefined,
+		size?: string | number | undefined,
+		class?: string | undefined
+	}
+
+	const props = withDefaults(defineProps<Props>(), {
+		text: 'SWAT+ Toolbox',
+		ranSwat: false,
+		noIcon: false,
+		variant: undefined,
+		color: undefined,
+		block: false,
+		rounded: undefined,
+		size: undefined,
+		class: undefined
+	});
 
 	let unavailable = reactive({
 		show: false,
@@ -45,12 +65,15 @@
 </script>
 
 <template>
-	<v-btn v-if="constants.globals.platform === 'win32'" @click="open" :active="false">
+	<v-btn v-if="constants.globals.platform === 'win32' && !noIcon" @click="open" :active="false">
 		<v-icon>fas fa-toolbox</v-icon> {{ props.text }}
+	</v-btn>
+	<v-btn v-else-if="constants.globals.platform === 'win32' && noIcon" @click="open" :variant="variant" :color="color" :block="block" :rounded="rounded" :size="size" :class="class">
+		{{ props.text }}
 	</v-btn>
 
 	<v-dialog v-model="unavailable.show" width="auto">
-		<v-card>
+		<v-card :title="unavailableTitle">
 			<v-card-text>
 				<p v-if="unavailable.norun" class="py-5">
 					You must run the model before opening your project in SWAT+ Toolbox.

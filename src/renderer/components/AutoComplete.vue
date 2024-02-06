@@ -23,7 +23,8 @@
 		showItemLink?: boolean,
 		customSearchUrl?: string,
 		hideDetails?: boolean,
-		disabled?: boolean
+		disabled?: boolean,
+		noRouteId?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -42,7 +43,8 @@
 		showItemLink: false,
 		customSearchUrl: '',
 		hideDetails: false,
-		disabled: false
+		disabled: false,
+		noRouteId: false
 	});
 
 	let model = ref(props.value);
@@ -87,7 +89,10 @@
 				const response = await utilities.getAutoCompleteId(props.tableName, name);
 				var id = response.data.id;
 				
-				router.push({ name: props.routeName, params: { id: id }});
+				if (props.noRouteId)
+					router.push({ name: props.routeName });
+				else
+					router.push({ name: props.routeName, params: { id: id }});
 			} catch (error) {
 				errors.logError(error, `Cannot find ${name} in database table ${props.tableName}.`);
 			}

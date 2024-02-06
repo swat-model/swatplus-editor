@@ -119,14 +119,14 @@
 				<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="org_min_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 				<auto-complete label="Organic Mineral Properties" class="flex-grow-1 flex-shrink-0"
 					v-model="item.org_min_name" :value="item.org_min_name" :show-item-link="props.isUpdate"
-					table-name="om_water_ini" route-name="InitOMWaterEdit"
-					section="Initialization Data / Organic Mineral" help-file="om_water.ini" help-db="om_water_ini"
+					table-name="om_water_ini" route-name="ConstituentsOMWaterEdit"
+					section="Constituents / Organic Mineral" help-file="om_water.ini" help-db="om_water_ini"
 					api-url="init/om_water"></auto-complete>
 			</div>
 
 			<v-alert type="info" variant="tonal" class="mb-4">
 				For the fields below, you must enable and set up your data in the 
-				<router-link to="/edit/init/constituents" class="text-primary">Initialization / Constituents</router-link> section.
+				Constituents section.
 			</v-alert>
 
 			<v-row>
@@ -135,8 +135,8 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="pest_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Pesticide Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.pest_name" :value="item.pest_name" :show-item-link="props.isUpdate"
-							table-name="pest_water_ini" route-name="InitPestWaterEdit"
-							section="Initialization Data / Pesticides Water" help-file="pest_water.ini" help-db="pest_water_ini"
+							table-name="pest_water_ini" route-name="ConstituentsPesticides" no-route-id
+							section="Constituents / Pesticides Water" help-file="pest_water.ini" help-db="pest_water_ini"
 							api-url="init/constituents/pest-water"></auto-complete>
 					</div>
 				</v-col>
@@ -145,8 +145,8 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="path_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Pathogen Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.path_name" :value="item.path_name" :show-item-link="props.isUpdate"
-							table-name="path_water_ini" route-name="InitPathWaterEdit"
-							section="Initialization Data / Pathogens Water" help-file="path_water.ini" help-db="path_water_ini"
+							table-name="path_water_ini" route-name="ConstituentsPathogens" no-route-id
+							section="Constituents / Pathogens Water" help-file="path_water.ini" help-db="path_water_ini"
 							api-url="init/constituents/path-water"></auto-complete>
 					</div>
 				</v-col>
@@ -160,7 +160,7 @@
 						<auto-complete label="Heavy Metal Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.hmet_name" :value="item.hmet_name" :show-item-link="props.isUpdate"
 							table-name="hmet_water_ini" route-name="InitHmetWaterEdit"
-							section="Initialization Data / Heavy Metals Water" help-file="hmet_water.ini" help-db="hmet_water_ini"
+							section="Constituents / Heavy Metals Water" help-file="hmet_water.ini" help-db="hmet_water_ini"
 							api-url="init/constituents/hmet-water"></auto-complete>
 					</div>
 				</v-col>
@@ -169,8 +169,8 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="salt_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Pathogen Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.salt_name" :value="item.salt_name" :show-item-link="props.isUpdate"
-							table-name="salt_water_ini" route-name="InitSaltWaterEdit"
-							section="Initialization Data / Salt Water" help-file="salt_water.ini" helpdb="salt_water_ini"
+							table-name="salt_water_ini" route-name="ConstituentsSalts" no-route-id
+							section="Constituents / Salt Water" help-file="salt_water.ini" helpdb="salt_water_ini"
 							api-url="init/constituents/salt-water"></auto-complete>
 					</div>
 				</v-col>

@@ -412,7 +412,7 @@
 							<div v-else-if="header.type === 'object'">
 								<span v-if="formatters.isNullOrEmpty(item[header.key])">-</span>
 								<router-link v-else-if="!formatters.isNullOrEmpty(header.objectRoutePath)" class="text-primary text-decoration-none" 
-									:to="`${header.objectRoutePath}${item[header.objectValueField||'id']}`">
+									:to="`${header.objectRoutePath}${header.ignoreObjectRouteId ? '' : item[header.objectValueField||'id']}`">
 									{{ item[header.key][header.objectTextField||'name'] }}
 								</router-link>
 								<span v-else>

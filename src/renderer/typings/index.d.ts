@@ -32,6 +32,7 @@ export interface GridViewHeader {
 	objectValueField?: string|null;
 	objectTextField?: string|null;
 	objectRoutePath?: string|null;
+	ignoreObjectRouteId?: boolean|null;
 	filePath?: string|null;
 	defaultIfNull?: string|null;
 	formatter?: (value:any) => string;
