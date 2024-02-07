@@ -4,6 +4,7 @@ export interface ElectronGlobals {
 	project_db: string|null;
 	api_port: number|null;
 	locale: string|null;
+	swat_path: string|null;
 }
 
 export interface ElectronAppSettings {

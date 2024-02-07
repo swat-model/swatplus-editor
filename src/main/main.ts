@@ -79,6 +79,10 @@ const getScriptPath = (scriptName = 'swatplus_rest_api') => {
 	}
 }
 
+const getSwatExeDirectory = () => {
+	return join(app.getAppPath(), 'static', 'swat_exe').replace('app.asar', 'app.asar.unpacked');
+}
+
 const getSwatExeFile = (debug:boolean) => {
 	let d = debug ? 'debug' : 'rel';
 	if (process.platform === 'linux') d += '_linux';
@@ -295,7 +299,8 @@ ipcMain.on('globals', (event, arg) => {
 		platform: process.platform,
 		project_db: global.project_db,
 		api_port: global.api_port,
-		locale: app.getLocale()
+		locale: app.getLocale(),
+		swat_path: getSwatExeDirectory(),
 	};
 })
 

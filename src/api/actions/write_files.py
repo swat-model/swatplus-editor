@@ -19,10 +19,13 @@ NULL_FILE = "null"
 
 
 class WriteFiles(ExecutableApi):
-	def __init__(self, project_db_file, swat_version):
+	def __init__(self, project_db_file, swat_version, ignored_files=[], ignored_cio_files=[], custom_cio_files=[]):
 		self.__abort = False
 		SetupProjectDatabase.init(project_db_file)
 		self.project_db = project_base.db
+		self.ignored_files = ignored_files if ignored_files is not None else []
+		self.ignored_cio_files = ignored_cio_files if ignored_cio_files is not None else []
+		self.custom_cio_files = custom_cio_files if custom_cio_files is not None else []
 
 		try:
 			config = Project_config.get()
@@ -139,7 +142,7 @@ class WriteFiles(ExecutableApi):
 			total += step
 
 			self.update_file_status(total, "file.cio")
-			config.File_cio(os.path.join(self.__dir, "file.cio"), self.__version, self.__swat_version).write()
+			config.File_cio(os.path.join(self.__dir, "file.cio"), self.__version, self.__swat_version, self.ignored_cio_files, self.custom_cio_files).write()
 
 			Project_config.update(input_files_last_written=datetime.now(), swat_last_run=None, output_last_imported=None).execute()
 		except ValueError as err:
@@ -151,7 +154,8 @@ class WriteFiles(ExecutableApi):
 		try:
 			c = File_cio_classification.get(File_cio_classification.name == section)
 			m = project_file_cio.select().where(project_file_cio.classification == c).order_by(project_file_cio.order_in_class)
-			file_names = [v.file_name for v in m]
+			file_names = [v.file_name if v.file_name not in self.ignored_files else NULL_FILE for v in m]
+			#sys.stdout.write(','.join(file_names))
 		except File_cio_classification.DoesNotExist:
 			pass
 		except project_file_cio.DoesNotExist:

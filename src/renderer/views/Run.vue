@@ -29,6 +29,10 @@
 			},
 			savedScenario: {
 				show: false
+			},
+			inputs: {
+				show: false,
+				maxCols: 20
 			}
 		},
 		hasImportedWeather: false,
@@ -68,6 +72,12 @@
 				csvout: false
 			},
 			objects: []
+		},
+		file_cio: [],
+		inputs: {
+			ignore_files: [],
+			ignore_cio_files: [],
+			custom_cio_files: []
 		},
 		options: {
 			timeSteps: [
@@ -240,6 +250,14 @@
 			data.print = response.data.print;
 			data.hasImportedWeather = response.data.imported_weather;
 			data.hasObservedWeather = response.data.has_observed_weather;
+			data.file_cio = response.data.file_cio;
+			data.inputs = response.data.inputs;
+
+			let cols = 0;
+			for (let cat of data.file_cio) {
+				if (cat.files.length > cols) cols = cat.files.length;
+			}
+			data.page.inputs.maxCols = cols;
 
 			data.timeDisplay.startDate = getDateStringFromTime(data.time.day_start, data.time.yrc_start);
 			data.timeDisplay.endDate = getDateStringFromTime(data.time.day_end, data.time.yrc_end, true);
@@ -302,7 +320,8 @@
 					input_files_dir: data.config.input_files_dir.replace(/\\/g,"/"),
 					time: data.time,
 					print: data.print.prt,
-					print_objects: data.print.objects
+					print_objects: data.print.objects,
+					inputs: data.inputs
 				};
 				await api.put(`setup/run-settings`, infoData, currentProject.getApiHeader());
 				data.page.validated = false;
@@ -346,6 +365,10 @@
 			'--project_db_file='+ currentProject.projectDb, 
 			'--swat_version='+ constants.appSettings.swatplus
 		];
+
+		if (data.inputs.ignore_files.length > 0) args.push(`--ignore_files=${data.inputs.ignore_files.join(',')}`);
+		if (data.inputs.ignore_cio_files.length > 0) args.push(`--ignore_cio_files=${data.inputs.ignore_cio_files.join(',')}`);
+		if (data.inputs.custom_cio_files.length > 0) args.push(`--custom_cio_files=${data.inputs.custom_cio_files.join(',')}`);
 
 		runTask(false, args, '', false);
 	}
@@ -438,20 +461,25 @@
 
 		listeners.stdoutSwat = runProcess.processStdout('run-swat', (stdData:any) => {
 			let str = stdData.toString().trim();
-			if (!str.startsWith('Original Simulation')) {
-				data.task.progress = { percent: 5, message: 'Running SWAT+' };
-			} else {
-				let arr = str.split(' ').filter(function(el:any) { return el !== '' });
-				let yrIdx = arr.indexOf('Yr');
-				if (yrIdx > -1) {
-					let thisYr = arr[yrIdx + 1];
-					if (thisYr !== data.task.modelYear) {
-						let totalYears = data.time.yrc_end - data.time.yrc_start + 1;
-						let yrProg = data.time.yrc_start + Number(thisYr) - 1;
-						data.task.modelYear = thisYr;
-						data.task.progress = { percent: thisYr / totalYears * 100, message: `Executing model year ${yrProg} (${thisYr} of ${totalYears})` };
-					}
+			let arr = str.split(' ').filter(function(el:any) { return el !== '' });
+			let yrIdx = arr.indexOf('Yr');
+			if (yrIdx > -1) {
+				let thisYr = arr[yrIdx + 1];
+				if (thisYr !== data.task.modelYear) {
+					let modelStr = '';
+					try {
+						for (let i = 0; i < yrIdx - 3; i++) {
+							modelStr += arr[i] + ' ';
+						}
+					} catch (error) { modelStr = 'model'; }
+
+					let totalYears = data.time.yrc_end - data.time.yrc_start + 1;
+					let yrProg = data.time.yrc_start + Number(thisYr) - 1;
+					data.task.modelYear = thisYr;
+					data.task.progress = { percent: thisYr / totalYears * 100, message: `Executing ${formatters.toLower(modelStr)} year ${yrProg} (${thisYr} of ${totalYears})` };
 				}
+			} else {
+				data.task.progress = { percent: 5, message: 'Running SWAT+' };
 			}
 		});
 		
@@ -622,6 +650,10 @@
 	function printIndex(name:any) {
 		return data.print.objects.findIndex((x:any) => { return x.name === name});
 	}
+
+	function inputCustomizationColor(name:any) {
+		return data.inputs.ignore_files.includes(name) || data.inputs.ignore_cio_files.includes(name) || data.inputs.custom_cio_files.includes(name) ? 'primary' : undefined;
+	}
 </script>
 
 <template>
@@ -656,6 +688,9 @@
 									<select-folder-input v-model="data.config.input_files_dir" :value="data.config.input_files_dir"
 										label="Directory to write your input files"
 										required invalidFeedback="Please select a folder"></select-folder-input>
+								</div>
+								<div>
+									<v-btn @click="data.page.inputs.show = true" variant="flat" class="border">Advanced: Customize files to write...</v-btn>
 								</div>
 							</v-expansion-panel-text>
 						</v-expansion-panel>
@@ -907,7 +942,10 @@
 									<v-checkbox density="compact" hide-details v-model="data.selection.model" id="select_model"></v-checkbox>
 								</div>
 								<div class="pt-1">
-									<label for="select_model"><b>Run SWAT+ rev. {{ constants.appSettings.swatplus }}</b></label>
+									<label for="select_model">
+										Run SWAT+ rev. {{ constants.appSettings.swatplus }}
+										<open-file :file-path="constants.globals.swat_path" class="text-secondary"><font-awesome-icon :icon="['fas', 'fa-folder-open']" class="ml-1"></font-awesome-icon></open-file>
+									</label>
 									<span class="text-secondary" v-if="!formatters.isNullOrEmpty(data.config.swat_last_run)">
 										<br>Last run {{ formatters.toDate(data.config.swat_last_run) }}
 									</span>
@@ -1054,6 +1092,63 @@
 						</v-card-actions>
 					</v-card>
 				</v-dialog>
+
+				<v-dialog v-model="data.page.inputs.show" scrollable>
+					<v-card title="Customize input files to write">
+						<v-card-text>
+							<p>
+								By default, the editor will write all SWAT+ input files determined by your model setup.
+								If you are modifying any files outside of the editor, you may choose to skip writing them below.
+								Be sure the files still exist in your input file directory, otherwise the model will crash.
+								You may also choose to ignore input files entirely by selecting not to write to the file.cio.
+								This option is not recommended for novice users and may break your model.
+							</p>
+
+							<v-table small density="compact">
+								<thead>
+									<tr class="bg-secondary-tonal">
+										<th>Category</th>
+										<th :colspan="data.page.inputs.maxCols">Files</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="cat in data.file_cio" :key="cat.category">
+										<td><b>{{cat.category}}</b></td>
+										<td v-for="f in cat.files" :key="f.name" style="white-space: nowrap;">
+											<v-btn variant="text" append-icon="fas fa-angle-down" class="plain-button" :color="inputCustomizationColor(f.name)">
+												{{ f.available ? f.name : 'none' }}
+												<v-menu activator="parent">
+													<v-card>
+														<v-card-item>
+															<label class="d-flex align-center" v-if="f.available">
+																<div style="width:30px"><v-checkbox hide-details v-model="data.inputs.ignore_files" :value="f.name" density="compact"></v-checkbox></div>
+																<div>provide my own {{ f.name }}</div>
+															</label>
+															<label class="d-flex align-center" v-if="f.available">
+																<div style="width:30px"><v-checkbox hide-details v-model="data.inputs.ignore_cio_files" :value="f.name" density="compact"></v-checkbox></div>
+																<div>exclude {{ f.name }} from file.cio</div>
+															</label>
+															<label class="d-flex align-center" v-if="!f.available">
+																<div style="width:30px"><v-checkbox hide-details v-model="data.inputs.custom_cio_files" :value="f.name" density="compact"></v-checkbox></div>
+																<div>provide my own {{ f.name }}</div>
+															</label>
+														</v-card-item>
+													</v-card>
+													
+												</v-menu>
+											</v-btn>
+										</td>
+										<td v-if="cat.files.length < data.page.inputs.maxCols" :colspan="data.page.inputs.maxCols - cat.files.length"></td>
+									</tr>
+								</tbody>
+							</v-table>
+						</v-card-text>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<v-btn @click="data.page.inputs.show = false" color="primary">Save &amp; Close</v-btn>
+						</v-card-actions>
+					</v-card>
+				</v-dialog>
 			</div>
 		</v-main>
 	</project-container>
@@ -1067,5 +1162,10 @@
 	overflow:auto;
 	padding: 5px;
 	font-size: 0.8rem;
+}
+
+.plain-button {
+	text-transform:lowercase; 
+	letter-spacing: normal;
 }
 </style>

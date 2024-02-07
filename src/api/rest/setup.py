@@ -8,10 +8,15 @@ from actions import import_gis
 from actions.get_swatplus_check import GetSwatplusCheck
 from database.project import config, gis, climate, connect, simulation, regions
 from database import lib
+from fileio import config as fileio_config
 
 from helpers import utils
 from datetime import datetime
 import os.path
+
+FILE_CIO_DEFAULT = 0
+FILE_CIO_USER_PROVIDED = 1
+FILE_CIO_NONE = 2
 
 bp = Blueprint('setup', __name__, url_prefix='/setup')
 
@@ -21,7 +26,7 @@ def getConfig():
 	has_db,error = rh.init(project_db)
 	if not has_db: abort(400, error)
 
-	check_config(project_db)
+	automatic_updates(project_db)
 	m = config.Project_config.get_or_none()
 
 	rh.close()
@@ -97,6 +102,8 @@ def getInfo():
 		rh.close()
 		abort(400, 'Could not retrieve project configuration table.')
 	else:
+		automatic_updates(project_db)
+
 		gis_type = 'GIS'
 		if m.gis_type == 'qgis':
 			gis_type = 'QSWAT+'
@@ -168,6 +175,45 @@ def getInfo():
 		rh.close()
 		return jsonify(info)
 	
+def getFileCio():
+	is_lte = False
+	c = config.Project_config.get_or_none()
+	if c is not None:
+		is_lte = c.is_lte
+
+	ignore = ['pcp_path', 'tmp_path', 'slr_path', 'hmd_path', 'wnd_path']
+	classes = config.File_cio_classification.select().where(config.File_cio_classification.name.not_in(ignore)).order_by(config.File_cio_classification.id)
+	files = config.File_cio.select().order_by(config.File_cio.order_in_class)
+	query = prefetch(classes, files)
+
+	classifications = fileio_config.File_cio('').get_classifications(is_lte)
+	data = []
+	ignore_files = []
+	ignore_cio_files = []
+	custom_cio_files = []
+	for row in query:
+		item = {}
+		item['category'] = row.name
+		conditions = classifications.get(row.name, {})
+		item_files = []
+		for f in row.files:
+			avail = conditions.get(f.order_in_class, False)
+			item_files.append({ 'name': f.file_name, 'available': avail})
+			if f.customization == FILE_CIO_USER_PROVIDED and avail:
+				ignore_files.append(f.file_name)
+			elif f.customization == FILE_CIO_USER_PROVIDED and not avail:
+				custom_cio_files.append(f.file_name)
+			elif f.customization == FILE_CIO_NONE:
+				ignore_cio_files.append(f.file_name)
+		item['files'] = item_files
+		data.append(item)
+	return {
+		'data': data,
+		'ignore_files': ignore_files,
+		'ignore_cio_files': ignore_cio_files,
+		'custom_cio_files': custom_cio_files
+	}
+
 @bp.route('/run-settings', methods=['GET'])
 def getRunSettings():
 	project_db = request.headers.get(rh.PROJECT_DB)
@@ -189,12 +235,20 @@ def getRunSettings():
 
 		prt = {'prt': prt, 'objects': objects}
 
+		cioSettings = getFileCio()
+
 		model = {
 			'config': conf,
 			'time': time,
 			'print': prt,
 			'imported_weather': climate.Weather_sta_cli.select().count() > 0 and climate.Weather_wgn_cli.select().count() > 0,
-			'has_observed_weather': climate.Weather_sta_cli.observed_count() > 0
+			'has_observed_weather': climate.Weather_sta_cli.observed_count() > 0,
+			'file_cio': cioSettings['data'],
+			'inputs': {
+				'ignore_files': cioSettings['ignore_files'],
+				'ignore_cio_files': cioSettings['ignore_cio_files'],
+				'custom_cio_files': cioSettings['custom_cio_files']
+			}
 		}
 
 		rh.close()
@@ -248,6 +302,14 @@ def putRunSettings():
 					yearly=o['yearly'],
 					avann=o['avann']
 				).where(simulation.Print_prt_object.id == o['id']).execute()
+
+		if 'inputs' in args:
+			ignore_files = args['inputs']['ignore_files']
+			ignore_cio_files = args['inputs']['ignore_cio_files']
+			custom_cio_files = args['inputs']['custom_cio_files']
+			config.File_cio.update(customization=FILE_CIO_DEFAULT).execute()
+			config.File_cio.update(customization=FILE_CIO_USER_PROVIDED).where((config.File_cio.file_name.in_(ignore_files)) | (config.File_cio.file_name.in_(custom_cio_files))).execute()			
+			config.File_cio.update(customization=FILE_CIO_NONE).where(config.File_cio.file_name.in_(ignore_cio_files)).execute()
 
 		rh.close()
 		if result > 0:
@@ -315,8 +377,17 @@ def putSwatplusCheck():
 Helper functions
 """
 
-def check_config(project_db):
+def automatic_updates(project_db):
 	conn = lib.open_db(project_db)
+	if lib.exists_table(conn, 'file_cio'):
+		config_cols = lib.get_column_names(conn, 'file_cio')
+		col_names = [v['name'] for v in config_cols]
+		if 'customization' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('file_cio', 'customization', IntegerField(default=0)),
+			)
+
 	if lib.exists_table(conn, 'project_config'):
 		config_cols = lib.get_column_names(conn, 'project_config')
 		col_names = [v['name'] for v in config_cols]

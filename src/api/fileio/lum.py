@@ -65,13 +65,22 @@ class Management_sch(BaseFileModel):
 		i += 1  # Next line
 		max_auto_lines = i + num_auto
 		while i < max_auto_lines:
-			mgt_auto_name = lines[i].strip()
+			dtable_data = lines[i].strip().split()
+			mgt_auto_name = dtable_data[0]
+			plant1 = None
+			plant2 = None
+			if len(dtable_data) > 1:
+				plant1 = dtable_data[1]
+				if len(dtable_data) > 2:
+					plant2 = dtable_data[2]
 			try:
 				d = self.d_table_dtl.get(self.d_table_dtl.name == mgt_auto_name)
 				
 				self.mgt_sch_auto.create(
 					management_sch=sch.id,
-					d_table=d.id
+					d_table=d.id,
+					plant1=plant1,
+					plant2=plant2
 				)
 			except self.d_table_dtl.DoesNotExist:
 				raise ValueError('Decision table {name} does not exist.'.format(name=mgt_auto_name))

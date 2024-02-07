@@ -8,10 +8,12 @@ from database.project import simulation, climate, connect, channel, reservoir, r
 
 
 class File_cio(BaseFileModel):
-	def __init__(self, file_name, version=None, swat_version=None):
+	def __init__(self, file_name, version=None, swat_version=None, ignored_files=[], custom_files=[]):
 		self.file_name = file_name
 		self.version = version
 		self.swat_version = swat_version
+		self.ignored_files = ignored_files
+		self.custom_files = custom_files
 	
 	def read(self):
 		raise NotImplementedError('Reading not implemented yet.')
@@ -38,7 +40,9 @@ class File_cio(BaseFileModel):
 				conditions = classifications.get(row.name, {})
 				
 				for f in row.files:
-					file_name = f.file_name if conditions.get(f.order_in_class, False) else null_str
+					file_name = f.file_name if conditions.get(f.order_in_class, False) or f.file_name in self.custom_files else null_str
+					if f.file_name in self.ignored_files:
+						file_name = null_str
 					
 					if file_name is None or file_name == "":
 						file_name = null_str

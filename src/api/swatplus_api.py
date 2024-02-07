@@ -74,6 +74,11 @@ if __name__ == '__main__':
 	parser.add_argument("--day_end", type=str, help="ending day of simulation (omit to use weather files dates)", nargs="?")
 	parser.add_argument("--input_files_dir", type=str, help="full path of where to write input files, defaults to Scenarios/Default/TxtInOut", nargs="?")
 
+	# write files
+	parser.add_argument("--ignore_files", type=lambda s: [item for item in s.split(',')], help="list of file names to not write", nargs="?")
+	parser.add_argument("--ignore_cio_files", type=lambda s: [item for item in s.split(',')], help="list of file names to not include in file.cio", nargs="?")
+	parser.add_argument("--custom_cio_files", type=lambda s: [item for item in s.split(',')], help="list of file names of user-created files to add to file.cio", nargs="?")
+
 	args = parser.parse_args()
 
 	del_ex = True if args.delete_existing == "y" else False
@@ -112,7 +117,7 @@ if __name__ == '__main__':
 		api = ReadOutput(args.output_files_dir, args.output_db_file, args.swat_version, args.editor_version, args.project_name)
 		api.read()
 	elif args.action == "write_files":
-		api = WriteFiles(args.project_db_file, args.swat_version)
+		api = WriteFiles(args.project_db_file, args.swat_version, args.ignore_files, args.ignore_cio_files, args.custom_cio_files)
 		api.write()
 	elif args.action == "create_database":
 		if args.db_type == "datasets":

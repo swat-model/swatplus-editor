@@ -302,9 +302,9 @@
 		});
 		
 		listeners.close = runProcess.processClose('gridview', async (code:any) => {
-			console.log(`close: ${code}`);
+			errors.log(`close: ${code}`);
 			if (formatters.isNullOrEmpty(task.error)) {
-				if (page.import.type === 'export_csv') {
+				if (page.import.form.type === 'export_csv') {
 					task.running = false;
 					closeTaskModals();
 					page.exported.show = true;

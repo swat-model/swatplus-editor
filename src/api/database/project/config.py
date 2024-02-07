@@ -1,7 +1,6 @@
 from peewee import *
 from . import base
 
-
 class File_cio_classification(base.BaseModel):
 	name = CharField()
 
@@ -10,6 +9,7 @@ class File_cio(base.BaseModel):
 	classification = ForeignKeyField(File_cio_classification, on_delete='CASCADE', related_name='files')
 	order_in_class = IntegerField()
 	file_name = CharField()
+	customization = IntegerField(default=0)
 
 
 class Project_config(base.BaseModel):
