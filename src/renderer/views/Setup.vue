@@ -266,20 +266,24 @@
 		page.edit.saving = true;
 		page.edit.error = null;
 
-		try {
-			let data = {
-				'name': formatters.toValidName(page.edit.name),
-				'description': formatters.toValidName(page.edit.description)
-			};
+		if (formatters.isNullOrEmpty(page.edit.name)) {
+			page.edit.error = 'Please enter a name for your project.';
+		} else {
+			try {
+				let data = {
+					'name': formatters.toValidName(page.edit.name),
+					'description': formatters.toValidName(page.edit.description)
+				};
 
-			const response = await api.put(`setup/config`, data, currentProject.getApiHeader());
-			errors.log(response.data);
-			currentProject.name = data.name;
-			currentProject.description = data.description;
-			page.edit.show = false;
-			await loadProject(currentProject.getObject());
-		} catch (error) {
-			page.edit.error = errors.logError(error, 'Unable to save changes.');
+				const response = await api.put(`setup/config`, data, currentProject.getApiHeader());
+				errors.log(response.data);
+				currentProject.name = data.name;
+				currentProject.description = data.description;
+				page.edit.show = false;
+				await loadProject(currentProject.getObject());
+			} catch (error) {
+				page.edit.error = errors.logError(error, 'Unable to save changes.');
+			}
 		}
 		
 		page.edit.saving = false;
@@ -681,7 +685,7 @@
 									<v-card>
 										<v-list density="compact">
 											<v-list-subheader class="text-uppercase">Project Status</v-list-subheader>
-											<v-list-item to="/edit/stations">
+											<v-list-item to="/edit/climate/stations">
 												<template #prepend>
 													<v-icon :color="info.status.imported_weather ? 'success' : 'plain'">{{ info.status.imported_weather ? 'fas fa-check' : 'fas fa-minus' }}</v-icon>
 												</template>
@@ -773,27 +777,27 @@
 												</tr>
 												<tr v-if="info.totals.lhru > 0">
 													<td class="text-right min">{{info.totals.lhru}}</td>
-													<td><router-link class="text-primary" to="/edit/hrus-lte">HRUs</router-link></td>
+													<td><router-link class="text-primary" to="/edit/cons/hrus-lte">HRUs</router-link></td>
 												</tr>
 												<tr v-else>
 													<td class="text-right min">{{info.totals.hru}}</td>
-													<td><router-link class="text-primary" to="/edit/hrus">HRUs</router-link></td>
+													<td><router-link class="text-primary" to="/edit/cons/hrus">HRUs</router-link></td>
 												</tr>
 												<tr>
 													<td class="text-right min">{{info.totals.cha > 0 ? info.totals.cha : info.totals.lcha}}</td>
-													<td><router-link class="text-primary" to="/edit/channels">Channels</router-link></td>
+													<td><router-link class="text-primary" to="/edit/cons/channels">Channels</router-link></td>
 												</tr>
 												<tr v-if="!info.is_lte">
 													<td class="text-right min">{{info.totals.aqu}}</td>
-													<td><router-link class="text-primary" to="/edit/aquifers">Aquifers</router-link></td>
+													<td><router-link class="text-primary" to="/edit/cons/aquifers">Aquifers</router-link></td>
 												</tr>
 												<tr v-if="!info.is_lte">
 													<td class="text-right min">{{info.totals.res}}</td>
-													<td><router-link class="text-primary" to="/edit/reservoirs">Reservoirs</router-link></td>
+													<td><router-link class="text-primary" to="/edit/cons/reservoirs">Reservoirs</router-link></td>
 												</tr>
 												<tr v-if="!info.is_lte">
 													<td class="text-right min">{{info.totals.rtu}}</td>
-													<td><router-link class="text-primary" to="/edit/routing_unit">Routing Units</router-link></td>
+													<td><router-link class="text-primary" to="/edit/cons/routing-units">Routing Units</router-link></td>
 												</tr>
 												<tr>
 													<td class="text-right min">{{info.totals.lsus}}</td>
@@ -801,7 +805,7 @@
 												</tr>
 												<tr v-if="!info.is_lte">
 													<td class="text-right min">{{info.totals.rec}}</td>
-													<td><router-link class="text-primary" to="/edit/recall">Point Sources / Inlets</router-link></td>
+													<td><router-link class="text-primary" to="/edit/cons/recall">Point Sources / Inlets</router-link></td>
 												</tr>
 											</tbody>
 										</v-table>

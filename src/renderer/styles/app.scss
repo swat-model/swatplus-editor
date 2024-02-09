@@ -139,6 +139,11 @@ mark {
 		width: calc(100% - 56px);
 	}
 
+	&.fullest {
+		left: 0;
+		width: 100%;
+	}
+
 	button {
 		margin-top: 7px;
 		margin-bottom: 7px;

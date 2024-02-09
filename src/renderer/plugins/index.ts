@@ -80,6 +80,10 @@ export function registerPlugins(app: App) {
 				fontSize: '16px',
 				fontWeight: 'bold'
 			}
+		},
+		credits: {
+			text: '<a href="https://www.highcharts.com" target="_blank">Highcharts.com</a>',
+			href: ''
 		}
 	});
 	HighchartsMore(Highcharts);

@@ -296,7 +296,7 @@
 
 					<p>
 						Any SWAT+ features not available through the editor can be modified manually through the text input files.
-						Edit your data as needed through the editor, then proceed to the <router-link to="/runall" class="text-primary">Run SWAT+</router-link> section. 
+						Edit your data as needed through the editor, then proceed to the <router-link to="/run" class="text-primary">Run SWAT+</router-link> section. 
 						After your initial files are written, you can modify them or add additional SWAT+ input files to your model.
 						Make a copy of any changes before returning to SWAT+ Editor, as the editor may overwrite them.
 					</p>

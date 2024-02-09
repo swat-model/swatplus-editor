@@ -12,8 +12,8 @@
 			{ key: 'elev', label: 'Elev (m)', type: 'number', class: 'text-right' },
 			{ key: 'wst', label: 'Weather Station', type: 'object', class: 'text-right', objectRoutePath: '/edit/climate/stations/edit/' },
 			{ key: 'soil_text', label: 'Soil', type: 'object', class: 'text-right', objectRoutePath: '/edit/soils/soils-lte/edit/' },
-			{ key: 'grow_start', label: 'Grow Start', type: 'object', class: 'text-right', objectRoutePath: '/edit/decision_table/edit/' },
-			{ key: 'grow_end', label: 'Grow End', type: 'object', class: 'text-right', objectRoutePath: '/edit/decision_table/edit/' },
+			{ key: 'grow_start', label: 'Grow Start', type: 'object', class: 'text-right', objectRoutePath: '/edit/decision-table/type/project/edit/' },
+			{ key: 'grow_end', label: 'Grow End', type: 'object', class: 'text-right', objectRoutePath: '/edit/decision-table/type/project/edit/' },
 			{ key: 'plnt_typ', label: 'Plant', type: 'object', class: 'text-right', objectRoutePath: '/edit/db/plants/edit/' },
 			{ key: 'outflow', label: '# Outflow', class: 'text-right' }
 		],

@@ -105,6 +105,7 @@
 		page.error = null;
 		let tableId = route.params.id;
 		let dbType = route.params.dbtype;
+		console.log(route.params.id)
 
 		try {
 			let apiUrl = `decision_table/table/${tableId}`;

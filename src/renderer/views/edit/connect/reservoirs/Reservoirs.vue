@@ -12,7 +12,7 @@
 			{ key: 'elev', label: 'Elev (m)', type: 'number', class: 'text-right' },
 			{ key: 'wst', label: 'Weather Station', type: 'object', class: 'text-right', objectRoutePath: '/edit/climate/stations/edit/' },
 			{ key: 'init', label: 'Initial', type: 'object', class: 'text-right', objectRoutePath: '/edit/cons/reservoirs/initial/edit/' },
-			{ key: 'rel', label: 'Release', type: 'object', class: 'text-right', objectRoutePath: '/edit/decision_table/edit/' },
+			{ key: 'rel', label: 'Release', type: 'object', class: 'text-right', objectRoutePath: '/edit/decision-table/type/project/edit/' },
 			{ key: 'hyd', label: 'Hydrology', type: 'object', class: 'text-right', objectRoutePath: '/edit/cons/reservoirs/hydrology/edit/' },
 			{ key: 'sed', label: 'Sediment', type: 'object', class: 'text-right', objectRoutePath: '/edit/cons/reservoirs/sediment/edit/' },
 			{ key: 'nut', label: 'Nutrients', type: 'object', class: 'text-right', objectRoutePath: '/edit/cons/reservoirs/nutrients/edit/' },

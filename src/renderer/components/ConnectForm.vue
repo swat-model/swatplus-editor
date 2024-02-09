@@ -156,7 +156,9 @@
 					outflow.form.error = errors.logError(error, 'Unable to save outflow to database.');
 				}
 			}
-		} 
+		} else {
+			outflow.form.error = 'Please complete all fields.';
+		}
 		
 		outflow.form.saving = false;
 	}

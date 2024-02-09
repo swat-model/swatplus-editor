@@ -27,6 +27,7 @@
 		useDynamicHeaders?: boolean,
 		noActionBar?: boolean,
 		fullWidthActionBar?: boolean,
+		fullestWidthActionBar?: boolean,
 		hideSummary?: boolean,
 		hideFilter?: boolean,
 		hideCreate?: boolean,
@@ -43,7 +44,8 @@
 		importExportNotes?: string,
 		importExportDeleteExisting?: boolean,
 		autoHeight?: boolean,
-		editPathPrefix?: string
+		editPathPrefix?: string,
+		hideBackButton?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -53,6 +55,7 @@
 		useDynamicHeaders: false,
 		noActionBar: false,
 		fullWidthActionBar: false,
+		fullestWidthActionBar: false,
 		hideSummary: false,
 		hideFilter: false,
 		hideCreate: false,
@@ -69,7 +72,8 @@
 		importExportNotes: '',
 		importExportDeleteExisting: false,
 		autoHeight: false,
-		editPathPrefix: ''
+		editPathPrefix: '',
+		hideBackButton: false
 	});
 
 	const loaderArray = computed(() => {
@@ -412,7 +416,7 @@
 							<div v-else-if="header.type === 'object'">
 								<span v-if="formatters.isNullOrEmpty(item[header.key])">-</span>
 								<router-link v-else-if="!formatters.isNullOrEmpty(header.objectRoutePath)" class="text-primary text-decoration-none" 
-									:to="`${header.objectRoutePath}${header.ignoreObjectRouteId ? '' : item[header.objectValueField||'id']}`">
+									:to="`${header.objectRoutePath}${header.ignoreObjectRouteId ? '' : item[header.key][header.objectValueField||'id']}`">
 									{{ item[header.key][header.objectTextField||'name'] }}
 								</router-link>
 								<span v-else>
@@ -449,11 +453,11 @@
 				</tbody>
 			</v-table>
 		</v-card>
-		<action-bar v-if="!props.noActionBar" :full-width="props.fullWidthActionBar">
+		<action-bar v-if="!props.noActionBar" :full-width="props.fullWidthActionBar" :fullest-width="props.fullestWidthActionBar">
 			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" class="mr-2" :to="utilities.appendRoute('create')">Create Record</v-btn>
 			<v-btn v-if="props.showImportExport" variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import/Export</v-btn>
 			<slot name="actions"></slot>
-			<back-button></back-button>
+			<back-button v-if="!hideBackButton"></back-button>
 			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="6"
 				:length="getNumPages()" class="ml-auto" size="small"></v-pagination>
 		</action-bar>

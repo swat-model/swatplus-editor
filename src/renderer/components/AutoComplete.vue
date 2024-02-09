@@ -143,7 +143,7 @@
 						<v-card-actions>
 							<v-btn v-if="!formatters.isNullOrEmpty(props.apiUrl)" 
 								color="primary"
-								:href="`/#/table-browser?apiUrl=${props.apiUrl}&section=${props.section}&projectDb=${currentProject.projectDbUrl}`" target="_blank">
+								:to="`/table-browser?apiUrl=${props.apiUrl}&section=${props.section}&projectDb=${currentProject.projectDbUrl}`" target="_blank">
 								Browse Table
 								<font-awesome-icon :icon="['fas', 'up-right-from-square']" class="ml-1"></font-awesome-icon>
 							</v-btn>

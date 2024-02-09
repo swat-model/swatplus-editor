@@ -11,7 +11,7 @@ class Gwflow_files(BaseFileModel):
 		self.file_name = file_name #txtinout directory
 		self.version = version
 		self.swat_version = swat_version
-		self.gwflow_base = gwflow.self.gwflow_base.get_or_none()
+		self.gwflow_base = gwflow.Gwflow_base.get_or_none()
 		self.gwflow_config = configparser.ConfigParser().read(gwflow_ini_file)['DEFAULT']
 
 	def read(self, database ='project'):
@@ -36,6 +36,7 @@ class Gwflow_files(BaseFileModel):
 				self.write_meta_line(file, file_name)
 
 				file.write(' Basic information\n')
+				file.write(' structured\n')
 				file.write(' {} cell size (m)\n'.format(utils.num_pad(self.gwflow_base.cell_size, decimals=1, direction='left')))
 				file.write(' {} number of rows, number of columns\n'.format(utils.string_pad('{} {}'.format(self.gwflow_base.row_count, self.gwflow_base.col_count), direction='left', default_pad=utils.DEFAULT_NUM_PAD)))
 				file.write(' {} boundary condition type (1=constant head; 2=no-flow)\n'.format(utils.num_pad(self.gwflow_base.boundary_conditions, decimals=0, direction='left')))

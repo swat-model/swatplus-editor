@@ -66,7 +66,7 @@
 
 				<grid-view 
 					:api-url="route.query.apiUrl" 
-					hide-edit hide-create hide-delete :items-per-page="100" use-dynamic-headers full-width-action-bar />
+					hide-edit hide-create hide-delete hide-back-button :items-per-page="100" use-dynamic-headers fullest-width-action-bar />
 			</div>
 		</div>
 	</v-main>
