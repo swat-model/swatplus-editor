@@ -17,6 +17,6 @@
 			/ Create
 		</file-header>
 
-		<management-form :item="data.item"></management-form>
+		<management-form :item="data"></management-form>
 	</project-container>
 </template>

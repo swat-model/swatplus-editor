@@ -49,7 +49,7 @@
 			/ Edit
 		</file-header>
 
-		<edit-form show-description show-range is-update get-datasets-record allow-bulk-edit
+		<edit-form is-update get-datasets-record allow-bulk-edit
 				   :item="data.item"
 				   name="Pathogens" table="path" no-gis
 				   :vars="data.vars"

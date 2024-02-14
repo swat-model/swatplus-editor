@@ -4,7 +4,7 @@ from .config import RequestHeaders as rh
 from database.project import connect, climate, channel, aquifer, reservoir, hydrology, hru, hru_parm_db, lum, soils, routing_unit, dr, init, decision_table, exco, dr, structural, gis
 from helpers import table_mapper # Note: string to table name dictionary moved here
 
-MAX_ROWS = 10000
+MAX_ROWS = 1000
 
 bp = Blueprint('auto_complete', __name__, url_prefix='/auto_complete')
 

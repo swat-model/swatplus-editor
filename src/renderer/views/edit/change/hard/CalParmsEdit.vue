@@ -17,7 +17,14 @@
 			saveSuccess: false,
 			saveError: null
 		},
-		item: {}
+		item: {
+			id: 0,
+			name: '',
+			abs_min: 0,
+			abs_max: 0,
+			units: '',
+			obj_typ: ''
+		}
 	});
 
 	const itemRules = computed(() => ({
@@ -33,7 +40,7 @@
 
 		try {
 			const response = await api.get(`change/cal_parms/${route.params.id}`, currentProject.getApiHeader());
-			data.item = response.data;
+			utilities.assignReactiveObject(data.item, response.data);
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');
 		}

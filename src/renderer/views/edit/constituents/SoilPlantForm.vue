@@ -80,7 +80,7 @@
 				if (props.isUpdate)
 					page.saveSuccess = true;
 				else
-					router.push({ name: 'ReservoirsInitial'});
+					router.push({ name: 'ConstituentsSoilPlantEdit', params: { id: response.data.id }});
 			} catch (error) {
 				page.error = errors.logError(error, 'Unable to save changes to database.');
 			}
@@ -124,7 +124,7 @@
 				<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="nutrients_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 				<auto-complete label="Nutrients" class="flex-grow-1 flex-shrink-0"
 					v-model="item.nutrients_name" :value="item.nutrients_name" :show-item-link="props.isUpdate"
-					table-name="om_water_ini" route-name="ConstituentsOMWaterEdit"
+					table-name="soil_nut" route-name="SoilNutrientsEdit"
 					section="Soils / Nutrients" help-file="nutrients.sol" help-db="nutrients_sol"
 					api-url="soils/nutrients"></auto-complete>
 			</div>

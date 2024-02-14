@@ -1088,7 +1088,7 @@
 						<v-divider></v-divider>
 						<v-card-actions>
 							<open-file button color="primary" variant="text" :file-path="newScenarioPath">Open Scenario Directory</open-file>
-							<v-btn @click="cancelTask">Cancel</v-btn>
+							<v-btn @click="data.page.savedScenario.show = false">Close</v-btn>
 						</v-card-actions>
 					</v-card>
 				</v-dialog>

@@ -367,6 +367,14 @@
 				<v-text-field v-model="page.item.description" label="Description" :readonly="notEditable"></v-text-field>
 			</div>
 
+			<v-alert v-if="notEditable && route.params.dbtype === 'project'" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+				This decision table is reserved in the model and cannot be modified. 
+				<br />To change any values in this table, we recommend making a copy and editing the copy instead.
+			</v-alert>
+			<v-alert v-if="notEditable && route.params.dbtype === 'datasets'" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+				This decision table is located in your datasets library. Make a copy to add it to your project.
+			</v-alert>
+
 			<v-card>
 				<v-tabs v-model="page.tab" bg-color="primary">
 					<v-tab value="basic">Description</v-tab>
@@ -422,13 +430,7 @@
 						</v-window-item>
 
 						<v-window-item value="advanced">
-							<v-alert v-if="notEditable && route.params.dbtype === 'project'" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-								This decision table is reserved in the model and cannot be modified. 
-								<br />To change any values in this table, we recommend making a copy and editing the copy instead.
-							</v-alert>
-							<v-alert v-if="notEditable && route.params.dbtype === 'datasets'" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-								This decision table is located in your datasets library. Make a copy to add it to your project.
-							</v-alert>
+							
 
 							<v-alert v-if="!notEditable" type="warning" icon="$warning" variant="tonal" border="start" class="mb-4">
 								Warning: advanced users only.
@@ -465,7 +467,7 @@
 			</v-card>					
 
 			<action-bar>
-				<v-btn v-if="!notEditable && page.tab === 'advanced'" type="submit" :loading="page.saving" variant="flat" color="primary" class="mr-2">Save Changes</v-btn>
+				<v-btn v-if="!notEditable" type="submit" :loading="page.saving" variant="flat" color="primary" class="mr-2">Save Changes</v-btn>
 				<back-button></back-button>
 				<v-btn type="button" variant="flat" color="info" class="ml-auto" @click="page.copy.show = true">Copy</v-btn>
 				<v-btn v-if="!notEditable && !isUsed" type="button" variant="flat" color="error" class="ml-1" @click="page.delete.show = true">Delete</v-btn>

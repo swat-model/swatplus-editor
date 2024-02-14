@@ -124,14 +124,23 @@
 		data.plants.splice(data.plants.indexOf(item), 1);
 	}
 
-	function saveItem() {
-		if (data.plant.isNew) {
-			data.plants.push(data.plant.item);
+	async function saveItem() {
+		data.plant.error = null;
+
+		const { valid } = await plantForm.value.validate();
+		if (!valid) {
+			data.plant.error = 'Please enter a value for all fields.';
 		} else {
-			data.plants[data.plant.editIndex] = data.plant.item;
-		}
-		data.plant.show = false;
+			if (data.plant.isNew) {
+				data.plants.push(data.plant.item);
+			} else {
+				data.plants[data.plant.editIndex] = data.plant.item;
+			}
+			data.plant.show = false;
+		}		
 	}
+
+	const plantForm = ref();
 
 	onMounted(async () => await get())
 	watch(() => route.path, async () => await get())
@@ -201,9 +210,9 @@
 				<v-card-text>
 					<error-alert :text="data.plant.error"></error-alert>
 					
-					<v-form>
+					<v-form ref="plantForm">
 						<div class="form-group">
-							<auto-complete label="Select a crop"
+							<auto-complete label="Select a crop" required
 								v-model="data.plant.item.name" :value="data.plant.item.name"
 								table-name="plant" route-name="PlantsEdit"
 								section="Databases / Plants" help-file="plants.plt" help-db="plants_plt"
@@ -211,7 +220,7 @@
 						</div>
 
 						<div class="form-group">
-							<v-text-field label="Crop yield - average annual t/ha dry weight" v-model.number="data.plant.item.yld" type="number" step="any"></v-text-field>
+							<v-text-field label="Crop yield - average annual t/ha dry weight" v-model.number="data.plant.item.yld" type="number" step="any" required></v-text-field>
 						</div>
 
 						<v-table class="table-editor" density="compact" v-if="!data.page.loading">
@@ -232,22 +241,22 @@
 										{{ item.var }}
 									</td>
 									<td>
-										<v-text-field v-model.number="item.init" type="number" step="any" hide-details density="compact"></v-text-field>
+										<v-text-field v-model.number="item.init" type="number" step="any" hide-details density="compact" required></v-text-field>
 									</td>
 									<td>
-										<v-select v-model="item.chg_typ" :items="data.options.chgTypes" hide-details density="compact"></v-select>
+										<v-select v-model="item.chg_typ" :items="data.options.chgTypes" hide-details density="compact" required></v-select>
 									</td>
 									<td>
-										<v-text-field v-model.number="item.neg" type="number" step="any" hide-details density="compact"></v-text-field>
+										<v-text-field v-model.number="item.neg" type="number" step="any" hide-details density="compact" required></v-text-field>
 									</td>
 									<td>
-										<v-text-field v-model.number="item.pos" type="number" step="any" hide-details density="compact"></v-text-field>
+										<v-text-field v-model.number="item.pos" type="number" step="any" hide-details density="compact" required></v-text-field>
 									</td>
 									<td>
-										<v-text-field v-model.number="item.lo" type="number" step="any" hide-details density="compact"></v-text-field>
+										<v-text-field v-model.number="item.lo" type="number" step="any" hide-details density="compact" required></v-text-field>
 									</td>
 									<td>
-										<v-text-field v-model.number="item.up" type="number" step="any" hide-details density="compact"></v-text-field>
+										<v-text-field v-model.number="item.up" type="number" step="any" hide-details density="compact" required></v-text-field>
 									</td>
 								</tr>
 							</tbody>

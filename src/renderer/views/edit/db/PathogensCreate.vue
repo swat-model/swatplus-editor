@@ -45,8 +45,7 @@
 			/ Create
 		</file-header>
 
-		<edit-form show-description show-range
-				   :item="data.item"
+		<edit-form :item="data.item"
 				   :vars="data.vars"
 				   api-url="db/pathogens"
 				   redirect-route="Pathogens" />

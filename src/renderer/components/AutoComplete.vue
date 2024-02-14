@@ -113,6 +113,13 @@
 		}
 	)
 
+	watch(
+		() => props.tableName,
+		async () => {
+			_.debounce(await get(), 500);
+		}
+	)
+
 	watch(model, (newModel) => {
 		emit('update:modelValue', newModel);
 	})
