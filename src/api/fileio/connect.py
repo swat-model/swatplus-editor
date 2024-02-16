@@ -105,6 +105,20 @@ def write_con_table(file_name, meta_line, con_table, con_out_table, elem_name, e
 				i += 1
 
 
+class IndexHelper():
+	def __init__(self, con_table):
+		self.con_table = con_table
+
+	def get(self):
+		cons = self.con_table.select().order_by(self.con_table.id)
+		gis_to_con = {}
+		i = 1
+		for con in cons:
+			gis_to_con[con.gis_id] = i
+			i += 1
+		return gis_to_con
+
+
 class Hru_con(BaseFileModel):
 	def __init__(self, file_name, version=None, swat_version=None):
 		self.file_name = file_name

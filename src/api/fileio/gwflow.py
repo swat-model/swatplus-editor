@@ -1,27 +1,29 @@
 from .base import BaseFileModel, FileColumn as col
-from database.project import base, gwflow
+from database.project import base, gis, gwflow, connect
 from database import lib as db_lib
 from helpers import utils
+from .connect import IndexHelper
 import os.path
 import configparser
-
+import numpy as np
 
 class Gwflow_files(BaseFileModel):
-	def __init__(self, file_name, version=None, swat_version=None, gwflow_ini_file='C:/SWAT/SWATPlus/gwflow/gwflow.ini'):
+	def __init__(self, file_name, version=None, swat_version=None, gwflow_ini_file='gwflow.ini'):
 		self.file_name = file_name #txtinout directory
 		self.version = version
 		self.swat_version = swat_version
 		self.gwflow_base = gwflow.Gwflow_base.get_or_none()
-		self.gwflow_config = configparser.ConfigParser().read(gwflow_ini_file)['DEFAULT']
+		self.gwflow_config = None
+		if self.gwflow_base is not None:
+			self.gwflow_config = configparser.ConfigParser().read(gwflow_ini_file)['DEFAULT']
 
 	def read(self, database ='project'):
 		raise NotImplementedError('Reading not implemented.')
 
 	def write(self):
 		self.write_input()
-		self.write_rivcells()
+		self.write_chancells()
 		self.write_hrucell()
-		self.write_cellhru()
 		self.write_lsucell()
 		self.write_rescells()
 		self.write_floodplain()
@@ -159,35 +161,154 @@ class Gwflow_files(BaseFileModel):
 				file.write(' River Cell Information\n')
 				file.write(' {}\n'.format(utils.get_num_format(self.gwflow_config.getfloat('river_depth', 5.0), 2)))
 
-	def write_rivcells(self, file_name='gwflow.rivcells'):
+	def write_chancells(self, file_name='gwflow.chancells'):
 		if self.gwflow_base is not None:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write(' Cell-Channel Connection Information ')
 				self.write_meta_line(file, file_name)
+				file.write('\n')
 
-	def write_hrucell(self, file_name='gwflow.hrucell'):
-		if self.gwflow_base is not None:
-			with open(os.path.join(self.file_name, file_name), 'w') as file:
-				file.write(' HRU-Cell Connection Information ')
-				self.write_meta_line(file, file_name)
+				header_cols = [col('ID', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				   col('elev_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
+				   col('channel', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				   col('riv_length_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
+				   col('zone', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left')]
+				self.write_headers(file, header_cols)
+				file.write('\n')
 
-	def write_cellhru(self, file_name='gwflow.cellhru'):
+				grid_cells = gwflow.Gwflow_rivcell.select().join(gwflow.Gwflow_grid).order_by(gwflow.Gwflow_rivcell.cell_id)
+				channels_gis_to_con = IndexHelper(connect.Chandeg_con).get()
+				for cell in grid_cells:
+					utils.write_int(file, cell.cell_id)
+					utils.write_num(file, cell.cell.elevation, decimals=2)
+					utils.write_int(file, channels_gis_to_con.get(cell.channel, 0))
+					utils.write_num(file, cell.length_m, decimals=2)
+					utils.write_int(file, cell.cell.zone_id)
+					file.write('\n')
+
+	def get_hru_data(self):
+		hru_or_lsu_recharge = self.gwflow_config.getint('HRUorLSU_recharge', 2)
+		hru_recharge = hru_or_lsu_recharge == 1 or hru_or_lsu_recharge == 3
+		hrus_gis_to_con = IndexHelper(connect.Hru_con).get()
+		return hru_recharge, hrus_gis_to_con
+
+	def write_hrucell(self, file_names=['gwflow.hrucell','gwflow.cellhru']):
 		if self.gwflow_base is not None:
-			with open(os.path.join(self.file_name, file_name), 'w') as file:
-				file.write(' Cell-HRU Connection Information ')
-				self.write_meta_line(file, file_name)
+			hru_recharge, hrus_gis_to_con = self.get_hru_data()
+			if hru_recharge:
+				grid_cells = gwflow.Gwflow_hrucell.select().join(gwflow.Gwflow_grid).join(gis.Gis_hrus)
+				with open(os.path.join(self.file_name, file_names[0]), 'w') as file:
+					file.write(' HRU-Cell Connection Information ')
+					self.write_meta_line(file, file_names[0])
+					file.write('\n')
+
+					file.write(' HRUs that are connected to cells\n')
+					hru_ids = list(set([v.hru_id for v in grid_cells])).sort()
+
+					file.write('{}\n'.format(len(hru_ids)))
+					for hru_id in hru_ids:
+						file.write('{}\n'.format(hrus_gis_to_con.get(hru_id, 0)))
+					file.write('\n')
+
+					header_cols = [col('hru', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+					col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
+					col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+					col('overlap_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+					self.write_headers(file, header_cols)
+					file.write('\n')
+
+					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.hru_id, gwflow.Gwflow_hrucell.cell_id):
+						utils.write_int(file, hrus_gis_to_con.get(cell.hru_id, 0))
+						utils.write_num(file, cell.hru.arslp * 10000, decimals=2) # NOT SURE
+						utils.write_int(file, cell.cell_id)
+						utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
+						file.write('\n')
+				
+				with open(os.path.join(self.file_name, file_names[1]), 'w') as file:
+					file.write(' Cell-HRU Connection Information ')
+					self.write_meta_line(file, file_names[1])
+					file.write('\n')
+
+					file.write('{}\t\t\tNumber of cells that intersect HRUs\n'.format(len(grid_cells)))
+
+					header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+					col('hru', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+					col('cell_area', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
+					col('overlap_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+					self.write_headers(file, header_cols)
+					file.write('\n')
+
+					cell_size = self.gwflow_base.cell_size
+					cell_area = cell_size * cell_size
+					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.cell_id):
+						utils.write_int(file, cell.cell_id)
+						utils.write_int(file, hrus_gis_to_con.get(cell.hru_id, 0))
+						utils.write_num(file, cell_area, decimals=2) # NOT SURE
+						utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
+						file.write('\n')
 
 	def write_lsucell(self, file_name='gwflow.lsucell'):
 		if self.gwflow_base is not None:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write(' LSU (landscape unit) - Cell Connection Information ')
 				self.write_meta_line(file, file_name)
+				file.write('\n')
+
+				grid_cells = gwflow.Gwflow_lsucell.select().join(gwflow.Gwflow_grid).join(gis.Gis_lsus)
+				lsus_gis_to_con = IndexHelper(connect.Rout_unit_con).get()
+
+				file.write(' HRUs that are connected to cells\n')
+				unique_ids = list(set([v.lsu_id for v in grid_cells])).sort()
+
+				file.write('{}\t\t total number of landscape units in model\n'.format(gis.Gis_lsus.select().count()))
+				file.write('{}\t\t number of landscape units connected to grid cells\n'.format(len(unique_ids)))
+
+				for id in unique_ids:
+					file.write('{}\n'.format(lsus_gis_to_con.get(id, 0)))
+				file.write('\n')
+
+				file.write('connection information between landscape units and grid cells\n')
+
+				header_cols = [col('lsu_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				col('lsu_area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
+				col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+				self.write_headers(file, header_cols)
+				file.write('\n')
+
+				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.lsu_id, gwflow.Gwflow_lsucell.cell_id):
+					utils.write_int(file, lsus_gis_to_con.get(cell.lsu_id, 0))
+					utils.write_num(file, cell.lsu.area * 10000, decimals=2) # NOT SURE
+					utils.write_int(file, cell.cell_id)
+					utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
+					file.write('\n')
 
 	def write_rescells(self, file_name='gwflow.rescells'):
-		if self.gwflow_base is not None:
+		if self.gwflow_base is not None and gwflow.Gwflow_rivcell.select().count() > 0:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write(' Cell-Reservoir Connection Information ')
 				self.write_meta_line(file, file_name)
+
+				grid_cells = gwflow.Gwflow_rivcell.select().join(gwflow.Gwflow_grid)
+				res_gis_to_con = IndexHelper(connect.Reservoir_con).get()
+
+				file.write(' Reservoir bed parameters\n')
+				file.write(' {}\t\t bed thickness (m)\n'.format(self.gwflow_base.res_bed_thickness))
+				file.write(' {}\t\t bed conductivity (m/day)\n'.format(self.gwflow_base.res_bed_k))
+				file.write(' {}\t\t number of cells connected to reservoirs\n'.format(grid_cells.count()))
+
+				header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				col('res_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				col('res_stage_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+				self.write_headers(file, header_cols)
+				file.write('\n')
+
+				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.lsu_id, gwflow.Gwflow_lsucell.cell_id):
+					utils.write_int(file, cell.cell_id)
+					utils.write_int(file, res_gis_to_con.get(cell.res_id, 0))
+					utils.write_num(file, cell.res_stage, decimals=2) 
+					file.write('\n')
+			   
 
 	def write_floodplain(self, file_name='gwflow.floodplain'):
 		if self.gwflow_base is not None:
@@ -212,3 +333,108 @@ class Gwflow_files(BaseFileModel):
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write(' solute parameters and initial concentrations ')
 				self.write_meta_line(file, file_name)
+
+	def update_swatplus_files(self):
+		#Copying code from original GWFLOW module
+		#%%Modification of SWAT+ files (file.cio / object.cnt / rout_unit.con)
+		#------- Modifying file.cio file---------------
+		filename_cio = os.path.join(self.file_name, 'file.cio')
+		file_cio = open(filename_cio, 'r')
+		file_cio_lst = file_cio.readlines()
+		file_cio.close()
+
+		file_cio_lst[4] = file_cio_lst[4].split(' ')
+		file_cio_lst[12] = file_cio_lst[12].split(' ')
+		count = 0
+
+		for i in range(0, len(file_cio_lst[4])):
+			if file_cio_lst[4][i] != '':
+				count+= 1
+				if count == 5:
+					file_cio_lst[4][i] = 'gwflow.con'
+				if count == 6:
+					file_cio_lst[4][i] = 'null'
+		count = 0
+
+		for i in range(0, len(file_cio_lst[12])):
+			if file_cio_lst[12][i] != '':
+				count+= 1
+				if count == 3:
+					file_cio_lst[12][i] = 'null'        
+					
+		file_cio_lst[4] = ' '.join(file_cio_lst[4])
+		file_cio_lst[12] = ' '.join(file_cio_lst[12])
+
+		file_cio_out = open(os.path.join(self.file_name, 'file.cio'), 'w')
+		for line in file_cio_lst:
+			file_cio_out.write(line)    
+			
+		file_cio_out.close()
+
+		#------ Modifying object.cnt -----
+		"""
+		filename_objectcnt = os.path.join(self.file_name, 'object.cnt')
+		object_cnt = open(filename_objectcnt, 'r')
+		object_cnt_lines = object_cnt.readlines()
+		object_cnt.close()
+
+		object_cnt_lines[2] = object_cnt_lines[2].split(' ')
+		count = 0
+		for i in range(0, len(object_cnt_lines[2])):
+			if object_cnt_lines[2][i] != '':
+				count+= 1
+				
+				if count == 8:
+					object_cnt_lines[2][i] = str(riv_unique_nr)
+				if count == 9:
+					object_cnt_lines[2][i] = '0'
+			
+		obj_numr = 0     
+		count = 0       
+		for i in range(0, len(object_cnt_lines[2])):
+			if object_cnt_lines[2][i] != '':
+				count+= 1
+				if count >= 5 and count != 22:
+					obj_numr+= float(object_cnt_lines[2][i])  
+		count = 0
+		for i in range(0, len(object_cnt_lines[2])):
+			if object_cnt_lines[2][i] != '':
+				count+= 1
+				if count == 4:
+					object_cnt_lines[2][i] = str(int(obj_numr))
+
+		object_cnt_lines[2] = ' '.join(object_cnt_lines[2])
+
+		object_cnt_out = open(os.path.join(self.file_name, 'object.cnt'), 'w')
+		for line in object_cnt_lines:
+			object_cnt_out.write(line)    
+			
+		#object_cnt.close()
+		object_cnt_out.close()
+		"""
+
+		#----------Modifying rout_unit.con---------
+		filename_routunit = os.path.join(self.file_name, 'rout_unit.con')
+		nru = open(filename_routunit, "r")              #Delete first line of text generated by the model to be able to work in a dataframe
+		lines = nru.readlines()
+		line0 = lines[0]
+		rout_unit_data = lines[1:]
+		nru.close()
+
+		for i in range(0, len(rout_unit_data)):
+			rout_unit_data[i] = rout_unit_data[i].split()
+			if i>0:
+				rout_unit_data[i][12] = '1'
+				del rout_unit_data[i][-4:]
+
+
+		rout_unit_array = np.array(rout_unit_data)
+		np.savetxt(os.path.join(self.file_name, 'rout_unit_data.txt'), rout_unit_array, fmt = '%-8s', delimiter = '\t')
+		rout_txt = open(os.path.join(self.file_name, 'rout_unit_data.txt'), 'r')
+
+		routunit = open(os.path.join(self.file_name, 'rout_unit.con'), 'w')            #Generation of base file
+
+		routunit.write(line0)
+		routunit.write(rout_txt.read())
+		rout_txt.close()
+		routunit.close()
