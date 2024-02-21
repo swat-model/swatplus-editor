@@ -102,6 +102,10 @@ def write_num(file, val, decimals=DEFAULT_DECIMALS, default_pad=DEFAULT_NUM_PAD,
 	file.write(num_pad(val, decimals, default_pad, direction, text_if_null, use_non_zero_min))
 
 
+def write_exp(file, val, decimals=DEFAULT_DECIMALS, default_pad=DEFAULT_NUM_PAD, direction=DEFAULT_DIRECTION, text_if_null=NULL_NUM, use_non_zero_min=False):
+	file.write(exp_pad(val, decimals, default_pad, direction, text_if_null, use_non_zero_min))
+
+
 def write_int(file, val, default_pad=DEFAULT_INT_PAD, direction=DEFAULT_DIRECTION):
 	file.write(int_pad(val, default_pad, direction))
 

@@ -6,7 +6,7 @@ from database.project.config import Project_config
 from database.project.config import File_cio as project_file_cio, File_cio_classification
 from database.project.climate import Weather_file
 
-from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, water_rights
+from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, water_rights, gwflow
 from helpers import utils
 
 import sys
@@ -22,6 +22,7 @@ class WriteFiles(ExecutableApi):
 	def __init__(self, project_db_file, swat_version, ignored_files=[], ignored_cio_files=[], custom_cio_files=[]):
 		self.__abort = False
 		SetupProjectDatabase.init(project_db_file)
+		self.project_db_file = project_db_file
 		self.project_db = project_base.db
 		self.ignored_files = ignored_files if ignored_files is not None else []
 		self.ignored_cio_files = ignored_cio_files if ignored_cio_files is not None else []
@@ -62,6 +63,12 @@ class WriteFiles(ExecutableApi):
 			big_step = 5
 			bigger_step = 10
 			total = 0
+
+			gwlow_ini_file = os.path.join(self.__dir, '../', 'gwflow.ini')
+			if not os.path.exists(gwlow_ini_file):
+				gwlow_ini_file = os.path.join(self.__dir, 'gwflow.ini')
+			gwflow_writer = gwflow.Gwflow(self.__dir, self.__version, self.__swat_version, self.project_db_file, gwlow_ini_file)
+			gwflow_writer.update_codes_bsn()
 
 			self.write_simulation(total, step)
 			total += step
@@ -143,6 +150,11 @@ class WriteFiles(ExecutableApi):
 
 			self.update_file_status(total, "file.cio")
 			config.File_cio(os.path.join(self.__dir, "file.cio"), self.__version, self.__swat_version, self.ignored_cio_files, self.custom_cio_files).write()
+			total += step
+
+			if gwflow_writer.exists():
+				self.update_file_status(total, "gwflow files")
+				gwflow_writer.write()
 
 			Project_config.update(input_files_last_written=datetime.now(), swat_last_run=None, output_last_imported=None).execute()
 		except ValueError as err:

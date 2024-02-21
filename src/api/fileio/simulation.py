@@ -200,7 +200,7 @@ class Object_cnt(BaseFileModel):
 							   col(table.hru),
 							   col(table.lhru),
 							   col(table.rtu),
-							   col(table.mfl),
+							   col(table.mfl, alt_header_name="gwfl"),
 							   col(table.aqu),
 							   col(table.cha),
 							   col(table.res),

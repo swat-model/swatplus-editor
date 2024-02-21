@@ -1,6 +1,6 @@
 from .base import BaseFileModel, FileColumn as col
-from database.project import base, gis, gwflow, connect
-from database import lib as db_lib
+from database.project import gis, gwflow, connect, reservoir, basin
+from database import lib
 from helpers import utils
 from .connect import IndexHelper
 import os.path
@@ -8,14 +8,32 @@ import configparser
 import numpy as np
 
 class Gwflow_files(BaseFileModel):
-	def __init__(self, file_name, version=None, swat_version=None, gwflow_ini_file='gwflow.ini'):
+	def __init__(self, file_name, version=None, swat_version=None, project_db_file=None, gwflow_ini_file='gwflow.ini'):
 		self.file_name = file_name #txtinout directory
 		self.version = version
 		self.swat_version = swat_version
-		self.gwflow_base = gwflow.Gwflow_base.get_or_none()
-		self.gwflow_config = None
-		if self.gwflow_base is not None:
-			self.gwflow_config = configparser.ConfigParser().read(gwflow_ini_file)['DEFAULT']
+
+		self.gwflow_base = None
+		if project_db_file is not None:
+			conn = lib.open_db(project_db_file)
+			if lib.exists_table(conn, 'gwflow_base'):
+				self.gwflow_base = gwflow.Gwflow_base.get_or_none()
+				self.gwflow_config = None
+				if self.gwflow_base is not None:
+					self.gwflow_config = configparser.ConfigParser().read(gwflow_ini_file)['DEFAULT']
+			conn.close()	
+
+	def exists(self):
+		return self.gwflow_base is not None
+
+	def update_codes_bsn(self):
+		codes_bsn = basin.Codes_bsn.get_or_none()
+		if codes_bsn is not None:
+			if self.gwflow_base is not None:
+				codes_bsn.gwflow = 1
+			else:
+				codes_bsn.gwflow = 0
+			codes_bsn.save()	
 
 	def read(self, database ='project'):
 		raise NotImplementedError('Reading not implemented.')
@@ -30,6 +48,7 @@ class Gwflow_files(BaseFileModel):
 		self.write_wetland()
 		self.write_tiles()
 		self.write_solutes()
+		self.update_swatplus_files()
 
 	def write_input(self, file_name='gwflow.input'):
 		if self.gwflow_base is not None:
@@ -284,7 +303,7 @@ class Gwflow_files(BaseFileModel):
 					file.write('\n')
 
 	def write_rescells(self, file_name='gwflow.rescells'):
-		if self.gwflow_base is not None and gwflow.Gwflow_rivcell.select().count() > 0:
+		if self.gwflow_base is not None and self.gwflow_base.reservoir_exchange == 1:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write(' Cell-Reservoir Connection Information ')
 				self.write_meta_line(file, file_name)
@@ -311,28 +330,90 @@ class Gwflow_files(BaseFileModel):
 			   
 
 	def write_floodplain(self, file_name='gwflow.floodplain'):
-		if self.gwflow_base is not None:
+		if self.gwflow_base is not None and self.gwflow_base.floodplain_exchange == 1:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
-				file.write(' gwflow floodplain cells (optional file; list cells that interact with channels, when channel water is in the floodplain) ')
+				file.write('gwflow floodplain cells (optional file; list cells that interact with channels, when channel water is in the floodplain) ')
 				self.write_meta_line(file, file_name)
+
+				grid_cells = gwflow.Gwflow_fpcell.select().join(gwflow.Gwflow_grid)
+				cha_gis_to_con = IndexHelper(connect.Chandeg_con).get()
+				file.write('{}\t\t\t\t\tNumber of floodplain cells\n'.format(grid_cells.count()))
+
+				header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				col('chan_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				col('fp_K', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
+				col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+				self.write_headers(file, header_cols)
+				file.write('\n')
+
+				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.lsu_id, gwflow.Gwflow_lsucell.cell_id):
+					utils.write_int(file, cell.cell_id)
+					utils.write_int(file, cha_gis_to_con.get(cell.channel_id, 0))
+					utils.write_exp(file, 0, decimals=4) # CAN'T FIND IN DB
+					utils.write_num(file, cell.area_m2, decimals=2) 
+					file.write('\n')
 
 	def write_wetland(self, file_name='gwflow.wetland'):
-		if self.gwflow_base is not None:
+		if self.gwflow_base is not None and self.gwflow_base.wetland_exchange == 1:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
-				file.write(' gwflow.wetland: parameters for groundwater-wetland interactions ')
+				file.write('gwflow.wetland: parameters for groundwater-wetland interactions ')
 				self.write_meta_line(file, file_name)
+
+				file.write('wet_id = same as id listed in wetland.wet\n')
+				file.write('thick_m = thickness (in meters) of wetland bottom material\n')
+				file.write('(hydraulic conductivity is listed in hydrology.wet)\n')
+
+				header_cols = [col('wet_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
+				col('thick_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+				self.write_headers(file, header_cols)
+				file.write('\n')
+
+				for wet in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id):
+					utils.write_int(file, wet.id)
+					utils.write_num(file, self.gwflow_base.wet_thickness, decimals=2) 
+					file.write('\n')
 
 	def write_tiles(self, file_name='gwflow.tiles'):
-		if self.gwflow_base is not None:
+		if self.gwflow_base is not None and self.gwflow_base.tile_drainage == 1:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
-				file.write(' gwflow tile drain information ')
+				file.write('gwflow tile drain information ')
 				self.write_meta_line(file, file_name)
 
+				file.write(' {}\t\t Depth (m) of tiles below ground surface\n'.format(utils.num_pad(self.gwflow_base.tile_depth, 5)))
+				file.write(' {}\t\t Area (m2) of groundwater inflow * flow length\n'.format(utils.num_pad(self.gwflow_base.tile_area, 5)))
+				file.write(' {}\t\t Hydraulic conductivity (m/day) of the drain perimeter\n'.format(utils.num_pad(self.gwflow_base.tile_k, 5)))
+				file.write(' {}\t\t Tile cell groups (flag: 0=no; 1=yes)\n'.format(utils.int_pad(self.gwflow_base.tile_groups, default_pad=utils.DEFAULT_NUM_PAD)))
+
+				grid_cells = gwflow.Gwflow_grid.select().order_by(gwflow.Gwflow_grid.cell_id)
+
+				status_lines = 'gwflow tile cells (0=no tile; 1=tiles are present)\n'
+
+				col = 1
+				for cell in grid_cells:
+					if col == self.gwflow_base.col_count:
+						status_lines += '\n'
+						col = 1
+
+					status_lines += '{}\t'.format(cell.tile)
+					col += 1
+
+				if not status_lines.endswith('\n'): status_lines += '\n'
+
+				file.write(status_lines)
+
 	def write_solutes(self, file_name='gwflow.solutes'):
-		if self.gwflow_base is not None:
-			with open(os.path.join(self.file_name, file_name), 'w') as file:
-				file.write(' solute parameters and initial concentrations ')
-				self.write_meta_line(file, file_name)
+		if self.gwflow_base is not None and self.gwflow_base.solute_transport == 1:
+			solutes = gwflow.Gwflow_solutes.get_or_none()
+			if solutes is not None:
+				with open(os.path.join(self.file_name, file_name), 'w') as file:
+					file.write('solute parameters and initial concentrations ')
+					self.write_meta_line(file, file_name)
+
+					file.write('general parameters\n')
+					file.write(' {}\t\t number of transport time steps for flow time step\n'.format(solutes.transport_steps))
+					file.write(' {}\t\t dispersion coefficient (m2/day)\n'.format(solutes.disp_coef))
+
+					file.write('solute parameters: name,sorption,rate constant,canal_irrig (one row per active solute)\n')
 
 	def update_swatplus_files(self):
 		#Copying code from original GWFLOW module
@@ -370,48 +451,6 @@ class Gwflow_files(BaseFileModel):
 			file_cio_out.write(line)    
 			
 		file_cio_out.close()
-
-		#------ Modifying object.cnt -----
-		"""
-		filename_objectcnt = os.path.join(self.file_name, 'object.cnt')
-		object_cnt = open(filename_objectcnt, 'r')
-		object_cnt_lines = object_cnt.readlines()
-		object_cnt.close()
-
-		object_cnt_lines[2] = object_cnt_lines[2].split(' ')
-		count = 0
-		for i in range(0, len(object_cnt_lines[2])):
-			if object_cnt_lines[2][i] != '':
-				count+= 1
-				
-				if count == 8:
-					object_cnt_lines[2][i] = str(riv_unique_nr)
-				if count == 9:
-					object_cnt_lines[2][i] = '0'
-			
-		obj_numr = 0     
-		count = 0       
-		for i in range(0, len(object_cnt_lines[2])):
-			if object_cnt_lines[2][i] != '':
-				count+= 1
-				if count >= 5 and count != 22:
-					obj_numr+= float(object_cnt_lines[2][i])  
-		count = 0
-		for i in range(0, len(object_cnt_lines[2])):
-			if object_cnt_lines[2][i] != '':
-				count+= 1
-				if count == 4:
-					object_cnt_lines[2][i] = str(int(obj_numr))
-
-		object_cnt_lines[2] = ' '.join(object_cnt_lines[2])
-
-		object_cnt_out = open(os.path.join(self.file_name, 'object.cnt'), 'w')
-		for line in object_cnt_lines:
-			object_cnt_out.write(line)    
-			
-		#object_cnt.close()
-		object_cnt_out.close()
-		"""
 
 		#----------Modifying rout_unit.con---------
 		filename_routunit = os.path.join(self.file_name, 'rout_unit.con')

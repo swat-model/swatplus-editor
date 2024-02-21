@@ -148,6 +148,22 @@ class UpdateProject(ExecutableApi):
 	
 	def updates_for_3_0_0(self, project_db, datasets_db, rollback_db):
 		try:
+			self.emit_progress(5, 'Running migrations...')
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('codes_bsn', 'gwflow', IntegerField(default=0)),
+				migrator.rename_column('hyd_sed_lte_cha', 'bed_load', 'bankfull_flo'),
+			)
+
+			#Datasets DB - Ignore error if already done
+			try:
+				dsmigrator = SqliteMigrator(SqliteDatabase(datasets_db))
+				migrate(
+					dsmigrator.add_column('codes_bsn', 'gwflow', IntegerField(default=0)),
+				)
+			except Exception:
+				pass
+
 			self.emit_progress(15, 'Updating database with new defaults...')
 
 			#decision table changes

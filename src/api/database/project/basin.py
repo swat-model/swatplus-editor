@@ -28,6 +28,7 @@ class Codes_bsn(base.BaseModel):
 	atmo_dep = CharField()
 	stor_max = IntegerField()
 	i_fpwet = IntegerField()
+	gwflow = IntegerField(default=0)
 
 
 class Parameters_bsn(base.BaseModel):

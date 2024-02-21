@@ -523,7 +523,7 @@ class GisImport(ExecutableApi):
 					'carbon': 0.04,
 					'dry_bd': 1,
 					'side_slp': 0.5,
-					'bed_load': 0.5,
+					'bankfull_flo': 0.5,
 					'fps': 0.00001,
 					'fpn': 0.1,
 					'n_conc': 0,
