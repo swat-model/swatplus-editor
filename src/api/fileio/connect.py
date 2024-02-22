@@ -1,7 +1,7 @@
 from helpers import utils, table_mapper
 import database.project.connect as db
 
-from database.project import hru, routing_unit, exco, reservoir, aquifer, channel, recall, dr
+from database.project import hru, routing_unit, exco, reservoir, aquifer, channel, recall, dr, basin
 from .base import BaseFileModel
 
 
@@ -29,7 +29,7 @@ def write_header(file, elem_name, has_con_out):
 	file.write("\n")
 
 
-def write_row(file, con, index, con_to_index, con_outs, con_out_id_dict):
+def write_row(file, con, index, con_to_index, con_outs, con_out_id_dict, using_gwflow=False):
 	file.write(utils.int_pad(index))
 	file.write(utils.string_pad(con.name, direction="left"))
 	file.write(utils.int_pad(con.gis_id))
@@ -42,7 +42,13 @@ def write_row(file, con, index, con_to_index, con_outs, con_out_id_dict):
 	file.write(utils.int_pad(con.cst_id))
 	file.write(utils.int_pad(con.ovfl))
 	file.write(utils.int_pad(con.rule))
-	file.write(utils.int_pad(con_outs.count()))
+
+	total = con_outs.count()
+	hyd_typs = [v.hyd_typ for v in con_outs]
+	has_rhg = "rhg" in hyd_typs
+	if using_gwflow and has_rhg:
+		total = total - 1
+	file.write(utils.int_pad(total))
 
 	for out in con_outs:
 		obj_id = out.obj_id
@@ -60,7 +66,7 @@ def write_row(file, con, index, con_to_index, con_outs, con_out_id_dict):
 	file.write("\n")
 
 
-def write_con_table(file_name, meta_line, con_table, con_out_table, elem_name, elem_table):
+def write_con_table(file_name, meta_line, con_table, con_out_table, elem_name, elem_table, using_gwflow=False):
 	if con_table.select().count() > 0:
 		with open(file_name, 'w') as file:
 			file.write(meta_line)
@@ -101,7 +107,7 @@ def write_con_table(file_name, meta_line, con_table, con_out_table, elem_name, e
 				if con.id != elem_id:
 					con_to_index = elem_ids.index(elem_id) + 1
 					#con_to_index = elem_table.select().where(elem_table.id <= elem_id).count()
-				write_row(file, con, i, con_to_index, con.con_outs.order_by(con_out_table.order), con_out_id_dict)
+				write_row(file, con, i, con_to_index, con.con_outs.order_by(con_out_table.order), con_out_id_dict, using_gwflow)
 				i += 1
 
 
@@ -155,7 +161,11 @@ class Rout_unit_con(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		write_con_table(self.file_name, self.get_meta_line(), db.Rout_unit_con, db.Rout_unit_con_out, "rtu", routing_unit.Rout_unit_rtu)
+		using_gwflow = False
+		codes_bsn = basin.Codes_bsn.get_or_none()
+		if codes_bsn is not None:
+			using_gwflow = codes_bsn.gwflow == 1
+		write_con_table(self.file_name, self.get_meta_line(), db.Rout_unit_con, db.Rout_unit_con_out, "rtu", routing_unit.Rout_unit_rtu, using_gwflow)
 
 
 class Aquifer_con(BaseFileModel):

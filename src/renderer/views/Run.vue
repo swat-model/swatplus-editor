@@ -175,6 +175,24 @@
 				'hru_ls': 'HRU',
 				'hru-lte_ls': 'HRU-LTE',
 				'region_ls': 'Region',
+			},
+			salts: {
+				'basin_salt': 'Basin',
+				'hru_salt': 'HRU',
+				'ru_salt': 'Routing Unit',
+				'aqu_salt': 'Aquifer',
+				'channel_salt': 'Channel',
+				'res_salt': 'Reservoir',
+				'wetland_salt': 'Wetland',
+			},
+			cs: {
+				'basin_cs': 'Basin',
+				'hru_cs': 'HRU',
+				'ru_cs': 'Routing Unit',
+				'aqu_cs': 'Aquifer',
+				'channel_cs': 'Channel',
+				'res_cs': 'Reservoir',
+				'wetland_cs': 'Wetland',
 			}
 		},
 		printConfig: {
@@ -844,6 +862,28 @@
 													<th colspan="6">Losses</th>
 												</tr>
 												<tr v-for="([k, v], i) in Object.entries(data.printGroups.losses)" :key="i" v-show="!data.printConfig.inactive.includes(k) || data.printConfig.showInactive">
+													<td>{{v}}</td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="code text-muted">{{k}}</td>
+												</tr>
+												<tr class="bg-secondary-tonal">
+													<th colspan="6">Salts</th>
+												</tr>
+												<tr v-for="([k, v], i) in Object.entries(data.printGroups.salts)" :key="i" v-show="!data.printConfig.inactive.includes(k) || data.printConfig.showInactive">
+													<td>{{v}}</td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="code text-muted">{{k}}</td>
+												</tr>
+												<tr class="bg-secondary-tonal">
+													<th colspan="6">Constituents</th>
+												</tr>
+												<tr v-for="([k, v], i) in Object.entries(data.printGroups.cs)" :key="i" v-show="!data.printConfig.inactive.includes(k) || data.printConfig.showInactive">
 													<td>{{v}}</td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>

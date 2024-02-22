@@ -391,6 +391,11 @@ def automatic_updates(project_db):
 	if lib.exists_table(conn, 'project_config'):
 		config_cols = lib.get_column_names(conn, 'project_config')
 		col_names = [v['name'] for v in config_cols]
+		if 'use_gwflow' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'use_gwflow', BooleanField(default=False)),
+			)
 		if 'output_last_imported' not in col_names:
 			migrator = SqliteMigrator(SqliteDatabase(project_db))
 			migrate(

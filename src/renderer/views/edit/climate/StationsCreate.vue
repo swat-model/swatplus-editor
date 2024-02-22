@@ -12,7 +12,7 @@
 		slr: <string|null>'sim',
 		hmd: <string|null>'sim',
 		wnd: <string|null>'sim',
-		wnd_dir: <string|null>null,
+		pet: <string|null>null,
 		atmo_dep: <string|null>null
 	});
 </script>

@@ -8,7 +8,6 @@ peewee = "*"
 flask-cors = "*"
 pyinstaller = "*"
 flask = "*"
-numpy = "*"
 
 [dev-packages]
 pyinstaller = "*"

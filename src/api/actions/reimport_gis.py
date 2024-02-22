@@ -42,7 +42,7 @@ class ReimportGis(ExecutableApi):
 		# Run updates if needed
 		SetupProjectDatabase.init(project_db, datasets_db)
 		config = Project_config.get()
-		if config.editor_version in update_project.available_to_update:
+		if config.editor_version[:3] in update_project.available_to_update:
 			update_project.UpdateProject(project_db, editor_version, update_project_values=True)
 
 		# Backup original db before beginning

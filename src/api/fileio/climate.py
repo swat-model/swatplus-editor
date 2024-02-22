@@ -23,7 +23,7 @@ class Weather_sta_cli(BaseFileModel):
 							  table.slr,
 							  table.hmd,
 							  table.wnd,
-							  table.wnd_dir,
+							  table.pet,
 							  table.atmo_dep)
 					  .join(db.Weather_wgn_cli, JOIN.LEFT_OUTER)
 					  .order_by(table.name))
@@ -35,7 +35,7 @@ class Weather_sta_cli(BaseFileModel):
 				col(table.slr, padding_override=25, text_if_null="sim"),
 				col(table.hmd, padding_override=25, text_if_null="sim"),
 				col(table.wnd, padding_override=25, text_if_null="sim"),
-				col(table.wnd_dir, text_if_null="null"),
+				col(table.pet, padding_override=25, text_if_null="null"),
 				col(table.atmo_dep, text_if_null="null")]
 		self.write_query(query, cols)
 

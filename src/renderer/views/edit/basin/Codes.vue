@@ -45,13 +45,6 @@
 			Basin Codes
 		</file-header>
 
-		<p>
-			To use your own potential ET file, select "pet.cli" followed by "3 - Read in potential ET values" from the form below.
-			Copy your pet.cli file to your <open-file :file-path="currentProject.txtInOutPath" class="text-primary">input files directory</open-file>. 
-			See the <open-in-browser url="https://swatplus.gitbook.io/io-docs/introduction/basin-1/codes.bsn/pet" text="basin documentation" class="text-primary"></open-in-browser> 
-			for formatting.
-		</p>
-
 		<edit-form is-update hide-name no-id hide-copy
 			:item="data.item" 
 			:vars="data.vars" :nullable-fields="['pet_file']"

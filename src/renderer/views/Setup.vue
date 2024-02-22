@@ -818,18 +818,25 @@
 								</v-col>
 							</v-row>
 						</div>
-						<div v-else-if="versionSupport.updatable">
-							<p>
-								You must update your project to continue using it in this version of SWAT+ Editor.
-								If you do not wish to update your project, please uninstall this version of the editor and
-								<open-in-browser url="https://swatplus.gitbook.io/docs/installation"  text="install a compatible earlier version" class="text-primary" />.
-							</p>
-							<p>
-								Your project database may be modified during the upgrade. We will make a backup of the database and store it in the Backups folder 
-								within your project directory. There may be changes to the model inputs, so we recommend you <open-in-browser url="https://swatplus.gitbook.io/docs/release-notes"  text="read our full release notes" class="text-primary" />
-								to see what has changed <strong>before</strong> upgrading your project.
-							</p>
-						</div>
+						<v-card v-else-if="versionSupport.updatable">
+							<v-card-item>
+								<p class="mt-3">
+									You must update your project to continue using it in this version of SWAT+ Editor.
+									If you do not wish to update your project, please uninstall this version of the editor and
+									<open-in-browser url="https://swatplus.gitbook.io/docs/installation"  text="install a compatible earlier version" class="text-primary" />.
+								</p>
+								<p>
+									Your project database may be modified during the upgrade. We will make a backup of the database and store it in the Backups folder 
+									within your project directory. There may be changes to the model inputs, so we recommend you <open-in-browser url="https://swatplus.gitbook.io/docs/release-notes"  text="read our full release notes" class="text-primary" />
+									to see what has changed <strong>before</strong> upgrading your project.
+								</p>
+								<p>
+									<v-btn @click="updateProject" variant="flat" color="primary" size="large">
+										Update Project
+									</v-btn>
+								</p>
+							</v-card-item>
+						</v-card>
 					</div>					
 
 					<v-bottom-navigation id="action-bar" elevation="0" border="t" grow>

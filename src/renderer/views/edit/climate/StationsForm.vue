@@ -45,7 +45,7 @@
 		slr: {},
 		hmd: {},
 		wnd: {},
-		wnd_dir: {},
+		pet: {},
 		atmo_dep: {}
 	}))
 	const v$ = useVuelidate(itemRules, props.item);
@@ -209,9 +209,9 @@
 						<td><auto-complete v-if="!page.form.isSim.wnd" v-model="item.wnd" :value="item.wnd" :custom-search-url="getFilesUrl('wnd')" hide-details></auto-complete></td>
 					</tr>
 					<tr>
-						<th>Wind direction</th>
+						<th>Potential evapotranspiration</th>
 						<td class="text-center"></td>
-						<td><auto-complete v-model="item.wnd_dir" :value="item.wnd_dir" :custom-search-url="getFilesUrl('wnd_dir')" hide-details></auto-complete></td>
+						<td><auto-complete v-model="item.pet" :value="item.pet" :custom-search-url="getFilesUrl('pet')" hide-details></auto-complete></td>
 					</tr>
 					<tr>
 						<th class="min">Atmospheric deposition</th>

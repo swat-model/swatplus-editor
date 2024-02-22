@@ -8,7 +8,7 @@ from database.datasets.setup import SetupDatasetsDatabase
 
 from database.datasets.hru_parm_db import Plants_plt as dataset_plants
 from database.datasets.definitions import File_cio as dataset_file_cio, Var_range, Version, Print_prt as dataset_print_prt, Print_prt_object as dataset_print_prt_object
-from database.datasets import change as datasets_change, init as datasets_init, lum as datasets_lum, basin as datasets_basin, ops as datasets_ops, decision_table as datasets_decision_table
+from database.datasets import change as datasets_change, init as datasets_init, lum as datasets_lum, basin as datasets_basin, ops as datasets_ops, decision_table as datasets_decision_table, hru_parm_db as datasets_hru_parm_db, base as datasets_base
 from actions.import_gis import GisImport
 
 from .reimport_gis import ReimportGis
@@ -23,29 +23,15 @@ from playhouse.migrate import *
 import datetime
 
 available_to_update = [
-	'2.2.2',
-	'2.2.1',
-	'2.2.0',
-	'2.1.4',
-	'2.1.3',
-	'2.1.2',
-	'2.1.1',
-	'2.1.0',
-	'2.0.4',
-	'2.0.3',
-	'2.0.2',
-	'2.0.1',
-	'2.0.0',
-	'1.4.0',
-	'1.3.0',
-	'1.2.3',
-	'1.2.2',
-	'1.2.1',
-	'1.2.0',
-	'1.1.2',
-	'1.1.1',
-	'1.1.0',
-	'1.0.0'
+	'2.3',
+	'2.2',
+	'2.1',
+	'2.0',
+	'1.4',
+	'1.3',
+	'1.2',
+	'1.1',
+	'1.0'
 ]
 
 
@@ -83,19 +69,26 @@ class UpdateProject(ExecutableApi):
 				sys.exit(err)
 			
 			did_update = False
-			if m.editor_version.startswith('2.1.') or m.editor_version.startswith('2.2.'):
+			if m.editor_version.startswith('2.3.'):
+				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
+				did_update = True
+				reimport_gis = False
+			elif m.editor_version.startswith('2.1.') or m.editor_version.startswith('2.2.'):
 				self.updates_for_2_3_0(project_db, datasets_db, backup_db_file)
+				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
 				did_update = True
 				reimport_gis = False
 			elif m.editor_version.startswith('2.0.'):
 				self.updates_for_2_1_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_3_0(project_db, datasets_db, backup_db_file)
+				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
 				did_update = True
 				reimport_gis = False
 			elif m.editor_version == '1.3.0' or m.editor_version == '1.4.0':
 				self.updates_for_2_0_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_1_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_3_0(project_db, datasets_db, backup_db_file)
+				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
 				did_update = True
 				reimport_gis = False
 			elif m.editor_version == '1.2.1' or m.editor_version == '1.2.2' or m.editor_version == '1.2.3':
@@ -103,6 +96,7 @@ class UpdateProject(ExecutableApi):
 				self.updates_for_2_0_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_1_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_3_0(project_db, datasets_db, backup_db_file)
+				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
 				did_update = True
 				reimport_gis = False
 			elif m.editor_version == '1.2.0':
@@ -111,6 +105,7 @@ class UpdateProject(ExecutableApi):
 				self.updates_for_2_0_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_1_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_3_0(project_db, datasets_db, backup_db_file)
+				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
 				did_update = True
 				reimport_gis = False
 			elif m.editor_version == '1.1.0' or m.editor_version == '1.1.1' or m.editor_version == '1.1.2':
@@ -120,6 +115,7 @@ class UpdateProject(ExecutableApi):
 				self.updates_for_2_0_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_1_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_3_0(project_db, datasets_db, backup_db_file)
+				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
 				did_update = True
 			elif m.editor_version == '1.0.0':
 				self.updates_for_1_1_0(project_db, datasets_db, backup_db_file)
@@ -129,6 +125,7 @@ class UpdateProject(ExecutableApi):
 				self.updates_for_2_0_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_1_0(project_db, datasets_db, backup_db_file)
 				self.updates_for_2_3_0(project_db, datasets_db, backup_db_file)
+				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
 				did_update = True
 			
 			m.editor_version = new_version
@@ -141,7 +138,7 @@ class UpdateProject(ExecutableApi):
 
 	def check_config(self, new_version):
 		m = Project_config.get()
-		if m.editor_version not in available_to_update:
+		if m.editor_version[:3] not in available_to_update:
 			sys.exit("Unable to update this project to {new_version}. Updates from {current_version} unavailable.".format(new_version=new_version, current_version=m.editor_version))
 			
 		return m
@@ -152,7 +149,9 @@ class UpdateProject(ExecutableApi):
 			migrator = SqliteMigrator(SqliteDatabase(project_db))
 			migrate(
 				migrator.add_column('codes_bsn', 'gwflow', IntegerField(default=0)),
+				migrator.add_column('pesticide_pst', 'pl_uptake', DoubleField(default=0.01)),
 				migrator.rename_column('hyd_sed_lte_cha', 'bed_load', 'bankfull_flo'),
+				migrator.rename_column('weather_sta_cli', 'wnd_dir', 'pet'),
 			)
 
 			#Datasets DB - Ignore error if already done
@@ -160,11 +159,57 @@ class UpdateProject(ExecutableApi):
 				dsmigrator = SqliteMigrator(SqliteDatabase(datasets_db))
 				migrate(
 					dsmigrator.add_column('codes_bsn', 'gwflow', IntegerField(default=0)),
+					dsmigrator.add_column('pesticide_pst', 'pl_uptake', DoubleField(default=0.01)),
 				)
 			except Exception:
 				pass
 
 			self.emit_progress(15, 'Updating database with new defaults...')
+
+			File_cio.update({File_cio.file_name: 'pet.cli'}).where(File_cio.file_name == 'wind-dir.cli').execute()
+			File_cio.update({File_cio.file_name: 'gwflow.con'}).where(File_cio.file_name == 'modflow.con').execute()
+			File_cio.update({File_cio.file_name: 'pesticide.pst'}).where(File_cio.file_name == 'pesticide.pes').execute()
+			dataset_file_cio.update({dataset_file_cio.default_file_name: 'pet.cli'}).where(dataset_file_cio.default_file_name == 'wind-dir.cli').execute()
+			dataset_file_cio.update({dataset_file_cio.default_file_name: 'gwflow.con'}).where(dataset_file_cio.default_file_name == 'modflow.con').execute()
+			dataset_file_cio.update({dataset_file_cio.default_file_name: 'pesticide.pst'}).where(dataset_file_cio.default_file_name == 'pesticide.pes').execute()
+
+			hru_parm_db.Pesticide_pst.update({hru_parm_db.Pesticide_pst.aq_hlife: 142.85, hru_parm_db.Pesticide_pst.ben_hlife: 20}).execute()
+			datasets_hru_parm_db.Pesticide_pst.update({datasets_hru_parm_db.Pesticide_pst.aq_hlife: 142.85, datasets_hru_parm_db.Pesticide_pst.ben_hlife: 20}).execute()
+
+			self.plant_value_updates_for_3_0_0(hru_parm_db.Plants_plt)
+			self.plant_value_updates_for_3_0_0(datasets_hru_parm_db.Plants_plt)
+
+			self.cal_parms_value_updates_for_3_0_0(change.Cal_parms_cal)
+			self.cal_parms_value_updates_for_3_0_0(datasets_change.Cal_parms_cal)
+
+			new_print_prt = [
+				{ 'name': 'basin_salt', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'hru_salt', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'ru_salt', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'aqu_salt', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'channel_salt', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'res_salt', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'wetland_salt', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'basin_cs', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'hru_cs', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'ru_cs', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'aqu_cs', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'channel_cs', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'res_cs', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+				{ 'name': 'wetland_cs', 'daily': 0, 'monthly': 0, 'yearly': 0, 'avann': 0 },
+			]
+			new_print_project = []
+			for p in new_print_prt:
+				new_print_project.append({
+					'name': p['name'],
+					'daily': p['daily'],
+					'monthly': p['monthly'],
+					'yearly': p['yearly'],
+					'avann': p['avann'],
+					'print_prt_id': 1
+				})
+			lib.bulk_insert(base.db, simulation.Print_prt_object, new_print_project)
+			lib.bulk_insert(datasets_base.db, dataset_print_prt_object, new_print_prt)
 
 			#decision table changes
 			decision_table.D_table_dtl_act.update({decision_table.D_table_dtl_act.fp: 'grain'}).where(decision_table.D_table_dtl_act.act_typ == 'harvest_kill').execute()
@@ -178,6 +223,46 @@ class UpdateProject(ExecutableApi):
 				SetupProjectDatabase.rollback(project_db, rollback_db)
 				self.emit_progress(100, "Error occurred.")
 			sys.exit(str(ex))
+
+	def plant_value_updates_for_3_0_0(self, table):
+		all_rice = ['rice', 'rice120', 'rice140', 'rice160', 'rice180']
+		table.update({table.days_mat: 130}).where(table.name == 'rice').execute()
+		table.update({
+				table.bm_e: 26, 
+				table.lai_max1: 0.15, 
+				table.frac_hu2: 0.5, 
+				table.hu_lai_decl: 0.9, 
+				table.dlai_rate: 0.1
+			}).where(table.name.in_(all_rice)).execute()
+		
+		table.update({table.ext_co: 0.8}).where(table.name == 'bsvg').execute()
+		table.update({table.ext_co: 0.85}).where(table.name == 'crdy').execute()
+		table.update({table.ext_co: 0.85}).where(table.name == 'crgr').execute()
+		table.update({table.ext_co: 0.85}).where(table.name == 'crir').execute()
+		table.update({table.ext_co: 0.83}).where(table.name == 'crwo').execute()
+		table.update({table.ext_co: 0.83}).where(table.name == 'fodb').execute()
+		table.update({table.ext_co: 0.83}).where(table.name == 'fodn').execute()
+		table.update({table.ext_co: 0.77}).where(table.name == 'foeb').execute()
+		table.update({table.ext_co: 0.77}).where(table.name == 'foen').execute()
+		table.update({table.ext_co: 0.79}).where(table.name == 'fomi').execute()
+		table.update({table.ext_co: 0.84}).where(table.name == 'gras').execute()
+
+	def cal_parms_value_updates_for_3_0_0(self, table):
+		table.insert(name='nperco_lchtile', obj_typ='bsn', abs_min=0, abs_max=1, units=None).execute()
+		table.delete().where(table.name == 'spcon').execute()
+		table.delete().where(table.name == 'spexp').execute()
+		table.update({
+				table.name: 'bankfull_flo',
+				table.abs_min: 0.2,
+				table.abs_max: 3,
+				table.units: 'fraction'
+			}).where(table.name == 'bedldcoef').execute()
+		table.update({
+				table.name: 'flood_sedfrac',
+				table.abs_min: 0.1,
+				table.abs_max: 0.9,
+				table.units: 'fraction'
+			}).where(table.name == 'chseq').execute()
 	
 	def updates_for_2_3_0(self, project_db, datasets_db, rollback_db):
 		try:

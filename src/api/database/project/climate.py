@@ -37,14 +37,15 @@ class Weather_sta_cli(BaseModel):
 	slr = CharField(null=True)
 	hmd = CharField(null=True)
 	wnd = CharField(null=True)
-	wnd_dir = CharField(null=True)
+	#wnd_dir = CharField(null=True)
+	pet = CharField(null=True)
 	atmo_dep = CharField(null=True)
 	lat = DoubleField(null=True)
 	lon = DoubleField(null=True)
 	
 	@classmethod
 	def observed_count(cls):
-		return cls.select().where((cls.pcp != 'sim') | (cls.tmp != 'sim') | (cls.slr != 'sim') | (cls.hmd != 'sim') | (cls.wnd != 'sim')).count()
+		return cls.select().where((cls.pcp != 'sim') | (cls.tmp != 'sim') | (cls.slr != 'sim') | (cls.hmd != 'sim') | (cls.wnd != 'sim') | (cls.pet != 'sim')).count()
 
 
 class Weather_file(BaseModel):

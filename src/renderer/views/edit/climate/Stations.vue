@@ -19,7 +19,7 @@
 			{ key: 'slr', label: 'Solar radiation', type: 'file', defaultIfNull: 'sim' },
 			{ key: 'hmd', label: 'Rel. humidity', type: 'file', defaultIfNull: 'sim' },
 			{ key: 'wnd', label: 'Wind speed', type: 'file', defaultIfNull: 'sim' },
-			{ key: 'wnd_dir', label: 'Wind direction', type: 'file', defaultIfNull: 'null' },
+			{ key: 'pet', label: 'Potential ET', type: 'file', defaultIfNull: 'null' },
 			{ key: 'atmo_dep', label: 'Atmo. dep.' },
 			{ key: 'lat', label: 'Lat', type: 'number', class: 'text-right' },
 			{ key: 'lon', label: 'Lon', type: 'number', class: 'text-right' }
@@ -299,14 +299,14 @@
 							<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 								<span v-if="page.import.form.format === 'SWAT2012'">
 									Each measurement provided must have a file named as: <code>pcp.txt</code>, <code>rh.txt</code>, <code>solar.txt</code>, 
-									<code>tmp.txt</code>, and <code>wind.txt</code>. 
+									<code>tmp.txt</code>, <code>wind.txt</code>, and <code>pet.txt</code>. 
 									<open-in-browser url="https://plus.swat.tamu.edu/downloads/sample_files/weather-stations/swat2012-weather-stations.zip" text="Download a sample format"></open-in-browser>
 									and 
 									<open-in-browser url="https://swatplus.gitbook.io/docs/user/editor/inputs/climate#swat2012-global-weather-websites-format" text="read the instructions"></open-in-browser>.
 								</span>
 								<span v-else>
 									Each measurement provided must have a file named as: <code>pcp.cli</code>, <code>hmd.cli</code>, <code>slr.cli</code>, 
-									<code>tmp.cli</code>, and <code>wnd.cli</code>.
+									<code>tmp.cli</code>, <code>wnd.cli</code>, and <code>pet.cli</code>.
 									<open-in-browser url="https://plus.swat.tamu.edu/downloads/sample_files/weather-stations/swatplus-weather-stations.zip" text="Download a sample format"></open-in-browser>
 									and 
 									<open-in-browser url="https://swatplus.gitbook.io/docs/user/editor/inputs/climate#swat+-format" text="read the instructions"></open-in-browser>.

@@ -97,6 +97,7 @@ class Pesticide_pst(BaseModel):
 	ben_act_dep = DoubleField()
 	ben_bury = DoubleField()
 	ben_hlife = DoubleField()
+	pl_uptake = DoubleField(default=0.01)
 	description = TextField(null=True)
 	
 	

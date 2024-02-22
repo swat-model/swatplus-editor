@@ -35,6 +35,7 @@ class Project_config(base.BaseModel):
 	output_last_imported = DateTimeField(null=True)
 	imported_gis = BooleanField(default=False)
 	is_lte = BooleanField(default=False)
+	use_gwflow = BooleanField(default=False)
 
 	@classmethod
 	def update_version(cls, version):

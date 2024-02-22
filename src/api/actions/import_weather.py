@@ -24,6 +24,7 @@ PCP_TXT = "pcp.txt"
 SLR_TXT = "slr.txt"
 TMP_TXT = "tmp.txt"
 WND_TXT = "wnd.txt"
+PET_TXT = "pet.txt"
 
 HMD_TXT2 = "rh.txt"
 SLR_TXT2 = "solar.txt"
@@ -34,13 +35,15 @@ PCP_CLI = "pcp.cli"
 SLR_CLI = "slr.cli"
 TMP_CLI = "tmp.cli"
 WND_CLI = "wnd.cli"
+PET_CLI = "pet.cli"
 
 WEATHER_DESC = {
 	"hmd": "Relative humidity",
 	"pcp": "Precipitation",
 	"slr": "Solar radiation",
 	"tmp": "Temperature",
-	"wnd": "Wind speed"
+	"wnd": "Wind speed",
+	"pet": "Potential evapotranspiration"
 }
 
 def weather_sta_name(lat, lon, prefix = 's', mult = 1000):
@@ -203,7 +206,6 @@ class WeatherImport(ExecutableApi):
 			except Weather_sta_cli.DoesNotExist:
 				station = {
 					"name": name,
-					"wnd_dir": None,
 					"atmo_dep": None,
 					"lat": lat,
 					"lon": lon,
@@ -231,6 +233,7 @@ class WeatherImport(ExecutableApi):
 		update_closest_lat_lon("weather_sta_cli", "slr", "weather_file", "filename", "slr")
 		update_closest_lat_lon("weather_sta_cli", "tmp", "weather_file", "filename", "tmp")
 		update_closest_lat_lon("weather_sta_cli", "wnd", "weather_file", "filename", "wnd")
+		update_closest_lat_lon("weather_sta_cli", "pet", "weather_file", "filename", "pet")
 		"""with project_base.db.atomic():
 			query = Weather_sta_cli.select()
 			records = query.count()
@@ -257,9 +260,11 @@ class WeatherImport(ExecutableApi):
 		tmp_start, tmp_end = self.add_weather_files_type(os.path.join(dir, TMP_CLI), "tmp", 15)
 		if self.__abort: return
 		wnd_start, wnd_end = self.add_weather_files_type(os.path.join(dir, WND_CLI), "wnd", 20)
+		if self.__abort: return
+		pet_start, pet_end = self.add_weather_files_type(os.path.join(dir, PET_CLI), "pet", 25)
 
-		starts = [hmd_start, pcp_start, slr_start, tmp_start, wnd_start]
-		ends = [hmd_end, pcp_end, slr_end, tmp_end, wnd_end]
+		starts = [hmd_start, pcp_start, slr_start, tmp_start, wnd_start, pet_start]
+		ends = [hmd_end, pcp_end, slr_end, tmp_end, wnd_end, pet_end]
 		starts = [v for v in starts if v is not None]
 		ends = [v for v in ends if v is not None]
 		if len(starts) > 0:
@@ -438,11 +443,15 @@ class Swat2012WeatherImport(ExecutableApi):
 		wnd_res = self.write_weather(wnd_file, os.path.join(self.output_dir, WND_CLI), "wnd", tmp_res[0], total_files)
 
 		if self.__abort: return
+		pet_res = self.write_weather(os.path.join(dir, PET_TXT), os.path.join(self.output_dir, PET_CLI), "pet", wnd_res[0], total_files)
+
+		if self.__abort: return
 		warnings.append(hmd_res[1])
 		warnings.append(pcp_res[1])
 		warnings.append(slr_res[1])
 		warnings.append(tmp_res[1])
 		warnings.append(wnd_res[1])
+		warnings.append(pet_res[1])
 		has_warnings = any(x is not None for x in warnings)
 
 		if has_warnings:
@@ -882,7 +891,7 @@ class WgnImport(ExecutableApi):
 					"slr": None,
 					"tmp": None,
 					"wnd": None,
-					"wnd_dir": None,
+					"pet": None,
 					"atmo_dep": None,
 					"lat": lat,
 					"lon": lon,

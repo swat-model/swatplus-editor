@@ -57,6 +57,7 @@ class File_cio(BaseFileModel):
 	def get_classifications(self, is_lte=False):
 		rec_cnt = recall.Recall_rec.select().where(recall.Recall_rec.rec_typ != 4).count()
 		exco_cnt = recall.Recall_dat.select().join(recall.Recall_rec).where((recall.Recall_rec.rec_typ == 4) & (recall.Recall_dat.flo != 0)).count()
+		codes_bsn = basin.Codes_bsn.get_or_none()
 
 		sim_conditions = {
 			1: True,
@@ -67,14 +68,14 @@ class File_cio(BaseFileModel):
 		}
 		
 		basin_conditions = {
-			1: basin.Codes_bsn.select().count() > 0,
+			1: codes_bsn is not None,
 			2: basin.Parameters_bsn.select().count() > 0
 		}
 		
 		climate_conditions = {
 			1: True,
 			2: True,
-			3: climate.Weather_file.select().where(climate.Weather_file.type == "wind-dir").count() > 0,
+			3: climate.Weather_file.select().where(climate.Weather_file.type == "pet").count() > 0,
 			4: climate.Weather_file.select().where(climate.Weather_file.type == "pcp").count() > 0,
 			5: climate.Weather_file.select().where(climate.Weather_file.type == "tmp").count() > 0,
 			6: climate.Weather_file.select().where(climate.Weather_file.type == "slr").count() > 0,
@@ -87,7 +88,7 @@ class File_cio(BaseFileModel):
 			1: connect.Hru_con.select().count() > 0,
 			2: connect.Hru_lte_con.select().count() > 0,
 			3: connect.Rout_unit_con.select().count() > 0,
-			4: connect.Modflow_con.select().count() > 0, #gwflow.con if using gwflow in QSWAT+
+			4: codes_bsn is not None and codes_bsn.gwflow == 1, #gwflow.con if using gwflow in QSWAT+
 			5: connect.Aquifer_con.select().count() > 0, #false if using gwflow.con
 			6: connect.Aquifer2d_con.select().count() > 0,
 			7: connect.Channel_con.select().count() > 0,

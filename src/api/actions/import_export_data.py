@@ -121,7 +121,7 @@ class ImportExportData(ExecutableApi):
 				ignored_cols.append('slr')
 				ignored_cols.append('hmd')
 				ignored_cols.append('wnd')
-				ignored_cols.append('wnd_dir')
+				ignored_cols.append('pet')
 				ignored_cols.append('atmo_dep')
 				initial_headers.append('atmo_station')
 				initial_headers.append('weather_station')

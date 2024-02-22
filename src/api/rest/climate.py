@@ -21,7 +21,7 @@ bp = Blueprint('climate', __name__, url_prefix='/climate')
 def stations():
 	if request.method == 'GET':
 		table = Weather_sta_cli
-		filter_cols = [table.name, table.lat, table.lon, table.pcp, table.tmp, table.slr, table.hmd, table.wnd, table.wnd_dir, table.atmo_dep]
+		filter_cols = [table.name, table.lat, table.lon, table.pcp, table.tmp, table.slr, table.hmd, table.wnd, table.pet, table.atmo_dep]
 		table_lookups = {
 			table.wgn: Weather_wgn_cli
 		}
@@ -40,7 +40,7 @@ def stations():
 			m.slr = args['slr']
 			m.hmd = args['hmd']
 			m.wnd = args['wnd']
-			m.wnd_dir = args['wnd_dir']
+			m.pet = args['pet']
 			m.atmo_dep = args['atmo_dep']
 			m.lat = args['lat']
 			m.lon = args['lon']
@@ -106,7 +106,7 @@ def stationsId(id):
 			m.slr = args['slr']
 			m.hmd = args['hmd']
 			m.wnd = args['wnd']
-			m.wnd_dir = args['wnd_dir']
+			m.pet = args['pet']
 			m.atmo_dep = args['atmo_dep']
 			m.lat = args['lat']
 			m.lon = args['lon']
