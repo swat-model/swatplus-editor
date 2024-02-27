@@ -226,7 +226,7 @@
 						</v-alert>
 
 						<v-row>
-							<v-col cols="12" md="6">
+							<v-col cols="12" xl="6">
 								<div id="hydrology" class="picture-holder">
 									<span id="pet">PET<br />{{formatters.toNumberFormat(data.check.hydrology.pet, 2)}}</span>
 									<span id="et">{{formatters.toNumberFormat(data.check.hydrology.et, 2)}}</span>
@@ -245,7 +245,7 @@
 									<span id="hydrology-units">All Units mm</span>
 								</div>
 							</v-col>
-							<v-col cols="12" md="6">
+							<v-col cols="12" xl="6">
 								<p class="font-weight-bold">Water Balance Ratios</p>
 								<v-table small density="compact">
 									<tbody>

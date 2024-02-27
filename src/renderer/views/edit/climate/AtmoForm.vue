@@ -219,10 +219,10 @@
 
 			<div v-if="props.isUpdate">
 				<h2 class="text-h5 my-3">Values</h2>
-				<div v-if="!page.values.list || page.values.list.length < 1" class="alert alert-primary">
-					This weather generator does not have any monthly values. 
-					<a href="#" @click.prevent="add">Add now.</a>
-				</div>
+				<v-alert v-if="!page.values.list || page.values.list.length < 1" variant="tonal" type="info">
+					This station does not have any values. 
+					<a href="#" @click.prevent="add" class="text-primary">Add now.</a>
+				</v-alert>
 				<div v-if="page.values.list && page.values.list.length > 0">
 					<v-card>
 						<v-table class="data-table" fixed-header density="compact">
@@ -275,7 +275,7 @@
 		</v-form>
 
 		<v-dialog v-model="page.values.form.show" :max-width="constants.dialogSizes.lg">
-			<v-card :title="page.values.form.update ? 'Update monthly values' : 'Add monthly values'">
+			<v-card :title="page.values.form.update ? 'Update values' : 'Add values'">
 				<v-card-text>
 					<error-alert :text="page.values.form.error"></error-alert>
 

@@ -1,7 +1,7 @@
 from helpers.executable_api import ExecutableApi, Unbuffered
 from helpers import utils
 from database import lib
-from database.project import base, init, dr, channel, reservoir, simulation, hru, lum, exco, connect, routing_unit, recall, change, soils, aquifer, hru_parm_db, decision_table, ops, basin, water_rights
+from database.project import base, init, dr, channel, reservoir, simulation, hru, lum, exco, connect, routing_unit, recall, change, soils, aquifer, hru_parm_db, decision_table, ops, basin, water_rights, salts
 from database.project.config import Project_config, File_cio
 from database.project.setup import SetupProjectDatabase
 from database.datasets.setup import SetupDatasetsDatabase
@@ -145,6 +145,35 @@ class UpdateProject(ExecutableApi):
 	
 	def updates_for_3_0_0(self, project_db, datasets_db, rollback_db):
 		try:
+			self.emit_progress(3, 'Creating salinity tables...')
+			"""migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				#migrator.drop_foreign_key_constraint('initial_aqu', 'salt_id'),
+				migrator.drop_column('initial_aqu', 'salt_id'),
+				#migrator.drop_foreign_key_constraint('initial_cha', 'salt_id'),
+				migrator.drop_column('initial_cha', 'salt_id'),
+				#migrator.drop_foreign_key_constraint('initial_res', 'salt_id'),
+				migrator.drop_column('initial_res', 'salt_id'),
+				#migrator.drop_foreign_key_constraint('soil_plant_ini', 'salt_id'),
+				migrator.drop_column('soil_plant_ini', 'salt_id'),
+			)"""
+
+			#base.db.drop_tables([init.Salt_hru_ini_item, init.Salt_hru_ini, init.Salt_water_ini_item, init.Salt_water_ini])
+			base.db.create_tables([salts.Salt_recall_rec, 
+						  salts.Salt_recall_dat,
+						  salts.Salt_atmo_cli,
+						  salts.Salt_road,
+						  salts.Salt_fertilizer_frt,
+						  salts.Salt_urban,
+						  salts.Salt_plants_flags,
+						  salts.Salt_plants,
+						  salts.Salt_uptake,
+						  salts.Salt_irrigation,
+						  salts.Salt_aqu_ini,
+						  salts.Salt_channel_ini,
+						  salts.Salt_res_ini,
+						  salts.Salt_hru_ini_cs])
+
 			self.emit_progress(5, 'Running migrations...')
 			migrator = SqliteMigrator(SqliteDatabase(project_db))
 			migrate(
@@ -152,6 +181,11 @@ class UpdateProject(ExecutableApi):
 				migrator.add_column('pesticide_pst', 'pl_uptake', DoubleField(default=0.01)),
 				migrator.rename_column('hyd_sed_lte_cha', 'bed_load', 'bankfull_flo'),
 				migrator.rename_column('weather_sta_cli', 'wnd_dir', 'pet'),
+
+				migrator.add_column('initial_aqu', 'salt_cs_id', ForeignKeyField(salts.Salt_aqu_ini, salts.Salt_aqu_ini.id, on_delete='SET NULL', null=True)),
+				migrator.add_column('initial_cha', 'salt_cs_id', ForeignKeyField(salts.Salt_channel_ini, salts.Salt_channel_ini.id, on_delete='SET NULL', null=True)),
+				migrator.add_column('initial_res', 'salt_cs_id', ForeignKeyField(salts.Salt_res_ini, salts.Salt_res_ini.id, on_delete='SET NULL', null=True)),
+				migrator.add_column('soil_plant_ini', 'salt_cs_id', ForeignKeyField(salts.Salt_hru_ini_cs, salts.Salt_hru_ini_cs.id, on_delete='SET NULL', null=True)),
 			)
 
 			#Datasets DB - Ignore error if already done

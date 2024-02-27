@@ -1,5 +1,6 @@
 from peewee import *
 from . import base, init
+from .salts import Salt_aqu_ini
 
 
 class Initial_aqu(base.BaseModel):
@@ -8,7 +9,8 @@ class Initial_aqu(base.BaseModel):
 	pest = ForeignKeyField(init.Pest_water_ini, on_delete='SET NULL', null=True)
 	path = ForeignKeyField(init.Path_water_ini, on_delete='SET NULL', null=True)
 	hmet = ForeignKeyField(init.Hmet_water_ini, on_delete='SET NULL', null=True)
-	salt = ForeignKeyField(init.Salt_water_ini, on_delete='SET NULL', null=True)
+	salt = ForeignKeyField(init.Salt_water_ini, on_delete='SET NULL', null=True) 
+	salt_cs = ForeignKeyField(Salt_aqu_ini, on_delete='SET NULL', null=True)
 	description = TextField(null=True)
 
 

@@ -1,7 +1,7 @@
 from peewee import *
 from . import base, config, simulation, climate, link, channel, reservoir, dr, exco, recall, hydrology, routing_unit, aquifer, \
 	basin, hru_parm_db, structural, ops, decision_table, init, lum, soils, \
-	change, regions, hru, connect, gis, water_rights
+	change, regions, hru, connect, gis, water_rights, salts
 from database import lib
 from database.datasets import base as datasets_base, definitions as dataset_defs, decision_table as dataset_dts
 import os, os.path
@@ -96,6 +96,20 @@ class SetupProjectDatabase():
 		base.db.create_tables([connect.Rout_unit_ele])
 		base.db.create_tables([gis.Gis_channels, gis.Gis_subbasins, gis.Gis_hrus, gis.Gis_lsus, gis.Gis_water, gis.Gis_points, gis.Gis_routing])
 		base.db.create_tables([water_rights.Water_allocation_wro, water_rights.Water_allocation_src_ob, water_rights.Water_allocation_dmd_ob, water_rights.Water_allocation_dmd_ob_src])
+		base.db.create_tables([salts.Salt_recall_rec, 
+						  salts.Salt_recall_dat,
+						  salts.Salt_atmo_cli,
+						  salts.Salt_road,
+						  salts.Salt_fertilizer_frt,
+						  salts.Salt_urban,
+						  salts.Salt_plants_flags,
+						  salts.Salt_plants,
+						  salts.Salt_uptake,
+						  salts.Salt_irrigation,
+						  salts.Salt_aqu_ini,
+						  salts.Salt_channel_ini,
+						  salts.Salt_res_ini,
+						  salts.Salt_hru_ini_cs])
 
 	@staticmethod
 	def initialize_data(project_name, is_lte=False, overwrite_plants=False):

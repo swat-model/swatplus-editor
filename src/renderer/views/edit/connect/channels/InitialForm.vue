@@ -152,9 +152,9 @@
 				</v-col>
 			</v-row>
 
-			<!--Not currently active!-->
-			<v-row v-if="false">
-				<v-col cols="12" md="6">
+			<v-row>
+				<!--Not currently active!-->
+				<v-col cols="12" md="6" v-if="false">
 					<div class="form-group d-flex">
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="hmet_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Heavy Metal Properties" class="flex-grow-1 flex-shrink-0"
@@ -164,14 +164,15 @@
 							api-url="init/constituents/hmet-water"></auto-complete>
 					</div>
 				</v-col>
+
 				<v-col cols="12" md="6">
 					<div class="form-group d-flex">
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="salt_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
-						<auto-complete label="Pathogen Properties" class="flex-grow-1 flex-shrink-0"
+						<auto-complete label="Salt Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.salt_name" :value="item.salt_name" :show-item-link="props.isUpdate"
-							table-name="salt_water_ini" route-name="ConstituentsSalts" no-route-id
-							section="Constituents / Salt Water" help-file="salt_water.ini" helpdb="salt_water_ini"
-							api-url="init/constituents/salt-water"></auto-complete>
+							table-name="salt_channel_ini" route-name="ConstituentsSaltsChannelIni"
+							section="Constituents / Salts / Channel Initialization" help-file="salt_channel.ini" helpdb="salt_channel_ini"
+							api-url="salts/salt_channel_ini"></auto-complete>
 					</div>
 				</v-col>
 			</v-row>

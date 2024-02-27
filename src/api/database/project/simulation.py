@@ -106,3 +106,9 @@ class Constituents_cs(BaseModel):
 	path_coms = CharField(null=True)
 	hmet_coms = CharField(null=True)
 	salt_coms = CharField(null=True)
+
+	@classmethod
+	def is_enabled(cls):
+		cs = cls.get_or_none()
+		if cs is None: return False
+		return cs.pest_coms is not None or cs.path_coms is not None or cs.hmet_coms is not None or cs.salt_coms is not None

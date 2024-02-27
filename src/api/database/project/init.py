@@ -1,5 +1,6 @@
 from peewee import *
 from . import base, hru_parm_db, soils
+from .salts import Salt_hru_ini_cs
 
 
 class Plant_ini(base.BaseModel):
@@ -205,22 +206,22 @@ class Hmet_water_ini_item(base.BaseModel):
 	water = DoubleField()
 	benthic = DoubleField()
 
-
+#removed in 3.0.0 migration
 class Salt_hru_ini(base.BaseModel):
 	name = CharField(unique=True)
 
-
+#removed in 3.0.0 migration
 class Salt_hru_ini_item(base.BaseModel):
 	salt_hru_ini = ForeignKeyField(Salt_hru_ini, on_delete='CASCADE', related_name="salt_hrus")
 	name = ForeignKeyField(hru_parm_db.Salts_slt, on_delete='CASCADE', null=True)
 	plant = DoubleField()
 	soil = DoubleField()
 
-
+#removed in 3.0.0 migration
 class Salt_water_ini(base.BaseModel):
 	name = CharField(unique=True)
 
-
+#removed in 3.0.0 migration
 class Salt_water_ini_item(base.BaseModel):
 	salt_water_ini = ForeignKeyField(Salt_water_ini, on_delete='CASCADE', related_name="salt_waters")
 	name = ForeignKeyField(hru_parm_db.Salts_slt, on_delete='CASCADE', null=True)
@@ -236,3 +237,4 @@ class Soil_plant_ini(base.BaseModel):
 	path = ForeignKeyField(Path_hru_ini, on_delete='SET NULL', null=True)
 	hmet = ForeignKeyField(Hmet_hru_ini, on_delete='SET NULL', null=True)
 	salt = ForeignKeyField(Salt_hru_ini, on_delete='SET NULL', null=True)
+	salt_cs = ForeignKeyField(Salt_hru_ini_cs, on_delete='SET NULL', null=True)

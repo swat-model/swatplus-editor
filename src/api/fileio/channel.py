@@ -21,7 +21,6 @@ class Initial_cha(BaseFileModel):
 							  init.Pest_water_ini.name.alias("pest"),
 							  init.Path_water_ini.name.alias("path"),
 							  init.Hmet_water_ini.name.alias("hmet"),
-							  init.Salt_water_ini.name.alias("salt"),
 							  table.description)
 					  .join(init.Om_water_ini, JOIN.LEFT_OUTER)
 					  .switch(table)
@@ -30,8 +29,6 @@ class Initial_cha(BaseFileModel):
 					  .join(init.Path_water_ini, JOIN.LEFT_OUTER)
 					  .switch(table)
 					  .join(init.Hmet_water_ini, JOIN.LEFT_OUTER)
-					  .switch(table)
-					  .join(init.Salt_water_ini, JOIN.LEFT_OUTER)
 					  .order_by(table.id))
 
 		cols = [col(table.name, direction="left"),
@@ -39,7 +36,7 @@ class Initial_cha(BaseFileModel):
 				col(table.pest, query_alias="pest"),
 				col(table.path, query_alias="path"),
 				col(table.hmet, query_alias="hmet"),
-				col(table.salt, query_alias="salt"),
+				col("salt", not_in_db=True, value_override="null"),
 				col(table.description, direction="left")]
 		self.write_query(query, cols)
 

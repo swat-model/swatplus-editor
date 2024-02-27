@@ -3,6 +3,7 @@ from peewee import *
 from helpers import utils
 from database.project import soils
 from database.project.simulation import Constituents_cs
+from database.project.salts import Salt_hru_ini_cs
 import database.project.init as db
 
 
@@ -85,7 +86,7 @@ class Soil_plant_ini(BaseFileModel):
 							  db.Pest_hru_ini.name.alias("pest"),
 							  db.Path_hru_ini.name.alias("path"),
 							  db.Hmet_hru_ini.name.alias("hmet"),
-							  db.Salt_hru_ini.name.alias("salt"))
+							  Salt_hru_ini_cs.name.alias("salt"))
 					  .join(soils.Nutrients_sol, JOIN.LEFT_OUTER)
 					  .switch(table)
 					  .join(db.Pest_hru_ini, JOIN.LEFT_OUTER)
@@ -94,7 +95,7 @@ class Soil_plant_ini(BaseFileModel):
 					  .switch(table)
 					  .join(db.Hmet_hru_ini, JOIN.LEFT_OUTER)
 					  .switch(table)
-					  .join(db.Salt_hru_ini, JOIN.LEFT_OUTER)
+					  .join(Salt_hru_ini_cs, JOIN.LEFT_OUTER)
 					  .order_by(table.id))
 
 		cols = [col(table.name, direction="left"),
@@ -103,8 +104,18 @@ class Soil_plant_ini(BaseFileModel):
 				col(table.pest, query_alias="pest"),
 				col(table.path, query_alias="path"),
 				col(table.hmet, query_alias="hmet"),
-				col(table.salt, query_alias="salt")]
+				col("salt", not_in_db=True, value_override="null")]
 		self.write_query(query, cols)
+
+		self.file_name = self.file_name + "_cs"
+		cols_cs = [col(table.name, direction="left"),
+				col("pest", not_in_db=True, value_override="null"),
+				col("path", not_in_db=True, value_override="null"),
+				col("hmet", not_in_db=True, value_override="null"),
+				col(table.salt, query_alias="salt"),
+				col("cs", not_in_db=True, value_override="null")]
+		self.write_query(query, cols_cs)
+
 
 
 class Pest_hru_ini(BaseFileModel):

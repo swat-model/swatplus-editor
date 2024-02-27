@@ -1,5 +1,6 @@
 from peewee import *
 from . import base, init
+from .salts import Salt_channel_ini
 
 
 class Initial_cha(base.BaseModel):
@@ -9,6 +10,7 @@ class Initial_cha(base.BaseModel):
 	path = ForeignKeyField(init.Path_water_ini, on_delete='SET NULL', null=True)
 	hmet = ForeignKeyField(init.Hmet_water_ini, on_delete='SET NULL', null=True)
 	salt = ForeignKeyField(init.Salt_water_ini, on_delete='SET NULL', null=True)
+	salt_cs = ForeignKeyField(Salt_channel_ini, on_delete='SET NULL', null=True)
 	description = TextField(null=True)
 
 

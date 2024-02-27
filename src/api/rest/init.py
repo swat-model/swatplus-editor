@@ -9,6 +9,7 @@ from database.project import init as db
 from database.project.soils import Nutrients_sol
 from database.project.simulation import Constituents_cs
 from database.project.hru_parm_db import Pesticide_pst, Pathogens_pth
+from database.project.salts import Salt_hru_ini_cs
 from database.project import base as project_base
 from database import lib as db_lib
 
@@ -31,7 +32,7 @@ def save_soil_plant_args(m, args):
 	if 'hmet_name' in args:
 		m.hmet_id = RestHelpers.get_id_from_name(db.Hmet_hru_ini, args['hmet_name'])
 	if 'salt_name' in args:
-		m.salt_id = RestHelpers.get_id_from_name(db.Salt_hru_ini, args['salt_name'])
+		m.salt_cs_id = RestHelpers.get_id_from_name(Salt_hru_ini_cs, args['salt_name'])
 
 	return m.save()
 
@@ -71,7 +72,7 @@ def soil_plant():
 		except db.Hmet_hru_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except db.Salt_hru_ini.DoesNotExist:
+		except Salt_hru_ini_cs.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -118,7 +119,7 @@ def soil_plantId(id):
 		except db.Hmet_hru_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except db.Salt_hru_ini.DoesNotExist:
+		except Salt_hru_ini_cs.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -151,7 +152,7 @@ def soil_plantMany():
 			if 'hmet_name' in args:
 				param_dict['hmet_id'] = RestHelpers.get_id_from_name(db.Hmet_hru_ini, args['hmet_name'])
 			if 'salt_name' in args:
-				param_dict['salt_id'] = RestHelpers.get_id_from_name(db.Salt_hru_ini, args['salt_name'])
+				param_dict['salt_cs_id'] = RestHelpers.get_id_from_name(Salt_hru_ini_cs, args['salt_name'])
 
 			query = db.Soil_plant_ini.update(param_dict).where(db.Soil_plant_ini.id.in_(args['selected_ids']))
 			result = query.execute()
@@ -176,7 +177,7 @@ def soil_plantMany():
 		except db.Hmet_hru_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except db.Salt_hru_ini.DoesNotExist:
+		except Salt_hru_ini_cs.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -320,8 +321,6 @@ def constituents():
 			db.Path_water_ini.delete().execute()
 			db.Hmet_hru_ini.delete().execute()
 			db.Hmet_water_ini.delete().execute()
-			db.Salt_hru_ini.delete().execute()
-			db.Salt_water_ini.delete().execute()
 			Constituents_cs.delete().execute()
 
 		rh.close()

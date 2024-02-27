@@ -342,8 +342,15 @@ class BaseFileModel:
 				for row in query.dicts():
 					row_cols = []
 					for col in cols:
-						col_name = col.query_alias if col.query_alias != "" else col.value.name
-						col_value = i if col_name == "id" else row[col_name]
+						if col.not_in_db:
+							col_name = col.value
+						else:
+							col_name = col.query_alias if col.query_alias != "" else col.value.name
+						
+						if col.value_override is not None:
+							col_value = col.value_override
+						else:
+							col_value = i if col_name == "id" else row[col_name]
 						row_cols.append(FileColumn(col_value, direction=col.direction, padding_override=col.padding_override, text_if_null=col.text_if_null, is_desc=col.is_desc, use_non_zero_min=col.use_non_zero_min))
 
 					self.write_row(file, row_cols)

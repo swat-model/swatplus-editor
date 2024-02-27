@@ -8,7 +8,8 @@ from .defaults import DefaultRestMethods, RestHelpers
 from database.project.connect import Channel_con, Chandeg_con, Chandeg_con_out
 from database.project.channel import Channel_cha, Initial_cha, Hydrology_cha, Sediment_cha, Nutrients_cha, Channel_lte_cha, Hyd_sed_lte_cha
 from database.project.climate import Weather_sta_cli
-from database.project.init import Om_water_ini, Pest_water_ini, Path_water_ini, Hmet_water_ini, Salt_water_ini
+from database.project.init import Om_water_ini, Pest_water_ini, Path_water_ini, Hmet_water_ini
+from database.project.salts import Salt_channel_ini
 
 bp = Blueprint('channels', __name__, url_prefix='/channels')
 
@@ -109,7 +110,7 @@ def init():
 			if 'hmet_name' in args:
 				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
 			if 'salt_name' in args:
-				m.salt_id = RestHelpers.get_id_from_name(Salt_water_ini, args['salt_name'])
+				m.salt_cs_id = RestHelpers.get_id_from_name(Salt_channel_ini, args['salt_name'])
 			result = m.save()
 
 			rh.close()
@@ -132,7 +133,7 @@ def init():
 		except Hmet_water_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_water_ini.DoesNotExist:
+		except Salt_channel_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -164,7 +165,7 @@ def initId(id):
 			if args['hmet_name']:
 				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
 			if args['salt_name']:
-				m.salt_id = RestHelpers.get_id_from_name(Salt_water_ini, args['salt_name'])
+				m.salt_cs_id = RestHelpers.get_id_from_name(Salt_channel_ini, args['salt_name'])
 			result = m.save()
 
 			rh.close()
@@ -190,7 +191,7 @@ def initId(id):
 		except Hmet_water_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_water_ini.DoesNotExist:
+		except Salt_channel_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -221,7 +222,7 @@ def initMany():
 			if args['hmet_name'] is not None:
 				param_dict['hmet_id'] = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
 			if args['salt_name'] is not None:
-				param_dict['salt_id'] = RestHelpers.get_id_from_name(Salt_water_ini, args['salt_name'])
+				param_dict['salt_cs_id'] = RestHelpers.get_id_from_name(Salt_channel_ini, args['salt_name'])
 
 			query = Initial_cha.update(param_dict).where(Initial_cha.id.in_(args['selected_ids']))
 			result = query.execute()
@@ -243,7 +244,7 @@ def initMany():
 		except Hmet_water_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_water_ini.DoesNotExist:
+		except Salt_channel_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:

@@ -1,4 +1,4 @@
-from database.project import connect, climate, channel, aquifer, reservoir, hydrology, hru, hru_parm_db, lum, soils, routing_unit, dr, init, decision_table, exco, dr, structural, ops, regions, change, recall
+from database.project import connect, climate, channel, aquifer, reservoir, hydrology, hru, hru_parm_db, lum, soils, routing_unit, dr, init, decision_table, exco, dr, structural, ops, regions, change, recall, salts
 
 obj_typs = {
 	"hru": connect.Hru_con,
@@ -112,11 +112,14 @@ types = {
 	"pest_water_ini": init.Pest_water_ini,
 	"path_water_ini": init.Path_water_ini,
 	"hmet_water_ini": init.Hmet_water_ini,
-	"salt_water_ini": init.Salt_water_ini,
 	"pest_hru_ini": init.Pest_hru_ini,
 	"path_hru_ini": init.Path_hru_ini,
 	"hmet_hru_ini": init.Hmet_hru_ini,
-	"salt_hru_ini": init.Salt_hru_ini,
+
+	"salt_hru_ini": salts.Salt_hru_ini_cs,
+	"salt_aqu_ini": salts.Salt_aqu_ini,
+	"salt_channel_ini": salts.Salt_channel_ini,
+	"salt_res_ini": salts.Salt_res_ini,
 
 	"lu_mgt": lum.Landuse_lum,
 	"mgt_sch": lum.Management_sch,

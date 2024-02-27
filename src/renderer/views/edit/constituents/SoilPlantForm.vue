@@ -173,9 +173,9 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="salt_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Salt Properties" class="flex-grow-1 flex-shrink-0"
 							v-model="item.salt_name" :value="item.salt_name" :show-item-link="props.isUpdate"
-							table-name="salt_water_ini" route-name="ConstituentsSalts" no-route-id
-							section="Constituents / Salts" help-file="salt_water.ini" helpdb="salt_water_ini"
-							api-url="init/constituents/salt-water"></auto-complete>
+							table-name="salt_hru_ini" route-name="ConstituentsSaltsHruIni"
+							section="Constituents / Salts / HRU Initialization" help-file="salt_hru.ini" helpdb="salt_hru_ini"
+							api-url="salts/salt_hru_ini"></auto-complete>
 					</div>
 				</v-col>
 			</v-row>

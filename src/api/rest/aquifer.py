@@ -8,7 +8,8 @@ from .defaults import DefaultRestMethods, RestHelpers
 from database.project.connect import Aquifer_con, Aquifer_con_out
 from database.project.aquifer import Aquifer_aqu, Initial_aqu
 from database.project.climate import Weather_sta_cli
-from database.project.init import Om_water_ini, Pest_water_ini, Path_water_ini, Hmet_water_ini, Salt_water_ini
+from database.project.init import Om_water_ini, Pest_water_ini, Path_water_ini, Hmet_water_ini
+from database.project.salts import Salt_aqu_ini
 
 bp = Blueprint('aquifers', __name__, url_prefix='/aquifers')
 
@@ -196,7 +197,7 @@ def initial():
 			if 'hmet_name' in args:
 				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
 			if 'salt_name' in args:
-				m.salt_id = RestHelpers.get_id_from_name(Salt_water_ini, args['salt_name'])
+				m.salt_cs_id = RestHelpers.get_id_from_name(Salt_aqu_ini, args['salt_name'])
 			result = m.save()
 
 			rh.close()
@@ -219,7 +220,7 @@ def initial():
 		except Hmet_water_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_water_ini.DoesNotExist:
+		except Salt_aqu_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -252,7 +253,7 @@ def initialId(id):
 			if 'hmet_name' in args:
 				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
 			if 'salt_name' in args:
-				m.salt_id = RestHelpers.get_id_from_name(Salt_water_ini, args['salt_name'])
+				m.salt_cs_id = RestHelpers.get_id_from_name(Salt_aqu_ini, args['salt_name'])
 
 			result = m.save()
 
@@ -276,7 +277,7 @@ def initialId(id):
 		except Hmet_water_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_water_ini.DoesNotExist:
+		except Salt_aqu_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -307,7 +308,7 @@ def initialMany():
 			if 'hmet_name' in args:
 				param_dict['hmet_id'] = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
 			if 'salt_name' in args:
-				param_dict['salt_id'] = RestHelpers.get_id_from_name(Salt_water_ini, args['salt_name'])
+				param_dict['salt_cs_id'] = RestHelpers.get_id_from_name(Salt_aqu_ini, args['salt_name'])
 
 			query = Initial_aqu.update(param_dict).where(Initial_aqu.id.in_(args['selected_ids']))
 			result = query.execute()
@@ -329,7 +330,7 @@ def initialMany():
 		except Hmet_water_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_water_ini.DoesNotExist:
+		except Salt_aqu_ini.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:

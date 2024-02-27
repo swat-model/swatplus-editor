@@ -64,7 +64,7 @@ class File_cio(BaseFileModel):
 			2: True,
 			3: simulation.Object_prt.select().count() > 0,
 			4: True,
-			5: simulation.Constituents_cs.select().count() > 0
+			5: simulation.Constituents_cs.is_enabled()
 		}
 		
 		basin_conditions = {
@@ -238,8 +238,8 @@ class File_cio(BaseFileModel):
 			7: init.Path_water_ini.select().count() > 0,
 			8: init.Hmet_hru_ini.select().count() > 0,
 			9: init.Hmet_water_ini.select().count() > 0,
-			10: init.Salt_hru_ini.select().count() > 0,
-			11: init.Salt_water_ini.select().count() > 0
+			10: False, #init.Salt_hru_ini.select().count() > 0,
+			11: False, #init.Salt_water_ini.select().count() > 0
 		}
 		
 		soils_conditions = {
