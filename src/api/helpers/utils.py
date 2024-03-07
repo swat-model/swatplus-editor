@@ -30,8 +30,13 @@ def remove_space(s, c='_'):
 	return s.strip().replace(' ', c)
 
 
-def string_pad(val, default_pad=DEFAULT_STR_PAD, direction=DEFAULT_DIRECTION, text_if_null=NULL_STR, spaces_after=DEFAULT_SPACES_AFTER):
-	val_text = text_if_null if val is None or val == '' else remove_space(val)
+def string_pad(val, default_pad=DEFAULT_STR_PAD, direction=DEFAULT_DIRECTION, text_if_null=NULL_STR, spaces_after=DEFAULT_SPACES_AFTER, no_space_removal=False):
+	if val is None or val == '':
+		val_text = text_if_null
+	elif no_space_removal:
+		val_text = val
+	else:
+		val_text = remove_space(val)
 
 	space = ""
 	for x in range(0, spaces_after):

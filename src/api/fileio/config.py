@@ -89,7 +89,7 @@ class File_cio(BaseFileModel):
 			2: connect.Hru_lte_con.select().count() > 0,
 			3: connect.Rout_unit_con.select().count() > 0,
 			4: codes_bsn is not None and codes_bsn.gwflow == 1, #gwflow.con if using gwflow in QSWAT+
-			5: connect.Aquifer_con.select().count() > 0, #false if using gwflow.con
+			5: codes_bsn is not None and codes_bsn.gwflow == 0 and connect.Aquifer_con.select().count() > 0, #false if using gwflow.con
 			6: connect.Aquifer2d_con.select().count() > 0,
 			7: connect.Channel_con.select().count() > 0,
 			8: connect.Reservoir_con.select().count() > 0,

@@ -33,6 +33,9 @@ class Gwflow_base(base.BaseModel):
 	aa_output = IntegerField()
 	daily_output_row = IntegerField()
 	daily_output_col = IntegerField()
+	
+	class Meta:
+		primary_key = False
 
 
 class Gwflow_zone(base.BaseModel):
@@ -56,11 +59,17 @@ class Gwflow_grid(base.BaseModel):
 class Gwflow_out_days(base.BaseModel):
 	year = IntegerField()
 	jday = IntegerField()
+	
+	class Meta:
+		primary_key = False
 
 
 # do not make this a foreign key since may accidentally reference inactive cell
 class Gwflow_obs_locs(base.BaseModel):
 	cell_id = IntegerField()
+	
+	class Meta:
+		primary_key = False
 
 
 class Gwflow_solutes(base.BaseModel):
@@ -97,33 +106,51 @@ class Gwflow_solutes(base.BaseModel):
 	init_seo3 = DoubleField(default=0)
 	init_boron = DoubleField(default=0)
 	init_pest = DoubleField(default=0)
+	
+	class Meta:
+		primary_key = False
 
 
 class Gwflow_hrucell(base.BaseModel):
-	cell = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', lazy_load=False)
+	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
 	hru = ForeignKeyField(gis.Gis_hrus, on_delete='CASCADE', column_name='hru', lazy_load=False)
 	area_m2 = DoubleField()
+	
+	class Meta:
+		primary_key = False
 
 
 class Gwflow_fpcell(base.BaseModel):
-	cell = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', lazy_load=False)
+	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
 	channel = ForeignKeyField(gis.Gis_channels, on_delete='CASCADE', column_name='channel', lazy_load=False)
 	area_m2 = DoubleField()
+	
+	class Meta:
+		primary_key = False
 
 
 class Gwflow_rivcell(base.BaseModel):
-	cell = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', lazy_load=False)
+	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
 	channel = ForeignKeyField(gis.Gis_channels, on_delete='CASCADE', column_name='channel', lazy_load=False)
 	length_m = DoubleField()
+	
+	class Meta:
+		primary_key = False
 
 
 class Gwflow_lsucell(base.BaseModel):
-	cell = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', lazy_load=False)
+	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
 	lsu = ForeignKeyField(gis.Gis_lsus, on_delete='CASCADE', column_name='lsu', lazy_load=False)
 	area_m2 = DoubleField()
+	
+	class Meta:
+		primary_key = False
 
 
 class Gwflow_rescell(base.BaseModel):
-	cell = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', lazy_load=False)
+	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
 	res = ForeignKeyField(gis.Gis_water, on_delete='CASCADE', column_name='res', lazy_load=False)
 	res_stage = DoubleField()
+	
+	class Meta:
+		primary_key = False

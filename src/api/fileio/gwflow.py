@@ -5,6 +5,7 @@ from helpers import utils
 from .connect import IndexHelper
 import os.path
 import configparser
+import sys
 #import numpy as np
 
 class Gwflow_files(BaseFileModel):
@@ -20,7 +21,10 @@ class Gwflow_files(BaseFileModel):
 				self.gwflow_base = gwflow.Gwflow_base.get_or_none()
 				self.gwflow_config = None
 				if self.gwflow_base is not None:
-					self.gwflow_config = configparser.ConfigParser().read(gwflow_ini_file)['DEFAULT']
+					config = configparser.ConfigParser()
+					config.read(gwflow_ini_file)
+					self.gwflow_config = config['DEFAULT']
+					#self.gwflow_config = configparser.ConfigParser().read(gwflow_ini_file)['DEFAULT']
 			conn.close()	
 
 	def exists(self):
@@ -72,7 +76,7 @@ class Gwflow_files(BaseFileModel):
 				file.write(' {} canal seepage to groundwater (0=off; 1=on)\n'.format(utils.num_pad(self.gwflow_base.canal_seepage, decimals=0, direction='left')))
 				file.write(' {} groundwater solute transport (0=off; 1=on)\n'.format(utils.num_pad(self.gwflow_base.solute_transport, decimals=0, direction='left')))
 				file.write(' {} time step (days)\n'.format(utils.num_pad(self.gwflow_config.getfloat('timestep_balance', 1), decimals=2, direction='left'))) # missing in QSWAT+ tables?
-				file.write(' {} write flags (daily, annual, avg. annual)\n'.format(utils.string_pad('{} {} {}'.format(self.gwflow_base.daily_output, self.gwflow_base.annual_output, self.gwflow_base.aa_output), direction='left', default_pad=utils.DEFAULT_NUM_PAD)))
+				file.write(' {} write flags (daily, annual, avg. annual)\n'.format(utils.string_pad('{} {} {}'.format(self.gwflow_base.daily_output, self.gwflow_base.annual_output, self.gwflow_base.aa_output), direction='left', default_pad=utils.DEFAULT_NUM_PAD, no_space_removal=True)))
 
 				file.write(' Aquifer and Streambed Parameter Zones\n')
 
@@ -195,14 +199,14 @@ class Gwflow_files(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
-				grid_cells = gwflow.Gwflow_rivcell.select().join(gwflow.Gwflow_grid).order_by(gwflow.Gwflow_rivcell.cell_id)
+				grid_cells = gwflow.Gwflow_rivcell.select(gwflow.Gwflow_rivcell, gwflow.Gwflow_grid).join(gwflow.Gwflow_grid).order_by(gwflow.Gwflow_rivcell.cell_id)
 				channels_gis_to_con = IndexHelper(connect.Chandeg_con).get()
 				for cell in grid_cells:
-					utils.write_int(file, cell.cell_id)
-					utils.write_num(file, cell.cell.elevation, decimals=2)
+					utils.write_int(file, cell.cell_id.cell_id)
+					utils.write_num(file, cell.cell_id.elevation, decimals=2)
 					utils.write_int(file, channels_gis_to_con.get(cell.channel, 0))
 					utils.write_num(file, cell.length_m, decimals=2)
-					utils.write_int(file, cell.cell.zone_id)
+					utils.write_int(file, cell.cell_id.zone_id)
 					file.write('\n')
 
 	def get_hru_data(self):
@@ -214,15 +218,21 @@ class Gwflow_files(BaseFileModel):
 	def write_hrucell(self, file_names=['gwflow.hrucell','gwflow.cellhru']):
 		if self.gwflow_base is not None:
 			hru_recharge, hrus_gis_to_con = self.get_hru_data()
-			if hru_recharge:
-				grid_cells = gwflow.Gwflow_hrucell.select().join(gwflow.Gwflow_grid).join(gis.Gis_hrus)
+			#if hru_recharge:
+			if True:
+				grid_cells = gwflow.Gwflow_hrucell.select(gwflow.Gwflow_hrucell, gwflow.Gwflow_grid, gis.Gis_hrus).join(gwflow.Gwflow_grid).switch(gwflow.Gwflow_hrucell).join(gis.Gis_hrus)
+				
+				sql = grid_cells.sql()
+				sys.stdout.write(sql[0] % tuple(sql[1]))
+				
 				with open(os.path.join(self.file_name, file_names[0]), 'w') as file:
 					file.write(' HRU-Cell Connection Information ')
 					self.write_meta_line(file, file_names[0])
 					file.write('\n')
 
 					file.write(' HRUs that are connected to cells\n')
-					hru_ids = list(set([v.hru_id for v in grid_cells])).sort()
+					hru_ids = list(set([v.hru.id for v in grid_cells]))
+					hru_ids.sort()
 
 					file.write('{}\n'.format(len(hru_ids)))
 					for hru_id in hru_ids:
@@ -236,8 +246,8 @@ class Gwflow_files(BaseFileModel):
 					self.write_headers(file, header_cols)
 					file.write('\n')
 
-					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.hru_id, gwflow.Gwflow_hrucell.cell_id):
-						utils.write_int(file, hrus_gis_to_con.get(cell.hru_id, 0))
+					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.hru.id, gwflow.Gwflow_hrucell.cell_id):
+						utils.write_int(file, hrus_gis_to_con.get(cell.hru.id, 0))
 						utils.write_num(file, cell.hru.arslp * 10000, decimals=2) # NOT SURE
 						utils.write_int(file, cell.cell_id)
 						utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
@@ -261,7 +271,7 @@ class Gwflow_files(BaseFileModel):
 					cell_area = cell_size * cell_size
 					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.cell_id):
 						utils.write_int(file, cell.cell_id)
-						utils.write_int(file, hrus_gis_to_con.get(cell.hru_id, 0))
+						utils.write_int(file, hrus_gis_to_con.get(cell.hru.id, 0))
 						utils.write_num(file, cell_area, decimals=2) # NOT SURE
 						utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
 						file.write('\n')
@@ -273,11 +283,13 @@ class Gwflow_files(BaseFileModel):
 				self.write_meta_line(file, file_name)
 				file.write('\n')
 
-				grid_cells = gwflow.Gwflow_lsucell.select().join(gwflow.Gwflow_grid).join(gis.Gis_lsus)
+				grid_cells = gwflow.Gwflow_lsucell.select(gwflow.Gwflow_lsucell, gis.Gis_lsus).join(gwflow.Gwflow_grid).switch(gwflow.Gwflow_lsucell).join(gis.Gis_lsus)
 				lsus_gis_to_con = IndexHelper(connect.Rout_unit_con).get()
 
 				file.write(' HRUs that are connected to cells\n')
-				unique_ids = list(set([v.lsu_id for v in grid_cells])).sort()
+				
+				unique_ids = list(set([v.lsu.id for v in grid_cells]))
+				unique_ids.sort()
 
 				file.write('{}\t\t total number of landscape units in model\n'.format(gis.Gis_lsus.select().count()))
 				file.write('{}\t\t number of landscape units connected to grid cells\n'.format(len(unique_ids)))
@@ -295,8 +307,8 @@ class Gwflow_files(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
-				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.lsu_id, gwflow.Gwflow_lsucell.cell_id):
-					utils.write_int(file, lsus_gis_to_con.get(cell.lsu_id, 0))
+				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.cell_id):
+					utils.write_int(file, lsus_gis_to_con.get(cell.lsu.id, 0))
 					utils.write_num(file, cell.lsu.area * 10000, decimals=2) # NOT SURE
 					utils.write_int(file, cell.cell_id)
 					utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
@@ -308,12 +320,12 @@ class Gwflow_files(BaseFileModel):
 				file.write(' Cell-Reservoir Connection Information ')
 				self.write_meta_line(file, file_name)
 
-				grid_cells = gwflow.Gwflow_rivcell.select().join(gwflow.Gwflow_grid)
+				grid_cells = gwflow.Gwflow_rescell.select(gwflow.Gwflow_rescell, gwflow.Gwflow_grid).join(gwflow.Gwflow_grid)
 				res_gis_to_con = IndexHelper(connect.Reservoir_con).get()
 
 				file.write(' Reservoir bed parameters\n')
-				file.write(' {}\t\t bed thickness (m)\n'.format(self.gwflow_base.res_bed_thickness))
-				file.write(' {}\t\t bed conductivity (m/day)\n'.format(self.gwflow_base.res_bed_k))
+				file.write(' {}\t\t bed thickness (m)\n'.format(self.gwflow_base.resbed_thickness))
+				file.write(' {}\t\t bed conductivity (m/day)\n'.format(self.gwflow_base.resbed_k))
 				file.write(' {}\t\t number of cells connected to reservoirs\n'.format(grid_cells.count()))
 
 				header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
@@ -322,7 +334,7 @@ class Gwflow_files(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
-				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.lsu_id, gwflow.Gwflow_lsucell.cell_id):
+				for cell in grid_cells.order_by(gwflow.Gwflow_rescell.cell_id):
 					utils.write_int(file, cell.cell_id)
 					utils.write_int(file, res_gis_to_con.get(cell.res_id, 0))
 					utils.write_num(file, cell.res_stage, decimals=2) 
@@ -335,7 +347,7 @@ class Gwflow_files(BaseFileModel):
 				file.write('gwflow floodplain cells (optional file; list cells that interact with channels, when channel water is in the floodplain) ')
 				self.write_meta_line(file, file_name)
 
-				grid_cells = gwflow.Gwflow_fpcell.select().join(gwflow.Gwflow_grid)
+				grid_cells = gwflow.Gwflow_fpcell.select(gwflow.Gwflow_fpcell, gwflow.Gwflow_grid).join(gwflow.Gwflow_grid)
 				cha_gis_to_con = IndexHelper(connect.Chandeg_con).get()
 				file.write('{}\t\t\t\t\tNumber of floodplain cells\n'.format(grid_cells.count()))
 
@@ -346,7 +358,7 @@ class Gwflow_files(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
-				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.lsu_id, gwflow.Gwflow_lsucell.cell_id):
+				for cell in grid_cells.order_by(gwflow.Gwflow_fpcell.cell_id):
 					utils.write_int(file, cell.cell_id)
 					utils.write_int(file, cha_gis_to_con.get(cell.channel_id, 0))
 					utils.write_exp(file, 0, decimals=4) # CAN'T FIND IN DB
