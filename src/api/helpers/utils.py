@@ -81,7 +81,7 @@ def get_num_format(val, precision=5):
 		return val
 	
 	min_val = 1 / (10**precision)
-	if val < min_val: 
+	if val < min_val and val != 0: 
 		eprec = precision - 2 if precision > 3 else precision
 		return "{:.{prec}E}".format(Decimal(val), prec=eprec)
 	return "{:.{prec}f}".format(float(val), prec=precision)

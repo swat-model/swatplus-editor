@@ -1,12 +1,12 @@
 from .base import BaseFileModel, FileColumn as col
 from database.project import gis, gwflow, connect, reservoir, basin
+from database.project.config import Project_config
 from database import lib
 from helpers import utils
 from .connect import IndexHelper
 import os.path
 import configparser
 import sys
-#import numpy as np
 
 class Gwflow_files(BaseFileModel):
 	def __init__(self, file_name, version=None, swat_version=None, project_db_file=None, gwflow_ini_file='gwflow.ini'):
@@ -15,7 +15,8 @@ class Gwflow_files(BaseFileModel):
 		self.swat_version = swat_version
 
 		self.gwflow_base = None
-		if project_db_file is not None:
+		pc = Project_config.get()
+		if pc.use_gwflow and project_db_file is not None:
 			conn = lib.open_db(project_db_file)
 			if lib.exists_table(conn, 'gwflow_base'):
 				self.gwflow_base = gwflow.Gwflow_base.get_or_none()
@@ -39,10 +40,19 @@ class Gwflow_files(BaseFileModel):
 				codes_bsn.gwflow = 0
 			codes_bsn.save()	
 
+	def set_grid_cellid_to_index(self):
+		grid_cells = gwflow.Gwflow_grid.select().order_by(gwflow.Gwflow_grid.cell_id)
+		self.grid_cellid_to_index = {}
+		i = 1
+		for cell in grid_cells:
+			self.grid_cellid_to_index[cell.cell_id] = i
+			i += 1
+
 	def read(self, database ='project'):
 		raise NotImplementedError('Reading not implemented.')
 
 	def write(self):
+		self.set_grid_cellid_to_index()
 		self.write_input()
 		self.write_chancells()
 		self.write_hrucell()
@@ -51,8 +61,7 @@ class Gwflow_files(BaseFileModel):
 		self.write_floodplain()
 		self.write_wetland()
 		self.write_tiles()
-		self.write_solutes()
-		#self.update_swatplus_files()
+		#self.write_solutes()
 
 	def write_input(self, file_name='gwflow.input'):
 		if self.gwflow_base is not None:
@@ -63,7 +72,7 @@ class Gwflow_files(BaseFileModel):
 				file.write(' Basic information\n')
 				file.write(' structured\n')
 				file.write(' {} cell size (m)\n'.format(utils.num_pad(self.gwflow_base.cell_size, decimals=1, direction='left')))
-				file.write(' {} number of rows, number of columns\n'.format(utils.string_pad('{} {}'.format(self.gwflow_base.row_count, self.gwflow_base.col_count), direction='left', default_pad=utils.DEFAULT_NUM_PAD)))
+				file.write(' {} number of rows, number of columns\n'.format(utils.string_pad('{} {}'.format(self.gwflow_base.row_count, self.gwflow_base.col_count), direction='left', default_pad=utils.DEFAULT_NUM_PAD, no_space_removal=True)))
 				file.write(' {} boundary condition type (1=constant head; 2=no-flow)\n'.format(utils.num_pad(self.gwflow_base.boundary_conditions, decimals=0, direction='left')))
 				file.write(' {} recharge connection type (1=HRU-cell; 2=LSU-cell)\n'.format(utils.num_pad(self.gwflow_base.recharge, decimals=0, direction='left')))
 				file.write(' {} groundwater-->soil transfer (0=off; 1=on)\n'.format(utils.num_pad(self.gwflow_base.soil_transfer, decimals=0, direction='left')))
@@ -77,7 +86,8 @@ class Gwflow_files(BaseFileModel):
 				file.write(' {} groundwater solute transport (0=off; 1=on)\n'.format(utils.num_pad(self.gwflow_base.solute_transport, decimals=0, direction='left')))
 				file.write(' {} time step (days)\n'.format(utils.num_pad(self.gwflow_config.getfloat('timestep_balance', 1), decimals=2, direction='left'))) # missing in QSWAT+ tables?
 				file.write(' {} write flags (daily, annual, avg. annual)\n'.format(utils.string_pad('{} {} {}'.format(self.gwflow_base.daily_output, self.gwflow_base.annual_output, self.gwflow_base.aa_output), direction='left', default_pad=utils.DEFAULT_NUM_PAD, no_space_removal=True)))
-
+				file.write(' {} number of columns in output files\n'.format(utils.num_pad(1, decimals=0, direction='left')))
+				
 				file.write(' Aquifer and Streambed Parameter Zones\n')
 
 				zones = gwflow.Gwflow_zone.select().order_by(gwflow.Gwflow_zone.zone_id)
@@ -127,7 +137,7 @@ class Gwflow_files(BaseFileModel):
 
 				col = 1
 				for cell in grid_cells:
-					if col == self.gwflow_base.col_count:
+					if col == self.gwflow_base.col_count + 1:
 						status_lines += '\n'
 						elevation_lines += '\n'
 						aquifer_thickness_lines += '\n'
@@ -176,11 +186,12 @@ class Gwflow_files(BaseFileModel):
 				obs_loc = gwflow.Gwflow_obs_locs.select()
 				file.write('\t\t{}\n'.format(obs_loc.count()))
 				for loc in obs_loc:
-					file.write('{}\n'.format(loc.cell_id))
+					file.write('{}\n'.format(self.grid_cellid_to_index.get(loc.cell_id, 0)))
 
 				file.write(' Cell for detailed daily sources/sink output\n')
-				file.write('  Row  Column\n')
-				file.write(' {} {}\n'.format(utils.int_pad(self.gwflow_config.getint('row_det', 0), 4), utils.int_pad(self.gwflow_config.getint('col_det', 0), 8)))
+				file.write(' 0\n')
+				#file.write('  Row  Column\n')
+				#file.write(' {} {}\n'.format(utils.int_pad(self.gwflow_config.getint('row_det', 0), 4), utils.int_pad(self.gwflow_config.getint('col_det', 0), 8)))
 				file.write(' River Cell Information\n')
 				file.write(' {}\n'.format(utils.get_num_format(self.gwflow_config.getfloat('river_depth', 5.0), 2)))
 
@@ -202,7 +213,7 @@ class Gwflow_files(BaseFileModel):
 				grid_cells = gwflow.Gwflow_rivcell.select(gwflow.Gwflow_rivcell, gwflow.Gwflow_grid).join(gwflow.Gwflow_grid).order_by(gwflow.Gwflow_rivcell.cell_id)
 				channels_gis_to_con = IndexHelper(connect.Chandeg_con).get()
 				for cell in grid_cells:
-					utils.write_int(file, cell.cell_id.cell_id)
+					utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
 					utils.write_num(file, cell.cell_id.elevation, decimals=2)
 					utils.write_int(file, channels_gis_to_con.get(cell.channel, 0))
 					utils.write_num(file, cell.length_m, decimals=2)
@@ -218,12 +229,12 @@ class Gwflow_files(BaseFileModel):
 	def write_hrucell(self, file_names=['gwflow.hrucell','gwflow.cellhru']):
 		if self.gwflow_base is not None:
 			hru_recharge, hrus_gis_to_con = self.get_hru_data()
-			#if hru_recharge:
-			if True:
+			if hru_recharge:
+			#if True:
 				grid_cells = gwflow.Gwflow_hrucell.select(gwflow.Gwflow_hrucell, gwflow.Gwflow_grid, gis.Gis_hrus).join(gwflow.Gwflow_grid).switch(gwflow.Gwflow_hrucell).join(gis.Gis_hrus)
 				
-				sql = grid_cells.sql()
-				sys.stdout.write(sql[0] % tuple(sql[1]))
+				#sql = grid_cells.sql()
+				#sys.stdout.write(sql[0] % tuple(sql[1]))
 				
 				with open(os.path.join(self.file_name, file_names[0]), 'w') as file:
 					file.write(' HRU-Cell Connection Information ')
@@ -246,10 +257,10 @@ class Gwflow_files(BaseFileModel):
 					self.write_headers(file, header_cols)
 					file.write('\n')
 
-					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.hru.id, gwflow.Gwflow_hrucell.cell_id):
+					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.hru.id, gwflow.Gwflow_hrucell.cell_id.cell_id):
 						utils.write_int(file, hrus_gis_to_con.get(cell.hru.id, 0))
 						utils.write_num(file, cell.hru.arslp * 10000, decimals=2) # NOT SURE
-						utils.write_int(file, cell.cell_id)
+						utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
 						utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
 						file.write('\n')
 				
@@ -269,8 +280,8 @@ class Gwflow_files(BaseFileModel):
 
 					cell_size = self.gwflow_base.cell_size
 					cell_area = cell_size * cell_size
-					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.cell_id):
-						utils.write_int(file, cell.cell_id)
+					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.cell_id.cell_id):
+						utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
 						utils.write_int(file, hrus_gis_to_con.get(cell.hru.id, 0))
 						utils.write_num(file, cell_area, decimals=2) # NOT SURE
 						utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
@@ -310,7 +321,7 @@ class Gwflow_files(BaseFileModel):
 				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.cell_id):
 					utils.write_int(file, lsus_gis_to_con.get(cell.lsu.id, 0))
 					utils.write_num(file, cell.lsu.area * 10000, decimals=2) # NOT SURE
-					utils.write_int(file, cell.cell_id)
+					utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id, 0))
 					utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
 					file.write('\n')
 
@@ -334,8 +345,8 @@ class Gwflow_files(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
-				for cell in grid_cells.order_by(gwflow.Gwflow_rescell.cell_id):
-					utils.write_int(file, cell.cell_id)
+				for cell in grid_cells.order_by(gwflow.Gwflow_rescell.cell_id.cell_id):
+					utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
 					utils.write_int(file, res_gis_to_con.get(cell.res_id, 0))
 					utils.write_num(file, cell.res_stage, decimals=2) 
 					file.write('\n')
@@ -358,8 +369,8 @@ class Gwflow_files(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
-				for cell in grid_cells.order_by(gwflow.Gwflow_fpcell.cell_id):
-					utils.write_int(file, cell.cell_id)
+				for cell in grid_cells.order_by(gwflow.Gwflow_fpcell.cell_id.cell_id):
+					utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
 					utils.write_int(file, cha_gis_to_con.get(cell.channel_id, 0))
 					utils.write_exp(file, 0, decimals=4) # CAN'T FIND IN DB
 					utils.write_num(file, cell.area_m2, decimals=2) 
@@ -402,7 +413,7 @@ class Gwflow_files(BaseFileModel):
 
 				col = 1
 				for cell in grid_cells:
-					if col == self.gwflow_base.col_count:
+					if col == self.gwflow_base.col_count + 1:
 						status_lines += '\n'
 						col = 1
 
@@ -413,7 +424,7 @@ class Gwflow_files(BaseFileModel):
 
 				file.write(status_lines)
 
-	def write_solutes(self, file_name='gwflow.solutes'):
+	"""def write_solutes(self, file_name='gwflow.solutes'):
 		if self.gwflow_base is not None and self.gwflow_base.solute_transport == 1:
 			solutes = gwflow.Gwflow_solutes.get_or_none()
 			if solutes is not None:
@@ -425,67 +436,4 @@ class Gwflow_files(BaseFileModel):
 					file.write(' {}\t\t number of transport time steps for flow time step\n'.format(solutes.transport_steps))
 					file.write(' {}\t\t dispersion coefficient (m2/day)\n'.format(solutes.disp_coef))
 
-					file.write('solute parameters: name,sorption,rate constant,canal_irrig (one row per active solute)\n')
-
-	def update_swatplus_files(self):
-		#Copying code from original GWFLOW module
-		#%%Modification of SWAT+ files (file.cio / object.cnt / rout_unit.con)
-		#------- Modifying file.cio file---------------
-		"""filename_cio = os.path.join(self.file_name, 'file.cio')
-		file_cio = open(filename_cio, 'r')
-		file_cio_lst = file_cio.readlines()
-		file_cio.close()
-
-		file_cio_lst[4] = file_cio_lst[4].split(' ')
-		file_cio_lst[12] = file_cio_lst[12].split(' ')
-		count = 0
-
-		for i in range(0, len(file_cio_lst[4])):
-			if file_cio_lst[4][i] != '':
-				count+= 1
-				if count == 5:
-					file_cio_lst[4][i] = 'gwflow.con'
-				if count == 6:
-					file_cio_lst[4][i] = 'null'
-		count = 0
-
-		for i in range(0, len(file_cio_lst[12])):
-			if file_cio_lst[12][i] != '':
-				count+= 1
-				if count == 3:
-					file_cio_lst[12][i] = 'null'        
-					
-		file_cio_lst[4] = ' '.join(file_cio_lst[4])
-		file_cio_lst[12] = ' '.join(file_cio_lst[12])
-
-		file_cio_out = open(os.path.join(self.file_name, 'file.cio'), 'w')
-		for line in file_cio_lst:
-			file_cio_out.write(line)    
-			
-		file_cio_out.close()"""
-
-		#----------Modifying rout_unit.con---------
-		"""filename_routunit = os.path.join(self.file_name, 'rout_unit.con')
-		nru = open(filename_routunit, "r")              #Delete first line of text generated by the model to be able to work in a dataframe
-		lines = nru.readlines()
-		line0 = lines[0]
-		rout_unit_data = lines[1:]
-		nru.close()
-
-		for i in range(0, len(rout_unit_data)):
-			rout_unit_data[i] = rout_unit_data[i].split()
-			if i>0:
-				rout_unit_data[i][12] = '1'
-				del rout_unit_data[i][-4:]
-
-
-		rout_unit_array = np.array(rout_unit_data)
-		np.savetxt(os.path.join(self.file_name, 'rout_unit_data.txt'), rout_unit_array, fmt = '%-8s', delimiter = '\t')
-		rout_txt = open(os.path.join(self.file_name, 'rout_unit_data.txt'), 'r')
-
-		routunit = open(os.path.join(self.file_name, 'rout_unit.con'), 'w')            #Generation of base file
-
-		routunit.write(line0)
-		routunit.write(rout_txt.read())
-		rout_txt.close()
-		routunit.close()"""
+					file.write('solute parameters: name,sorption,rate constant,canal_irrig (one row per active solute)\n')"""

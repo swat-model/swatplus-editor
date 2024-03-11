@@ -72,7 +72,7 @@ class Gwflow_obs_locs(base.BaseModel):
 		primary_key = False
 
 
-class Gwflow_solutes(base.BaseModel):
+"""class Gwflow_solutes(base.BaseModel):
 	no3 = IntegerField()
 	p = IntegerField()
 	so4 = IntegerField(default=0)
@@ -108,7 +108,7 @@ class Gwflow_solutes(base.BaseModel):
 	init_pest = DoubleField(default=0)
 	
 	class Meta:
-		primary_key = False
+		primary_key = False"""
 
 
 class Gwflow_hrucell(base.BaseModel):
