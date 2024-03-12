@@ -38,6 +38,8 @@ import AquifersInitial from '../views/edit/connect/aquifers/Initial.vue';
 import AquifersInitialEdit from '../views/edit/connect/aquifers/InitialEdit.vue';
 import AquifersInitialCreate from '../views/edit/connect/aquifers/InitialCreate.vue';
 
+import Gwflow from '../views/edit/connect/gwflow/Gwflow.vue';
+
 import Reservoirs from '../views/edit/connect/reservoirs/Reservoirs.vue';
 import ReservoirsEdit from '../views/edit/connect/reservoirs/ReservoirsEdit.vue';
 import ReservoirsCreate from '../views/edit/connect/reservoirs/ReservoirsCreate.vue';
@@ -142,6 +144,10 @@ export default [
 					] 
 				},		
 			] 					
+	},
+	{ 
+		path: 'cons/gwflow', name: 'Gwflow', component: Gwflow, 
+			children: [] 					
 	},
 	{ 
 		path: 'cons/reservoirs', name: 'Reservoirs', component: Reservoirs, 

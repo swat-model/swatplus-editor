@@ -536,6 +536,8 @@ class RestHelpers:
 
 		if is_new:
 			query = table.insert(params)
+		elif id == 0:
+			query = table.update(params)
 		else:
 			query = table.update(params).where(table.id == id)
 		

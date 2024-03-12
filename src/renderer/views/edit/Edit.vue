@@ -82,7 +82,8 @@
 						{ name: 'Wetland Hydrology', path: '/edit/cons/reservoirs/wetlands_hydrology', show: true, routeName: '', subItems: [] }
 					]
 				},
-				{ name: 'Point Sources / Inlets', path: '/edit/cons/recall', show: !currentProject.isLte, routeName: '', subItems: [] }
+				{ name: 'Point Sources / Inlets', path: '/edit/cons/recall', show: !currentProject.isLte, routeName: '', subItems: [] },
+				{ name: 'Groundwater Flow', path: '/edit/cons/gwflow', show: !currentProject.isLte, routeName: '', subItems: [] },
 			]
 		},
 		{

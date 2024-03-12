@@ -1,6 +1,9 @@
 <script setup lang="ts">
+	import { reactive, onMounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
+	import { useHelpers } from '@/helpers';
 	const route = useRoute();
+	const { api, currentProject, errors, utilities } = useHelpers();
 
 	let table:any = {
 		apiUrl: 'aquifers/items',
@@ -30,14 +33,47 @@
 			{ key: 'outflow', label: '# Outflow', class: 'text-right' }
 		],
 	};
+
+	let data:any = reactive({
+		page: {
+			loading: false,
+			error: null
+		},
+		use_gwflow: false,
+	});
+
+	async function get() {
+		data.page.loading = true;
+		data.page.error = null;
+
+		try {
+			const response = await api.get(`gwflow/enabled`, currentProject.getApiHeader());
+			errors.log(response.data);
+
+			data.use_gwflow = response.data.use_gwflow;
+		} catch (error) {
+			console.log(error);
+			data.page.error = errors.logError(error, 'Unable to get project information from database.');
+		}
+		
+		data.page.loading = false;
+	}
+
+	onMounted(async () => await get())
+	watch(() => route.name, async () => await get())
+	watch(() => route.params.id, async () => await get())
 </script>
 
 <template>
-	<project-container>
+	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<div v-if="$route.name == 'Aquifers'">
 			<file-header input-file="aquifer.con" docs-path="aquifers/aquifer.aqu" use-io>
 				Aquifers
 			</file-header>
+
+			<v-alert v-if="data.use_gwflow" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+				Groundwater flow is enabled. Aquifers will not be used in this simulation, but are still shown below.
+			</v-alert>
 
 			<grid-view :api-url="table.apiUrl" :headers="table.headers"></grid-view>
 		</div>

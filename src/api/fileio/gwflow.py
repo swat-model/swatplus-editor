@@ -40,19 +40,23 @@ class Gwflow_files(BaseFileModel):
 				codes_bsn.gwflow = 0
 			codes_bsn.save()	
 
-	def set_grid_cellid_to_index(self):
+	def set_grid_index_to_cell(self):
+		self.grid_index_to_cell = {}
+		if self.gwflow_base is None:
+			return
+		
 		grid_cells = gwflow.Gwflow_grid.select().order_by(gwflow.Gwflow_grid.cell_id)
-		self.grid_cellid_to_index = {}
-		i = 1
-		for cell in grid_cells:
-			self.grid_cellid_to_index[cell.cell_id] = i
-			i += 1
+		active_grid_cells = { cell.cell_id: cell for cell in grid_cells }
+
+		cell_count = self.gwflow_base.row_count * self.gwflow_base.col_count
+		for i in range(1, cell_count + 1):
+			self.grid_index_to_cell[i] = active_grid_cells.get(i, None)
 
 	def read(self, database ='project'):
 		raise NotImplementedError('Reading not implemented.')
 
 	def write(self):
-		self.set_grid_cellid_to_index()
+		self.set_grid_index_to_cell()
 		self.write_input()
 		self.write_chancells()
 		self.write_hrucell()
@@ -124,7 +128,7 @@ class Gwflow_files(BaseFileModel):
 					i += 1
 
 				file.write(' Grid Cell Information\n')
-				grid_cells = gwflow.Gwflow_grid.select().order_by(gwflow.Gwflow_grid.cell_id)
+				#grid_cells = gwflow.Gwflow_grid.select().order_by(gwflow.Gwflow_grid.cell_id)
 
 				status_lines = 'Cell Status (0=inactive; 1=active; 2=boundary)\n'
 				elevation_lines = 'Ground Surface Elevation (m)\n'
@@ -136,7 +140,7 @@ class Gwflow_files(BaseFileModel):
 				init_head_lines = 'Initial Groundwater Head (m)\n'
 
 				col = 1
-				for cell in grid_cells:
+				for key in self.grid_index_to_cell:
 					if col == self.gwflow_base.col_count + 1:
 						status_lines += '\n'
 						elevation_lines += '\n'
@@ -148,14 +152,15 @@ class Gwflow_files(BaseFileModel):
 						init_head_lines += '\n'
 						col = 1
 
-					status_lines += '{}\t'.format(cell.status)
-					elevation_lines += '{}\t'.format(utils.get_num_format(cell.elevation, 2))
-					aquifer_thickness_lines += '{}\t'.format(utils.get_num_format(cell.aquifer_thickness, 2))
-					zone_k_lines += '{}\t'.format(zone_id_index.get(cell.zone, 0))
-					zone_yld_lines += '{}\t'.format(zone_id_index.get(cell.zone, 0))
+					cell = self.grid_index_to_cell[key]
+					status_lines += '{}\t'.format(0 if cell is None else cell.status)
+					elevation_lines += '{}\t'.format(utils.get_num_format(0 if cell is None else cell.elevation, 2))
+					aquifer_thickness_lines += '{}\t'.format(utils.get_num_format(0 if cell is None else cell.aquifer_thickness, 2))
+					zone_k_lines += '{}\t'.format(zone_id_index.get(0 if cell is None else cell.zone, 0))
+					zone_yld_lines += '{}\t'.format(zone_id_index.get(0 if cell is None else cell.zone, 0))
+					init_head_lines += '{}\t'.format(utils.get_num_format(0 if cell is None else cell.initial_head, 2))
 					recharge_lines += '{}\t'.format(utils.get_num_format(self.gwflow_base.recharge_delay, 2))
 					et_lines += '{}\t'.format(utils.get_num_format(self.gwflow_base.et_extinction_depth, 2))
-					init_head_lines += '{}\t'.format(utils.get_num_format(cell.initial_head, 2))
 					col += 1
 
 				if not status_lines.endswith('\n'): status_lines += '\n'
@@ -186,14 +191,20 @@ class Gwflow_files(BaseFileModel):
 				obs_loc = gwflow.Gwflow_obs_locs.select()
 				file.write('\t\t{}\n'.format(obs_loc.count()))
 				for loc in obs_loc:
-					file.write('{}\n'.format(self.grid_cellid_to_index.get(loc.cell_id, 0)))
+					file.write('{}\n'.format(loc.cell_id))
 
 				file.write(' Cell for detailed daily sources/sink output\n')
-				file.write(' 0\n')
+				row_det = self.gwflow_config.getint('row_det', 0)
+				col_det = self.gwflow_config.getint('col_det', 0)
+				cell_det = 0
+				if row_det > 0 and col_det > 0:
+					cell_det = (row_det - 1) * self.gwflow_base.col_count + col_det
+				file.write(' {}\n'.format(cell_det))
 				#file.write('  Row  Column\n')
 				#file.write(' {} {}\n'.format(utils.int_pad(self.gwflow_config.getint('row_det', 0), 4), utils.int_pad(self.gwflow_config.getint('col_det', 0), 8)))
+				
 				file.write(' River Cell Information\n')
-				file.write(' {}\n'.format(utils.get_num_format(self.gwflow_config.getfloat('river_depth', 5.0), 2)))
+				file.write(' {}\n'.format(utils.get_num_format(self.gwflow_base.river_depth, 2)))
 
 	def write_chancells(self, file_name='gwflow.chancells'):
 		if self.gwflow_base is not None:
@@ -213,7 +224,7 @@ class Gwflow_files(BaseFileModel):
 				grid_cells = gwflow.Gwflow_rivcell.select(gwflow.Gwflow_rivcell, gwflow.Gwflow_grid).join(gwflow.Gwflow_grid).order_by(gwflow.Gwflow_rivcell.cell_id)
 				channels_gis_to_con = IndexHelper(connect.Chandeg_con).get()
 				for cell in grid_cells:
-					utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
+					utils.write_int(file, cell.cell_id.cell_id)
 					utils.write_num(file, cell.cell_id.elevation, decimals=2)
 					utils.write_int(file, channels_gis_to_con.get(cell.channel, 0))
 					utils.write_num(file, cell.length_m, decimals=2)
@@ -221,7 +232,7 @@ class Gwflow_files(BaseFileModel):
 					file.write('\n')
 
 	def get_hru_data(self):
-		hru_or_lsu_recharge = self.gwflow_config.getint('HRUorLSU_recharge', 2)
+		hru_or_lsu_recharge = self.gwflow_base.recharge
 		hru_recharge = hru_or_lsu_recharge == 1 or hru_or_lsu_recharge == 3
 		hrus_gis_to_con = IndexHelper(connect.Hru_con).get()
 		return hru_recharge, hrus_gis_to_con
@@ -260,7 +271,7 @@ class Gwflow_files(BaseFileModel):
 					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.hru.id, gwflow.Gwflow_hrucell.cell_id.cell_id):
 						utils.write_int(file, hrus_gis_to_con.get(cell.hru.id, 0))
 						utils.write_num(file, cell.hru.arslp * 10000, decimals=2) # NOT SURE
-						utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
+						utils.write_int(file, cell.cell_id.cell_id)
 						utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
 						file.write('\n')
 				
@@ -281,14 +292,14 @@ class Gwflow_files(BaseFileModel):
 					cell_size = self.gwflow_base.cell_size
 					cell_area = cell_size * cell_size
 					for cell in grid_cells.order_by(gwflow.Gwflow_hrucell.cell_id.cell_id):
-						utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
+						utils.write_int(file, cell.cell_id.cell_id)
 						utils.write_int(file, hrus_gis_to_con.get(cell.hru.id, 0))
 						utils.write_num(file, cell_area, decimals=2) # NOT SURE
 						utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
 						file.write('\n')
 
 	def write_lsucell(self, file_name='gwflow.lsucell'):
-		if self.gwflow_base is not None:
+		if self.gwflow_base is not None and (self.gwflow_base.recharge == 2 or self.gwflow_base.recharge == 3):
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write(' LSU (landscape unit) - Cell Connection Information ')
 				self.write_meta_line(file, file_name)
@@ -321,7 +332,7 @@ class Gwflow_files(BaseFileModel):
 				for cell in grid_cells.order_by(gwflow.Gwflow_lsucell.cell_id):
 					utils.write_int(file, lsus_gis_to_con.get(cell.lsu.id, 0))
 					utils.write_num(file, cell.lsu.area * 10000, decimals=2) # NOT SURE
-					utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id, 0))
+					utils.write_int(file, cell.cell_id)
 					utils.write_num(file, cell.area_m2, decimals=2) # NOT SURE
 					file.write('\n')
 
@@ -346,7 +357,7 @@ class Gwflow_files(BaseFileModel):
 				file.write('\n')
 
 				for cell in grid_cells.order_by(gwflow.Gwflow_rescell.cell_id.cell_id):
-					utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
+					utils.write_int(file, cell.cell_id.cell_id)
 					utils.write_int(file, res_gis_to_con.get(cell.res_id, 0))
 					utils.write_num(file, cell.res_stage, decimals=2) 
 					file.write('\n')
@@ -370,7 +381,7 @@ class Gwflow_files(BaseFileModel):
 				file.write('\n')
 
 				for cell in grid_cells.order_by(gwflow.Gwflow_fpcell.cell_id.cell_id):
-					utils.write_int(file, self.grid_cellid_to_index.get(cell.cell_id.cell_id, 0))
+					utils.write_int(file, cell.cell_id.cell_id)
 					utils.write_int(file, cha_gis_to_con.get(cell.channel_id, 0))
 					utils.write_exp(file, 0, decimals=4) # CAN'T FIND IN DB
 					utils.write_num(file, cell.area_m2, decimals=2) 
@@ -412,12 +423,13 @@ class Gwflow_files(BaseFileModel):
 				status_lines = 'gwflow tile cells (0=no tile; 1=tiles are present)\n'
 
 				col = 1
-				for cell in grid_cells:
+				for key in self.grid_index_to_cell:
 					if col == self.gwflow_base.col_count + 1:
 						status_lines += '\n'
 						col = 1
 
-					status_lines += '{}\t'.format(cell.tile)
+					cell = self.grid_index_to_cell[key]
+					status_lines += '{}\t'.format(0 if cell is None else cell.tile)
 					col += 1
 
 				if not status_lines.endswith('\n'): status_lines += '\n'

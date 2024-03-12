@@ -10,14 +10,16 @@
 		apiUrl: string,
 		item: any,
 		isUpdate?: boolean,
-		allowBulkEdit?: boolean
+		allowBulkEdit?: boolean,
+		useGwflow?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
 		apiUrl: '',
 		item: { id: 0 },
 		isUpdate: false,
-		allowBulkEdit: false
+		allowBulkEdit: false,
+		useGwflow: false
 	});
 
 	let page:any = reactive({
@@ -142,6 +144,10 @@
 	<div>
 		<error-alert :text="page.error"></error-alert>
 		<success-alert v-model="page.saveSuccess" :show="page.saveSuccess"></success-alert>
+
+		<v-alert v-if="props.useGwflow" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+			Groundwater flow is enabled. Any aquifer recharge outflow shown will not be used in the simulation.
+		</v-alert>
 
 		<v-form @submit.prevent="save">
 			<div v-if="page.bulk.show">

@@ -8,7 +8,7 @@ import os
 import werkzeug
 import traceback
 
-from rest import setup, aquifer, auto_complete, basin, change, channel, climate, decision_table, definitions, hru, hru_lte, hru_parm_db, hydrology, init, lum, ops, recall, regions, reservoir, routing_unit, soils, structural, water_rights
+from rest import setup, aquifer, auto_complete, basin, change, channel, climate, decision_table, definitions, gwflow, hru, hru_lte, hru_parm_db, hydrology, init, lum, ops, recall, regions, reservoir, routing_unit, soils, structural, water_rights
 
 app = Flask(__name__)
 CORS(app)
@@ -25,6 +25,7 @@ app.register_blueprint(channel.bp)
 app.register_blueprint(climate.bp)
 app.register_blueprint(decision_table.bp)
 app.register_blueprint(definitions.bp)
+app.register_blueprint(gwflow.bp)
 app.register_blueprint(hru.bp)
 app.register_blueprint(hru_lte.bp)
 app.register_blueprint(hru_parm_db.bp)

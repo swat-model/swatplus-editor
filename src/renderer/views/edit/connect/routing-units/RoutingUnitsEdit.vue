@@ -17,7 +17,8 @@
 			connect: {},
 			props: {},
 			outflow: []
-		}
+		},
+		use_gwflow: false
 	});
 
 	async function get() {
@@ -50,6 +51,11 @@
 				field_name: utilities.setToNameProp(response2.data.field),
 				description: response2.data.description
 			};
+
+			const responseGwflow = await api.get(`gwflow/enabled`, currentProject.getApiHeader());
+			errors.log(responseGwflow.data);
+
+			data.use_gwflow = responseGwflow.data.use_gwflow;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');
 		}
@@ -69,6 +75,6 @@
 			/ Edit
 		</file-header>
 
-		<routing-units-form :item="data.item" :api-url="data.apiUrl" is-update allow-bulk-edit></routing-units-form>
+		<routing-units-form :item="data.item" :api-url="data.apiUrl" is-update allow-bulk-edit :use-gwflow="data.use_gwflow"></routing-units-form>
 	</project-container>
 </template>
