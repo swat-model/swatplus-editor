@@ -5,11 +5,9 @@ from database import lib
 from helpers import utils
 from .connect import IndexHelper
 import os.path
-import configparser
-import sys
 
 class Gwflow_files(BaseFileModel):
-	def __init__(self, file_name, version=None, swat_version=None, project_db_file=None, gwflow_ini_file='gwflow.ini'):
+	def __init__(self, file_name, version=None, swat_version=None, project_db_file=None):
 		self.file_name = file_name #txtinout directory
 		self.version = version
 		self.swat_version = swat_version
@@ -20,12 +18,6 @@ class Gwflow_files(BaseFileModel):
 			conn = lib.open_db(project_db_file)
 			if lib.exists_table(conn, 'gwflow_base'):
 				self.gwflow_base = gwflow.Gwflow_base.get_or_none()
-				self.gwflow_config = None
-				if self.gwflow_base is not None:
-					config = configparser.ConfigParser()
-					config.read(gwflow_ini_file)
-					self.gwflow_config = config['DEFAULT']
-					#self.gwflow_config = configparser.ConfigParser().read(gwflow_ini_file)['DEFAULT']
 			conn.close()	
 
 	def exists(self):
@@ -88,7 +80,7 @@ class Gwflow_files(BaseFileModel):
 				file.write(' {} groundwater-floodplain exchange (0=off; 1=on)\n'.format(utils.num_pad(self.gwflow_base.floodplain_exchange, decimals=0, direction='left')))
 				file.write(' {} canal seepage to groundwater (0=off; 1=on)\n'.format(utils.num_pad(self.gwflow_base.canal_seepage, decimals=0, direction='left')))
 				file.write(' {} groundwater solute transport (0=off; 1=on)\n'.format(utils.num_pad(self.gwflow_base.solute_transport, decimals=0, direction='left')))
-				file.write(' {} time step (days)\n'.format(utils.num_pad(self.gwflow_config.getfloat('timestep_balance', 1), decimals=2, direction='left'))) # missing in QSWAT+ tables?
+				file.write(' {} time step (days)\n'.format(utils.num_pad(self.gwflow_base.timestep_balance, decimals=2, direction='left'))) # missing in QSWAT+ tables?
 				file.write(' {} write flags (daily, annual, avg. annual)\n'.format(utils.string_pad('{} {} {}'.format(self.gwflow_base.daily_output, self.gwflow_base.annual_output, self.gwflow_base.aa_output), direction='left', default_pad=utils.DEFAULT_NUM_PAD, no_space_removal=True)))
 				file.write(' {} number of columns in output files\n'.format(utils.num_pad(1, decimals=0, direction='left')))
 				
@@ -194,14 +186,12 @@ class Gwflow_files(BaseFileModel):
 					file.write('{}\n'.format(loc.cell_id))
 
 				file.write(' Cell for detailed daily sources/sink output\n')
-				row_det = self.gwflow_config.getint('row_det', 0)
-				col_det = self.gwflow_config.getint('col_det', 0)
+				row_det = self.gwflow_base.daily_output_row
+				col_det = self.gwflow_base.daily_output_col
 				cell_det = 0
 				if row_det > 0 and col_det > 0:
 					cell_det = (row_det - 1) * self.gwflow_base.col_count + col_det
 				file.write(' {}\n'.format(cell_det))
-				#file.write('  Row  Column\n')
-				#file.write(' {} {}\n'.format(utils.int_pad(self.gwflow_config.getint('row_det', 0), 4), utils.int_pad(self.gwflow_config.getint('col_det', 0), 8)))
 				
 				file.write(' River Cell Information\n')
 				file.write(' {}\n'.format(utils.get_num_format(self.gwflow_base.river_depth, 2)))

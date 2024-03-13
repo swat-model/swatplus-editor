@@ -26,8 +26,8 @@ def enabled():
 		'can_enable': can_enable
 	}		
 
-@bp.route('/ini', methods=['GET', 'PUT'])
-def ini():
+@bp.route('/base', methods=['GET', 'PUT'])
+def base():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
 	if not has_db: abort(400, error)
@@ -47,11 +47,11 @@ def ini():
 		rh.close()
 		return {
 			'use_gwflow': pc.use_gwflow == 1,
-			'ini': d,
+			'base': d,
 		}
 	elif request.method == 'PUT':
 		try:
-			result = RestHelpers.save_args(table, request.json['ini'], id=0)
+			result = RestHelpers.save_args(table, request.json['base'], id=0)
 
 			pc.use_gwflow = request.json['use_gwflow']
 			pc.save()

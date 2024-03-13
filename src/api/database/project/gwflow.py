@@ -17,6 +17,8 @@ class Gwflow_base(base.BaseModel):
 	floodplain_exchange = IntegerField()
 	canal_seepage = IntegerField()
 	solute_transport = IntegerField()
+	transport_steps = DoubleField()
+	disp_coef = DoubleField()
 	recharge_delay = IntegerField()
 	et_extinction_depth = DoubleField()
 	water_table_depth = DoubleField()
@@ -33,6 +35,7 @@ class Gwflow_base(base.BaseModel):
 	aa_output = IntegerField()
 	daily_output_row = IntegerField()
 	daily_output_col = IntegerField()
+	timestep_balance = DoubleField()
 	
 	class Meta:
 		primary_key = False

@@ -64,10 +64,10 @@ class WriteFiles(ExecutableApi):
 			bigger_step = 10
 			total = 0
 
-			gwlow_ini_file = os.path.join(self.__dir, '../', 'gwflow.ini')
-			if not os.path.exists(gwlow_ini_file):
-				gwlow_ini_file = os.path.join(self.__dir, 'gwflow.ini')
-			gwflow_writer = gwflow.Gwflow_files(self.__dir, self.__version, self.__swat_version, self.project_db_file, gwlow_ini_file)
+			"""gwflow_ini_file = os.path.join(self.__dir, '../', 'gwflow.ini')
+			if not os.path.exists(gwflow_ini_file):
+				gwflow_ini_file = os.path.join(self.__dir, 'gwflow.ini')"""
+			gwflow_writer = gwflow.Gwflow_files(self.__dir, self.__version, self.__swat_version, self.project_db_file)
 			gwflow_writer.update_codes_bsn()
 
 			self.write_simulation(total, step)
