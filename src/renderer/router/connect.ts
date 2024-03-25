@@ -39,6 +39,7 @@ import AquifersInitialEdit from '../views/edit/connect/aquifers/InitialEdit.vue'
 import AquifersInitialCreate from '../views/edit/connect/aquifers/InitialCreate.vue';
 
 import Gwflow from '../views/edit/connect/gwflow/Gwflow.vue';
+import GwflowGrids from '../views/edit/connect/gwflow/GwflowGrids.vue';
 
 import Reservoirs from '../views/edit/connect/reservoirs/Reservoirs.vue';
 import ReservoirsEdit from '../views/edit/connect/reservoirs/ReservoirsEdit.vue';
@@ -147,7 +148,9 @@ export default [
 	},
 	{ 
 		path: 'cons/gwflow', name: 'Gwflow', component: Gwflow, 
-			children: [] 					
+			children: [
+				{ path: 'grids', name: 'GwflowGrids', component: GwflowGrids },
+			] 					
 	},
 	{ 
 		path: 'cons/reservoirs', name: 'Reservoirs', component: Reservoirs, 

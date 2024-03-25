@@ -83,7 +83,13 @@
 					]
 				},
 				{ name: 'Point Sources / Inlets', path: '/edit/cons/recall', show: !currentProject.isLte, routeName: '', subItems: [] },
-				{ name: 'Groundwater Flow', path: '/edit/cons/gwflow', show: !currentProject.isLte, routeName: '', subItems: [] },
+				{ 
+					name: 'Groundwater Flow', path: '/edit/cons/gwflow', show: !currentProject.isLte, routeName: 'Gwflow', 
+					subItems: [
+						{ name: 'Zones', path: '/edit/cons/gwflow/zones', show: true, routeName: '', subItems: [] },
+						{ name: 'Grid Data', path: '/edit/cons/gwflow/grids', show: true, routeName: '', subItems: [] },
+					] 
+				},
 			]
 		},
 		{
@@ -240,7 +246,7 @@
 
 	function processSubOpen(thisRoute:RouteRecordName|null|undefined) {
 		let subOpenItems = [
-			'Channels', 'Aquifers', 'Reservoirs', 'RoutingUnits', 
+			'Channels', 'Aquifers', 'Reservoirs', 'RoutingUnits', 'Gwflow',
 			'Stations', 'Operations', 'LandscapeUnits', 'HardCalibration', 'SoftCalibration', 'Constituents'
 		];
 

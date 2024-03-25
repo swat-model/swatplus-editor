@@ -1,10 +1,14 @@
+from playhouse.shortcuts import model_to_dict
 from .base import BaseFileModel, FileColumn as col
-from database.project import gis, gwflow, connect, reservoir, basin
+from database.project import gis, gwflow, connect, reservoir, basin, base
 from database.project.config import Project_config
 from database import lib
 from helpers import utils
 from .connect import IndexHelper
 import os.path
+import sys
+
+solute_grid_cols = ['init_no3', 'init_p', 'init_so4', 'init_ca', 'init_mg', 'init_na', 'init_k', 'init_cl', 'init_co3', 'init_hco3']
 
 class Gwflow_files(BaseFileModel):
 	def __init__(self, file_name, version=None, swat_version=None, project_db_file=None):
@@ -32,17 +36,21 @@ class Gwflow_files(BaseFileModel):
 				codes_bsn.gwflow = 0
 			codes_bsn.save()	
 
-	def set_grid_index_to_cell(self):
-		self.grid_index_to_cell = {}
+	def get_grid_index_to_cell(self, table = gwflow.Gwflow_grid):
+		data_dict = {}
 		if self.gwflow_base is None:
 			return
 		
-		grid_cells = gwflow.Gwflow_grid.select().order_by(gwflow.Gwflow_grid.cell_id)
+		grid_cells = table.select().order_by(table.cell_id)
 		active_grid_cells = { cell.cell_id: cell for cell in grid_cells }
 
 		cell_count = self.gwflow_base.row_count * self.gwflow_base.col_count
 		for i in range(1, cell_count + 1):
-			self.grid_index_to_cell[i] = active_grid_cells.get(i, None)
+			data_dict[i] = active_grid_cells.get(i, None)
+		return data_dict
+
+	def set_grid_index_to_cell(self):
+		self.grid_index_to_cell = self.get_grid_index_to_cell()
 
 	def read(self, database ='project'):
 		raise NotImplementedError('Reading not implemented.')
@@ -57,7 +65,73 @@ class Gwflow_files(BaseFileModel):
 		self.write_floodplain()
 		self.write_wetland()
 		self.write_tiles()
-		#self.write_solutes()
+		self.write_solutes()
+
+	def write_grid(self, file_name, column_name='', separator='\t', skip_header=False):
+		table = gwflow.Gwflow_grid if column_name not in solute_grid_cols else gwflow.Gwflow_init_conc
+		grid_cell_dict = self.get_grid_index_to_cell(table)
+		with open(file_name, 'w') as file:
+			if not skip_header:
+				self.write_meta_line(file, 'Gwflow grid data for "{}"'.format(column_name))
+			lines = ''
+			col = 1
+			for key in grid_cell_dict:
+				if col == self.gwflow_base.col_count + 1:
+					lines += '\n'
+					col = 1
+
+				cell = grid_cell_dict[key]
+
+				value = 0
+				decimals = 2
+
+				if cell is not None:
+					cell_dict = model_to_dict(cell, recurse=False)
+					value = cell_dict.get(column_name, 0)
+
+					if column_name == 'tile':
+						decimals = 0
+				
+				lines += '{}{}'.format(utils.get_num_format(value, decimals), separator)
+				col += 1
+
+			if not lines.endswith('\n'): lines += '\n'
+			file.write(lines)
+
+	def read_grid(self, file_name, column_name=''):
+		table = gwflow.Gwflow_grid if column_name not in solute_grid_cols else gwflow.Gwflow_init_conc
+		grid_cell_dict = self.get_grid_index_to_cell(table)
+
+		with open(file_name, 'r') as file:
+			start_line = 2
+			i = 1
+			row = 1
+			col = 1
+			updated_cells = []
+			for line in file:
+				if i >= start_line:
+					col = 1
+					values = utils.split_multiple_delimiters(line)
+					for value in values:
+						cell_index = (row - 1) * self.gwflow_base.col_count + col
+						cell = grid_cell_dict.get(cell_index, None)
+
+						if cell is not None:
+							cell_dict = model_to_dict(cell, recurse=False)
+							if column_name in cell_dict:
+								#sys.stdout.write('Updating cell {} with {} value {}\n'.format(cell_index, column_name, value))
+								cell_dict[column_name] = float(value) if column_name != 'tile' else int(value)
+								updated_cells.append(cell_dict)
+						col += 1
+					row += 1
+				i += 1
+		
+			if len(updated_cells) > 0:
+				sys.stdout.write('Updating {} cells\n'.format(len(updated_cells)))
+				with base.db.atomic():
+					#table.bulk_update(updated_cells, fields=[column_name], batch_size=100)
+					for cell in updated_cells:
+						table.update(cell).where(table.cell_id == cell['cell_id']).execute()
 
 	def write_input(self, file_name='gwflow.input'):
 		if self.gwflow_base is not None:
@@ -152,7 +226,7 @@ class Gwflow_files(BaseFileModel):
 					zone_yld_lines += '{}\t'.format(zone_id_index.get(0 if cell is None else cell.zone, 0))
 					init_head_lines += '{}\t'.format(utils.get_num_format(0 if cell is None else cell.initial_head, 2))
 					recharge_lines += '{}\t'.format(utils.get_num_format(self.gwflow_base.recharge_delay, 2))
-					et_lines += '{}\t'.format(utils.get_num_format(self.gwflow_base.et_extinction_depth, 2))
+					et_lines += '{}\t'.format(utils.get_num_format(0 if cell is None else cell.extinction_depth, 2))
 					col += 1
 
 				if not status_lines.endswith('\n'): status_lines += '\n'
@@ -426,16 +500,32 @@ class Gwflow_files(BaseFileModel):
 
 				file.write(status_lines)
 
-	"""def write_solutes(self, file_name='gwflow.solutes'):
+	def write_solutes(self, file_name='gwflow.solutes'):
 		if self.gwflow_base is not None and self.gwflow_base.solute_transport == 1:
-			solutes = gwflow.Gwflow_solutes.get_or_none()
-			if solutes is not None:
-				with open(os.path.join(self.file_name, file_name), 'w') as file:
-					file.write('solute parameters and initial concentrations ')
-					self.write_meta_line(file, file_name)
+			with open(os.path.join(self.file_name, file_name), 'w') as file:
+				file.write('solute parameters and initial concentrations ')
+				self.write_meta_line(file, file_name)
 
-					file.write('general parameters\n')
-					file.write(' {}\t\t number of transport time steps for flow time step\n'.format(solutes.transport_steps))
-					file.write(' {}\t\t dispersion coefficient (m2/day)\n'.format(solutes.disp_coef))
+				file.write('general parameters\n')
+				file.write(' {}\t\t number of transport time steps for flow time step\n'.format(self.gwflow_base.transport_steps))
+				file.write(' {}\t\t dispersion coefficient (m2/day)\n'.format(self.gwflow_base.disp_coef))
 
-					file.write('solute parameters: name,sorption,rate constant,canal_irrig (one row per active solute)\n')"""
+				file.write('solute parameters: name,sorption,rate constant,canal_irrig (one row per active solute)\n')
+				solutes = gwflow.Gwflow_solutes.select()
+				for solute in solutes:
+					utils.write_string(file, solute.name, default_pad=8, direction='left')
+					utils.write_num(file, solute.sorption, decimals=2)
+					utils.write_num(file, solute.rate_const, decimals=4)
+					utils.write_num(file, solute.canal_irr, decimals=2)
+					file.write('\n')
+
+				file.write('initial concentrations (g/m3)\n')
+				for solute in solutes:
+					file.write('{}\n'.format(solute.name))
+					file.write('{}\n'.format(solute.init_data))
+
+					if solute.init_data == 'single':
+						file.write(utils.get_num_format(solute.init_conc, 2))
+					else:
+						solute_name = solute.name if solute.name != 'no3-n' else 'no3'
+						self.write_grid(os.path.join(self.file_name, file_name), column_name='init_{}'.format(solute_name), skip_header=True)

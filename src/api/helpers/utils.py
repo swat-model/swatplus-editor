@@ -183,3 +183,8 @@ def add_months(sourcedate, months):
     month = month % 12 + 1
     day = min(sourcedate.day, calendar.monthrange(year,month)[1])
     return date(year, month, day)
+
+
+def split_multiple_delimiters(s, delimiters = [',', ' ', '\t','\n']):
+	values = re.split('|'.join(map(re.escape, delimiters)), s)
+	return list(filter(None, values))

@@ -81,6 +81,8 @@
 			filters = [{ name: 'CSV (Comma delimited)', extensions: ['csv'] }];
 		} else if (props.fileType == "cli") {
 			filters = [{ name: 'Cli/Text', extensions: ['txt','cli'] },{ name: 'All files', extensions: ['*'] }]
+		} else if (props.fileType == "text") {
+			filters = [{ name: 'Text', extensions: ['txt','csv'] },{ name: 'All files', extensions: ['*'] }]
 		} else {
 			filters = [{ name: 'All files', extensions: ['*'] }]
 		}

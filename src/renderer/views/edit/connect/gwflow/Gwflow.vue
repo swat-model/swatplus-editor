@@ -86,67 +86,70 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.loadingError">
-		<file-header input-file="gwflow.input" docs-path="modflow" use-io>
-			Groundwater Flow
-		</file-header>
-
 		<v-alert v-if="!data.can_enable" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 			Groundwater flow must be setup through Step 2, HRUs tab in QSWAT+ in order to use it through the editor.
 		</v-alert>
-		<div v-else>
-			<error-alert as-popup v-model="data.page.saveError" :show="data.page.saveError" :text="data.page.error" :timeout="-1"></error-alert>
-			<success-alert v-model="data.page.saveSuccess" :show="data.page.saveSuccess"></success-alert>
+		<div v-else-if="$route.name == 'Gwflow'">
+			<file-header input-file="gwflow.input" docs-path="modflow" use-io>
+				Groundwater Flow
+			</file-header>
 
-			<p>
-				Any disabled rows below denote values used during gwflow setup in QSWAT+ and are not editable through SWAT+ editor.
-			</p>
-			
-			<v-form @submit.prevent="save">
-				<v-table class="table-editor" density="compact">
-					<thead>
-						<tr class="bg-surface">
-							<th class="bg-secondary-tonal">Value</th>
-							<th class="bg-secondary-tonal">Description</th>
-							<th class="bg-secondary-tonal">Default</th>
-							<th class="bg-secondary-tonal">QSWAT+ Only</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td class="field">
-								<v-select density="compact" hide-details="auto" 
-									v-model="data.item.use_gwflow"
-									:items="[{ value: false, title: 'Disabled'}, {value: true, title: 'Enabled'}]"></v-select>
-							</td>
-							<td>Enable or disable the groundwater flow module for this simulation</td>
-							<td></td>
-							<td></td>
-						</tr>
-						<tr v-for="v in data.vars" :key="v.name" :class="v.disabled ? 'text-medium-emphasis' : ''">
-							<td v-if="v.disabled" class="field">{{ data.item.base[v.name] }}</td>
-							<td v-else class="field">
-								<v-select v-if="v.type === 'select'" density="compact" hide-details="auto" 
-									v-model="data.item.base[v.name]"
-									:items="v.items"></v-select>
-								<v-text-field density="compact" v-else-if="v.type === 'float'" 
-									v-model.number="data.item.base[v.name]" type="number" step="any" hide-details="auto">
-								</v-text-field>
-								<v-text-field density="compact" v-else-if="v.type === 'int'" 
-									v-model.number="data.item.base[v.name]" type="number" hide-details="auto">
-								</v-text-field>
-							</td>
-							<td>{{ v.description }}</td>
-							<td>{{ v.default }}</td>
-							<td><font-awesome-icon v-if="v.disabled" :icon="['fas', 'check']"></font-awesome-icon></td>
-						</tr>
-					</tbody>
-				</v-table>
+			<div>
+				<error-alert as-popup v-model="data.page.saveError" :show="data.page.saveError" :text="data.page.error" :timeout="-1"></error-alert>
+				<success-alert v-model="data.page.saveSuccess" :show="data.page.saveSuccess"></success-alert>
 
-				<action-bar>
-					<v-btn type="submit" :loading="data.page.saving" variant="flat" color="primary" class="mr-2">Save Changes</v-btn>
-					<back-button></back-button>
-				</action-bar>
-			</v-form>
+				<p>
+					Any disabled rows below denote values used during gwflow setup in QSWAT+ and are not editable through SWAT+ editor.
+				</p>
+				
+				<v-form @submit.prevent="save">
+					<v-table class="table-editor" density="compact">
+						<thead>
+							<tr class="bg-surface">
+								<th class="bg-secondary-tonal">Value</th>
+								<th class="bg-secondary-tonal">Description</th>
+								<th class="bg-secondary-tonal">Default</th>
+								<th class="bg-secondary-tonal">QSWAT+ Only</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="field">
+									<v-select density="compact" hide-details="auto" 
+										v-model="data.item.use_gwflow"
+										:items="[{ value: false, title: 'Disabled'}, {value: true, title: 'Enabled'}]"></v-select>
+								</td>
+								<td>Enable or disable the groundwater flow module for this simulation</td>
+								<td></td>
+								<td></td>
+							</tr>
+							<tr v-for="v in data.vars" :key="v.name" :class="v.disabled ? 'text-medium-emphasis' : ''">
+								<td v-if="v.disabled" class="field">{{ data.item.base[v.name] }}</td>
+								<td v-else class="field">
+									<v-select v-if="v.type === 'select'" density="compact" hide-details="auto" 
+										v-model="data.item.base[v.name]"
+										:items="v.items"></v-select>
+									<v-text-field density="compact" v-else-if="v.type === 'float'" 
+										v-model.number="data.item.base[v.name]" type="number" step="any" hide-details="auto">
+									</v-text-field>
+									<v-text-field density="compact" v-else-if="v.type === 'int'" 
+										v-model.number="data.item.base[v.name]" type="number" hide-details="auto">
+									</v-text-field>
+								</td>
+								<td>{{ v.description }}</td>
+								<td>{{ v.default }}</td>
+								<td><font-awesome-icon v-if="v.disabled" :icon="['fas', 'check']"></font-awesome-icon></td>
+							</tr>
+						</tbody>
+					</v-table>
+
+					<action-bar>
+						<v-btn type="submit" :loading="data.page.saving" variant="flat" color="primary" class="mr-2">Save Changes</v-btn>
+						<back-button></back-button>
+					</action-bar>
+				</v-form>
+			</div>
 		</div>
+		<router-view></router-view>
 	</project-container>
 </template>

@@ -5,7 +5,7 @@ from database.project import base as project_base
 from database.project.recall import Recall_rec, Recall_dat
 from database.project.climate import Weather_sta_cli
 from fileio import base as fileio
-from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change
+from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, gwflow
 
 import sys
 import argparse
@@ -17,9 +17,10 @@ dtl_names = [
 ]
 
 class ImportExportData(ExecutableApi):
-	def __init__(self, file_name, table_name, db_file, delete_existing=False, related_id=0, ignore_id_col=True, version=None, input_files_dir=None, rec_typ=None):
+	def __init__(self, file_name, table_name, db_file, delete_existing=False, related_id=0, ignore_id_col=True, version=None, input_files_dir=None, rec_typ=None, column_name=None, swat_version=None):
 		self.__abort = False
 		SetupProjectDatabase.init(db_file)
+		self.db_file = db_file
 		self.file_name = file_name
 		self.table = table_mapper.types.get(table_name, None)
 
@@ -30,6 +31,8 @@ class ImportExportData(ExecutableApi):
 		self.version = version
 		self.input_files_dir = input_files_dir
 		self.rec_typ = rec_typ
+		self.column_name = column_name
+		self.swat_version = swat_version
 
 		if self.table is None:
 			sys.exit("Table '{table}' does not exist.".format(table=table_name))
@@ -88,6 +91,9 @@ class ImportExportData(ExecutableApi):
 			decision_table.D_table_dtl(self.file_name, file_type=self.table_name).read()
 		elif self.table_name == 'mgt_sch':
 			lum.Management_sch(self.file_name).read()
+		elif self.table_name == 'gwflow_grid':
+			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
+			gwflow_writer.read_grid(self.file_name, self.column_name)
 		else:
 			fileio.read_csv_file(self.file_name, self.table, project_base.db, 0, ignore_id_col=self.ignore_id_col, overwrite=fileio.FileOverwrite.replace, remove_spaces_cols=['name'])
 
@@ -96,6 +102,9 @@ class ImportExportData(ExecutableApi):
 			decision_table.D_table_dtl(self.file_name, self.version, file_type=self.table_name).write()
 		elif self.table_name == 'mgt_sch':
 			lum.Management_sch(self.file_name, self.version).write()
+		elif self.table_name == 'gwflow_grid':
+			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
+			gwflow_writer.write_grid(self.file_name, self.column_name)
 		else:
 			ignored_cols = []
 			initial_headers = []

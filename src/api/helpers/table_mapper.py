@@ -1,4 +1,4 @@
-from database.project import connect, climate, channel, aquifer, reservoir, hydrology, hru, hru_parm_db, lum, soils, routing_unit, dr, init, decision_table, exco, dr, structural, ops, regions, change, recall, salts
+from database.project import connect, climate, channel, aquifer, reservoir, hydrology, hru, hru_parm_db, lum, soils, routing_unit, dr, init, decision_table, exco, dr, structural, ops, regions, change, recall, salts, gwflow
 
 obj_typs = {
 	"hru": connect.Hru_con,
@@ -160,5 +160,8 @@ types = {
 	"septic_str": structural.Septic_str,
 	"filterstrip_str": structural.Filterstrip_str,
 	"grassedww_str": structural.Grassedww_str,
-	"bmpuser_str": structural.Bmpuser_str
+	"bmpuser_str": structural.Bmpuser_str,
+
+	"gwflow_zone": gwflow.Gwflow_zone,
+	"gwflow_grid": gwflow.Gwflow_grid,
 }

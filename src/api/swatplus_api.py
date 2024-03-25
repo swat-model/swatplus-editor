@@ -49,6 +49,7 @@ if __name__ == '__main__':
 	parser.add_argument("--table_name", type=str, help="database table", nargs="?")
 	parser.add_argument("--related_id", type=int, help="database table", nargs="?")
 	parser.add_argument("--ignore_id", type=str, help="y/n ignore id column", nargs="?")
+	parser.add_argument("--column_name", type=str, help="database table column name", nargs="?")
 
 	# setup project
 	parser.add_argument("--datasets_db_file", type=str, help="full path of datasets SQLite database file", nargs="?")
@@ -148,7 +149,7 @@ if __name__ == '__main__':
 	elif args.action == "import_csv" or args.action == "export_csv" or args.action == "export_text":
 		related_id = 0 if args.related_id is None else args.related_id
 		ignore_id = False if args.ignore_id == "n" else True
-		api = ImportExportData(args.file_name, args.table_name, args.db_file, del_ex, related_id, ignore_id, args.editor_version)
+		api = ImportExportData(args.file_name, args.table_name, args.db_file, del_ex, related_id, ignore_id, args.editor_version, column_name=args.column_name, swat_version=args.swat_version)
 	
 		if args.action == "import_csv":
 			api.import_csv()
