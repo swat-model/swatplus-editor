@@ -3,12 +3,22 @@ from .base import BaseFileModel, FileColumn as col
 from database.project import gis, gwflow, connect, reservoir, basin, base
 from database.project.config import Project_config
 from database import lib
+from helpers import table_mapper
 from helpers import utils
 from .connect import IndexHelper
 import os.path
 import sys
+import csv
 
 solute_grid_cols = ['init_no3', 'init_p', 'init_so4', 'init_ca', 'init_mg', 'init_na', 'init_k', 'init_cl', 'init_co3', 'init_hco3']
+
+gis_cols = {
+	'gwflow_hrucell': ['hru', connect.Hru_con, 'many', False],
+	'gwflow_fpcell': ['channel', connect.Chandeg_con, 'single', True],
+	'gwflow_rivcell': ['channel', connect.Chandeg_con, 'single', False],
+	'gwflow_lsucell': ['lsu', connect.Rout_unit_con, 'many', False],
+	'gwflow_rescell': ['res', connect.Reservoir_con, 'single', True],
+}
 
 class Gwflow_files(BaseFileModel):
 	def __init__(self, file_name, version=None, swat_version=None, project_db_file=None):
@@ -66,6 +76,93 @@ class Gwflow_files(BaseFileModel):
 		self.write_wetland()
 		self.write_tiles()
 		self.write_solutes()
+
+	def write_cell_csv(self, file_name, table_name):
+		table = table_mapper.types.get(table_name, None)
+		gis_col = gis_cols.get(table_name, None)
+		if table is None or gis_col is None:
+			sys.exit("Table '{table}' is not valid for this request.".format(table=table_name))
+
+		with open(file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = []
+			for field in table._meta.sorted_fields:
+				headers.append(field.name)
+
+			csv_writer.writerow(headers)
+
+			query = table.select().order_by(table.cell_id)
+			gis_to_con_name = IndexHelper(gis_col[1]).get_names()
+				
+			for row in query.dicts():
+				values = []
+				for col in headers:
+					if col == gis_col[0]:
+						values.append(gis_to_con_name.get(row[col], 'null'))
+					else:
+						values.append(row[col])
+				csv_writer.writerow(values)
+
+	def read_cell_csv(self, file_name, table_name):
+		table = table_mapper.types.get(table_name, None)
+		gis_col = gis_cols.get(table_name, None)
+		if table is None or gis_col is None:
+			sys.exit("Table '{table}' is not valid for this request.".format(table=table_name))
+
+		gis_name_to_con = IndexHelper(gis_col[1]).get_id_from_name()
+
+		with open(file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			rows = []
+			fields = table._meta.sorted_fields
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				row = {}
+				j = 0
+				table_gis_field = None
+				for field in fields:
+					value = None
+					if len(val) > j:
+						if field.name == gis_col[0]:
+							table_gis_field = field
+							value = gis_name_to_con.get(val[j], None)
+						else:
+							value = val[j]
+
+					if type(value) is str:
+						if value == 'null':
+							value = None
+					
+					row[field.name] = value
+
+					j += 1
+
+				if gis_col[2] == 'single':
+					m = table.get_or_none(table.cell_id == row['cell_id'])
+				else:
+					m = table.get_or_none((table.cell_id == row['cell_id']) & (table_gis_field == row[gis_col[0]]))
+
+				if m is not None:
+					if gis_col[2] == 'single':
+						table.update(row).where(table.cell_id == row['cell_id']).execute()
+					else:
+						table.update(row).where((table.cell_id == row['cell_id']) & (table_gis_field == row[gis_col[0]])).execute()
+				elif gis_col[3]:
+					rows.append(row)
+			
+		lib.bulk_insert(base.db, table, rows)
 
 	def write_grid(self, file_name, column_name='', separator='\t', skip_header=False):
 		table = gwflow.Gwflow_grid if column_name not in solute_grid_cols else gwflow.Gwflow_init_conc

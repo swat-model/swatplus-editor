@@ -223,13 +223,13 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 	
 	@staticmethod
-	def put(id, table, item_description, lookup_fields=[], remove_spaces=[]) -> Response:
+	def put(id, table, item_description, lookup_fields=[], remove_spaces=[], primary_key=None) -> Response:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
 		if not has_db: abort(400, error)
 
 		try:
-			result = RestHelpers.save_args(table, request.json, id=id, lookup_fields=lookup_fields, remove_spaces=remove_spaces)
+			result = RestHelpers.save_args(table, request.json, id=id, lookup_fields=lookup_fields, remove_spaces=remove_spaces, primary_key=primary_key)
 
 			rh.close()
 			if result > 0:
@@ -515,9 +515,12 @@ class RestHelpers:
 		return default if not RestHelpers.has_arg(args, name) else args[name]
 	
 	@staticmethod
-	def save_args(table, args, id=0, is_new=False, lookup_fields=[], extra_args=[], remove_spaces=[]):
+	def save_args(table, args, id=0, is_new=False, lookup_fields=[], extra_args=[], remove_spaces=[], primary_key=None):
 		params = {}
+		table_key = None
 		for field in table._meta.sorted_fields:
+			if field.name == primary_key:
+				table_key = field
 			if field.column_name in args or field.name in args:
 				if field.name in lookup_fields:
 					#d = ast.literal_eval(args[field.name])
@@ -538,6 +541,8 @@ class RestHelpers:
 			query = table.insert(params)
 		elif id == 0:
 			query = table.update(params)
+		elif table_key is not None:
+			query = table.update(params).where(table_key == id)
 		else:
 			query = table.update(params).where(table.id == id)
 		

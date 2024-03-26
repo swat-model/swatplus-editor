@@ -43,6 +43,7 @@
 		importExportDescription?: string,
 		importExportNotes?: string,
 		importExportDeleteExisting?: boolean,
+		importPrimaryKey?: string,
 		autoHeight?: boolean,
 		editPathPrefix?: string,
 		hideBackButton?: boolean
@@ -71,6 +72,7 @@
 		importExportDescription: 'CSV',
 		importExportNotes: '',
 		importExportDeleteExisting: false,
+		importPrimaryKey: '',
 		autoHeight: false,
 		editPathPrefix: '',
 		hideBackButton: false
@@ -268,6 +270,7 @@
 
 			if (!formatters.isNullOrEmpty(props.importExportRelatedId)) args.push('--related_id=' + props.importExportRelatedId);
 			if (props.importExportDeleteExisting) args.push('--delete_existing=y');
+			if (!formatters.isNullOrEmpty(props.importPrimaryKey)) args.push('--column_name=' + props.importPrimaryKey);
 
 			runTask(args);
 		}
@@ -340,7 +343,9 @@
 	}
 
 	function getEditRoute(item:any) {
-		return formatters.isNullOrEmpty(props.editPathPrefix) ? utilities.appendRoute(`edit/${item.id}`) : `${props.editPathPrefix}edit/${item.id}`
+		let pk = item.id;
+		if (!formatters.isNullOrEmpty(props.importPrimaryKey)) pk = item[props.importPrimaryKey];
+		return formatters.isNullOrEmpty(props.editPathPrefix) ? utilities.appendRoute(`edit/${pk}`) : `${props.editPathPrefix}edit/${pk}`
 	}
 
 	onMounted(async () => {

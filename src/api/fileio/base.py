@@ -15,21 +15,25 @@ class FileOverwrite(Enum):
 	rename = 3
 
 
-def write_csv(file_name, table, ignore_id_col=False, ignored_cols=[], custom_query=None, initial_headers=[]):
+def write_csv(file_name, table, ignore_id_col=False, ignored_cols=[], custom_query=None, initial_headers=[], primary_key=None):
 	with open(file_name, mode='w') as file:
 		csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
 		headers = initial_headers
+		table_key = None
 		for field in table._meta.sorted_fields:
+			if field.name == primary_key:
+				table_key = field
 			if not ignore_id_col or field.name != "id":
 				if field.name not in ignored_cols:
 					headers.append(field.name)
 
 		csv_writer.writerow(headers)
 
-		query = table.select().order_by(table.id)
+		order_key = table_key if table_key is not None else table.id
+		query = table.select().order_by(order_key)
 		if custom_query is not None:
-			query = custom_query.order_by(table.id)
+			query = custom_query.order_by(order_key)
 			
 		for row in query.dicts():
 			values = []
@@ -38,7 +42,7 @@ def write_csv(file_name, table, ignore_id_col=False, ignored_cols=[], custom_que
 			csv_writer.writerow(values)
 
 
-def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, convert_name_to_lower=False, overwrite=FileOverwrite.ignore, remove_spaces_cols=[], return_id_dict=False, replace_id_col=None, replace_id_dict={}):
+def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, convert_name_to_lower=False, overwrite=FileOverwrite.ignore, remove_spaces_cols=[], return_id_dict=False, replace_id_col=None, replace_id_dict={}, primary_key=None):
 	csv_file = open(file_name, mode='r')
 
 	dialect = csv.Sniffer().sniff(csv_file.readline())
@@ -67,11 +71,15 @@ def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, conv
 		row = {}
 		j = 0
 		row_id = 0
+		table_key = None
 		for field in fields:
 			skip = False
 			if ignore_id_col and field.name == "id":
 				skip = True
 				row_id = val[j]
+
+			if field.name == primary_key:
+				table_key = field
 
 			if not skip:
 				value = None
@@ -96,10 +104,16 @@ def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, conv
 		add_row = True
 		if overwrite != FileOverwrite.ignore:
 			try:
-				m = table.get(table.name == row['name'])
+				if table_key is not None:
+					m = table.get(table_key == row[primary_key])
+				else:
+					m = table.get(table.name == row['name'])
 
 				if overwrite == FileOverwrite.replace:
-					query = table.update(row).where(table.id == m.id)
+					if table_key is not None:
+						query = table.update(row).where(table_key == row[primary_key])
+					else:
+						query = table.update(row).where(table.id == m.id)
 					result = query.execute()
 					add_row = False
 				elif overwrite == FileOverwrite.rename:

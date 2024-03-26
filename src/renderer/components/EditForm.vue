@@ -27,7 +27,8 @@
 		name?: string,
 		includeHruOption?: boolean,
 		hideCopy?: boolean,
-		nullableFields?: string[]
+		nullableFields?: string[],
+		primaryKey?: string
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -50,7 +51,8 @@
 		name: '',
 		includeHruOption: false,
 		hideCopy: false,
-		nullableFields: () => []
+		nullableFields: () => [],
+		primaryKey: ''
 	});
 
 	const data:any = reactive({
@@ -88,8 +90,10 @@
 		else if (props.isUpdate)
 			if (props.noId)
 				return api.put(props.apiUrl, formData, currentProject.getApiHeader());
-			else
-				return api.put(props.apiUrl + '/' + props.item.id, formData, currentProject.getApiHeader());
+			else {
+				let pk = !formatters.isNullOrEmpty(props.primaryKey) ? props.primaryKey : 'id';
+				return api.put(props.apiUrl + '/' + props.item[pk], formData, currentProject.getApiHeader());
+			}
 		else
 			return api.post(props.apiUrl , formData, currentProject.getApiHeader());
 	}

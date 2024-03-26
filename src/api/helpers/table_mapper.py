@@ -164,4 +164,10 @@ types = {
 
 	"gwflow_zone": gwflow.Gwflow_zone,
 	"gwflow_grid": gwflow.Gwflow_grid,
+	"gwflow_solutes": gwflow.Gwflow_solutes,
+	"gwflow_hrucell": gwflow.Gwflow_hrucell,
+	"gwflow_fpcell": gwflow.Gwflow_fpcell,
+	"gwflow_rivcell": gwflow.Gwflow_rivcell,
+	"gwflow_lsucell": gwflow.Gwflow_lsucell,
+	"gwflow_rescell": gwflow.Gwflow_rescell,
 }

@@ -118,6 +118,7 @@ class Gwflow_fpcell(base.BaseModel):
 	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
 	channel = ForeignKeyField(gis.Gis_channels, on_delete='CASCADE', column_name='channel', lazy_load=False)
 	area_m2 = DoubleField(null=True)
+	conductivity = DoubleField(null=True)
 	
 	class Meta:
 		primary_key = False

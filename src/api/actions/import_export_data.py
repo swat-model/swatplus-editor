@@ -16,6 +16,10 @@ dtl_names = [
 	'lum.dtl', 'res_rel.dtl', 'scen_lu.dtl', 'flo_con.dtl'
 ]
 
+gwflow_cell_tables = [
+	'gwflow_hrucell', 'gwflow_fpcell', 'gwflow_rivcell', 'gwflow_lsucell', 'gwflow_rescell'
+]
+
 class ImportExportData(ExecutableApi):
 	def __init__(self, file_name, table_name, db_file, delete_existing=False, related_id=0, ignore_id_col=True, version=None, input_files_dir=None, rec_typ=None, column_name=None, swat_version=None):
 		self.__abort = False
@@ -94,8 +98,11 @@ class ImportExportData(ExecutableApi):
 		elif self.table_name == 'gwflow_grid':
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.read_grid(self.file_name, self.column_name)
+		elif self.table_name in gwflow_cell_tables:
+			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
+			gwflow_writer.read_cell_csv(self.file_name, self.table_name)
 		else:
-			fileio.read_csv_file(self.file_name, self.table, project_base.db, 0, ignore_id_col=self.ignore_id_col, overwrite=fileio.FileOverwrite.replace, remove_spaces_cols=['name'])
+			fileio.read_csv_file(self.file_name, self.table, project_base.db, 0, ignore_id_col=self.ignore_id_col, overwrite=fileio.FileOverwrite.replace, remove_spaces_cols=['name'], primary_key=self.column_name)
 
 	def export_csv(self):
 		if self.table_name in dtl_names:
@@ -105,6 +112,9 @@ class ImportExportData(ExecutableApi):
 		elif self.table_name == 'gwflow_grid':
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.write_grid(self.file_name, self.column_name)
+		elif self.table_name in gwflow_cell_tables:
+			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
+			gwflow_writer.write_cell_csv(self.file_name, self.table_name)
 		else:
 			ignored_cols = []
 			initial_headers = []
@@ -138,7 +148,7 @@ class ImportExportData(ExecutableApi):
 				custom_query = ws.select(ws.atmo_dep.alias('atmo_station'), ws.name.alias('weather_station'), ws.lat, ws.lon)
 
 			try:
-				fileio.write_csv(self.file_name, self.table, ignore_id_col=self.ignore_id_col, ignored_cols=ignored_cols, custom_query=custom_query, initial_headers=initial_headers)
+				fileio.write_csv(self.file_name, self.table, ignore_id_col=self.ignore_id_col, ignored_cols=ignored_cols, custom_query=custom_query, initial_headers=initial_headers, primary_key=self.column_name)
 			except PermissionError:
 				sys.exit('Permission error. Please check to make sure the file is not open.')
 

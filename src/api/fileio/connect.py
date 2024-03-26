@@ -123,6 +123,20 @@ class IndexHelper():
 			gis_to_con[con.gis_id] = i
 			i += 1
 		return gis_to_con
+	
+	def get_names(self):
+		cons = self.con_table.select().order_by(self.con_table.id)
+		gis_to_con = {}
+		for con in cons:
+			gis_to_con[con.gis_id] = con.name
+		return gis_to_con
+	
+	def get_id_from_name(self):
+		cons = self.con_table.select().order_by(self.con_table.id)
+		con_to_gis = {}
+		for con in cons:
+			con_to_gis[con.name] = con.gis_id
+		return con_to_gis
 
 
 class Hru_con(BaseFileModel):
