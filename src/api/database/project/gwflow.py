@@ -1,5 +1,6 @@
 from peewee import *
 from . import base, gis
+from .reservoir import Wetland_wet
 
 
 class Gwflow_base(base.BaseModel):
@@ -146,6 +147,14 @@ class Gwflow_rescell(base.BaseModel):
 	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
 	res = ForeignKeyField(gis.Gis_water, on_delete='CASCADE', column_name='res', lazy_load=False)
 	res_stage = DoubleField(null=True)
+	
+	class Meta:
+		primary_key = False
+
+
+class Gwflow_wetland(base.BaseModel):
+	wet_id = ForeignKeyField(Wetland_wet, on_delete='CASCADE', column_name='wet_id', lazy_load=False)
+	thickness = DoubleField(null=True)
 	
 	class Meta:
 		primary_key = False

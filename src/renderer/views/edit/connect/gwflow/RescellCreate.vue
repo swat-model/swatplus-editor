@@ -1,12 +1,11 @@
 <script setup lang="ts">
 	import { reactive } from 'vue';
-	import FpcellForm from './FpcellForm.vue';
+	import RescellForm from './RescellForm.vue';
 
 	let data:any = reactive({
 		cell_id: 1,
-		channel_name: null,
-		area_m2: 0,
-		conductivity: 0,
+		res_name: null,
+		res_stage: 0,
 	});
 
 	
@@ -16,10 +15,10 @@
 	<project-container>
 		<file-header input-file="gwflow.input" docs-path="modflow" use-io>
 			<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
-			/ <router-link to="/edit/cons/gwflow/fpcell">Floodplain</router-link>
+			/ <router-link to="/edit/cons/gwflow/rescell">Reservoirs</router-link>
 			/ Create
 		</file-header>
 
-		<fpcell-form :item="data"></fpcell-form>
+		<rescell-form :item="data"></rescell-form>
 	</project-container>
 </template>

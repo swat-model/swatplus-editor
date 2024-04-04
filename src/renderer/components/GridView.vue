@@ -46,7 +46,8 @@
 		importPrimaryKey?: string,
 		autoHeight?: boolean,
 		editPathPrefix?: string,
-		hideBackButton?: boolean
+		hideBackButton?: boolean,
+		showDeleteAll?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -75,7 +76,8 @@
 		importPrimaryKey: '',
 		autoHeight: false,
 		editPathPrefix: '',
-		hideBackButton: false
+		hideBackButton: false,
+		showDeleteAll: false
 	});
 
 	const loaderArray = computed(() => {
@@ -110,6 +112,11 @@
 			show: false,
 			id: null,
 			name: '',
+			error: null,
+			saving: false
+		},
+		deleteAll: {
+			show: false,
 			error: null,
 			saving: false
 		},
@@ -256,6 +263,24 @@
 		page.delete.saving = false;
 	}
 
+	async function confirmDeleteAll() {
+		page.deleteAll.errors = [];
+		page.deleteAll.saving = true;
+
+		try {
+			let url = formatters.isNullOrEmpty(props.deleteApiUrl) ? props.apiUrl : props.deleteApiUrl;
+			const response = await api.delete(`${url}`, currentProject.getApiHeader());
+			errors.log(response);
+			page.deleteAll.show = false;
+			table.currentPage = 1;
+			await get(false);
+		} catch (error) {
+			page.deleteAll.error = errors.logError(error, 'Unable to delete from database.');
+		}
+
+		page.deleteAll.saving = false;
+	}
+
 	function importData() {
 		page.import.error = null;
 		page.import.saving = true;
@@ -347,6 +372,10 @@
 		if (!formatters.isNullOrEmpty(props.importPrimaryKey)) pk = item[props.importPrimaryKey];
 		return formatters.isNullOrEmpty(props.editPathPrefix) ? utilities.appendRoute(`edit/${pk}`) : `${props.editPathPrefix}edit/${pk}`
 	}
+
+	const itemPk = computed(() => {
+		return formatters.isNullOrEmpty(props.importPrimaryKey) ? 'id' : props.importPrimaryKey;
+	})
 
 	onMounted(async () => {
 		page.loading = true;
@@ -452,7 +481,7 @@
 							</div>	
 						</td>
 						<td v-if="!props.hideDelete" class="min">
-							<font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" title="Delete" @click="askDelete(item.id, item.name)"></font-awesome-icon>
+							<font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" title="Delete" @click="askDelete(item[itemPk], item.name)"></font-awesome-icon>
 						</td>
 					</tr>
 				</tbody>
@@ -461,6 +490,7 @@
 		<action-bar v-if="!props.noActionBar" :full-width="props.fullWidthActionBar" :fullest-width="props.fullestWidthActionBar">
 			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" class="mr-2" :to="utilities.appendRoute('create')">Create Record</v-btn>
 			<v-btn v-if="props.showImportExport" variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import/Export</v-btn>
+			<v-btn v-if="data.items && data.items.length > 0 && props.showDeleteAll" variant="flat" color="error" class="mr-2" @click="page.deleteAll.show = true">Delete All</v-btn>
 			<slot name="actions"></slot>
 			<back-button v-if="!hideBackButton"></back-button>
 			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="6"
@@ -469,6 +499,7 @@
 		<div v-else class="d-flex align-center mt-3">
 			<v-btn v-if="!props.hideCreate" variant="flat" color="primary" class="mr-2" :to="utilities.appendRoute('create')">Create Record</v-btn>
 			<v-btn v-if="props.showImportExport" variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import/Export</v-btn>
+			<v-btn v-if="data.items && data.items.length > 0 && props.showDeleteAll" variant="flat" color="error" class="mr-2" @click="page.deleteAll.show = true">Delete All</v-btn>
 			<slot name="actions"></slot>
 			<v-pagination v-model="table.page" @update:modelValue="get(false)" :total-visible="6"
 				:length="getNumPages()" class="ml-auto" size="small"></v-pagination>
@@ -488,6 +519,24 @@
 				<v-card-actions>
 					<v-btn @click="confirmDelete" :loading="page.delete.saving" color="error" variant="text">Delete</v-btn>
 					<v-btn @click="page.delete.show = false">Cancel</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
+
+		<v-dialog v-model="page.deleteAll.show" :max-width="constants.dialogSizes.md">
+			<v-card title="Confirm delete">
+				<v-card-text>
+					<error-alert :text="page.deleteAll.error"></error-alert>
+
+					<p>
+						Are you sure you want to delete <strong>ALL</strong> records?
+						This action is permanent and cannot be undone. 
+					</p>
+				</v-card-text>
+				<v-divider></v-divider>
+				<v-card-actions>
+					<v-btn @click="confirmDeleteAll" :loading="page.deleteAll.saving" color="error" variant="text">Delete All</v-btn>
+					<v-btn @click="page.deleteAll.show = false">Cancel</v-btn>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>

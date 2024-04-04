@@ -170,4 +170,5 @@ types = {
 	"gwflow_rivcell": gwflow.Gwflow_rivcell,
 	"gwflow_lsucell": gwflow.Gwflow_lsucell,
 	"gwflow_rescell": gwflow.Gwflow_rescell,
+	"gwflow_wetland": gwflow.Gwflow_wetland,
 }

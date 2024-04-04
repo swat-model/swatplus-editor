@@ -164,6 +164,53 @@ class Gwflow_files(BaseFileModel):
 			
 		lib.bulk_insert(base.db, table, rows)
 
+	def write_wetland_csv(self, file_name):
+		with open(file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = ['wet_id', 'thickness']
+			csv_writer.writerow(headers)
+
+			wet_thick = { v.wet_id: v.thickness for v in gwflow.Gwflow_wetland.select().order_by(gwflow.Gwflow_wetland.wet_id) }
+
+			for wet in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id):
+				values = [wet.name, wet_thick.get(wet.id, self.gwflow_base.wet_thickness)]
+				csv_writer.writerow(values)
+
+	def read_wetland_csv(self, file_name):
+		with open(file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			wet_names = { v.name: v.id for v in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id) }
+
+			rows = []
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				row = {}
+				name = val[0]
+				thickness = float(val[1])
+				if name in wet_names:
+					row['wet_id'] = wet_names[name]
+					row['thickness'] = thickness
+
+					m = gwflow.Gwflow_wetland.get_or_none(gwflow.Gwflow_wetland.wet_id == row['wet_id'])
+					if m is not None:
+						gwflow.Gwflow_wetland.update(row).where(gwflow.Gwflow_wetland.wet_id == row['wet_id']).execute()
+					else:
+						rows.append(row)
+			
+		lib.bulk_insert(base.db, gwflow.Gwflow_wetland, rows)
+
 	def write_grid(self, file_name, column_name='', separator='\t', skip_header=False):
 		table = gwflow.Gwflow_grid if column_name not in solute_grid_cols else gwflow.Gwflow_init_conc
 		grid_cell_dict = self.get_grid_index_to_cell(table)
@@ -197,6 +244,25 @@ class Gwflow_files(BaseFileModel):
 
 	def read_grid(self, file_name, column_name=''):
 		table = gwflow.Gwflow_grid if column_name not in solute_grid_cols else gwflow.Gwflow_init_conc
+
+		if column_name in solute_grid_cols and gwflow.Gwflow_init_conc.select().count() == 0:
+			init_rows = []
+			for cell in gwflow.Gwflow_grid.select().order_by(gwflow.Gwflow_grid.cell_id):
+				init_row = {}
+				init_row['cell_id'] = cell.cell_id
+				init_row['init_no3'] = 0
+				init_row['init_p'] = 0
+				init_row['init_so4'] = 0
+				init_row['init_ca'] = 0
+				init_row['init_mg'] = 0
+				init_row['init_na'] = 0
+				init_row['init_k'] = 0
+				init_row['init_cl'] = 0
+				init_row['init_co3'] = 0
+				init_row['init_hco3'] = 0
+				init_rows.append(init_row)
+			lib.bulk_insert(base.db, gwflow.Gwflow_init_conc, init_rows)
+			
 		grid_cell_dict = self.get_grid_index_to_cell(table)
 
 		with open(file_name, 'r') as file:
@@ -374,11 +440,11 @@ class Gwflow_files(BaseFileModel):
 				self.write_meta_line(file, file_name)
 				file.write('\n')
 
-				header_cols = [col('ID', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				   col('elev_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
-				   col('channel', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				   col('riv_length_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
-				   col('zone', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left')]
+				header_cols = [col('ID', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				   col('elev_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
+				   col('channel', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				   col('riv_length_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
+				   col('zone', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right')]
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
@@ -422,10 +488,10 @@ class Gwflow_files(BaseFileModel):
 						file.write('{}\n'.format(hrus_gis_to_con.get(hru_id, 0)))
 					file.write('\n')
 
-					header_cols = [col('hru', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-					col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
-					col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-					col('overlap_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+					header_cols = [col('hru', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+					col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
+					col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+					col('overlap_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right')]
 					self.write_headers(file, header_cols)
 					file.write('\n')
 
@@ -443,10 +509,10 @@ class Gwflow_files(BaseFileModel):
 
 					file.write('{}\t\t\tNumber of cells that intersect HRUs\n'.format(len(grid_cells)))
 
-					header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-					col('hru', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-					col('cell_area', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
-					col('overlap_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+					header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+					col('hru', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+					col('cell_area', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
+					col('overlap_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right')]
 					self.write_headers(file, header_cols)
 					file.write('\n')
 
@@ -483,10 +549,10 @@ class Gwflow_files(BaseFileModel):
 
 				file.write('connection information between landscape units and grid cells\n')
 
-				header_cols = [col('lsu_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				col('lsu_area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
-				col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+				header_cols = [col('lsu_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('lsu_area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
+				col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right')]
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
@@ -511,9 +577,9 @@ class Gwflow_files(BaseFileModel):
 				file.write(' {}\t\t bed conductivity (m/day)\n'.format(self.gwflow_base.resbed_k))
 				file.write(' {}\t\t number of cells connected to reservoirs\n'.format(grid_cells.count()))
 
-				header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				col('res_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				col('res_stage_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+				header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('res_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('res_stage_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right')]
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
@@ -523,7 +589,6 @@ class Gwflow_files(BaseFileModel):
 					utils.write_num(file, cell.res_stage, decimals=2) 
 					file.write('\n')
 			   
-
 	def write_floodplain(self, file_name='gwflow.floodplain'):
 		if self.gwflow_base is not None and self.gwflow_base.floodplain_exchange == 1:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
@@ -534,10 +599,10 @@ class Gwflow_files(BaseFileModel):
 				cha_gis_to_con = IndexHelper(connect.Chandeg_con).get()
 				file.write('{}\t\t\t\t\tNumber of floodplain cells\n'.format(grid_cells.count()))
 
-				header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				col('chan_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				col('fp_K', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left'),
-				col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+				header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('chan_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('fp_K', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
+				col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right')]
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
@@ -558,14 +623,16 @@ class Gwflow_files(BaseFileModel):
 				file.write('thick_m = thickness (in meters) of wetland bottom material\n')
 				file.write('(hydraulic conductivity is listed in hydrology.wet)\n')
 
-				header_cols = [col('wet_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='left'),
-				col('thick_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='left')]
+				header_cols = [col('wet_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('thick_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right')]
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
+				wet_thick = { v.wet_id: v.thickness for v in gwflow.Gwflow_wetland.select().order_by(gwflow.Gwflow_wetland.wet_id) }
+
 				for wet in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id):
 					utils.write_int(file, wet.id)
-					utils.write_num(file, self.gwflow_base.wet_thickness, decimals=2) 
+					utils.write_num(file, wet_thick.get(wet.id, self.gwflow_base.wet_thickness), decimals=2) 
 					file.write('\n')
 
 	def write_tiles(self, file_name='gwflow.tiles'):
@@ -610,7 +677,7 @@ class Gwflow_files(BaseFileModel):
 				file.write('solute parameters: name,sorption,rate constant,canal_irrig (one row per active solute)\n')
 				solutes = gwflow.Gwflow_solutes.select()
 				for solute in solutes:
-					utils.write_string(file, solute.name, default_pad=8, direction='left')
+					utils.write_string(file, solute.solute_name, default_pad=8, direction='left')
 					utils.write_num(file, solute.sorption, decimals=2)
 					utils.write_num(file, solute.rate_const, decimals=4)
 					utils.write_num(file, solute.canal_irr, decimals=2)
@@ -618,11 +685,12 @@ class Gwflow_files(BaseFileModel):
 
 				file.write('initial concentrations (g/m3)\n')
 				for solute in solutes:
-					file.write('{}\n'.format(solute.name))
+					file.write('{}\n'.format(solute.solute_name))
 					file.write('{}\n'.format(solute.init_data))
 
 					if solute.init_data == 'single':
 						file.write(utils.get_num_format(solute.init_conc, 2))
+						file.write('\n')
 					else:
-						solute_name = solute.name if solute.name != 'no3-n' else 'no3'
+						solute_name = solute.solute_name if solute.solute_name != 'no3-n' else 'no3'
 						self.write_grid(os.path.join(self.file_name, file_name), column_name='init_{}'.format(solute_name), skip_header=True)

@@ -27,9 +27,9 @@
 
 	function putDb(data:any) {
 		if (props.isUpdate)
-			return api.put(`gwflow/fpcell/${props.item.cell_id}`, data, currentProject.getApiHeader());
+			return api.put(`gwflow/rescell/${props.item.cell_id}`, data, currentProject.getApiHeader());
 		else
-			return api.post(`gwflow/fpcell`, data, currentProject.getApiHeader());
+			return api.post(`gwflow/rescell`, data, currentProject.getApiHeader());
 	}
 
 	async function save() {
@@ -46,7 +46,7 @@
 				if (props.isUpdate)
 					page.saveSuccess = true;
 				else
-					router.push({ name: 'GwflowFpcell' });
+					router.push({ name: 'GwflowRescell' });
 			} catch (error) {
 				page.error = errors.logError(error, 'Unable to save changes to database.');
 			}
@@ -69,21 +69,16 @@
 			</div>
 
 			<div class="form-group">
-				<auto-complete label="Channel"
-					v-model="item.channel_name" :value="item.channel_name" :show-item-link="props.isUpdate"
-					table-name="chandeg_con" route-name="ChannelsEdit" required
-					section="Connections / Channels" help-file="chandeg.con" help-db="chandeg_con"
-					api-url="channels/items"></auto-complete>
+				<auto-complete label="Reservoir"
+					v-model="item.res_name" :value="item.res_name" :show-item-link="props.isUpdate"
+					table-name="reservoir_con" route-name="ReservoirsEdit" required
+					section="Connections / Reservoirs" help-file="reservoir.con" help-db="reservoir_con"
+					api-url="reservoirs/items"></auto-complete>
 			</div>
 
 			<div class="form-group">
-				<v-text-field v-model.number="item.area_m2" :rules="[constants.formRules.required]" 
-					label="Area (m2)" type="number" step="any"></v-text-field>
-			</div>
-
-			<div class="form-group">
-				<v-text-field v-model.number="item.conductivity" :rules="[constants.formRules.required]" 
-					label="Conductivity (m/day)" type="number" step="any"></v-text-field>
+				<v-text-field v-model.number="item.res_stage" :rules="[constants.formRules.required]" 
+					label="Reservoir Stage (m)" type="number" step="any"></v-text-field>
 			</div>
 
 			<action-bar>

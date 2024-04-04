@@ -43,6 +43,18 @@ import GwflowGrids from '../views/edit/connect/gwflow/GwflowGrids.vue';
 import GwflowZone from '../views/edit/connect/gwflow/GwflowZone.vue';
 import GwflowZoneEdit from '../views/edit/connect/gwflow/GwflowZoneEdit.vue';
 
+import GwflowFpcell from '../views/edit/connect/gwflow/Fpcell.vue';
+import GwflowFpcellEdit from '../views/edit/connect/gwflow/FpcellEdit.vue';
+import GwflowFpcellCreate from '../views/edit/connect/gwflow/FpcellCreate.vue';
+
+import GwflowRescell from '../views/edit/connect/gwflow/Rescell.vue';
+import GwflowRescellEdit from '../views/edit/connect/gwflow/RescellEdit.vue';
+import GwflowRescellCreate from '../views/edit/connect/gwflow/RescellCreate.vue';
+
+import GwflowWetlands from '../views/edit/connect/gwflow/Wetlands.vue';
+import GwflowWetlandsEdit from '../views/edit/connect/gwflow/WetlandsEdit.vue';
+import GwflowWetlandsCreate from '../views/edit/connect/gwflow/WetlandsCreate.vue';
+
 import Reservoirs from '../views/edit/connect/reservoirs/Reservoirs.vue';
 import ReservoirsEdit from '../views/edit/connect/reservoirs/ReservoirsEdit.vue';
 import ReservoirsCreate from '../views/edit/connect/reservoirs/ReservoirsCreate.vue';
@@ -156,6 +168,27 @@ export default [
 					path: 'zones', name: 'GwflowZone', component: GwflowZone,
 					children: [
 						{ path: 'edit/:id', name: 'GwflowZoneEdit', component: GwflowZoneEdit },
+					] 
+				},
+				{ 
+					path: 'fpcell', name: 'GwflowFpcell', component: GwflowFpcell,
+					children: [
+						{ path: 'edit/:id', name: 'GwflowFpcellEdit', component: GwflowFpcellEdit },
+						{ path: 'create', name: 'GwflowFpcellCreate', component: GwflowFpcellCreate }
+					] 
+				},
+				{ 
+					path: 'rescell', name: 'GwflowRescell', component: GwflowRescell,
+					children: [
+						{ path: 'edit/:id', name: 'GwflowRescellEdit', component: GwflowRescellEdit },
+						{ path: 'create', name: 'GwflowRescellCreate', component: GwflowRescellCreate }
+					] 
+				},
+				{ 
+					path: 'wetlands', name: 'GwflowWetlands', component: GwflowWetlands,
+					children: [
+						{ path: 'edit/:id', name: 'GwflowWetlandsEdit', component: GwflowWetlandsEdit },
+						{ path: 'create', name: 'GwflowWetlandsCreate', component: GwflowWetlandsCreate }
 					] 
 				},
 			] 					

@@ -3,9 +3,10 @@ from playhouse.shortcuts import model_to_dict
 
 from .defaults import DefaultRestMethods, RestHelpers
 from .config import RequestHeaders as rh
-from database.project import gwflow, config, connect
+from database.project import gwflow, config, connect, setup, reservoir
 from database import lib
 from fileio.connect import IndexHelper
+import sys
 
 bp = Blueprint('gwflow', __name__, url_prefix='/gwflow')
 
@@ -103,7 +104,7 @@ def zonesId(id):
 
 # Gwflow_fpcell
 
-@bp.route('/fpcell', methods=['GET', 'POST'])
+@bp.route('/fpcell', methods=['GET', 'POST', 'DELETE'])
 def fpcell():
 	table = gwflow.Gwflow_fpcell
 	description = 'Floodplain cell'
@@ -113,6 +114,8 @@ def fpcell():
 		return get_cell_paged(table, filter_cols)
 	elif request.method == 'POST':
 		return post_cell(table, description)
+	elif request.method == 'DELETE':
+		return delete_all_cells(table, description)
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/fpcell/<int:id>', methods=['GET', 'PUT', 'DELETE'])
@@ -126,6 +129,230 @@ def fpcellId(id):
 		return delete_cell(table, id, description)
 	elif request.method == 'PUT':
 		return put_cell(id, table, description)
+
+	abort(405, 'HTTP Method not allowed.')
+
+# Gwflow_rescell
+
+@bp.route('/rescell', methods=['GET', 'POST', 'DELETE'])
+def rescell():
+	table = gwflow.Gwflow_rescell
+	description = 'Reservoir cell'
+	filter_cols = [table.cell_id]
+
+	if request.method == 'GET':
+		return get_cell_paged(table, filter_cols)
+	elif request.method == 'POST':
+		return post_cell(table, description)
+	elif request.method == 'DELETE':
+		return delete_all_cells(table, description)
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/rescell/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def rescellId(id):
+	table = gwflow.Gwflow_rescell
+	description = 'Reservoir cell'
+
+	if request.method == 'GET':
+		return get_cell(table, id, description)
+	elif request.method == 'DELETE':
+		return delete_cell(table, id, description)
+	elif request.method == 'PUT':
+		return put_cell(id, table, description)
+
+	abort(405, 'HTTP Method not allowed.')
+
+# Gwflow_wetland
+
+@bp.route('/wetland', methods=['GET', 'POST', 'DELETE'])
+def wetland():
+	table = gwflow.Gwflow_wetland
+	description = 'Wetland'
+	filter_cols = []
+
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	if request.method == 'GET':
+		setup.SetupProjectDatabase.create_these_tables([gwflow.Gwflow_wetland])
+		items = DefaultRestMethods.get_paged_items(table, filter_cols)
+		m = items['model']
+
+		gis_col = 'wet_id'
+
+		ml = [model_to_dict(v, recurse=False) for v in m]
+		cons = reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id)
+		gis_to_con = {}
+		for con in cons:
+			gis_to_con[con.id] = con.name
+
+		for d in ml:
+			id = d[gis_col]
+			d['wetland'] = {
+				'id': id,
+				'name': gis_to_con.get(id, None)
+			}
+
+		return {
+			'total': items['total'],
+			'matches': items['matches'],
+			'items': ml
+		}
+	elif request.method == 'POST':
+		args = request.json
+		try:
+			m = gwflow.Gwflow_wetland()
+			m.thickness = 0 if 'thickness' not in args else args['thickness']
+			if 'wet_name' in args:
+				m.wet_id = RestHelpers.get_id_from_name(reservoir.Wetland_wet, args['wet_name'])
+
+			result = m.save()
+			rh.close()
+			if result > 0:
+				return {'id': result }, 201
+
+			abort(400, 'Unable to create {item}.'.format(item=description.lower()))
+		except Exception as ex:
+			rh.close()
+			abort(400, 'Unexpected error {ex}'.format(ex=ex))
+	elif request.method == 'DELETE':
+		return delete_all_cells(table, description)
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/wetland/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def wetlandId(id):
+	table = gwflow.Gwflow_wetland
+	description = 'Wetland'
+
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	if request.method == 'GET':
+		m = table.get_or_none(table.wet_id == id)
+		if m is None:
+			rh.close()
+			abort(400, '{} {} does not exist'.format(description, id))
+
+		d = model_to_dict(m, recurse=False)
+		con = reservoir.Wetland_wet.get_or_none(reservoir.Wetland_wet.id == d['wet_id'])
+		d['wet_name'] = con.name if con is not None else None
+		rh.close()
+		return d
+	elif request.method == 'DELETE':
+		query = table.delete().where(table.wet_id == id)
+		result = query.execute()
+		rh.close()
+		if result > 0:
+			return '', 204
+		
+		abort(400, 'Error deleting {item} {id}.'.format(item=description.lower(), id=id))
+	elif request.method == 'PUT':
+		args = request.json
+		try:
+			thickness = 0 if 'thickness' not in args else args['thickness']
+
+			result = gwflow.Gwflow_wetland.update(thickness=thickness).where(gwflow.Gwflow_wetland.wet_id == id).execute()
+			rh.close()
+			if result > 0:
+				return '', 200
+
+			abort(400, 'Unable to update properties {id}.'.format(id=id))
+		except gwflow.Gwflow_wetland.DoesNotExist:
+			rh.close()
+			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wet_name']))
+		except Exception as ex:
+			rh.close()
+			abort(400, 'Unexpected error {ex}'.format(ex=ex))
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/wetland-default', methods=['GET', 'PUT'])
+def wetlandDefault():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	if request.method == 'GET':
+		setup.SetupProjectDatabase.create_these_tables([gwflow.Gwflow_wetland])
+		m = gwflow.Gwflow_base.get_or_none()
+		if m is None:
+			rh.close()
+			abort(400, 'Gwflow setup does not exist')
+
+		rh.close()
+		return {
+			'wet_thickness': m.wet_thickness
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		try:
+			m = gwflow.Gwflow_base.get()
+			m.wet_thickness = 0 if 'wet_thickness' not in args else args['wet_thickness']
+
+			result = m.save()
+			rh.close()
+			if result > 0:
+				return '', 200
+
+			abort(400, 'Unable to update properties {id}.'.format(id=id))
+		except gwflow.Gwflow_base.DoesNotExist:
+			rh.close()
+			abort(400, RestHelpers.__invalid_name_msg.format(name='Gwflow setup'))
+		except Exception as ex:
+			rh.close()
+			abort(400, 'Unexpected error {ex}'.format(ex=ex))
+
+# Gwflow_solutes
+
+@bp.route('/solutes', methods=['GET'])
+def solutes():
+	if request.method == 'GET':
+		table = gwflow.Gwflow_solutes
+		filter_cols = [table.solute_name]
+		return DefaultRestMethods.get_paged_list(table, filter_cols)
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/solutes/<name>', methods=['GET', 'PUT'])
+def solutesId(name):
+	table = gwflow.Gwflow_solutes
+	description = 'Solute'
+
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	if request.method == 'GET':
+		m = table.get_or_none(table.solute_name == name)
+		if m is None:
+			rh.close()
+			abort(400, '{} {} does not exist'.format(description, name))
+
+		d = model_to_dict(m, recurse=False)
+		rh.close()
+		return d
+	elif request.method == 'PUT':
+		args = request.json
+		try:
+			sorption = 0 if 'sorption' not in args else args['sorption']
+			rate_const = 0 if 'rate_const' not in args else args['rate_const']
+			canal_irr = 0 if 'canal_irr' not in args else args['canal_irr']
+			init_data = 'single' if 'init_data' not in args else args['init_data']
+			init_conc = 0 if 'init_conc' not in args else args['init_conc']
+
+			result = table.update(sorption=sorption,rate_const=rate_const,canal_irr=canal_irr,init_data=init_data,init_conc=init_conc).where(table.solute_name == name).execute()
+			rh.close()
+			if result > 0:
+				return '', 200
+
+			abort(400, 'Unable to update properties {}.'.format(name))
+		except table.DoesNotExist:
+			rh.close()
+			abort(400, RestHelpers.__invalid_name_msg.format(name=name))
+		except Exception as ex:
+			rh.close()
+			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 
 	abort(405, 'HTTP Method not allowed.')
 
@@ -179,17 +406,31 @@ def get_cell(table, id, description) -> Response:
 	rh.close()
 	return d
 
+def delete_all_cells(table, description) -> Response:
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	query = table.delete()
+	result = query.execute()
+	rh.close()
+	if result > 0:
+		return '', 204
+	
+	abort(400, 'Error deleting {item}.'.format(item=description.lower()))
+
 def delete_cell(table, id, description) -> Response:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
 	if not has_db: abort(400, error)
 
-	m = table.get_or_none(table.cell_id == id)
-	if m is not None:
-		result = m.delete_instance()
-		rh.close()
-		if result > 0:
-			return '', 204
+	query = table.delete().where(table.cell_id == id)
+	result = query.execute()
+	rh.close()
+	if result > 0:
+		return '', 204
+	
+	abort(400, 'Error deleting {item} {id}.'.format(item=description.lower(), id=id))
 		
 def post_cell(table, item_description) -> Response:
 	project_db = request.headers.get(rh.PROJECT_DB)

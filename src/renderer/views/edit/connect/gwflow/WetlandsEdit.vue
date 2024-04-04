@@ -2,7 +2,7 @@
 	import { reactive, onMounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
-	import FpcellForm from './FpcellForm.vue';
+	import WetlandsForm from './WetlandsForm.vue';
 
 	const route = useRoute();
 	const { api, currentProject, errors } = useHelpers();
@@ -21,12 +21,12 @@
 		data.page.error = null;
 
 		try {
-			const response = await api.get(`gwflow/fpcell/${route.params.id}`, currentProject.getApiHeader());
+			const response = await api.get(`gwflow/wetland/${route.params.id}`, currentProject.getApiHeader());
 			errors.log(response.data);
 
 			data.item = response.data;
 		} catch (error) {
-			data.page.error = errors.logError(error, 'Unable to get floodplain cell properties from database.');
+			data.page.error = errors.logError(error, 'Unable to get wetland properties from database.');
 		}
 		
 		data.page.loading = false;
@@ -39,12 +39,12 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="gwflow.input" docs-path="modflow" use-io>
+		<file-header input-file="gwflow.wetland" docs-path="modflow" use-io>
 			<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
-			/ <router-link to="/edit/cons/gwflow/fpcell">Floodplain</router-link>
+			/ <router-link to="/edit/cons/gwflow/wetlands">Wetlands</router-link>
 			/ Edit
 		</file-header>
 
-		<fpcell-form is-update :item="data.item"></fpcell-form>
+		<wetlands-form is-update :item="data.item"></wetlands-form>
 	</project-container>
 </template>

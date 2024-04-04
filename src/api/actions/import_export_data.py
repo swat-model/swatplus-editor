@@ -101,6 +101,9 @@ class ImportExportData(ExecutableApi):
 		elif self.table_name in gwflow_cell_tables:
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.read_cell_csv(self.file_name, self.table_name)
+		elif self.table_name == 'gwflow_wetland':
+			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
+			gwflow_writer.read_wetland_csv(self.file_name)
 		else:
 			fileio.read_csv_file(self.file_name, self.table, project_base.db, 0, ignore_id_col=self.ignore_id_col, overwrite=fileio.FileOverwrite.replace, remove_spaces_cols=['name'], primary_key=self.column_name)
 
@@ -115,6 +118,9 @@ class ImportExportData(ExecutableApi):
 		elif self.table_name in gwflow_cell_tables:
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.write_cell_csv(self.file_name, self.table_name)
+		elif self.table_name == 'gwflow_wetland':
+			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
+			gwflow_writer.write_wetland_csv(self.file_name)
 		else:
 			ignored_cols = []
 			initial_headers = []

@@ -13,7 +13,7 @@
 
 	const props = withDefaults(defineProps<Props>(), {
 		apiUrl: '',
-		item: { cell_id: 0 },
+		item: { wet_id: 0 },
 		isUpdate: false
 	});
 
@@ -27,9 +27,9 @@
 
 	function putDb(data:any) {
 		if (props.isUpdate)
-			return api.put(`gwflow/fpcell/${props.item.cell_id}`, data, currentProject.getApiHeader());
+			return api.put(`gwflow/wetland/${props.item.wet_id}`, data, currentProject.getApiHeader());
 		else
-			return api.post(`gwflow/fpcell`, data, currentProject.getApiHeader());
+			return api.post(`gwflow/wetland`, data, currentProject.getApiHeader());
 	}
 
 	async function save() {
@@ -46,7 +46,7 @@
 				if (props.isUpdate)
 					page.saveSuccess = true;
 				else
-					router.push({ name: 'GwflowFpcell' });
+					router.push({ name: 'GwflowWetlands' });
 			} catch (error) {
 				page.error = errors.logError(error, 'Unable to save changes to database.');
 			}
@@ -64,26 +64,18 @@
 
 		<v-form @submit.prevent="save">
 			<div class="form-group">
-				<v-text-field v-model.number="item.cell_id" :rules="[constants.formRules.required]" :readonly="props.isUpdate"
-					label="Cell ID #" type="number" :hint="`Cell must be active or it will be ignored. ${props.isUpdate ? 'Cell ID cannot be modified. Delete and recreate if ID changes.' : ''}`" persistent-hint></v-text-field>
+				<auto-complete label="Wetland" :disabled="props.isUpdate"
+					:hint="props.isUpdate ? 'Wetland cannot be modified. Delete and recreate if wetland changes.' : ''"
+					:persistant-hint="props.isUpdate"
+					v-model="item.wet_name" :value="item.wet_name" :show-item-link="props.isUpdate"
+					table-name="wet_res" route-name="ReservoirsWetlandsEdit" required
+					section="Connections / Reservoirs / Wetlands" help-file="wetlands.wet" help-db="wetlands_wet"
+					api-url="reservoirs/wetlands"></auto-complete>
 			</div>
 
 			<div class="form-group">
-				<auto-complete label="Channel"
-					v-model="item.channel_name" :value="item.channel_name" :show-item-link="props.isUpdate"
-					table-name="chandeg_con" route-name="ChannelsEdit" required
-					section="Connections / Channels" help-file="chandeg.con" help-db="chandeg_con"
-					api-url="channels/items"></auto-complete>
-			</div>
-
-			<div class="form-group">
-				<v-text-field v-model.number="item.area_m2" :rules="[constants.formRules.required]" 
-					label="Area (m2)" type="number" step="any"></v-text-field>
-			</div>
-
-			<div class="form-group">
-				<v-text-field v-model.number="item.conductivity" :rules="[constants.formRules.required]" 
-					label="Conductivity (m/day)" type="number" step="any"></v-text-field>
+				<v-text-field v-model.number="item.thickness" :rules="[constants.formRules.required]" 
+					label="Thickness of wetland bottom material (m)" type="number" step="any"></v-text-field>
 			</div>
 
 			<action-bar>

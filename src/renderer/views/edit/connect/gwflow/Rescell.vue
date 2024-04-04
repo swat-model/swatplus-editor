@@ -5,16 +5,16 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'GwflowFpcell'">
+		<div v-if="$route.name == 'GwflowRescell'">
 			<file-header input-file="gwflow.input" docs-path="modflow" use-io>
 				<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
-				/ Floodplain
+				/ Reservoirs
 			</file-header>
 			
 			<grid-view
-				api-url="gwflow/fpcell" :default-sort="['cell_id', 'asc']"
+				api-url="gwflow/rescell" :default-sort="['cell_id', 'asc']"
 				use-dynamic-headers show-delete-all
-				show-import-export default-csv-file="gwflow_floodplain.csv" table-name="gwflow_fpcell" import-primary-key="cell_id" />
+				show-import-export default-csv-file="gwflow_rescells.csv" table-name="gwflow_rescell" import-primary-key="cell_id" />
 		</div>
 		<router-view></router-view>
 	</project-container>

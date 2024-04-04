@@ -41,6 +41,10 @@ class SetupProjectDatabase():
 		SetupProjectDatabase.init(project_db)
 
 	@staticmethod
+	def create_these_tables(tables):
+		base.db.create_tables(tables, safe=True)
+
+	@staticmethod
 	def create_tables():
 		base.db.create_tables([config.Project_config, config.File_cio_classification, config.File_cio])
 		base.db.create_tables([basin.Codes_bsn, basin.Parameters_bsn])
