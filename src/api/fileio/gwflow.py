@@ -211,35 +211,40 @@ class Gwflow_files(BaseFileModel):
 			
 		lib.bulk_insert(base.db, gwflow.Gwflow_wetland, rows)
 
-	def write_grid(self, file_name, column_name='', separator='\t', skip_header=False):
+	def write_grid(self, file_name, column_name='', separator='\t', skip_header=False, return_string=False):
 		table = gwflow.Gwflow_grid if column_name not in solute_grid_cols else gwflow.Gwflow_init_conc
 		grid_cell_dict = self.get_grid_index_to_cell(table)
-		with open(file_name, 'w') as file:
-			if not skip_header:
-				self.write_meta_line(file, 'Gwflow grid data for "{}"'.format(column_name))
-			lines = ''
-			col = 1
-			for key in grid_cell_dict:
-				if col == self.gwflow_base.col_count + 1:
-					lines += '\n'
-					col = 1
+		if not return_string:
+			file = open(file_name, 'w')
+			
+		if not skip_header and not return_string:
+			self.write_meta_line(file, 'Gwflow grid data for "{}"'.format(column_name))
+		lines = ''
+		col = 1
+		for key in grid_cell_dict:
+			if col == self.gwflow_base.col_count + 1:
+				lines += '\n'
+				col = 1
 
-				cell = grid_cell_dict[key]
+			cell = grid_cell_dict[key]
 
-				value = 0
-				decimals = 2
+			value = 0
+			decimals = 2
 
-				if cell is not None:
-					cell_dict = model_to_dict(cell, recurse=False)
-					value = cell_dict.get(column_name, 0)
+			if cell is not None:
+				cell_dict = model_to_dict(cell, recurse=False)
+				value = cell_dict.get(column_name, 0)
 
-					if column_name == 'tile':
-						decimals = 0
-				
-				lines += '{}{}'.format(utils.get_num_format(value, decimals), separator)
-				col += 1
+				if column_name == 'tile':
+					decimals = 0
+			
+			lines += '{}{}'.format(utils.get_num_format(value, decimals), separator)
+			col += 1
 
-			if not lines.endswith('\n'): lines += '\n'
+		if not lines.endswith('\n'): lines += '\n'
+		if return_string:
+			return lines
+		else:
 			file.write(lines)
 
 	def read_grid(self, file_name, column_name=''):
@@ -530,12 +535,9 @@ class Gwflow_files(BaseFileModel):
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write(' LSU (landscape unit) - Cell Connection Information ')
 				self.write_meta_line(file, file_name)
-				file.write('\n')
 
 				grid_cells = gwflow.Gwflow_lsucell.select(gwflow.Gwflow_lsucell, gis.Gis_lsus).join(gwflow.Gwflow_grid).switch(gwflow.Gwflow_lsucell).join(gis.Gis_lsus)
 				lsus_gis_to_con = IndexHelper(connect.Rout_unit_con).get()
-
-				file.write(' HRUs that are connected to cells\n')
 				
 				unique_ids = list(set([v.lsu.id for v in grid_cells]))
 				unique_ids.sort()
@@ -564,7 +566,7 @@ class Gwflow_files(BaseFileModel):
 					file.write('\n')
 
 	def write_rescells(self, file_name='gwflow.rescells'):
-		if self.gwflow_base is not None and self.gwflow_base.reservoir_exchange == 1:
+		if self.gwflow_base is not None and self.gwflow_base.reservoir_exchange == 1 and gwflow.Gwflow_rescell.select().count() > 0:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write(' Cell-Reservoir Connection Information ')
 				self.write_meta_line(file, file_name)
@@ -590,7 +592,7 @@ class Gwflow_files(BaseFileModel):
 					file.write('\n')
 			   
 	def write_floodplain(self, file_name='gwflow.floodplain'):
-		if self.gwflow_base is not None and self.gwflow_base.floodplain_exchange == 1:
+		if self.gwflow_base is not None and self.gwflow_base.floodplain_exchange == 1 and gwflow.Gwflow_fpcell.select().count() > 0:
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write('gwflow floodplain cells (optional file; list cells that interact with channels, when channel water is in the floodplain) ')
 				self.write_meta_line(file, file_name)
@@ -693,4 +695,5 @@ class Gwflow_files(BaseFileModel):
 						file.write('\n')
 					else:
 						solute_name = solute.solute_name if solute.solute_name != 'no3-n' else 'no3'
-						self.write_grid(os.path.join(self.file_name, file_name), column_name='init_{}'.format(solute_name), skip_header=True)
+						grid_text = self.write_grid(os.path.join(self.file_name, file_name), column_name='init_{}'.format(solute_name), skip_header=True, return_string=True)
+						file.write(grid_text)

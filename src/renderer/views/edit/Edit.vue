@@ -91,6 +91,7 @@
 						{ name: 'Reservoirs', path: '/edit/cons/gwflow/rescell', show: true, routeName: '', subItems: [] },
 						{ name: 'Floodplain', path: '/edit/cons/gwflow/fpcell', show: true, routeName: '', subItems: [] },
 						{ name: 'Wetlands', path: '/edit/cons/gwflow/wetlands', show: true, routeName: '', subItems: [] },
+						{ name: 'Solutes', path: '/edit/cons/gwflow/solutes', show: true, routeName: '', subItems: [] },
 					] 
 				},
 			]

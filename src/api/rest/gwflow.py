@@ -162,6 +162,42 @@ def rescellId(id):
 
 	abort(405, 'HTTP Method not allowed.')
 
+@bp.route('/rescell-default', methods=['GET', 'PUT'])
+def rescellDefault():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	if request.method == 'GET':
+		m = gwflow.Gwflow_base.get_or_none()
+		if m is None:
+			rh.close()
+			abort(400, 'Gwflow setup does not exist')
+
+		rh.close()
+		return {
+			'resbed_thickness': m.resbed_thickness,
+			'resbed_k': m.resbed_k
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		try:
+			resbed_thickness = 0 if 'resbed_thickness' not in args else args['resbed_thickness']
+			resbed_k = 0 if 'resbed_k' not in args else args['resbed_k']
+
+			result = gwflow.Gwflow_base.update(resbed_thickness=resbed_thickness, resbed_k=resbed_k).execute()
+			rh.close()
+			if result > 0:
+				return '', 200
+
+			abort(400, 'Unable to update properties {id}.'.format(id=id))
+		except gwflow.Gwflow_base.DoesNotExist:
+			rh.close()
+			abort(400, RestHelpers.__invalid_name_msg.format(name='Gwflow setup'))
+		except Exception as ex:
+			rh.close()
+			abort(400, 'Unexpected error {ex}'.format(ex=ex))
+
 # Gwflow_wetland
 
 @bp.route('/wetland', methods=['GET', 'POST', 'DELETE'])
@@ -288,10 +324,9 @@ def wetlandDefault():
 	elif request.method == 'PUT':
 		args = request.json
 		try:
-			m = gwflow.Gwflow_base.get()
-			m.wet_thickness = 0 if 'wet_thickness' not in args else args['wet_thickness']
+			wet_thickness = 0 if 'wet_thickness' not in args else args['wet_thickness']
 
-			result = m.save()
+			result = gwflow.Gwflow_base.update(wet_thickness=wet_thickness).execute()
 			rh.close()
 			if result > 0:
 				return '', 200
@@ -355,6 +390,42 @@ def solutesId(name):
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 
 	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/solutes-default', methods=['GET', 'PUT'])
+def solutesDefault():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	if request.method == 'GET':
+		m = gwflow.Gwflow_base.get_or_none()
+		if m is None:
+			rh.close()
+			abort(400, 'Gwflow setup does not exist')
+
+		rh.close()
+		return {
+			'transport_steps': m.transport_steps,
+			'disp_coef': m.disp_coef
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		try:
+			transport_steps = 0 if 'transport_steps' not in args else args['transport_steps']
+			disp_coef = 0 if 'disp_coef' not in args else args['disp_coef']
+
+			result = gwflow.Gwflow_base.update(transport_steps=transport_steps, disp_coef=disp_coef).execute()
+			rh.close()
+			if result > 0:
+				return '', 200
+
+			abort(400, 'Unable to update properties {id}.'.format(id=id))
+		except gwflow.Gwflow_base.DoesNotExist:
+			rh.close()
+			abort(400, RestHelpers.__invalid_name_msg.format(name='Gwflow setup'))
+		except Exception as ex:
+			rh.close()
+			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 
 #helpers
 	

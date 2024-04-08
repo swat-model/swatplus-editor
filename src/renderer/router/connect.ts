@@ -55,6 +55,9 @@ import GwflowWetlands from '../views/edit/connect/gwflow/Wetlands.vue';
 import GwflowWetlandsEdit from '../views/edit/connect/gwflow/WetlandsEdit.vue';
 import GwflowWetlandsCreate from '../views/edit/connect/gwflow/WetlandsCreate.vue';
 
+import GwflowSolutes from '../views/edit/connect/gwflow/Solutes.vue';
+import GwflowSolutesEdit from '../views/edit/connect/gwflow/SolutesEdit.vue';
+
 import Reservoirs from '../views/edit/connect/reservoirs/Reservoirs.vue';
 import ReservoirsEdit from '../views/edit/connect/reservoirs/ReservoirsEdit.vue';
 import ReservoirsCreate from '../views/edit/connect/reservoirs/ReservoirsCreate.vue';
@@ -189,6 +192,12 @@ export default [
 					children: [
 						{ path: 'edit/:id', name: 'GwflowWetlandsEdit', component: GwflowWetlandsEdit },
 						{ path: 'create', name: 'GwflowWetlandsCreate', component: GwflowWetlandsCreate }
+					] 
+				},
+				{ 
+					path: 'solutes', name: 'GwflowSolutes', component: GwflowSolutes,
+					children: [
+						{ path: 'edit/:id', name: 'GwflowSolutesEdit', component: GwflowSolutesEdit }
 					] 
 				},
 			] 					

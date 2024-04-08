@@ -13,7 +13,7 @@
 
 <template>
 	<project-container>
-		<file-header input-file="gwflow.input" docs-path="modflow" use-io>
+		<file-header input-file="gwflow.rescells" docs-path="modflow" use-io>
 			<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
 			/ <router-link to="/edit/cons/gwflow/rescell">Reservoirs</router-link>
 			/ Create
