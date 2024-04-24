@@ -1,0 +1,181 @@
+from flask import Blueprint, request, abort
+from .config import RequestHeaders as rh
+
+from playhouse.shortcuts import model_to_dict
+from peewee import *
+
+from .defaults import DefaultRestMethods, RestHelpers
+from database.project import salts as db
+from database.project import base as project_base, recall
+from database.project.simulation import Time_sim
+from database import lib as db_lib
+
+import datetime
+
+bp = Blueprint('salts', __name__, url_prefix='/salts')
+
+@bp.route('/enable-recall', methods=['GET','PUT'])
+def enableRecall():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	module, created = db.Salt_module.get_or_create(id=1)
+	
+	if request.method == 'GET':
+		rh.close()
+		return {
+			'recall': module.recall
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		result = db.Salt_module.update(recall=args['recall']).execute()
+		
+		if result > 0:
+			if db.Salt_recall_rec.select().count() == 0:
+				items = []
+				for rec in recall.Recall_rec.select():
+					items.append({
+						'name': rec.name,
+						'rec_typ': 3
+					})
+
+				db_lib.bulk_insert(project_base.db, db.Salt_recall_rec, items)
+
+			rh.close()
+			return '', 200
+
+		rh.close()
+		abort(400, 'Unable to update salts recall module.')
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/recall', methods=['GET', 'POST'])
+def recall():
+	if request.method == 'GET':
+		table = db.Salt_recall_rec
+		filter_cols = [table.name]
+		return DefaultRestMethods.get_paged_list(table, filter_cols, True)
+	elif request.method == 'POST':
+		return DefaultRestMethods.post(db.Salt_recall_rec, 'Recall')
+	
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/recall/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def recallId(id):
+	if request.method == 'GET':
+		return DefaultRestMethods.get(id, db.Salt_recall_rec, 'Salt recall', back_refs=False)
+	elif request.method == 'DELETE':
+		return DefaultRestMethods.delete(id, db.Salt_recall_rec, 'Salt recall')
+	elif request.method == 'PUT':
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+
+		table = db.Salt_recall_rec
+		item_description = 'Salt recall'
+		args = request.json
+		try:
+			sim = Time_sim.get_or_create_default()
+			m = table.get(table.id==id)
+			update_recall_rec(m, id, sim, args['rec_typ'])
+
+			result = RestHelpers.save_args(table, args, id=id)
+
+			rh.close()
+			if result > 0:
+				return '', 200
+
+			abort(400, 'Unable to update salt recall {id}.'.format(id=id))
+		except IntegrityError as e:
+			rh.close()
+			abort(400, 'Name must be unique.')
+		except table.DoesNotExist:
+			rh.close()
+			abort(404, '{item} {id} does not exist'.format(item=item_description, id=id))
+		except Exception as ex:
+			rh.close()
+			abort(400, 'Unexpected error {ex}'.format(ex=ex))
+
+	abort(405, 'HTTP Method not allowed.')
+
+def update_recall_rec(m, id, sim, new_rec_typ):
+	if m.rec_typ != new_rec_typ:
+		db.Salt_recall_dat.delete().where(db.Salt_recall_dat.recall_rec_id==id).execute()
+		rec = db.Salt_recall_rec.get_or_none(db.Salt_recall_rec.id == id)
+		name = '' if rec is None else rec.name
+
+		ob_typs = {
+			1: 'pt_day',
+			2: 'pt_mon',
+			3: 'pt_yr'
+		}
+		ob_typ = ob_typs.get(new_rec_typ, 'ptsrc')
+
+		years = 0
+		months = 1
+		start_month = 1
+		insert_daily = False
+
+		if new_rec_typ != 4:
+			years = sim.yrc_end - sim.yrc_start
+			if new_rec_typ != 3:
+				start_date = datetime.datetime(sim.yrc_start, 1, 1) + datetime.timedelta(sim.day_start)
+				end_date = datetime.datetime(sim.yrc_end, 1, 1) + datetime.timedelta(sim.day_end)
+				if sim.day_end == 0:
+					end_date = datetime.datetime(sim.yrc_end, 12, 31)
+
+				start_month = start_date.month
+				months = end_date.month
+				
+				if new_rec_typ != 2:
+					insert_daily = True
+
+		rec_data = []
+		if not insert_daily:
+			for x in range(years + 1):
+				for y in range(start_month, months + 1):
+					t_step = x + 1 if months == 1 else y
+					data = {
+						'recall_rec_id': id,
+						'jday': 1,
+						'mo': t_step if new_rec_typ == 1 or new_rec_typ == 2 else 1,
+						'day_mo': 1,
+						'yr': x + sim.yrc_start if new_rec_typ != 4 else 1,
+						'ob_typ': ob_typ,
+						'ob_name': name,
+						'so4': 0,
+						'ca': 0,
+						'mg': 0,
+						'na': 0,
+						'k': 0,
+						'cl': 0,
+						'co3': 0,
+						'hco3': 0
+					}
+					rec_data.append(data)
+		else:
+			current_date = start_date
+			while current_date <= end_date:
+				curent_tt = current_date.timetuple()
+				data = {
+					'recall_rec_id': id,
+					'jday': curent_tt.tm_yday,
+					'mo': curent_tt.tm_mon,
+					'day_mo': curent_tt.tm_mday,
+					'yr': current_date.year,
+					'ob_typ': ob_typ,
+					'ob_name': name,
+					'so4': 0,
+					'ca': 0,
+					'mg': 0,
+					'na': 0,
+					'k': 0,
+					'cl': 0,
+					'co3': 0,
+					'hco3': 0
+				}
+				rec_data.append(data)
+				current_date = current_date + datetime.timedelta(1) 
+
+		db_lib.bulk_insert(project_base.db, db.Salt_recall_dat, rec_data)

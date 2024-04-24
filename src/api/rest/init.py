@@ -9,7 +9,7 @@ from database.project import init as db
 from database.project.soils import Nutrients_sol
 from database.project.simulation import Constituents_cs
 from database.project.hru_parm_db import Pesticide_pst, Pathogens_pth
-from database.project.salts import Salt_hru_ini_cs
+from database.project.salts import Salt_hru_ini_cs, Salt_module
 from database.project import base as project_base
 from database import lib as db_lib
 
@@ -282,7 +282,8 @@ def create_constit_ini_tables():
 	project_base.db.create_tables([db.Pest_hru_ini, db.Pest_hru_ini_item, db.Pest_water_ini, db.Pest_water_ini_item, 
 		db.Path_hru_ini, db.Path_hru_ini_item, db.Path_water_ini, db.Path_water_ini_item, 
 		db.Hmet_hru_ini, db.Hmet_hru_ini_item, db.Hmet_water_ini, db.Hmet_water_ini_item, 
-		db.Salt_hru_ini, db.Salt_hru_ini_item, db.Salt_water_ini, db.Salt_water_ini_item])
+		db.Salt_hru_ini, db.Salt_hru_ini_item, db.Salt_water_ini, db.Salt_water_ini_item,
+		Salt_module])
 	
 @bp.route('/constituents', methods=['GET','DELETE','PUT'])
 def constituents():
@@ -331,6 +332,8 @@ def constituents():
 			result = 1
 			if Constituents_cs.select().count() < 1:
 				Constituents_cs.create(id=1, name='Constituents')
+			if Salt_module.select().count() < 1:
+				Salt_module.create(id=1)
 
 			if 'pests' in args:
 				if len(args['pests']) < 1:
@@ -355,8 +358,9 @@ def constituents():
 					db.Path_water_ini_item.delete().where(db.Path_water_ini_item.name.not_in(path_ids)).execute()
 					result = Constituents_cs.update(path_coms=path_coms).execute()
 			if 'enable_salts' in args:
-				salt_coms = 'so4,ca,mg,na,k,cl,co3,hco3'
+				salt_coms = 'so4,ca,mg,na,k,cl,co3,hco3' if args['enable_salts'] == 1 else None
 				result = Constituents_cs.update(salt_coms=salt_coms).execute()
+				result = Salt_module.update(enable=args['enable_salts']==1).execute()
 
 			rh.close()
 			if result > 0:

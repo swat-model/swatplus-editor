@@ -4,8 +4,9 @@ from database.project.setup import SetupProjectDatabase
 from database.project import base as project_base
 from database.project.recall import Recall_rec, Recall_dat
 from database.project.climate import Weather_sta_cli
+from database.project.salts import Salt_recall_rec, Salt_recall_dat
 from fileio import base as fileio
-from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, gwflow
+from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, gwflow, salts
 
 import sys
 import argparse
@@ -71,6 +72,7 @@ class ImportExportData(ExecutableApi):
 		for rec in Recall_rec.select():
 			rec_path = os.path.join(self.input_files_dir, '{}.csv'.format(rec.name.strip()))
 			if rec.rec_typ != 4:
+				prog += prog_step
 				self.emit_progress(prog, "Exporting {}.csv...".format(rec.name.strip()))
 				self.file_name = rec_path
 				self.table_name = 'rec_dat'
@@ -85,12 +87,44 @@ class ImportExportData(ExecutableApi):
 			self.table = table_mapper.types.get('rec_cnst', None)
 			self.export_csv()
 			
+	def import_salt_recall(self):
+		if self.input_files_dir is None or not os.path.exists(self.input_files_dir):
+			sys.exit('Please provide an input files directory containing your files.')
+
+		prog_items = Salt_recall_rec.select().count()
+		prog_step = 0 if prog_items == 0 else 100 / prog_items
+		prog = 0
+		for rec in Salt_recall_rec.select():
+			rec_path = os.path.join(self.input_files_dir, 'salt_{}.csv'.format(rec.name.strip()))
+			if os.path.exists(rec_path):
+				prog += prog_step
+				self.emit_progress(prog, "Importing {}.csv...".format(rec.name.strip()))
+				salts.Salt_recall_rec(rec_path).read_data(rec.id, self.delete_existing, None)
+
+	def export_salt_recall(self):
+		if self.input_files_dir is None or not os.path.exists(self.input_files_dir):
+			sys.exit('Please provide a directory to save your files.')
+
+		prog_items = Salt_recall_rec.select().count()
+		prog_step = 0 if prog_items == 0 else 100 / prog_items
+		prog = 0
+		self.table = table_mapper.types.get('salt_rec_dat', None)
+		for rec in Salt_recall_rec.select():
+			rec_path = os.path.join(self.input_files_dir, 'salt_{}.csv'.format(rec.name.strip()))
+			prog += prog_step
+			self.emit_progress(prog, "Exporting salt_{}.csv...".format(rec.name.strip()))
+			self.file_name = rec_path
+			self.table_name = 'salt_rec_dat'
+			self.related_id = rec.id
+			self.export_csv()
 
 	def import_csv(self):
 		if self.table_name == 'rec_dat':
 			recall.Recall_rec(self.file_name).read_data(self.related_id, self.delete_existing, self.rec_typ)
 		elif self.table_name == 'rec_cnst':
 			recall.Recall_rec(self.file_name).read_const_data()
+		elif self.table_name == 'salt_rec_dat':
+			salts.Salt_recall_rec(self.file_name).read_data(self.related_id, self.delete_existing, self.rec_typ)
 		elif self.table_name in dtl_names:
 			decision_table.D_table_dtl(self.file_name, file_type=self.table_name).read()
 		elif self.table_name == 'mgt_sch':
@@ -125,7 +159,7 @@ class ImportExportData(ExecutableApi):
 			ignored_cols = []
 			initial_headers = []
 			custom_query = None
-			if self.table_name == 'rec_dat':
+			if self.table_name == 'rec_dat' or self.table_name == 'salt_rec_dat':
 				ignored_cols.append('recall_rec')
 				custom_query = self.table.select().where(self.table.recall_rec_id == self.related_id)
 			elif self.table_name == 'rec_cnst':

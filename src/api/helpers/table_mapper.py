@@ -171,4 +171,6 @@ types = {
 	"gwflow_lsucell": gwflow.Gwflow_lsucell,
 	"gwflow_rescell": gwflow.Gwflow_rescell,
 	"gwflow_wetland": gwflow.Gwflow_wetland,
+
+	"salt_rec_dat": salts.Salt_recall_dat,
 }

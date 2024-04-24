@@ -192,3 +192,13 @@ class Salt_irrigation(BaseModel):
 	cl = DoubleField()
 	co3 = DoubleField()
 	hco3 = DoubleField()
+
+
+class Salt_module(BaseModel):
+	enabled = BooleanField(default=False)
+	recall = BooleanField(default=False)
+	atmo = BooleanField(default=False)
+	road = BooleanField(default=False)
+	fert = BooleanField(default=False)
+	irrigation = BooleanField(default=False)
+	urban = BooleanField(default=False)

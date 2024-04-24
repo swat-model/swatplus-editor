@@ -171,14 +171,14 @@
 				{ name: 'Pesticides', path: '/edit/constituents/pest', show: !currentProject.isLte, routeName: '', subItems: [] },
 				{ name: 'Pathogens', path: '/edit/constituents/path', show: !currentProject.isLte, routeName: '', subItems: [] },
 				{ 
-					name: 'Salts', path: '/edit/constituents/salt', show: false && !currentProject.isLte, routeName: 'Salts', 
+					name: 'Salts', path: '/edit/constituents/salts', show: !currentProject.isLte, routeName: 'Salts', 
 					subItems: [
-						{ name: 'Point Sources', path: '/edit/constituents/salt/recall', show: true, routeName: '', subItems: [] },
-						{ name: 'Atmospheric Deposition', path: '/edit/constituents/salt/atmo', show: true, routeName: '', subItems: [] },
-						{ name: 'Road Salt', path: '/edit/constituents/salt/road', show: true, routeName: '', subItems: [] },
-						{ name: 'Fertilizer & Soil Amendments', path: '/edit/constituents/salt/fert', show: true, routeName: '', subItems: [] },
-						{ name: 'Irrigation', path: '/edit/constituents/salt/irr', show: true, routeName: '', subItems: [] },
-						{ name: 'Urban Runoff', path: '/edit/constituents/salt/urban', show: true, routeName: '', subItems: [] }
+						{ name: 'Point Sources', path: '/edit/constituents/salts/recall', show: true, routeName: '', subItems: [] },
+						{ name: 'Atmospheric Deposition', path: '/edit/constituents/salts/atmo', show: true, routeName: '', subItems: [] },
+						{ name: 'Road Salt', path: '/edit/constituents/salts/road', show: true, routeName: '', subItems: [] },
+						{ name: 'Fertilizer & Soil Amendments', path: '/edit/constituents/salts/fert', show: true, routeName: '', subItems: [] },
+						{ name: 'Irrigation', path: '/edit/constituents/salts/irr', show: true, routeName: '', subItems: [] },
+						{ name: 'Urban Runoff', path: '/edit/constituents/salts/urban', show: true, routeName: '', subItems: [] }
 					]
 				}
 			]

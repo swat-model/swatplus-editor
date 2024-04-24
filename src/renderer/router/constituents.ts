@@ -9,6 +9,8 @@ import ConstituentsOMWaterCreate from '../views/edit/constituents/OMWaterCreate.
 import ConstituentsPesticides from '../views/edit/constituents/Pesticides.vue';
 import ConstituentsPathogens from '../views/edit/constituents/Pathogens.vue';
 
+import ConstituentsSalts from '../views/edit/constituents/salts/Salts.vue';
+
 export default [
 	{ 
 		path: 'constituents/soil_plant', name: 'ConstituentsSoilPlant', component: ConstituentsSoilPlant, 
@@ -30,6 +32,10 @@ export default [
 	},
 	{ 
 		path: 'constituents/path', name: 'ConstituentsPathogens', component: ConstituentsPathogens,
+		children: []
+	},
+	{ 
+		path: 'constituents/salts', name: 'ConstituentsSalts', component: ConstituentsSalts,
 		children: []
 	},
 ];

@@ -163,6 +163,12 @@ if __name__ == '__main__':
 	elif args.action == "export_recall":
 		api = ImportExportData('', 'rec_dat', args.db_file, del_ex, 0, True, args.editor_version, args.input_files_dir)
 		api.export_recall()
+	elif args.action == "import_salt_recall":
+		api = ImportExportData('', 'salt_rec_dat', args.db_file, del_ex, 0, True, args.editor_version, args.input_files_dir)
+		api.import_salt_recall()
+	elif args.action == "export_salt_recall":
+		api = ImportExportData('', 'salt_rec_dat', args.db_file, del_ex, 0, True, args.editor_version, args.input_files_dir)
+		api.export_salt_recall()
 	elif args.action == "run":
 		api = RunAll(args.project_db_file, args.editor_version, args.swat_exe_file,
 			args.weather_dir, args.weather_save_dir, args.weather_import_format,
