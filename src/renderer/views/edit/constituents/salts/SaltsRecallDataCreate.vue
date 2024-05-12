@@ -9,7 +9,7 @@
 
 	let data:any = reactive({
 		paths: {
-			vars: 'recall_dat'
+			vars: 'salts_recall_dat'
 		},
 		page: {
 			loading: true,
@@ -32,30 +32,12 @@
 		data.page.error = null;
 
 		try {
-			const response1 = await api.get(`recall/${route.params.id}`, currentProject.getApiHeader());
+			const response1 = await api.get(`salts/recall/${route.params.id}`, currentProject.getApiHeader());
 			errors.log(response1.data);
-			let item:any = {
-				connect: {
-					id: response1.data.id,
-					name: response1.data.name,
-					area: response1.data.area,
-					lat: response1.data.lat,
-					lon: response1.data.lon,
-					elev: response1.data.elev,
-					wst_name: response1.data.wst != null ? response1.data.wst.name : ''
-				},
-				props: {}
-			}
+			let item = response1.data;
 
-			const response12 = await api.get(`recall/data/${response1.data.rec.id}`, currentProject.getApiHeader());
-			item.props = {
-				id: response12.data.id,
-				name: response12.data.name,
-				rec_typ: response12.data.rec_typ
-			};
-
-			data.rec.name = item.connect.name;
-			data.rec.rec_typ = item.props.rec_typ;
+			data.rec.name = item.name;
+			data.rec.rec_typ = item.rec_typ;
 			data.rec.rec_typ_name = utilities.getRecTypDescription(data.rec.rec_typ);
 
 			const response = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
@@ -74,16 +56,17 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="recall.con" docs-path="connections/recall">
-			<router-link to="/edit/cons/recall">Point Source</router-link>
-			/ <router-link :to="`/edit/cons/recall/edit/${$route.params.id}`">{{data.rec.name}}</router-link>
+		<file-header input-file="constituents.cs" docs-path="constituents" use-io>
+			<router-link to="/edit/constituents/salts">Salt Constituents</router-link>
+			/ <router-link to="/edit/constituents/salts/recall">Point Source</router-link>
+			/ <router-link :to="`/edit/constituents/salts/recall/edit/${$route.params.id}`">{{data.rec.name}}</router-link>
 			/ Create
 		</file-header>
 
 		<edit-form show-range hide-name
 			:item="data.item" 
 			:vars="data.vars" 
-			api-url="recall/data"
-			:redirect-route="`/edit/recall/edit/${$route.params.id}`" redirect-path></edit-form>
+			api-url="salts/recall-data"
+			:redirect-route="`/edit/constituents/salts/recall/edit/${$route.params.id}`" redirect-path></edit-form>
 	</project-container>
 </template>

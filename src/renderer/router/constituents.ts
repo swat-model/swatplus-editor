@@ -11,6 +11,12 @@ import ConstituentsPathogens from '../views/edit/constituents/Pathogens.vue';
 
 import ConstituentsSalts from '../views/edit/constituents/salts/Salts.vue';
 
+import ConstituentsSaltsRecall from '../views/edit/constituents/salts/SaltsRecall.vue';
+import ConstituentsSaltsRecallEdit from '../views/edit/constituents/salts/SaltsRecallEdit.vue';
+import ConstituentsSaltsRecallCreate from '../views/edit/constituents/salts/SaltsRecallCreate.vue';
+import ConstituentsSaltsRecallDataEdit from '../views/edit/constituents/salts/SaltsRecallDataEdit.vue';
+import ConstituentsSaltsRecallDataCreate from '../views/edit/constituents/salts/SaltsRecallDataCreate.vue';
+
 export default [
 	{ 
 		path: 'constituents/soil_plant', name: 'ConstituentsSoilPlant', component: ConstituentsSoilPlant, 
@@ -36,6 +42,20 @@ export default [
 	},
 	{ 
 		path: 'constituents/salts', name: 'ConstituentsSalts', component: ConstituentsSalts,
-		children: []
+		children: [
+			{ 
+				path: 'recall', name: 'ConstituentsSaltsRecall', component: ConstituentsSaltsRecall,
+				children: [
+					{ 
+						path: 'edit/:id', name: 'ConstituentsSaltsRecallEdit', component: ConstituentsSaltsRecallEdit,
+						children: [
+							{ path: 'edit/:dataId', name: 'ConstituentsSaltsRecallDataEdit', component: ConstituentsSaltsRecallDataEdit },
+							{ path: 'create', name: 'ConstituentsSaltsRecallDataCreate', component: ConstituentsSaltsRecallDataCreate }
+						]
+					},
+					{ path: 'create', name: 'ConstituentsSaltsRecallCreate', component: ConstituentsSaltsRecallCreate }
+				] 
+			}
+		]
 	},
 ];

@@ -360,7 +360,7 @@ def constituents():
 			if 'enable_salts' in args:
 				salt_coms = 'so4,ca,mg,na,k,cl,co3,hco3' if args['enable_salts'] == 1 else None
 				result = Constituents_cs.update(salt_coms=salt_coms).execute()
-				result = Salt_module.update(enable=args['enable_salts']==1).execute()
+				result = Salt_module.update(enabled=args['enable_salts']==1).execute()
 
 			rh.close()
 			if result > 0:

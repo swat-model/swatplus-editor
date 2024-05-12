@@ -251,7 +251,7 @@
 	function processSubOpen(thisRoute:RouteRecordName|null|undefined) {
 		let subOpenItems = [
 			'Channels', 'Aquifers', 'Reservoirs', 'RoutingUnits', 'Gwflow',
-			'Stations', 'Operations', 'LandscapeUnits', 'HardCalibration', 'SoftCalibration', 'Constituents'
+			'Stations', 'Operations', 'LandscapeUnits', 'HardCalibration', 'SoftCalibration', 'Constituents', 'Salts'
 		];
 
 		for (let item of subOpenItems) {

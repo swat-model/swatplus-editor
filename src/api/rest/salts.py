@@ -14,7 +14,7 @@ import datetime
 
 bp = Blueprint('salts', __name__, url_prefix='/salts')
 
-@bp.route('/enable-recall', methods=['GET','PUT'])
+@bp.route('/enable-recall', methods=['GET','PUT','POST'])
 def enableRecall():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
@@ -32,32 +32,53 @@ def enableRecall():
 		result = db.Salt_module.update(recall=args['recall']).execute()
 		
 		if result > 0:
-			if db.Salt_recall_rec.select().count() == 0:
-				items = []
-				for rec in recall.Recall_rec.select():
-					items.append({
-						'name': rec.name,
-						'rec_typ': 3
-					})
-
-				db_lib.bulk_insert(project_base.db, db.Salt_recall_rec, items)
-
 			rh.close()
 			return '', 200
 
 		rh.close()
 		abort(400, 'Unable to update salts recall module.')
+	elif request.method == 'POST':
+		args = request.json
+		time_step = args['time_step']
+		if time_step < 1 or time_step > 3:
+			rh.close()
+			abort(400, 'Invalid time step value.')
+		
+		if db.Salt_recall_rec.select().count() == 0:
+			items = []
+			for rec in recall.Recall_rec.select():
+				items.append({
+					'name': rec.name,
+					'rec_typ': time_step
+				})
+
+			db_lib.bulk_insert(project_base.db, db.Salt_recall_rec, items)
+
+			for rec in db.Salt_recall_rec.select():
+				update_recall_rec(rec, rec.id, Time_sim.get_or_create_default(), time_step, True)
+
+		rh.close()
+		return '', 200
 
 	abort(405, 'HTTP Method not allowed.')
 
-@bp.route('/recall', methods=['GET', 'POST'])
-def recall():
+@bp.route('/recall', methods=['GET', 'POST', 'DELETE'])
+def recallTable():
 	if request.method == 'GET':
 		table = db.Salt_recall_rec
 		filter_cols = [table.name]
 		return DefaultRestMethods.get_paged_list(table, filter_cols, True)
 	elif request.method == 'POST':
 		return DefaultRestMethods.post(db.Salt_recall_rec, 'Recall')
+	elif request.method == 'DELETE':
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+		project_base.db.execute_sql("PRAGMA foreign_keys = ON")
+		db.Salt_recall_dat.delete().execute()
+		db.Salt_recall_rec.delete().execute()
+		rh.close()
+		return '', 200
 	
 	abort(405, 'HTTP Method not allowed.')
 
@@ -99,8 +120,55 @@ def recallId(id):
 
 	abort(405, 'HTTP Method not allowed.')
 
-def update_recall_rec(m, id, sim, new_rec_typ):
-	if m.rec_typ != new_rec_typ:
+@bp.route('/recall-data-list/<int:id>', methods=['GET'])
+def dataList(id):
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	table = db.Salt_recall_dat
+	args = request.args
+	sort = RestHelpers.get_arg(args, 'sort', 'name')
+	reverse = RestHelpers.get_arg(args, 'reverse', 'n')
+	page = RestHelpers.get_arg(args, 'page', 1)
+	per_page = RestHelpers.get_arg(args, 'per_page', 50)
+	
+	s = table.select().where(table.recall_rec_id == id)
+	total = s.count()
+
+	if sort == 'name':
+		sort_val = table.name if reverse != 'y' else table.name.desc()
+	else:
+		sort_val = SQL('[{}]'.format(sort))
+		if reverse == 'y':
+			sort_val = SQL('[{}]'.format(sort)).desc()
+
+	m = s.order_by(sort_val).paginate(int(page), int(per_page))
+
+	rh.close()
+	return {
+		'total': total,
+		'matches': total,
+		'items': [model_to_dict(v, recurse=False) for v in m]
+	}
+
+@bp.route('/recall-data', methods=['POST'])
+def data():
+	return DefaultRestMethods.post(db.Salt_recall_dat, 'Recall')
+
+@bp.route('/recall-data/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def dataItem(id):
+	if request.method == 'GET':
+		return DefaultRestMethods.get(id, db.Salt_recall_dat, 'Recall')
+	elif request.method == 'DELETE':
+		return DefaultRestMethods.delete(id, db.Salt_recall_dat, 'Recall')
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_recall_dat, 'Recall')
+
+	abort(405, 'HTTP Method not allowed.')
+
+def update_recall_rec(m, id, sim, new_rec_typ, no_compare = False):
+	if (m.rec_typ != new_rec_typ) or no_compare:
 		db.Salt_recall_dat.delete().where(db.Salt_recall_dat.recall_rec_id==id).execute()
 		rec = db.Salt_recall_rec.get_or_none(db.Salt_recall_rec.id == id)
 		name = '' if rec is None else rec.name

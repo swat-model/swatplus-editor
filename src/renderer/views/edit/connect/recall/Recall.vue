@@ -191,7 +191,7 @@
 				</template>
 
 				<template v-slot:actions>
-					<v-btn variant="flat" color="info" @click="page.import.show = true">Import/Export</v-btn>
+					<v-btn variant="flat" color="info" @click="page.import.show = true" class="mr-2">Import/Export</v-btn>
 				</template>
 			</grid-view>
 

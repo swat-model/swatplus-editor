@@ -102,9 +102,9 @@
 		</div>
 		<div v-else-if="data.enable_salts === 0">
 			<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-				Salt constituents are not enabled. <router-link class="text-primary" to="/edit/constituents/salt">Enable them here</router-link> to use this feature.
+				Salt constituents are not enabled. <router-link class="text-primary" to="/edit/constituents/salts">Enable them here</router-link> to use this feature.
 			</v-alert>
 		</div>
-		<router-view></router-view>
+		<router-view v-else></router-view>
 	</project-container>
 </template>
