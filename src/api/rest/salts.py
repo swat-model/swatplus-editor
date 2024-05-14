@@ -8,11 +8,160 @@ from .defaults import DefaultRestMethods, RestHelpers
 from database.project import salts as db
 from database.project import base as project_base, recall
 from database.project.simulation import Time_sim
+from database.project.climate import Atmo_cli_sta
 from database import lib as db_lib
 
 import datetime
 
 bp = Blueprint('salts', __name__, url_prefix='/salts')
+
+@bp.route('/enable-atmo', methods=['GET','PUT','POST','DELETE'])
+def enableAtmo():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	module, created = db.Salt_module.get_or_create(id=1)
+	if module.atmo_timestep is None or module.atmo_timestep == '':
+		module.atmo_timestep = 'aa'
+		module.save()
+	
+	if request.method == 'GET':
+		rh.close()
+		return {
+			'atmo': module.atmo,
+			'atmo_timestep': module.atmo_timestep
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		result = db.Salt_module.update(atmo=args['atmo'], atmo_timestep=args['atmo_timestep']).execute()
+		
+		if result > 0:
+			rh.close()
+			return '', 200
+
+		rh.close()
+		abort(400, 'Unable to update salts recall module.')
+	elif request.method == 'DELETE':
+		project_base.db.execute_sql("PRAGMA foreign_keys = ON")
+		db.Salt_atmo_cli.delete().execute()
+		rh.close()
+		return '', 200
+	elif request.method == 'POST':
+		args = request.json
+		time_step = args['time_step']	
+		sim = Time_sim.get_or_create_default()	
+		
+		items = []
+		for sta in Atmo_cli_sta.select().order_by(Atmo_cli_sta.name):
+			if time_step == 'aa':
+				items.append({
+					'sta_id': sta.id,
+					'timestep': 0,
+					'so4_wet': 0,
+					'ca_wet': 0,
+					'mg_wet': 0,
+					'na_wet': 0,
+					'k_wet': 0,
+					'cl_wet': 0,
+					'co3_wet': 0,
+					'hco3_wet': 0,
+					'so4_dry': 0,
+					'ca_dry': 0,
+					'mg_dry': 0,
+					'na_dry': 0,
+					'k_dry': 0,
+					'cl_dry': 0,
+					'co3_dry': 0,
+					'hco3_dry': 0
+				})
+			elif time_step == 'yr':
+				for yr in range(sim.yrc_start, sim.yrc_end + 1):
+					items.append({
+						'sta_id': sta.id,
+						'timestep': yr,
+						'so4_wet': 0,
+						'ca_wet': 0,
+						'mg_wet': 0,
+						'na_wet': 0,
+						'k_wet': 0,
+						'cl_wet': 0,
+						'co3_wet': 0,
+						'hco3_wet': 0,
+						'so4_dry': 0,
+						'ca_dry': 0,
+						'mg_dry': 0,
+						'na_dry': 0,
+						'k_dry': 0,
+						'cl_dry': 0,
+						'co3_dry': 0,
+						'hco3_dry': 0
+					})
+			elif time_step == 'mo':
+				start_date = datetime.datetime(sim.yrc_start, 1, 1) + datetime.timedelta(sim.day_start)
+				start_month = start_date.month
+				for yr in range(sim.yrc_start, sim.yrc_end + 1):
+					write_month = start_month if yr == sim.yrc_start else 1
+					for mo in range(write_month, 13):
+						items.append({
+							'sta_id': sta.id,
+							'timestep': yr * 100 + mo,
+							'so4_wet': 0,
+							'ca_wet': 0,
+							'mg_wet': 0,
+							'na_wet': 0,
+							'k_wet': 0,
+							'cl_wet': 0,
+							'co3_wet': 0,
+							'hco3_wet': 0,
+							'so4_dry': 0,
+							'ca_dry': 0,
+							'mg_dry': 0,
+							'na_dry': 0,
+							'k_dry': 0,
+							'cl_dry': 0,
+							'co3_dry': 0,
+							'hco3_dry': 0
+						})
+			
+
+		db_lib.bulk_insert(project_base.db, db.Salt_atmo_cli, items)
+
+		rh.close()
+		return '', 200
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/atmo/<int:id>', methods=['GET','POST'])
+def atmoValues(id):
+	if request.method == 'GET':
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+
+		sta = Atmo_cli_sta.get_or_none(Atmo_cli_sta.id == id)
+		if sta is None:
+			rh.close()
+			abort(404, 'Atmospheric station not found.')
+		m = db.Salt_atmo_cli.select(db.Salt_atmo_cli.sta_id == id).order_by(db.Salt_atmo_cli.timestep)
+		rh.close()
+		return {
+			'name': sta.name,
+			'values': [model_to_dict(v, recurse=False) for v in m]
+		}
+	elif request.method == 'POST':
+		return DefaultRestMethods.post(db.Salt_atmo_cli, 'Value')
+
+@bp.route('/atmo-values/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def atmoValuesId(id):
+	if request.method == 'GET':
+		return DefaultRestMethods.get(id, db.Salt_atmo_cli, 'Value')
+	elif request.method == 'DELETE':
+		return DefaultRestMethods.delete(id, db.Salt_atmo_cli, 'Value')
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_atmo_cli, 'Value')
+
+	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/enable-recall', methods=['GET','PUT','POST'])
 def enableRecall():

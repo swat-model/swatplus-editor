@@ -125,6 +125,8 @@ class ImportExportData(ExecutableApi):
 			recall.Recall_rec(self.file_name).read_const_data()
 		elif self.table_name == 'salt_rec_dat':
 			salts.Salt_recall_rec(self.file_name).read_data(self.related_id, self.delete_existing, self.rec_typ)
+		elif self.table_name == 'salt_atmo_cli':
+			salts.Salt_atmo_cli(self.file_name, self.version, self.swat_version).read()
 		elif self.table_name in dtl_names:
 			decision_table.D_table_dtl(self.file_name, file_type=self.table_name).read()
 		elif self.table_name == 'mgt_sch':
@@ -144,6 +146,8 @@ class ImportExportData(ExecutableApi):
 	def export_csv(self):
 		if self.table_name in dtl_names:
 			decision_table.D_table_dtl(self.file_name, self.version, file_type=self.table_name).write()
+		elif self.table_name == 'salt_atmo_cli':
+			salts.Salt_atmo_cli(self.file_name, self.version, self.swat_version).write_csv()
 		elif self.table_name == 'mgt_sch':
 			lum.Management_sch(self.file_name, self.version).write()
 		elif self.table_name == 'gwflow_grid':

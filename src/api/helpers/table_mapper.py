@@ -173,4 +173,5 @@ types = {
 	"gwflow_wetland": gwflow.Gwflow_wetland,
 
 	"salt_rec_dat": salts.Salt_recall_dat,
+	"salt_atmo_cli": salts.Salt_atmo_cli,
 }

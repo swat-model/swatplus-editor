@@ -269,7 +269,7 @@
 					Save Changes
 				</v-btn>
 				<v-btn type="button" variant="flat" color="info" class="mr-2"
-					v-if="isUpdate && (!page.values.list || page.values.list.length < 12)" @click="add">Add Values</v-btn>
+					v-if="isUpdate" @click="add">Add Values</v-btn>
 				<back-button></back-button>
 			</action-bar>
 		</v-form>
@@ -279,11 +279,12 @@
 				<v-card-text>
 					<error-alert :text="page.values.form.error"></error-alert>
 
-					<div class="form-group mb-0">
+					<div class="form-group">
 						<v-text-field v-model="page.values.obj.timestep" 
 							label="Timestep" type="number"
 							:error-messages="vo$.timestep.$errors.map(e => e.$message).join(', ')"
-							@input="vo$.timestep.$touch" @blur="vo$.timestep.$touch"></v-text-field>
+							@input="vo$.timestep.$touch" @blur="vo$.timestep.$touch"
+							hint="Average Annual = 0; Yearly = YYYY; Monthly = YYYYMM" persistent-hint></v-text-field>
 					</div>
 
 					<div class="form-group mb-0">

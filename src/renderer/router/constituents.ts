@@ -17,6 +17,9 @@ import ConstituentsSaltsRecallCreate from '../views/edit/constituents/salts/Salt
 import ConstituentsSaltsRecallDataEdit from '../views/edit/constituents/salts/SaltsRecallDataEdit.vue';
 import ConstituentsSaltsRecallDataCreate from '../views/edit/constituents/salts/SaltsRecallDataCreate.vue';
 
+import ConstituentsSaltsAtmo from '../views/edit/constituents/salts/SaltsAtmo.vue';
+import ConstituentsSaltsAtmoEdit from '../views/edit/constituents/salts/SaltsAtmoEdit.vue';
+
 export default [
 	{ 
 		path: 'constituents/soil_plant', name: 'ConstituentsSoilPlant', component: ConstituentsSoilPlant, 
@@ -54,6 +57,12 @@ export default [
 						]
 					},
 					{ path: 'create', name: 'ConstituentsSaltsRecallCreate', component: ConstituentsSaltsRecallCreate }
+				] 
+			},
+			{ 
+				path: 'atmo', name: 'ConstituentsSaltsAtmo', component: ConstituentsSaltsAtmo,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsAtmoEdit', component: ConstituentsSaltsAtmoEdit }
 				] 
 			}
 		]

@@ -28,7 +28,7 @@ class Salt_recall_dat(BaseModel):
 
 
 class Salt_atmo_cli(BaseModel):
-	sta = ForeignKeyField(Atmo_cli_sta, on_delete='CASCADE', related_name='values')
+	sta = ForeignKeyField(Atmo_cli_sta, on_delete='CASCADE', related_name='salt_values')
 	timestep = IntegerField()
 	so4_wet = DoubleField()
 	ca_wet = DoubleField()
@@ -49,7 +49,7 @@ class Salt_atmo_cli(BaseModel):
 
 
 class Salt_road(BaseModel):
-	sta = ForeignKeyField(Atmo_cli_sta, on_delete='CASCADE', related_name='values')
+	sta = ForeignKeyField(Atmo_cli_sta, on_delete='CASCADE', related_name='salt_road_values')
 	timestep = IntegerField()
 	so4 = DoubleField()
 	ca = DoubleField()
@@ -98,7 +98,7 @@ class Salt_plants(BaseModel):
 
 
 class Salt_uptake(BaseModel):
-	name = ForeignKeyField(Plants_plt, on_delete='CASCADE', related_name='salts')
+	name = ForeignKeyField(Plants_plt, on_delete='CASCADE', related_name='salt_uptakes')
 	so4 = DoubleField()
 	ca = DoubleField()
 	mg = DoubleField()
@@ -202,3 +202,5 @@ class Salt_module(BaseModel):
 	fert = BooleanField(default=False)
 	irrigation = BooleanField(default=False)
 	urban = BooleanField(default=False)
+	atmo_timestep = CharField(null=True)
+	road_timestep = CharField(null=True)

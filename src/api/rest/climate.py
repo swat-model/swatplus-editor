@@ -397,7 +397,7 @@ def atmoStations():
 @bp.route('/atmo/stations/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def atmoStationsId(id):
 	if request.method == 'GET':
-		return DefaultRestMethods.get(id, Atmo_cli_sta, 'Station', True, 2)
+		return DefaultRestMethods.get(id, Atmo_cli_sta, 'Station', back_refs=True)
 	elif request.method == 'DELETE':
 		return DefaultRestMethods.delete(id, Atmo_cli_sta, 'Station')
 	elif request.method == 'PUT':

@@ -22,7 +22,7 @@
 
 		try {
 			const response = await api.get(`climate/atmo/stations/${route.params.id}`, currentProject.getApiHeader());
-			errors.log(response.data);
+			console.log(response.data);
 			data.item = response.data;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get atmo. station from database.');
