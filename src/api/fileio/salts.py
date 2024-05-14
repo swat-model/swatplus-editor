@@ -5,6 +5,7 @@ from helpers import utils
 import os.path
 from database.project import base as project_base, simulation
 from database.project.climate import Atmo_cli_sta
+from database.project.hru_parm_db import Fertilizer_frt, Urban_urb, Plants_plt
 from database import lib as db_lib
 import csv
 import datetime
@@ -387,4 +388,540 @@ class Salt_atmo_cli(BaseFileModel):
 					file.write(cl_dry_line + '\n')
 					file.write(co3_dry_line + '\n')
 					file.write(hco3_dry_line + '\n')
-					
+
+class Salt_road(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		module = get_salt_module()
+
+		csv_file = open(self.file_name, "r")
+
+		dialect = csv.Sniffer().sniff(csv_file.readline())
+		csv_file.seek(0)
+		replace_commas = dialect is not None and dialect.delimiter != ','
+		hasHeader = csv.Sniffer().has_header(csv_file.readline())
+		csv_file.seek(0)
+
+		csv_reader = csv.reader(csv_file, dialect)
+
+		if hasHeader:
+			headerLine = next(csv_reader)
+
+		i = 0
+		stations_to_ids = {}
+		rows = []
+		for row in Atmo_cli_sta.select():
+			stations_to_ids[row.name] = row.id
+
+		for val in csv_reader:
+			if replace_commas:
+				val = [item.replace(',', '.', 1) for item in val]
+
+			if len(val) < 7:
+				sys.exit('Invalid csv file format. Ensure your data has the following columns: name,month,year,nh4_rf,no3_rf,nh4_dry,no3_dry')
+			name = utils.val_if_null(val[0], 'atmo{}'.format(i+1))
+			month = utils.val_if_null(int(val[1]), 0)
+			year = utils.val_if_null(int(val[2]), 0)
+			so4 = utils.val_if_null(float(val[3]), 0)
+			ca = utils.val_if_null(float(val[4]), 0)
+			mg = utils.val_if_null(float(val[5]), 0)
+			na = utils.val_if_null(float(val[6]), 0)
+			k = utils.val_if_null(float(val[7]), 0)
+			cl = utils.val_if_null(float(val[8]), 0)
+			co3 = utils.val_if_null(float(val[9]), 0)
+			hco3 = utils.val_if_null(float(val[10]), 0)
+
+			if i == 0:
+				if month == 0 and year == 0:
+					module.road_timestep = 'aa'
+				elif month == 0:
+					module.road_timestep = 'yr'
+				else:
+					module.road_timestep = 'mo'
+
+				module.save()
+
+			if name not in stations_to_ids:
+				sys.exit('Invalid atmo. station name: {}. Make sure the station name exists in your Climate/ Weather Stations / Atmospheric Deposition table'.format(name))
+
+			timestep = 0
+			if module.road_timestep == 'mo':
+				timestep = int('{y}{m}'.format(y=year, m=str(month).rjust(2, '0')))
+			elif module.road_timestep == 'yr':
+				timestep = year
+
+			data = {
+				'sta_id': stations_to_ids[name],
+				'timestep': timestep,
+				'so4': so4,
+				'ca': ca,
+				'mg': mg,
+				'na': na,
+				'k': k,
+				'cl': cl,
+				'co3': co3,
+				'hco3': hco3
+			}
+
+			rows.append(data)
+			i += 1
+
+		db.Salt_road.delete().execute()
+		db_lib.bulk_insert(project_base.db, db.Salt_road, rows)
+
+	def write_csv(self):
+		module = get_salt_module()
+		stations = Atmo_cli_sta.select().order_by(Atmo_cli_sta.name)
+		values = db.Salt_road.select().order_by(db.Salt_road.timestep)
+		query = prefetch(stations, values)
+
+		with open(self.file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = ['name', 'month', 'year', 'so4', 'ca', 'mg', 'na', 'k', 'cl', 'co3', 'hco3']
+			csv_writer.writerow(headers)
+
+			for row in query:
+				for val in row.salt_road_values:
+					mo = 0
+					yr = 0
+					if module.road_timestep == 'mo':
+						mo = int(str(val.timestep)[4:])
+						yr = int(str(val.timestep)[:4])
+					if module.road_timestep == 'yr':
+						yr = val.timestep
+
+					values = [row.name, mo, yr, val.so4, val.ca, val.mg, val.na, val.k, val.cl, val.co3, val.hco3]
+					csv_writer.writerow(values)
+
+	def write(self):
+		module = get_salt_module()
+		stations = Atmo_cli_sta.select().order_by(Atmo_cli_sta.name)
+		values = db.Salt_road.select().order_by(db.Salt_road.timestep)
+		query = prefetch(stations, values)
+
+		if stations.count() > 0 and values.count() > 0 and module.enabled and module.road:
+			with open(self.file_name, 'w') as file:
+				self.write_meta_line(file)
+				file.write(" applied road salt (kg/ha) values for each climate station (atmo.cli)\n")
+				header_cols = [col('NUM_STA', direction="right", padding_override=10, not_in_db=True),
+							   col('TIMESTEP', direction="right", padding_override=10, not_in_db=True),
+							   col('MO_INIT', direction="right", padding_override=10, not_in_db=True),
+							   col('YR_INIT', direction="right", padding_override=10, not_in_db=True),
+							   col('NUM_TS', direction="right", padding_override=10, not_in_db=True)]
+				self.write_headers(file, header_cols)
+				file.write("\n")
+
+				first_sta = query[0]
+				timestep = first_sta.salt_values[0].timestep
+				mo_init = 0
+				yr_init = 0
+				num_aa = 0 if module.road_timestep == 'aa' else len(first_sta.salt_road_values)
+
+				if module.road_timestep == 'mo':
+					mo_init = int(str(timestep)[4:])
+					yr_init = int(str(timestep)[:4])
+				if module.road_timestep == 'yr':
+					yr_init = timestep
+
+				row_cols = [col(stations.count(), direction="right", padding_override=10),
+							col(module.road_timestep, direction="right", padding_override=10),
+							col(mo_init, direction="right", padding_override=10),
+							col(yr_init, direction="right", padding_override=10),
+							col(num_aa, direction="right", padding_override=10)]
+				self.write_row(file, row_cols)
+				file.write("\n")
+
+				for row in query:
+					file.write(row.name)
+					file.write("\n")
+
+					so4_line = 'so4   '
+					ca_line = 'ca    '
+					mg_line = 'mg    '
+					na_line = 'na    '
+					k_line = 'k     '
+					cl_line = 'cl    '
+					co3_line = 'co3   '
+					hco3_line = 'hco3  '
+					for val in row.salt_road_values:
+						so4_line = '{l}{v}'.format(l=so4_line, v=utils.num_pad(val.so4, 2, 9))
+						ca_line = '{l}{v}'.format(l=ca_line, v=utils.num_pad(val.ca, 2, 9))
+						mg_line = '{l}{v}'.format(l=mg_line, v=utils.num_pad(val.mg, 2, 9))
+						na_line = '{l}{v}'.format(l=na_line, v=utils.num_pad(val.na, 2, 9))
+						k_line = '{l}{v}'.format(l=k_line, v=utils.num_pad(val.k, 2, 9))
+						cl_line = '{l}{v}'.format(l=cl_line, v=utils.num_pad(val.cl, 2, 9))
+						co3_line = '{l}{v}'.format(l=co3_line, v=utils.num_pad(val.co3, 2, 9))
+						hco3_line = '{l}{v}'.format(l=hco3_line, v=utils.num_pad(val.hco3, 2, 9))
+
+					file.write(so4_line + '\n')
+					file.write(ca_line + '\n')
+					file.write(mg_line + '\n')
+					file.write(na_line + '\n')
+					file.write(k_line + '\n')
+					file.write(cl_line + '\n')
+					file.write(co3_line + '\n')
+					file.write(hco3_line + '\n')
+
+class Salt_fertilizer_frt(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		with open(self.file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			row_names = { v.name: v.id for v in Fertilizer_frt.select().order_by(Fertilizer_frt.id) }
+
+			rows = []
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				name = val[0]
+				if name in row_names:
+					row = {
+						'name_id': row_names[name],
+						'so4': float(val[1]),
+						'ca': float(val[2]),
+						'mg': float(val[3]),
+						'na': float(val[4]),
+						'k': float(val[5]),
+						'cl': float(val[6]),
+						'co3': float(val[7]),
+						'hco3': float(val[8])
+					}
+
+					rows.append(row)
+
+		db.Salt_fertilizer_frt.delete().execute()
+		db_lib.bulk_insert(project_base.db, db.Salt_fertilizer_frt, rows)
+
+	def write_csv(self):
+		stations = Fertilizer_frt.select().order_by(Fertilizer_frt.id)
+
+		with open(self.file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = ['name', 'so4', 'ca', 'mg', 'na', 'k', 'cl', 'co3', 'hco3']
+			csv_writer.writerow(headers)
+
+			for row in stations:
+				for val in row.salts:
+					csv_writer.writerow([row.name, val.so4, val.ca, val.mg, val.na, val.k, val.cl, val.co3, val.hco3])
+				if row.salts is None or len(row.salts) == 0:
+					csv_writer.writerow([row.name, 0, 0, 0, 0, 0, 0, 0, 0])
+
+	def write(self):
+		module = get_salt_module()
+		stations = Fertilizer_frt.select().order_by(Fertilizer_frt.id)
+
+		if stations.count() > 0 and module.enabled and module.fert:
+			with open(self.file_name, 'w') as file:
+				self.write_meta_line(file)
+				header_cols = [col('name', direction="right", padding_override=16, not_in_db=True),
+							   col('so4', direction="right", padding_override=12, not_in_db=True),
+							   col('ca', direction="right", padding_override=12, not_in_db=True),
+							   col('mg', direction="right", padding_override=12, not_in_db=True),
+							   col('na', direction="right", padding_override=12, not_in_db=True),
+							   col('k', direction="right", padding_override=12, not_in_db=True),
+							   col('cl', direction="right", padding_override=12, not_in_db=True),
+							   col('co3', direction="right", padding_override=12, not_in_db=True),
+							   col('hco3', direction="right", padding_override=12, not_in_db=True)]
+				self.write_headers(file, header_cols)
+				file.write("\n")
+
+				for row in stations:
+					for val in row.salts:
+						file.write(utils.string_pad(row.name, direction="right"))
+						file.write(utils.num_pad(val.so4, 2, 12))
+						file.write(utils.num_pad(val.ca, 2, 12))
+						file.write(utils.num_pad(val.mg, 2, 12))
+						file.write(utils.num_pad(val.na, 2, 12))
+						file.write(utils.num_pad(val.k, 2, 12))
+						file.write(utils.num_pad(val.cl, 2, 12))
+						file.write(utils.num_pad(val.co3, 2, 12))
+						file.write(utils.num_pad(val.hco3, 2, 12))
+						file.write("\n")
+
+					if row.salts is None or len(row.salts) == 0:
+						file.write(utils.string_pad(row.name, direction="right"))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write("\n")	
+
+class Salt_urban(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		with open(self.file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			row_names = { v.name: v.id for v in Urban_urb.select().order_by(Urban_urb.id) }
+
+			rows = []
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				name = val[0]
+				if name in row_names:
+					row = {
+						'name_id': row_names[name],
+						'so4': float(val[1]),
+						'ca': float(val[2]),
+						'mg': float(val[3]),
+						'na': float(val[4]),
+						'k': float(val[5]),
+						'cl': float(val[6]),
+						'co3': float(val[7]),
+						'hco3': float(val[8])
+					}
+
+					rows.append(row)
+
+		db.Salt_urban.delete().execute()
+		db_lib.bulk_insert(project_base.db, db.Salt_urban, rows)
+
+	def write_csv(self):
+		stations = Urban_urb.select().order_by(Urban_urb.id)
+
+		with open(self.file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = ['name', 'so4', 'ca', 'mg', 'na', 'k', 'cl', 'co3', 'hco3']
+			csv_writer.writerow(headers)
+
+			for row in stations:
+				for val in row.salts:
+					csv_writer.writerow([row.name, val.so4, val.ca, val.mg, val.na, val.k, val.cl, val.co3, val.hco3])
+				if row.salts is None or len(row.salts) == 0:
+					csv_writer.writerow([row.name, 250, 150, 60, 45, 2, 55, 1, 200])
+
+	def write(self):
+		module = get_salt_module()
+		stations = Urban_urb.select().order_by(Urban_urb.id)
+
+		if stations.count() > 0 and module.enabled and module.urban:
+			with open(self.file_name, 'w') as file:
+				self.write_meta_line(file)
+				header_cols = [col('name', direction="right", padding_override=16, not_in_db=True),
+							   col('so4', direction="right", padding_override=12, not_in_db=True),
+							   col('ca', direction="right", padding_override=12, not_in_db=True),
+							   col('mg', direction="right", padding_override=12, not_in_db=True),
+							   col('na', direction="right", padding_override=12, not_in_db=True),
+							   col('k', direction="right", padding_override=12, not_in_db=True),
+							   col('cl', direction="right", padding_override=12, not_in_db=True),
+							   col('co3', direction="right", padding_override=12, not_in_db=True),
+							   col('hco3', direction="right", padding_override=12, not_in_db=True)]
+				self.write_headers(file, header_cols)
+				file.write("\n")
+
+				for row in stations:
+					for val in row.salts:
+						file.write(utils.string_pad(row.name, direction="right"))
+						file.write(utils.num_pad(val.so4, 2, 12))
+						file.write(utils.num_pad(val.ca, 2, 12))
+						file.write(utils.num_pad(val.mg, 2, 12))
+						file.write(utils.num_pad(val.na, 2, 12))
+						file.write(utils.num_pad(val.k, 2, 12))
+						file.write(utils.num_pad(val.cl, 2, 12))
+						file.write(utils.num_pad(val.co3, 2, 12))
+						file.write(utils.num_pad(val.hco3, 2, 12))
+						file.write("\n")
+
+					if row.salts is None or len(row.salts) == 0:
+						file.write(utils.string_pad(row.name, direction="right"))
+						file.write(utils.num_pad(250, 2, 12))
+						file.write(utils.num_pad(150, 2, 12))
+						file.write(utils.num_pad(60, 2, 12))
+						file.write(utils.num_pad(45, 2, 12))
+						file.write(utils.num_pad(2, 2, 12))
+						file.write(utils.num_pad(55, 2, 12))
+						file.write(utils.num_pad(1, 2, 12))
+						file.write(utils.num_pad(200, 2, 12))
+						file.write("\n")	
+
+class Salt_plants(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		with open(self.file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			row_names = { v.name: v.id for v in Plants_plt.select().order_by(Plants_plt.id) }
+
+			rows = []
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				name = val[0]
+				if name in row_names:
+					row = {
+						'name_id': row_names[name],
+						'a': float(val[1]),
+						'b': float(val[2]),
+						'so4': float(val[3]),
+						'ca': float(val[4]),
+						'mg': float(val[5]),
+						'na': float(val[6]),
+						'k': float(val[7]),
+						'cl': float(val[8]),
+						'co3': float(val[9]),
+						'hco3': float(val[10])
+					}
+
+					rows.append(row)
+
+		db.Salt_plants.delete().execute()
+		db_lib.bulk_insert(project_base.db, db.Salt_plants, rows)
+
+	def write_csv(self):
+		stations = Plants_plt.select().order_by(Plants_plt.id)
+
+		with open(self.file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = ['name', 'a', 'b', 'so4', 'ca', 'mg', 'na', 'k', 'cl', 'co3', 'hco3']
+			csv_writer.writerow(headers)
+
+			defaults = db.Salt_plants.get_a_b_defaults()
+			for row in stations:
+				for val in row.salts:
+					csv_writer.writerow([row.name.name, val.a, val.b, val.so4, val.ca, val.mg, val.na, val.k, val.cl, val.co3, val.hco3])
+				if row.salts is None or len(row.salts) == 0:
+					a = 0
+					b = 0
+					if row.name.name in defaults:
+						a = defaults[row.name.name][0]
+						b = defaults[row.name.name][1]
+					csv_writer.writerow([row.name.name, a, b, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+
+	def write(self, uptake_file_name):
+		module = get_salt_module()
+		stations = Plants_plt.select().order_by(Plants_plt.id)
+
+		if stations.count() > 0 and module.enabled:
+			with open(self.file_name, 'w') as file:
+				self.write_meta_line(file)
+
+				plant_flags, created = db.Salt_plants_flags.get_or_create(id=1)
+
+				file.write('conversion factor from TDS --> EC (EC=TDS/factor)\n')
+				file.write('{}\n'.format(plant_flags.conversion_factor))
+				file.write('plant salinity tolerance\n')
+				file.write('{}            flag (0 = off; 1 = on)\n'.format(plant_flags.enabled))
+				file.write('{}            flag (1=caso4 soils; 2=nacl soils)\n'.format(plant_flags.soil))
+				file.write('{}            flag (1=salt stress applied after other stresses applied; 2=included with other stresses)\n'.format(plant_flags.stress))
+				file.write('NOTE: a and b values are for nacl soils\n')
+				file.write('NOTE: if a and b values = 0, no salt impact\n')
+				file.write('a = EC_sat threshold for impact on crop yield\n')
+				file.write('b = slope of salinity impact on crop yield\n')
+
+				header_cols = [col('name', direction="right", padding_override=16, not_in_db=True),
+							   col('a', direction="right", padding_override=12, not_in_db=True),
+							   col('b', direction="right", padding_override=12, not_in_db=True)]
+				self.write_headers(file, header_cols)
+				file.write("\n")
+
+				defaults = db.Salt_plants.get_a_b_defaults()
+				for row in stations:
+					for val in row.salts:
+						file.write(utils.string_pad(row.name.name, direction="right"))
+						file.write(utils.num_pad(val.a, 2, 12))
+						file.write(utils.num_pad(val.b, 2, 12))
+						file.write("\n")
+
+					if row.salts is None or len(row.salts) == 0:
+						a = 0
+						b = 0
+						if row.name.name in defaults:
+							a = defaults[row.name.name][0]
+							b = defaults[row.name.name][1]
+						file.write(utils.string_pad(row.name.name, direction="right"))
+						file.write(utils.num_pad(a, 2, 12))
+						file.write(utils.num_pad(b, 2, 12))
+						file.write("\n")	
+
+			with open(uptake_file_name, 'w') as file:
+				self.write_meta_line(file)
+				file.write('for each ion: daily uptake mass (kg/ha) when crop has root mass\n')
+				header_cols = [col('name', direction="right", padding_override=16, not_in_db=True),
+							   col('so4', direction="right", padding_override=12, not_in_db=True),
+							   col('ca', direction="right", padding_override=12, not_in_db=True),
+							   col('mg', direction="right", padding_override=12, not_in_db=True),
+							   col('na', direction="right", padding_override=12, not_in_db=True),
+							   col('k', direction="right", padding_override=12, not_in_db=True),
+							   col('cl', direction="right", padding_override=12, not_in_db=True),
+							   col('co3', direction="right", padding_override=12, not_in_db=True),
+							   col('hco3', direction="right", padding_override=12, not_in_db=True)]
+				self.write_headers(file, header_cols)
+				file.write("\n")
+
+				for row in stations:
+					for val in row.salts:
+						file.write(utils.string_pad(row.name.name, direction="right"))
+						file.write(utils.num_pad(val.so4, 2, 12))
+						file.write(utils.num_pad(val.ca, 2, 12))
+						file.write(utils.num_pad(val.mg, 2, 12))
+						file.write(utils.num_pad(val.na, 2, 12))
+						file.write(utils.num_pad(val.k, 2, 12))
+						file.write(utils.num_pad(val.cl, 2, 12))
+						file.write(utils.num_pad(val.co3, 2, 12))
+						file.write(utils.num_pad(val.hco3, 2, 12))
+						file.write("\n")
+
+					if row.salts is None or len(row.salts) == 0:
+						file.write(utils.string_pad(row.name.name, direction="right"))
+						file.write(utils.num_pad(0.1, 2, 12))
+						file.write(utils.num_pad(0.1, 2, 12))
+						file.write(utils.num_pad(0.1, 2, 12))
+						file.write(utils.num_pad(0.1, 2, 12))
+						file.write(utils.num_pad(0.1, 2, 12))
+						file.write(utils.num_pad(0.1, 2, 12))
+						file.write(utils.num_pad(0.1, 2, 12))
+						file.write(utils.num_pad(0.1, 2, 12))
+						file.write("\n")	

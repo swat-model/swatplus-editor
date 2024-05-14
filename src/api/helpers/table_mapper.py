@@ -174,4 +174,8 @@ types = {
 
 	"salt_rec_dat": salts.Salt_recall_dat,
 	"salt_atmo_cli": salts.Salt_atmo_cli,
+	"salt_road": salts.Salt_road,
+	"salt_fert": salts.Salt_fertilizer_frt,
+	"salt_urban": salts.Salt_urban,
+	"salt_plants": salts.Salt_plants,
 }

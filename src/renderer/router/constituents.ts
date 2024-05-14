@@ -19,6 +19,13 @@ import ConstituentsSaltsRecallDataCreate from '../views/edit/constituents/salts/
 
 import ConstituentsSaltsAtmo from '../views/edit/constituents/salts/SaltsAtmo.vue';
 import ConstituentsSaltsAtmoEdit from '../views/edit/constituents/salts/SaltsAtmoEdit.vue';
+import ConstituentsSaltsRoad from '../views/edit/constituents/salts/SaltsRoad.vue';
+import ConstituentsSaltsRoadEdit from '../views/edit/constituents/salts/SaltsRoadEdit.vue';
+
+import ConstituentsSaltsFert from '../views/edit/constituents/salts/SaltsFert.vue';
+import ConstituentsSaltsFertEdit from '../views/edit/constituents/salts/SaltsFertEdit.vue';
+import ConstituentsSaltsUrban from '../views/edit/constituents/salts/SaltsUrban.vue';
+import ConstituentsSaltsUrbanEdit from '../views/edit/constituents/salts/SaltsUrbanEdit.vue';
 
 export default [
 	{ 
@@ -63,6 +70,24 @@ export default [
 				path: 'atmo', name: 'ConstituentsSaltsAtmo', component: ConstituentsSaltsAtmo,
 				children: [
 					{ path: 'edit/:id', name: 'ConstituentsSaltsAtmoEdit', component: ConstituentsSaltsAtmoEdit }
+				] 
+			},
+			{ 
+				path: 'road', name: 'ConstituentsSaltsRoad', component: ConstituentsSaltsRoad,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsRoadEdit', component: ConstituentsSaltsRoadEdit }
+				] 
+			},
+			{ 
+				path: 'fert', name: 'ConstituentsSaltsFert', component: ConstituentsSaltsFert,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsFertEdit', component: ConstituentsSaltsFertEdit }
+				] 
+			},
+			{ 
+				path: 'urban', name: 'ConstituentsSaltsUrban', component: ConstituentsSaltsUrban,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsUrbanEdit', component: ConstituentsSaltsUrbanEdit }
 				] 
 			}
 		]

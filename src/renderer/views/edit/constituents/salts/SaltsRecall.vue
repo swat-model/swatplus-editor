@@ -282,8 +282,8 @@
 
 			<grid-view v-if="data.showGrid" ref="recallGrid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal">
 				<template v-slot:actions>
-					<v-btn variant="flat" color="info" @click="data.createTemplates.show = true" class="mr-2">Create Templates</v-btn>
 					<v-btn variant="flat" color="info" @click="data.import.show = true" class="mr-2">Import/Export</v-btn>
+					<v-btn variant="flat" color="info" @click="data.createTemplates.show = true" class="mr-2">Create Templates</v-btn>
 					<v-btn v-if="table.total > 0" variant="flat" color="error" class="mr-2" @click="data.delete.show = true">Delete All</v-btn>
 				</template>
 			</grid-view>

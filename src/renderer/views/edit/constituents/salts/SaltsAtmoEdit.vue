@@ -40,14 +40,14 @@
 					id: null,
 					sta_id: Number(route.params.id),
 					timestep: 0,
-					so4_wet: 0,
-					ca_wet: 0,
-					mg_wet: 0,
-					na_wet: 0,
-					k_wet: 0,
-					cl_wet: 0,
+					so4_wet: 5,
+					ca_wet: 2,
+					mg_wet: 0.5,
+					na_wet: 0.75,
+					k_wet: 0.1,
+					cl_wet: 1,
 					co3_wet: 0,
-					hco3_wet: 0,
+					hco3_wet: 3,
 					so4_dry: 0,
 					ca_dry: 0,
 					mg_dry: 0,
@@ -146,14 +146,14 @@
 		data.page.values.obj.id = null;
 		data.page.values.obj.sta_id = Number(route.params.id);
 		data.page.values.obj.timestep = 0;
-		data.page.values.obj.so4_wet = 0;
-		data.page.values.obj.ca_wet = 0;
-		data.page.values.obj.mg_wet = 0;
-		data.page.values.obj.na_wet = 0;
-		data.page.values.obj.k_wet = 0;
-		data.page.values.obj.cl_wet = 0;
+		data.page.values.obj.so4_wet = 5;
+		data.page.values.obj.ca_wet = 4;
+		data.page.values.obj.mg_wet = 0.5;
+		data.page.values.obj.na_wet = 0.75;
+		data.page.values.obj.k_wet = 0.1;
+		data.page.values.obj.cl_wet = 1;
 		data.page.values.obj.co3_wet = 0;
-		data.page.values.obj.hco3_wet = 0;
+		data.page.values.obj.hco3_wet = 3;
 		data.page.values.obj.so4_dry = 0;
 		data.page.values.obj.ca_dry = 0;
 		data.page.values.obj.mg_dry = 0;
@@ -252,7 +252,7 @@
 							<tr class="bg-surface">
 								<th class="bg-secondary-tonal min"></th>
 								<th class="bg-secondary-tonal text-right" v-for="f in data.fields" :key="f.key">
-									{{ formatters.isNullOrEmpty(f.label) ? f.key : f.label }}
+									{{ f.key }}
 								</th>
 								<th class="bg-secondary-tonal min"></th>
 							</tr>
@@ -272,7 +272,7 @@
 									</a>
 								</td>
 								<td v-for="f in data.fields" :key="f.key" class="text-right">
-									<span v-if="f.key === 'month'">{{ row[f.key] }}</span>
+									<span v-if="f.key === 'timestep'">{{ row[f.key] }}</span>
 									<span v-else>{{ formatters.toNumberFormat(row[f.key], 3) }}</span>
 								</td>
 								<td class="min">

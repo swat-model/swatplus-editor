@@ -250,7 +250,7 @@
 										</a>
 									</td>
 									<td v-for="f in page.values.fields" :key="f.key" class="text-right">
-										<span v-if="f.key === 'month'">{{ row[f.key] }}</span>
+										<span v-if="f.key === 'timestep'">{{ row[f.key] }}</span>
 										<span v-else>{{ formatters.toNumberFormat(row[f.key], 3) }}</span>
 									</td>
 									<td class="min">

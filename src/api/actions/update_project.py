@@ -167,7 +167,6 @@ class UpdateProject(ExecutableApi):
 						  salts.Salt_urban,
 						  salts.Salt_plants_flags,
 						  salts.Salt_plants,
-						  salts.Salt_uptake,
 						  salts.Salt_irrigation,
 						  salts.Salt_aqu_ini,
 						  salts.Salt_channel_ini,

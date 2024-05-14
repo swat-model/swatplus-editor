@@ -177,8 +177,13 @@
 						{ name: 'Atmospheric Deposition', path: '/edit/constituents/salts/atmo', show: true, routeName: '', subItems: [] },
 						{ name: 'Road Salt', path: '/edit/constituents/salts/road', show: true, routeName: '', subItems: [] },
 						{ name: 'Fertilizer & Soil Amendments', path: '/edit/constituents/salts/fert', show: true, routeName: '', subItems: [] },
-						{ name: 'Irrigation', path: '/edit/constituents/salts/irr', show: true, routeName: '', subItems: [] },
-						{ name: 'Urban Runoff', path: '/edit/constituents/salts/urban', show: true, routeName: '', subItems: [] }
+						{ name: 'Urban Runoff', path: '/edit/constituents/salts/urban', show: true, routeName: '', subItems: [] },
+						{ name: 'Plant Influence', path: '/edit/constituents/salts/plants', show: true, routeName: '', subItems: [] },
+						{ name: 'Aquifer Initial Conditions', path: '/edit/constituents/salts/aqu', show: true, routeName: '', subItems: [] },
+						{ name: 'Channel Initial Conditions', path: '/edit/constituents/salts/cha', show: true, routeName: '', subItems: [] },
+						{ name: 'Reservoir Initial Conditions', path: '/edit/constituents/salts/res', show: true, routeName: '', subItems: [] },
+						{ name: 'HRU Initial Conditions', path: '/edit/constituents/salts/hru', show: true, routeName: '', subItems: [] },
+						{ name: 'Irrigation', path: '/edit/constituents/salts/irr', show: true, routeName: '', subItems: [] }
 					]
 				}
 			]

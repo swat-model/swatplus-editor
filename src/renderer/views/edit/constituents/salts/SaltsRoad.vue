@@ -26,13 +26,13 @@
 			showGrid: false
 		},
 		form: {
-			atmo: false,
-			atmo_timestep: 'aa',
+			road: false,
+			road_timestep: 'aa',
 			has_atmo: false
 		},
 		options: [
-			{ value: false, title: 'Disable salt atmospheric deposition' },
-			{ value: true, title: 'Enable salt atmospheric deposition' }
+			{ value: false, title: 'Disable road salt' },
+			{ value: true, title: 'Enable road salt' }
 		],
 		delete: {
 			show: false,
@@ -64,10 +64,10 @@
 		data.page.showError = false;
 
 		try {
-			const response = await api.get(`salts/enable-atmo`, currentProject.getApiHeader());
+			const response = await api.get(`salts/enable-road`, currentProject.getApiHeader());
 			data.form = response.data;
-			data.showGrid = data.form.atmo;
-			data.createTemplates.time_step = data.form.atmo_timestep;
+			data.showGrid = data.form.road;
+			data.createTemplates.time_step = data.form.road_timestep;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');
 		}
@@ -82,9 +82,9 @@
 		data.page.showError = false;
 
 		try {
-			const response = await api.put(`salts/enable-atmo`, data.form, currentProject.getApiHeader());
+			const response = await api.put(`salts/enable-road`, data.form, currentProject.getApiHeader());
 
-			data.showGrid = data.form.atmo;
+			data.showGrid = data.form.road;
 			if (data.showGrid) await recallGrid?.value?.get(false);
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to save changes to database.');
@@ -99,7 +99,7 @@
 		data.delete.saving = true;
 
 		try {
-			const response = await api.delete(`salts/enable-atmo`, currentProject.getApiHeader());
+			const response = await api.delete(`salts/enable-road`, currentProject.getApiHeader());
 			errors.log(response);
 			data.delete.show = false;
 			await recallGrid?.value?.get(false);
@@ -118,10 +118,10 @@
 			let formData = {
 				time_step: data.createTemplates.time_step
 			};
-			const response = await api.post(`salts/enable-atmo`, formData, currentProject.getApiHeader());
+			const response = await api.post(`salts/enable-road`, formData, currentProject.getApiHeader());
 			errors.log(response);
 			data.createTemplates.show = false;
-			data.form.atmo_timestep = data.createTemplates.time_step;
+			data.form.road_timestep = data.createTemplates.time_step;
 			await recallGrid?.value?.get(false);
 		} catch (error) {
 			data.createTemplates.error = errors.logError(error, 'Unable to create templates.');
@@ -136,14 +136,14 @@
 
 <template>
 	<project-container :loading="data.page.loading">
-		<div v-if="$route.name == 'ConstituentsSaltsAtmo'">
+		<div v-if="$route.name == 'ConstituentsSaltsRoad'">
 			<file-header input-file="constituents.cs" docs-path="constituents" use-io>
 				<router-link to="/edit/constituents/salts">Salt Constituents</router-link>
-				/ Atmospheric Deposition
+				/ Road Salt
 			</file-header>
 
 			<p>
-				For salt ion atmospheric deposition to be simulated, you must provide atmospheric deposition data in the 
+				For road salt application to be simulated, you must provide atmospheric deposition data in the 
 				<router-link to="/edit/climate/stations/atmo" class="text-primary">Climate / Weather Stations / Atmospheric Deposition</router-link> section.
 				<span v-if="data.form.has_atmo">We recommend using the Create Templates button below to create default data at the desired time step, then click Import/Export and 
 				export your data to CSV. You may then edit the CSV on your own and import it back into the system. Alternatively, you may edit each station value 
@@ -156,10 +156,10 @@
 					<success-alert v-model="data.page.saveSuccess" :show="data.page.saveSuccess"></success-alert>
 
 					<div class="form-group mb-0">
-						<v-select label="Turn salt atmospheric deposition module on/off" v-model="data.form.atmo" :items="data.options"></v-select>
+						<v-select label="Turn salt road module on/off" v-model="data.form.road" :items="data.options"></v-select>
 					</div>
-					<div class="form-group mb-0" v-if="data.form.atmo">
-						<v-select label="Set the timestep" v-model="data.form.atmo_timestep" :items="data.createTemplates.options.time_step" @update:model-value="data.createTemplates.time_step = data.form.atmo_timestep"></v-select>
+					<div class="form-group mb-0" v-if="data.form.road">
+						<v-select label="Set the timestep" v-model="data.form.road_timestep" :items="data.createTemplates.options.time_step" @update:model-value="data.createTemplates.time_step = data.form.road_timestep"></v-select>
 					</div>
 					<div>
 						<v-btn type="submit" :loading="data.page.saving" variant="flat" color="primary">Save Changes</v-btn>
@@ -169,7 +169,7 @@
 				<v-divider class="mt-6 mb-4"></v-divider>
 
 				<grid-view v-if="data.showGrid" ref="recallGrid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal" hide-create hide-delete
-					show-import-export default-csv-file="salt_atmo.csv" table-name="salt_atmo_cli">
+					show-import-export default-csv-file="salt_road.csv" table-name="salt_road">
 					<template v-slot:actions>
 						<v-btn variant="flat" color="info" @click="data.createTemplates.show = true" class="mr-2">Create Templates</v-btn>
 						<v-btn v-if="table.total > 0" variant="flat" color="error" class="mr-2" @click="data.delete.show = true">Delete All</v-btn>
@@ -182,7 +182,7 @@
 							<error-alert :text="data.delete.error"></error-alert>
 
 							<p>
-								Are you sure you want to delete <strong>ALL</strong> salt atmo. data?
+								Are you sure you want to delete <strong>ALL</strong> salt road data?
 								This action is permanent and cannot be undone. 
 							</p>
 						</v-card-text>
@@ -200,7 +200,7 @@
 							<error-alert :text="data.createTemplates.error"></error-alert>
 
 							<p>
-								Create salt atmo templates for the selected time step.
+								Create salt road templates for the selected time step.
 								<span class="text-error">WARNING:</span> This will replace any existing data. To change an individual station instead,
 								click a row in the table and change the time step as needed. 
 							</p>

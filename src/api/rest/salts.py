@@ -9,11 +9,262 @@ from database.project import salts as db
 from database.project import base as project_base, recall
 from database.project.simulation import Time_sim
 from database.project.climate import Atmo_cli_sta
+from database.project.hru_parm_db import Fertilizer_frt, Urban_urb, Plants_plt
 from database import lib as db_lib
 
 import datetime
 
 bp = Blueprint('salts', __name__, url_prefix='/salts')
+
+@bp.route('/enable-urban', methods=['GET','PUT'])
+def enableUrban():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	module, created = db.Salt_module.get_or_create(id=1)
+	
+	if request.method == 'GET':
+		rh.close()
+		return {
+			'urban': module.urban
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		result = db.Salt_module.update(urban=args['urban']).execute()
+		
+		if result > 0:
+			rh.close()
+			return '', 200
+
+		rh.close()
+		abort(400, 'Unable to update salts module.')
+
+@bp.route('/urban/<int:id>', methods=['GET','PUT'])
+def urban(id):
+	if request.method == 'GET':
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+
+		item = Urban_urb.get_or_none(Urban_urb.id == id)
+		
+		if item is None:
+			rh.close()
+			abort(404, 'Urban not found.')
+
+		if item.salts is None or len(item.salts) == 0:
+			v = db.Salt_urban.create(name_id=id, so4=250, ca=150, mg=60, na=45, k=2, cl=55, co3=1, hco3=200)
+		else:
+			v = item.salts[0]
+
+		d = model_to_dict(v, recurse=False)
+		for k in d:
+			if k == 'name':
+				d['name_id'] = d[k]
+				d.pop(k)
+				break
+
+		rh.close()
+		return {
+			'name': item.name,
+			'item': d
+		}
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_urban, 'Value')
+
+@bp.route('/enable-fert', methods=['GET','PUT'])
+def enableFert():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	module, created = db.Salt_module.get_or_create(id=1)
+	
+	if request.method == 'GET':
+		rh.close()
+		return {
+			'fert': module.fert
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		result = db.Salt_module.update(fert=args['fert']).execute()
+		
+		if result > 0:
+			rh.close()
+			return '', 200
+
+		rh.close()
+		abort(400, 'Unable to update salts module.')
+
+@bp.route('/fert/<int:id>', methods=['GET','PUT'])
+def fert(id):
+	if request.method == 'GET':
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+
+		item = Fertilizer_frt.get_or_none(Fertilizer_frt.id == id)
+		
+		if item is None:
+			rh.close()
+			abort(404, 'Fertilizer not found.')
+
+		if item.salts is None or len(item.salts) == 0:
+			v = db.Salt_fertilizer_frt.create(name_id=id, so4=0, ca=0, mg=0, na=0, k=0, cl=0, co3=0, hco3=0)
+		else:
+			v = item.salts[0]
+
+		d = model_to_dict(v, recurse=False)
+		for k in d:
+			if k == 'name':
+				d['name_id'] = d[k]
+				d.pop(k)
+				break
+
+		rh.close()
+		return {
+			'name': item.name,
+			'item': d
+		}
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_fertilizer_frt, 'Value')
+
+@bp.route('/enable-road', methods=['GET','PUT','POST','DELETE'])
+def enableRoad():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	module, created = db.Salt_module.get_or_create(id=1)
+	if module.road_timestep is None or module.road_timestep == '':
+		module.road_timestep = 'aa'
+		module.save()
+	
+	if request.method == 'GET':
+		rh.close()
+		return {
+			'road': module.road,
+			'road_timestep': module.road_timestep,
+			'has_atmo': Atmo_cli_sta.select().count() > 0
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		result = db.Salt_module.update(road=args['road'], road_timestep=args['road_timestep']).execute()
+		
+		if result > 0:
+			rh.close()
+			return '', 200
+
+		rh.close()
+		abort(400, 'Unable to update salts module.')
+	elif request.method == 'DELETE':
+		project_base.db.execute_sql("PRAGMA foreign_keys = ON")
+		db.Salt_road.delete().execute()
+		rh.close()
+		return '', 200
+	elif request.method == 'POST':
+		args = request.json
+		time_step = args['time_step']	
+		sim = Time_sim.get_or_create_default()	
+
+		mod_updated = db.Salt_module.update(road_timestep=args['time_step']).execute()
+		
+		items = []
+		for sta in Atmo_cli_sta.select().order_by(Atmo_cli_sta.name):
+			if time_step == 'aa':
+				items.append({
+					'sta_id': sta.id,
+					'timestep': 0,
+					'so4': 0,
+					'ca': 0,
+					'mg': 0,
+					'na': 1,
+					'k': 0,
+					'cl': 1.55,
+					'co3': 0,
+					'hco3': 0
+				})
+			elif time_step == 'yr':
+				for yr in range(sim.yrc_start, sim.yrc_end + 1):
+					items.append({
+						'sta_id': sta.id,
+						'timestep': yr,
+						'so4': 0,
+						'ca': 0,
+						'mg': 0,
+						'na': 1,
+						'k': 0,
+						'cl': 1.55,
+						'co3': 0,
+						'hco3': 0
+					})
+			elif time_step == 'mo':
+				start_date = datetime.datetime(sim.yrc_start, 1, 1) + datetime.timedelta(sim.day_start)
+				start_month = start_date.month
+				for yr in range(sim.yrc_start, sim.yrc_end + 1):
+					write_month = start_month if yr == sim.yrc_start else 1
+					for mo in range(write_month, 13):
+						items.append({
+							'sta_id': sta.id,
+							'timestep': yr * 100 + mo,
+							'so4': 0,
+							'ca': 0,
+							'mg': 0,
+							'na': 1,
+							'k': 0,
+							'cl': 1.55,
+							'co3': 0,
+							'hco3': 0
+						})
+			
+		db.Salt_road.delete().execute()
+		db_lib.bulk_insert(project_base.db, db.Salt_road, items)
+
+		rh.close()
+		return '', 200
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/road/<int:id>', methods=['GET','POST'])
+def roadValues(id):
+	if request.method == 'GET':
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+
+		sta = Atmo_cli_sta.get_or_none(Atmo_cli_sta.id == id)
+		
+		if sta is None:
+			rh.close()
+			abort(404, 'Atmospheric station not found.')
+
+		values = [model_to_dict(v, recurse=False) for v in sta.salt_road_values.order_by(db.Salt_road.timestep)]
+		for v in values:
+			for k in v:
+				if k == 'sta':
+					v['sta_id'] = v[k]
+					v.pop(k)
+					break
+
+		rh.close()
+		return {
+			'name': sta.name,
+			'values': values
+		}
+	elif request.method == 'POST':
+		return DefaultRestMethods.post(db.Salt_road, 'Value')
+
+@bp.route('/road-values/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def roadValuesId(id):
+	if request.method == 'GET':
+		return DefaultRestMethods.get(id, db.Salt_road, 'Value')
+	elif request.method == 'DELETE':
+		return DefaultRestMethods.delete(id, db.Salt_road, 'Value')
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_road, 'Value')
+
+	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/enable-atmo', methods=['GET','PUT','POST','DELETE'])
 def enableAtmo():
@@ -30,7 +281,8 @@ def enableAtmo():
 		rh.close()
 		return {
 			'atmo': module.atmo,
-			'atmo_timestep': module.atmo_timestep
+			'atmo_timestep': module.atmo_timestep,
+			'has_atmo': Atmo_cli_sta.select().count() > 0
 		}
 	elif request.method == 'PUT':
 		args = request.json
@@ -51,6 +303,8 @@ def enableAtmo():
 		args = request.json
 		time_step = args['time_step']	
 		sim = Time_sim.get_or_create_default()	
+
+		mod_updated = db.Salt_module.update(atmo_timestep=args['time_step']).execute()
 		
 		items = []
 		for sta in Atmo_cli_sta.select().order_by(Atmo_cli_sta.name):
@@ -58,14 +312,14 @@ def enableAtmo():
 				items.append({
 					'sta_id': sta.id,
 					'timestep': 0,
-					'so4_wet': 0,
-					'ca_wet': 0,
-					'mg_wet': 0,
-					'na_wet': 0,
-					'k_wet': 0,
-					'cl_wet': 0,
+					'so4_wet': 5,
+					'ca_wet': 2,
+					'mg_wet': 0.5,
+					'na_wet': 0.75,
+					'k_wet': 0.1,
+					'cl_wet': 1,
 					'co3_wet': 0,
-					'hco3_wet': 0,
+					'hco3_wet': 3,
 					'so4_dry': 0,
 					'ca_dry': 0,
 					'mg_dry': 0,
@@ -80,14 +334,14 @@ def enableAtmo():
 					items.append({
 						'sta_id': sta.id,
 						'timestep': yr,
-						'so4_wet': 0,
-						'ca_wet': 0,
-						'mg_wet': 0,
-						'na_wet': 0,
-						'k_wet': 0,
-						'cl_wet': 0,
+						'so4_wet': 5,
+						'ca_wet': 2,
+						'mg_wet': 0.5,
+						'na_wet': 0.75,
+						'k_wet': 0.1,
+						'cl_wet': 1,
 						'co3_wet': 0,
-						'hco3_wet': 0,
+						'hco3_wet': 3,
 						'so4_dry': 0,
 						'ca_dry': 0,
 						'mg_dry': 0,
@@ -106,14 +360,14 @@ def enableAtmo():
 						items.append({
 							'sta_id': sta.id,
 							'timestep': yr * 100 + mo,
-							'so4_wet': 0,
-							'ca_wet': 0,
-							'mg_wet': 0,
-							'na_wet': 0,
-							'k_wet': 0,
-							'cl_wet': 0,
+							'so4_wet': 5,
+							'ca_wet': 2,
+							'mg_wet': 0.5,
+							'na_wet': 0.75,
+							'k_wet': 0.1,
+							'cl_wet': 1,
 							'co3_wet': 0,
-							'hco3_wet': 0,
+							'hco3_wet': 3,
 							'so4_dry': 0,
 							'ca_dry': 0,
 							'mg_dry': 0,
@@ -124,7 +378,7 @@ def enableAtmo():
 							'hco3_dry': 0
 						})
 			
-
+		db.Salt_atmo_cli.delete().execute()
 		db_lib.bulk_insert(project_base.db, db.Salt_atmo_cli, items)
 
 		rh.close()
@@ -143,11 +397,19 @@ def atmoValues(id):
 		if sta is None:
 			rh.close()
 			abort(404, 'Atmospheric station not found.')
-		m = db.Salt_atmo_cli.select(db.Salt_atmo_cli.sta_id == id).order_by(db.Salt_atmo_cli.timestep)
+
+		values = [model_to_dict(v, recurse=False) for v in sta.salt_values.order_by(db.Salt_atmo_cli.timestep)]
+		for v in values:
+			for k in v:
+				if k == 'sta':
+					v['sta_id'] = v[k]
+					v.pop(k)
+					break
+		
 		rh.close()
 		return {
 			'name': sta.name,
-			'values': [model_to_dict(v, recurse=False) for v in m]
+			'values': values
 		}
 	elif request.method == 'POST':
 		return DefaultRestMethods.post(db.Salt_atmo_cli, 'Value')
