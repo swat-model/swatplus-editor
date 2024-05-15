@@ -16,6 +16,217 @@ import datetime
 
 bp = Blueprint('salts', __name__, url_prefix='/salts')
 
+@bp.route('/salt_aqu_ini', methods=['GET', 'POST'])
+def salt_aqu_ini():
+	if request.method == 'GET':
+		table = db.Salt_aqu_ini
+		filter_cols = [table.name]
+		return DefaultRestMethods.get_paged_list(table, filter_cols)
+	elif request.method == 'POST':
+		return DefaultRestMethods.post(db.Salt_aqu_ini, 'Value')
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/salt_aqu_ini/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def salt_aqu_iniId(id):
+	if request.method == 'GET':
+		return DefaultRestMethods.get(id, db.Salt_aqu_ini, 'Value')
+	elif request.method == 'DELETE':
+		return DefaultRestMethods.delete(id, db.Salt_aqu_ini, 'Value')
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_aqu_ini, 'Value')
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/salt_channel_ini', methods=['GET', 'POST'])
+def salt_channel_ini():
+	if request.method == 'GET':
+		table = db.Salt_channel_ini
+		filter_cols = [table.name]
+		return DefaultRestMethods.get_paged_list(table, filter_cols)
+	elif request.method == 'POST':
+		return DefaultRestMethods.post(db.Salt_channel_ini, 'Value')
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/salt_channel_ini/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def salt_channel_iniId(id):
+	if request.method == 'GET':
+		return DefaultRestMethods.get(id, db.Salt_channel_ini, 'Value')
+	elif request.method == 'DELETE':
+		return DefaultRestMethods.delete(id, db.Salt_channel_ini, 'Value')
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_channel_ini, 'Value')
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/salt_res_ini', methods=['GET', 'POST'])
+def salt_res_ini():
+	if request.method == 'GET':
+		table = db.Salt_res_ini
+		filter_cols = [table.name]
+		return DefaultRestMethods.get_paged_list(table, filter_cols)
+	elif request.method == 'POST':
+		return DefaultRestMethods.post(db.Salt_res_ini, 'Value')
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/salt_res_ini/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def salt_res_iniId(id):
+	if request.method == 'GET':
+		return DefaultRestMethods.get(id, db.Salt_res_ini, 'Value')
+	elif request.method == 'DELETE':
+		return DefaultRestMethods.delete(id, db.Salt_res_ini, 'Value')
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_res_ini, 'Value')
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/salt_hru_ini_cs', methods=['GET', 'POST'])
+def salt_hru_ini_cs():
+	if request.method == 'GET':
+		table = db.Salt_hru_ini_cs
+		filter_cols = [table.name]
+		return DefaultRestMethods.get_paged_list(table, filter_cols)
+	elif request.method == 'POST':
+		return DefaultRestMethods.post(db.Salt_hru_ini_cs, 'Value')
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/salt_hru_ini_cs/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+def salt_hru_ini_csId(id):
+	if request.method == 'GET':
+		return DefaultRestMethods.get(id, db.Salt_hru_ini_cs, 'Value')
+	elif request.method == 'DELETE':
+		return DefaultRestMethods.delete(id, db.Salt_hru_ini_cs, 'Value')
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_hru_ini_cs, 'Value')
+
+	abort(405, 'HTTP Method not allowed.')
+
+@bp.route('/enable-plants', methods=['GET','PUT'])
+def enablePlants():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	module, created = db.Salt_module.get_or_create(id=1)
+	flags, created2 = db.Salt_plants_flags.get_or_create(id=1)
+	
+	if request.method == 'GET':
+		rh.close()
+		return {
+			'plants_uptake': module.plants_uptake,
+			'enabled': flags.enabled,
+			'soil': flags.soil,
+			'stress': flags.stress,
+			'conversion_factor': flags.conversion_factor
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		result = db.Salt_module.update(plants_uptake=args['plants_uptake']).execute()
+		result2 = db.Salt_plants_flags.update(enabled=args['enabled'], soil=args['soil'], stress=args['stress'], conversion_factor=args['conversion_factor']).execute()
+		
+		if result > 0 and result2 > 0:
+			rh.close()
+			return '', 200
+
+		rh.close()
+		abort(400, 'Unable to update salts module.')
+
+@bp.route('/plants/<int:id>', methods=['GET','PUT'])
+def plants(id):
+	if request.method == 'GET':
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+
+		item = Plants_plt.get_or_none(Plants_plt.id == id)
+		
+		if item is None:
+			rh.close()
+			abort(404, 'Urban not found.')
+
+		if item.salts is None or len(item.salts) == 0:
+			defaults = db.Salt_plants.get_a_b_defaults()
+			a = 0
+			b = 0
+			if item.name in defaults:
+				a = defaults[item.name][0]
+				b = defaults[item.name][1]
+			v = db.Salt_plants.create(name_id=id, a=a, b=b, so4=0.1, ca=0.1, mg=0.1, na=0.1, k=0.1, cl=0.1, co3=0.1, hco3=0.1)
+		else:
+			v = item.salts[0]
+
+		d = model_to_dict(v, recurse=False)
+		for k in d:
+			if k == 'name':
+				d['name_id'] = d[k]
+				d.pop(k)
+				break
+
+		rh.close()
+		return {
+			'name': item.name,
+			'item': d
+		}
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_plants, 'Value')
+	
+@bp.route('/enable-irrigation', methods=['GET','PUT'])
+def enableIrrigation():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	module, created = db.Salt_module.get_or_create(id=1)
+	
+	if request.method == 'GET':
+		rh.close()
+		return {
+			'irrigation': module.irrigation,
+			'has_hru_ini': db.Salt_hru_ini_cs.select().count() > 0
+		}
+	elif request.method == 'PUT':
+		args = request.json
+		result = db.Salt_module.update(irrigation=args['irrigation']).execute()
+		
+		if result > 0:
+			rh.close()
+			return '', 200
+
+		rh.close()
+		abort(400, 'Unable to update salts module.')
+
+@bp.route('/irrigation/<int:id>', methods=['GET','PUT'])
+def irrigation(id):
+	if request.method == 'GET':
+		project_db = request.headers.get(rh.PROJECT_DB)
+		has_db,error = rh.init(project_db)
+		if not has_db: abort(400, error)
+
+		item = db.Salt_hru_ini_cs.get_or_none(db.Salt_hru_ini_cs.id == id)
+		
+		if item is None:
+			rh.close()
+			abort(404, 'Urban not found.')
+
+		if item.salts is None or len(item.salts) == 0:
+			v = db.Salt_irrigation.create(name_id=id, so4=0, ca=0, mg=0, na=0, k=0, cl=0, co3=0, hco3=0)
+		else:
+			v = item.salts[0]
+
+		d = model_to_dict(v, recurse=False)
+		for k in d:
+			if k == 'name':
+				d['name_id'] = d[k]
+				d.pop(k)
+				break
+
+		rh.close()
+		return {
+			'name': item.name,
+			'item': d
+		}
+	elif request.method == 'PUT':
+		return DefaultRestMethods.put(id, db.Salt_irrigation, 'Value')
+
 @bp.route('/enable-urban', methods=['GET','PUT'])
 def enableUrban():
 	project_db = request.headers.get(rh.PROJECT_DB)

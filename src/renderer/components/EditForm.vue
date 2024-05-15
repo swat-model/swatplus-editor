@@ -326,6 +326,7 @@
 				<v-btn type="submit" :loading="data.page.saving" variant="flat" color="primary" class="mr-2">
 					{{ data.page.bulk.show ? 'Save Bulk Changes' : 'Save Changes' }}
 				</v-btn>
+				<slot name="actions"></slot>
 				<v-btn v-if="!hideCopy && isUpdate && !data.page.bulk.show" 
 					@click="data.page.copy.show = true"
 					type="button" variant="flat" color="info" class="mr-2">Copy</v-btn>

@@ -178,4 +178,9 @@ types = {
 	"salt_fert": salts.Salt_fertilizer_frt,
 	"salt_urban": salts.Salt_urban,
 	"salt_plants": salts.Salt_plants,
+	"salt_aqu_ini": salts.Salt_aqu_ini,
+	"salt_channel_ini": salts.Salt_channel_ini,
+	"salt_res_ini": salts.Salt_res_ini,
+	"salt_hru_ini_cs": salts.Salt_hru_ini_cs,
+	"salt_irrigation": salts.Salt_irrigation,
 }

@@ -135,6 +135,8 @@ class ImportExportData(ExecutableApi):
 			salts.Salt_urban(self.file_name, self.version, self.swat_version).read()
 		elif self.table_name == 'salt_plants':
 			salts.Salt_plants(self.file_name, self.version, self.swat_version).read()
+		elif self.table_name == 'salt_irrigation':
+			salts.Salt_irrigation(self.file_name, self.version, self.swat_version).read()
 		elif self.table_name in dtl_names:
 			decision_table.D_table_dtl(self.file_name, file_type=self.table_name).read()
 		elif self.table_name == 'mgt_sch':
@@ -164,6 +166,8 @@ class ImportExportData(ExecutableApi):
 			salts.Salt_urban(self.file_name, self.version, self.swat_version).write_csv()
 		elif self.table_name == 'salt_plants':
 			salts.Salt_plants(self.file_name, self.version, self.swat_version).write_csv()
+		elif self.table_name == 'salt_irrigation':
+			salts.Salt_irrigation(self.file_name, self.version, self.swat_version).write_csv()
 		elif self.table_name == 'mgt_sch':
 			lum.Management_sch(self.file_name, self.version).write()
 		elif self.table_name == 'gwflow_grid':

@@ -314,10 +314,10 @@ class BaseFileModel:
 	def write_table(self, table, cols, write_cnt_line=False):
 		self.write_query(table.select().order_by(table.id), cols, write_cnt_line)
 
-	def write_default_table(self, table, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}):
-		self.write_custom_query_table(table, table.select().order_by(table.id), ignore_id_col=ignore_id_col, ignored_cols=ignored_cols, non_zero_min_cols=non_zero_min_cols, write_cnt_line=write_cnt_line, value_overrides=value_overrides)
+	def write_default_table(self, table, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines=''):
+		self.write_custom_query_table(table, table.select().order_by(table.id), ignore_id_col=ignore_id_col, ignored_cols=ignored_cols, non_zero_min_cols=non_zero_min_cols, write_cnt_line=write_cnt_line, value_overrides=value_overrides, extra_lines=extra_lines)
 
-	def write_custom_query_table(self, table, query, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}):
+	def write_custom_query_table(self, table, query, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines=''):
 		if table.select().count() > 0:
 			cols = []
 			for field in table._meta.sorted_fields:
@@ -335,15 +335,17 @@ class BaseFileModel:
 					if field.name not in ignored_cols:
 						cols.append(col)
 
-			self.write_query(query, cols, write_cnt_line)
+			self.write_query(query, cols, write_cnt_line, extra_lines=extra_lines)
 
 	def write_default_csv(self, table, ignore_id_col=False, ignored_cols=[]):
 		write_csv(self.file_name, table, ignore_id_col, ignored_cols)
 
-	def write_query(self, query, cols, write_cnt_line=False):
+	def write_query(self, query, cols, write_cnt_line=False, extra_lines=''):
 		if query.count() > 0:
 			with open(self.file_name, 'w') as file:
 				self.write_meta_line(file)
+				if extra_lines != '':
+					file.write(extra_lines)
 
 				if write_cnt_line:
 					file.write(str(query.count()))

@@ -11,7 +11,7 @@
 			{ key: 'pest', label: 'Pesticide', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/pest/edit/' },
 			{ key: 'path', label: 'Pathogen', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/path/edit/' },
 			//{ key: 'hmet', label: 'Heavy Metal', type: 'object', class: 'text-right' }, 
-			{ key: 'salt', label: 'Salt', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/salt/edit/' }
+			{ key: 'salt_cs', label: 'Salt', type: 'object', class: 'text-right' }
 		],
 	};
 </script>

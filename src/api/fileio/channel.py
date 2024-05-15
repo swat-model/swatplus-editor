@@ -3,6 +3,7 @@ from peewee import *
 from database.project import init
 import database.project.channel as db
 import database.project.link as link
+from database.project.salts import Salt_channel_ini, Salt_module
 
 
 class Initial_cha(BaseFileModel):
@@ -21,6 +22,7 @@ class Initial_cha(BaseFileModel):
 							  init.Pest_water_ini.name.alias("pest"),
 							  init.Path_water_ini.name.alias("path"),
 							  init.Hmet_water_ini.name.alias("hmet"),
+							  Salt_channel_ini.name.alias("salt"),
 							  table.description)
 					  .join(init.Om_water_ini, JOIN.LEFT_OUTER)
 					  .switch(table)
@@ -29,6 +31,8 @@ class Initial_cha(BaseFileModel):
 					  .join(init.Path_water_ini, JOIN.LEFT_OUTER)
 					  .switch(table)
 					  .join(init.Hmet_water_ini, JOIN.LEFT_OUTER)
+					  .switch(table)
+					  .join(Salt_channel_ini, JOIN.LEFT_OUTER)
 					  .order_by(table.id))
 
 		cols = [col(table.name, direction="left"),
@@ -39,6 +43,17 @@ class Initial_cha(BaseFileModel):
 				col("salt", not_in_db=True, value_override="null"),
 				col(table.description, direction="left")]
 		self.write_query(query, cols)
+
+		module, created = Salt_module.get_or_create(id=1)
+		if module.enabled:
+			self.file_name = self.file_name + "_cs"
+			cols_cs = [col(table.name, direction="left"),
+					col("pest", not_in_db=True, value_override="null"),
+					col("path", not_in_db=True, value_override="null"),
+					col("hmet", not_in_db=True, value_override="null"),
+					col(table.salt_cs, query_alias="salt"),
+					col("cs", not_in_db=True, value_override="null")]
+			self.write_query(query, cols_cs)
 
 
 class Hydrology_cha(BaseFileModel):

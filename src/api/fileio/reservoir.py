@@ -3,6 +3,7 @@ from peewee import *
 from helpers import utils
 from database.project import init
 import database.project.reservoir as db
+from database.project.salts import Salt_res_ini, Salt_module
 
 
 class Reservoir_res(BaseFileModel):
@@ -39,6 +40,26 @@ class Reservoir_res(BaseFileModel):
 					file.write(utils.key_name_pad(row.sed, default_pad=utils.DEFAULT_STR_PAD))
 					file.write(utils.key_name_pad(row.nut, default_pad=utils.DEFAULT_STR_PAD))
 					file.write("\n")
+			
+			module, created = Salt_module.get_or_create(id=1)
+			if module.enabled:
+				self.file_name = self.file_name + "_cs"
+				with open(self.file_name, 'w') as file:
+					file.write(self.get_meta_line())
+					file.write(utils.int_pad("id"))
+					file.write(utils.string_pad("pst"))
+					file.write(utils.string_pad("weir"))
+					file.write(utils.string_pad("salt"))
+					file.write(utils.string_pad("cs"))
+					file.write("\n")
+
+					for row in table.select().order_by(order_by):
+						file.write(utils.int_pad(row.id))
+						file.write(utils.string_pad("null", direction="left"))
+						file.write(utils.string_pad("null", direction="left"))
+						file.write(utils.key_name_pad(row.init.salt_cs, default_pad=utils.DEFAULT_STR_PAD))
+						file.write(utils.string_pad("null", direction="left"))
+						file.write("\n")
 
 
 class Hydrology_res(BaseFileModel):
@@ -163,6 +184,26 @@ class Wetland_wet(BaseFileModel):
 					file.write(utils.key_name_pad(row.sed, default_pad=utils.DEFAULT_STR_PAD))
 					file.write(utils.key_name_pad(row.nut, default_pad=utils.DEFAULT_STR_PAD))
 					file.write("\n")
+			
+			module, created = Salt_module.get_or_create(id=1)
+			if module.enabled:
+				self.file_name = self.file_name + "_cs"
+				with open(self.file_name, 'w') as file:
+					file.write(self.get_meta_line())
+					file.write(utils.int_pad("id"))
+					file.write(utils.string_pad("pst"))
+					file.write(utils.string_pad("weir"))
+					file.write(utils.string_pad("salt"))
+					file.write(utils.string_pad("cs"))
+					file.write("\n")
+
+					for row in table.select().order_by(order_by):
+						file.write(utils.int_pad(row.id))
+						file.write(utils.string_pad("null", direction="left"))
+						file.write(utils.string_pad("null", direction="left"))
+						file.write(utils.key_name_pad(row.init.salt_cs, default_pad=utils.DEFAULT_STR_PAD))
+						file.write(utils.string_pad("null", direction="left"))
+						file.write("\n")
 
 
 class Hydrology_wet(BaseFileModel):

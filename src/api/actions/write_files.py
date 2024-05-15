@@ -5,8 +5,9 @@ from database.project.setup import SetupProjectDatabase
 from database.project.config import Project_config
 from database.project.config import File_cio as project_file_cio, File_cio_classification
 from database.project.climate import Weather_file
+from database.project.salts import Salt_module
 
-from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, water_rights, gwflow
+from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, salts, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, water_rights, gwflow
 from helpers import utils
 
 import sys
@@ -871,9 +872,13 @@ class WriteFiles(ExecutableApi):
 
 	def write_init(self, start_prog, allocated_prog):
 		num_files = 2
+
+		module, created = Salt_module.get_or_create(id=1)
+		num_salinity_files = 11 if module.enabled else 0
+
 		files = self.get_file_names("init", num_files)
 
-		prog_step = round(allocated_prog / num_files)
+		prog_step = round(allocated_prog / (num_files + num_salinity_files))
 		prog = start_prog
 
 		initial_plt_file = files[0].strip()
@@ -916,6 +921,62 @@ class WriteFiles(ExecutableApi):
 		if path_water_ini_file != NULL_FILE:
 			self.update_file_status(prog, path_water_ini_file)
 			init.Path_water_ini(os.path.join(self.__dir, path_water_ini_file), self.__version, self.__swat_version).write()
+
+		if module.enabled:
+			prog += prog_step
+			salt_recall_rec_file = "salt_recall.rec"
+			self.update_file_status(prog, salt_recall_rec_file)
+			salts.Salt_recall_rec(os.path.join(self.__dir, salt_recall_rec_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_atmo_cli_file = "salt_atmo.cli"
+			self.update_file_status(prog, salt_atmo_cli_file)
+			salts.Salt_atmo_cli(os.path.join(self.__dir, salt_atmo_cli_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_road_file = "salt_road"
+			self.update_file_status(prog, salt_road_file)
+			salts.Salt_road(os.path.join(self.__dir, salt_road_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_fertilizer_frt_file = "salt_fertilizer.frt"
+			self.update_file_status(prog, salt_fertilizer_frt_file)
+			salts.Salt_fertilizer_frt(os.path.join(self.__dir, salt_fertilizer_frt_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_urban_file = "salt_urban"
+			self.update_file_status(prog, salt_urban_file)
+			salts.Salt_urban(os.path.join(self.__dir, salt_urban_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_plants_file = "salt_plants"
+			self.update_file_status(prog, salt_plants_file)
+			salts.Salt_plants(os.path.join(self.__dir, salt_plants_file), self.__version, self.__swat_version).write(os.path.join(self.__dir, "salt_uptake"))
+
+			prog += prog_step
+			salt_aqu_ini_file = "salt_aqu.ini"
+			self.update_file_status(prog, salt_aqu_ini_file)
+			salts.Salt_aqu_ini(os.path.join(self.__dir, salt_aqu_ini_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_channel_ini_file = "salt_channel.ini"
+			self.update_file_status(prog, salt_channel_ini_file)
+			salts.Salt_channel_ini(os.path.join(self.__dir, salt_channel_ini_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_res_ini_file = "salt_res"
+			self.update_file_status(prog, salt_res_ini_file)
+			salts.Salt_res_ini(os.path.join(self.__dir, salt_res_ini_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_hru_ini_file = "salt_hru.ini"
+			self.update_file_status(prog, salt_hru_ini_file)
+			salts.Salt_hru_ini_cs(os.path.join(self.__dir, salt_hru_ini_file), self.__version, self.__swat_version).write()
+
+			prog += prog_step
+			salt_irrigation_file = "salt_irrigation"
+			self.update_file_status(prog, salt_irrigation_file)
+			salts.Salt_irrigation(os.path.join(self.__dir, salt_irrigation_file), self.__version, self.__swat_version).write()
 
 	def write_soils(self, start_prog, allocated_prog):
 		num_files = 3

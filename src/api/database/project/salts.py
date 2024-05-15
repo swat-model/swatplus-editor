@@ -462,5 +462,6 @@ class Salt_module(BaseModel):
 	fert = BooleanField(default=False)
 	irrigation = BooleanField(default=False)
 	urban = BooleanField(default=False)
+	plants_uptake = BooleanField(default=False)
 	atmo_timestep = CharField(null=True)
 	road_timestep = CharField(null=True)

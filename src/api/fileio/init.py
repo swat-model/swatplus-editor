@@ -3,7 +3,7 @@ from peewee import *
 from helpers import utils
 from database.project import soils
 from database.project.simulation import Constituents_cs
-from database.project.salts import Salt_hru_ini_cs
+from database.project.salts import Salt_hru_ini_cs, Salt_module
 import database.project.init as db
 
 
@@ -107,14 +107,16 @@ class Soil_plant_ini(BaseFileModel):
 				col("salt", not_in_db=True, value_override="null")]
 		self.write_query(query, cols)
 
-		self.file_name = self.file_name + "_cs"
-		cols_cs = [col(table.name, direction="left"),
-				col("pest", not_in_db=True, value_override="null"),
-				col("path", not_in_db=True, value_override="null"),
-				col("hmet", not_in_db=True, value_override="null"),
-				col(table.salt, query_alias="salt"),
-				col("cs", not_in_db=True, value_override="null")]
-		self.write_query(query, cols_cs)
+		module, created = Salt_module.get_or_create(id=1)
+		if module.enabled:
+			self.file_name = self.file_name + "_cs"
+			cols_cs = [col(table.name, direction="left"),
+					col("pest", not_in_db=True, value_override="null"),
+					col("path", not_in_db=True, value_override="null"),
+					col("hmet", not_in_db=True, value_override="null"),
+					col(table.salt_cs, query_alias="salt"),
+					col("cs", not_in_db=True, value_override="null")]
+			self.write_query(query, cols_cs)
 
 
 

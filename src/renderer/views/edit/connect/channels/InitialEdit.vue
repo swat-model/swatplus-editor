@@ -31,7 +31,7 @@
 				pest_name: response.data.pest != null ? response.data.pest.name : '',
 				path_name: response.data.path != null ? response.data.path.name : '',
 				hmet_name: response.data.hmet != null ? response.data.hmet.name : '',
-				salt_name: response.data.salt != null ? response.data.salt.name : '',
+				salt_name: response.data.salt_cs != null ? response.data.salt_cs.name : '',
 				description: response.data.description
 			};
 		} catch (error) {

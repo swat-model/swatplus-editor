@@ -830,15 +830,16 @@ class Salt_plants(BaseFileModel):
 
 			defaults = db.Salt_plants.get_a_b_defaults()
 			for row in stations:
+				sys.stdout.write(row.name)
 				for val in row.salts:
-					csv_writer.writerow([row.name.name, val.a, val.b, val.so4, val.ca, val.mg, val.na, val.k, val.cl, val.co3, val.hco3])
+					csv_writer.writerow([row.name, val.a, val.b, val.so4, val.ca, val.mg, val.na, val.k, val.cl, val.co3, val.hco3])
 				if row.salts is None or len(row.salts) == 0:
 					a = 0
 					b = 0
-					if row.name.name in defaults:
-						a = defaults[row.name.name][0]
-						b = defaults[row.name.name][1]
-					csv_writer.writerow([row.name.name, a, b, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+					if row.name in defaults:
+						a = defaults[row.name][0]
+						b = defaults[row.name][1]
+					csv_writer.writerow([row.name, a, b, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
 
 	def write(self, uptake_file_name):
 		module = get_salt_module()
@@ -870,7 +871,7 @@ class Salt_plants(BaseFileModel):
 				defaults = db.Salt_plants.get_a_b_defaults()
 				for row in stations:
 					for val in row.salts:
-						file.write(utils.string_pad(row.name.name, direction="right"))
+						file.write(utils.string_pad(row.name, direction="right"))
 						file.write(utils.num_pad(val.a, 2, 12))
 						file.write(utils.num_pad(val.b, 2, 12))
 						file.write("\n")
@@ -878,14 +879,15 @@ class Salt_plants(BaseFileModel):
 					if row.salts is None or len(row.salts) == 0:
 						a = 0
 						b = 0
-						if row.name.name in defaults:
-							a = defaults[row.name.name][0]
-							b = defaults[row.name.name][1]
-						file.write(utils.string_pad(row.name.name, direction="right"))
+						if row.name in defaults:
+							a = defaults[row.name][0]
+							b = defaults[row.name][1]
+						file.write(utils.string_pad(row.name, direction="right"))
 						file.write(utils.num_pad(a, 2, 12))
 						file.write(utils.num_pad(b, 2, 12))
 						file.write("\n")	
 
+		if stations.count() > 0 and module.enabled and module.plants_uptake:
 			with open(uptake_file_name, 'w') as file:
 				self.write_meta_line(file)
 				file.write('for each ion: daily uptake mass (kg/ha) when crop has root mass\n')
@@ -903,7 +905,7 @@ class Salt_plants(BaseFileModel):
 
 				for row in stations:
 					for val in row.salts:
-						file.write(utils.string_pad(row.name.name, direction="right"))
+						file.write(utils.string_pad(row.name, direction="right"))
 						file.write(utils.num_pad(val.so4, 2, 12))
 						file.write(utils.num_pad(val.ca, 2, 12))
 						file.write(utils.num_pad(val.mg, 2, 12))
@@ -915,7 +917,7 @@ class Salt_plants(BaseFileModel):
 						file.write("\n")
 
 					if row.salts is None or len(row.salts) == 0:
-						file.write(utils.string_pad(row.name.name, direction="right"))
+						file.write(utils.string_pad(row.name, direction="right"))
 						file.write(utils.num_pad(0.1, 2, 12))
 						file.write(utils.num_pad(0.1, 2, 12))
 						file.write(utils.num_pad(0.1, 2, 12))
@@ -925,3 +927,226 @@ class Salt_plants(BaseFileModel):
 						file.write(utils.num_pad(0.1, 2, 12))
 						file.write(utils.num_pad(0.1, 2, 12))
 						file.write("\n")	
+
+
+class Salt_aqu_ini(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		raise NotImplementedError('Reading not implemented yet.')
+
+	def write(self):
+		extra_lines = ' initial salt ion concentrations (mg/L)\n initial salt mineral fractions (*100)\n'
+		self.write_default_table(db.Salt_aqu_ini, ignore_id_col=True, extra_lines=extra_lines)	
+
+
+class Salt_channel_ini(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		raise NotImplementedError('Reading not implemented yet.')
+
+	def write(self):
+		self.write_default_table(db.Salt_channel_ini, ignore_id_col=True)	
+
+
+class Salt_res_ini(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		raise NotImplementedError('Reading not implemented yet.')
+
+	def write(self):
+		extra_lines = ' parameter definitions\n'
+		extra_lines += ' c_so4	g/m3	Initial concentration of so4 in water\n'
+		extra_lines += ' c_ca	g/m3	Initial concentration of ca in water\n'
+		extra_lines += ' c_mg	g/m3	Initial concentration of mg in water\n'
+		extra_lines += ' c_na	g/m3	Initial concentration of na in water\n'
+		extra_lines += ' c_k	g/m3	Initial concentration of k in water\n'
+		extra_lines += ' c_cl	g/m3	Initial concentration of cl in water\n'
+		extra_lines += ' c_co3	g/m3	Initial concentration of co3 in water\n'
+		extra_lines += ' c_hco3	g/m3	Initial concentration of hco3 in water\n'
+		
+		self.write_default_table(db.Salt_res_ini, ignore_id_col=True, extra_lines=extra_lines)
+
+
+class Salt_hru_ini_cs(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		raise NotImplementedError('Reading not implemented yet.')
+
+	def write(self):
+		table = db.Salt_hru_ini_cs.select().order_by(db.Salt_hru_ini_cs.id)
+
+		if table.count() > 0:
+			with open(self.file_name, 'w') as file:
+				file.write(self.get_meta_line())
+				file.write(' initial salt ion concentrations (mg/L)\n')
+				file.write(' initial salt mineral fractions (*100)\n')
+				file.write(' row 1 = soil; row 2 = plant material\n')
+
+				file.write(utils.num_pad('so4'))
+				file.write(utils.num_pad('ca'))
+				file.write(utils.num_pad('mg'))
+				file.write(utils.num_pad('na'))
+				file.write(utils.num_pad('k'))
+				file.write(utils.num_pad('cl'))
+				file.write(utils.num_pad('co3'))
+				file.write(utils.num_pad('hco3'))
+				file.write(utils.num_pad('caco3'))
+				file.write(utils.num_pad('mgco3'))
+				file.write(utils.num_pad('caso4'))
+				file.write(utils.num_pad('mgso4'))
+				file.write(utils.num_pad('nacl'))
+				file.write("\n")
+
+				for row in table:
+					file.write(row.name)
+					file.write("\n")
+
+					file.write(utils.num_pad(row.soil_so4))
+					file.write(utils.num_pad(row.soil_ca))
+					file.write(utils.num_pad(row.soil_mg))
+					file.write(utils.num_pad(row.soil_na))
+					file.write(utils.num_pad(row.soil_k))
+					file.write(utils.num_pad(row.soil_cl))
+					file.write(utils.num_pad(row.soil_co3))
+					file.write(utils.num_pad(row.soil_hco3))
+					file.write(utils.num_pad(row.soil_caco3))
+					file.write(utils.num_pad(row.soil_mgco3))
+					file.write(utils.num_pad(row.soil_caso4))
+					file.write(utils.num_pad(row.soil_mgso4))
+					file.write(utils.num_pad(row.soil_nacl))
+					file.write("\n")
+					
+					file.write(utils.num_pad(row.plant_so4))
+					file.write(utils.num_pad(row.plant_ca))
+					file.write(utils.num_pad(row.plant_mg))
+					file.write(utils.num_pad(row.plant_na))
+					file.write(utils.num_pad(row.plant_k))
+					file.write(utils.num_pad(row.plant_cl))
+					file.write(utils.num_pad(row.plant_co3))
+					file.write(utils.num_pad(row.plant_hco3))
+					file.write(utils.num_pad(row.plant_caco3))
+					file.write(utils.num_pad(row.plant_mgco3))
+					file.write(utils.num_pad(row.plant_caso4))
+					file.write(utils.num_pad(row.plant_mgso4))
+					file.write(utils.num_pad(row.plant_nacl))
+					file.write("\n")
+
+
+class Salt_irrigation(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		with open(self.file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			row_names = { v.name: v.id for v in db.Salt_hru_ini_cs.select().order_by(db.Salt_hru_ini_cs.id) }
+
+			rows = []
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				name = val[0]
+				if name in row_names:
+					row = {
+						'name_id': row_names[name],
+						'so4': float(val[1]),
+						'ca': float(val[2]),
+						'mg': float(val[3]),
+						'na': float(val[4]),
+						'k': float(val[5]),
+						'cl': float(val[6]),
+						'co3': float(val[7]),
+						'hco3': float(val[8])
+					}
+
+					rows.append(row)
+
+		db.Salt_irrigation.delete().execute()
+		db_lib.bulk_insert(project_base.db, db.Salt_irrigation, rows)
+
+	def write_csv(self):
+		stations = db.Salt_hru_ini_cs.select().order_by(db.Salt_hru_ini_cs.id)
+
+		with open(self.file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = ['name', 'so4', 'ca', 'mg', 'na', 'k', 'cl', 'co3', 'hco3']
+			csv_writer.writerow(headers)
+
+			for row in stations:
+				for val in row.salts:
+					csv_writer.writerow([row.name, val.so4, val.ca, val.mg, val.na, val.k, val.cl, val.co3, val.hco3])
+				if row.salts is None or len(row.salts) == 0:
+					csv_writer.writerow([row.name, 0, 0, 0, 0, 0, 0, 0, 0])
+
+	def write(self):
+		module = get_salt_module()
+		stations = db.Salt_hru_ini_cs.select().order_by(db.Salt_hru_ini_cs.id)
+
+		if stations.count() > 0 and module.enabled and module.irrigation:
+			with open(self.file_name, 'w') as file:
+				self.write_meta_line(file)
+				header_cols = [col('name', direction="right", padding_override=16, not_in_db=True),
+							   col('so4', direction="right", padding_override=12, not_in_db=True),
+							   col('ca', direction="right", padding_override=12, not_in_db=True),
+							   col('mg', direction="right", padding_override=12, not_in_db=True),
+							   col('na', direction="right", padding_override=12, not_in_db=True),
+							   col('k', direction="right", padding_override=12, not_in_db=True),
+							   col('cl', direction="right", padding_override=12, not_in_db=True),
+							   col('co3', direction="right", padding_override=12, not_in_db=True),
+							   col('hco3', direction="right", padding_override=12, not_in_db=True)]
+				self.write_headers(file, header_cols)
+				file.write("\n")
+
+				for row in stations:
+					for val in row.salts:
+						file.write(utils.string_pad(row.name, direction="right"))
+						file.write(utils.num_pad(val.so4, 2, 12))
+						file.write(utils.num_pad(val.ca, 2, 12))
+						file.write(utils.num_pad(val.mg, 2, 12))
+						file.write(utils.num_pad(val.na, 2, 12))
+						file.write(utils.num_pad(val.k, 2, 12))
+						file.write(utils.num_pad(val.cl, 2, 12))
+						file.write(utils.num_pad(val.co3, 2, 12))
+						file.write(utils.num_pad(val.hco3, 2, 12))
+						file.write("\n")
+
+					if row.salts is None or len(row.salts) == 0:
+						file.write(utils.string_pad(row.name, direction="right"))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write(utils.num_pad(0, 2, 12))
+						file.write("\n")

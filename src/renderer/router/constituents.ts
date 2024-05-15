@@ -26,6 +26,27 @@ import ConstituentsSaltsFert from '../views/edit/constituents/salts/SaltsFert.vu
 import ConstituentsSaltsFertEdit from '../views/edit/constituents/salts/SaltsFertEdit.vue';
 import ConstituentsSaltsUrban from '../views/edit/constituents/salts/SaltsUrban.vue';
 import ConstituentsSaltsUrbanEdit from '../views/edit/constituents/salts/SaltsUrbanEdit.vue';
+import ConstituentsSaltsPlants from '../views/edit/constituents/salts/SaltsPlants.vue';
+import ConstituentsSaltsPlantsEdit from '../views/edit/constituents/salts/SaltsPlantsEdit.vue';
+
+import ConstituentsSaltsAquIni from '../views/edit/constituents/salts/SaltsAquIni.vue';
+import ConstituentsSaltsAquIniEdit from '../views/edit/constituents/salts/SaltsAquIniEdit.vue';
+import ConstituentsSaltsAquIniCreate from '../views/edit/constituents/salts/SaltsAquIniCreate.vue';
+
+import ConstituentsSaltsChannelIni from '../views/edit/constituents/salts/SaltsChannelIni.vue';
+import ConstituentsSaltsChannelIniEdit from '../views/edit/constituents/salts/SaltsChannelIniEdit.vue';
+import ConstituentsSaltsChannelIniCreate from '../views/edit/constituents/salts/SaltsChannelIniCreate.vue';
+
+import ConstituentsSaltsResIni from '../views/edit/constituents/salts/SaltsResIni.vue';
+import ConstituentsSaltsResIniEdit from '../views/edit/constituents/salts/SaltsResIniEdit.vue';
+import ConstituentsSaltsResIniCreate from '../views/edit/constituents/salts/SaltsResIniCreate.vue';
+
+import ConstituentsSaltsHruIni from '../views/edit/constituents/salts/SaltsHruIni.vue';
+import ConstituentsSaltsHruIniEdit from '../views/edit/constituents/salts/SaltsHruIniEdit.vue';
+import ConstituentsSaltsHruIniCreate from '../views/edit/constituents/salts/SaltsHruIniCreate.vue';
+
+import ConstituentsSaltsIrrigation from '../views/edit/constituents/salts/SaltsIrrigation.vue';
+import ConstituentsSaltsIrrigationEdit from '../views/edit/constituents/salts/SaltsIrrigationEdit.vue';
 
 export default [
 	{ 
@@ -88,6 +109,46 @@ export default [
 				path: 'urban', name: 'ConstituentsSaltsUrban', component: ConstituentsSaltsUrban,
 				children: [
 					{ path: 'edit/:id', name: 'ConstituentsSaltsUrbanEdit', component: ConstituentsSaltsUrbanEdit }
+				] 
+			},
+			{ 
+				path: 'plants', name: 'ConstituentsSaltsPlants', component: ConstituentsSaltsPlants,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsPlantsEdit', component: ConstituentsSaltsPlantsEdit }
+				] 
+			},
+			{ 
+				path: 'aqu', name: 'ConstituentsSaltsAquIni', component: ConstituentsSaltsAquIni,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsAquIniEdit', component: ConstituentsSaltsAquIniEdit },
+					{ path: 'create', name: 'ConstituentsSaltsAquIniCreate', component: ConstituentsSaltsAquIniCreate }
+				] 
+			},
+			{ 
+				path: 'cha', name: 'ConstituentsSaltsChannelIni', component: ConstituentsSaltsChannelIni,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsChannelIniEdit', component: ConstituentsSaltsChannelIniEdit },
+					{ path: 'create', name: 'ConstituentsSaltsChannelIniCreate', component: ConstituentsSaltsChannelIniCreate }
+				] 
+			},
+			{ 
+				path: 'res', name: 'ConstituentsSaltsResIni', component: ConstituentsSaltsResIni,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsResIniEdit', component: ConstituentsSaltsResIniEdit },
+					{ path: 'create', name: 'ConstituentsSaltsResIniCreate', component: ConstituentsSaltsResIniCreate }
+				] 
+			},
+			{ 
+				path: 'hru', name: 'ConstituentsSaltsHruIni', component: ConstituentsSaltsHruIni,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsHruIniEdit', component: ConstituentsSaltsHruIniEdit },
+					{ path: 'create', name: 'ConstituentsSaltsHruIniCreate', component: ConstituentsSaltsHruIniCreate }
+				] 
+			},
+			{ 
+				path: 'irr', name: 'ConstituentsSaltsIrrigation', component: ConstituentsSaltsIrrigation,
+				children: [
+					{ path: 'edit/:id', name: 'ConstituentsSaltsIrrigationEdit', component: ConstituentsSaltsIrrigationEdit }
 				] 
 			}
 		]
