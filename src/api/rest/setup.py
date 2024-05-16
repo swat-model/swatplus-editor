@@ -97,13 +97,12 @@ def getInfo():
 		abort(400, 'Project has not been set up.')
 	conn.close()
 
+	automatic_updates(project_db)
 	m = config.Project_config.get_or_none()
 	if m is None:
 		rh.close()
 		abort(400, 'Could not retrieve project configuration table.')
 	else:
-		automatic_updates(project_db)
-
 		gis_type = 'GIS'
 		if m.gis_type == 'qgis':
 			gis_type = 'QSWAT+'

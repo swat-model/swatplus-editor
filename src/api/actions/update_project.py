@@ -265,11 +265,13 @@ class UpdateProject(ExecutableApi):
 				table.bm_e: 26, 
 				table.lai_max1: 0.15, 
 				table.frac_hu2: 0.5, 
-				table.hu_lai_decl: 0.9, 
+				table.hu_lai_decl: 0.8, 
 				table.dlai_rate: 0.1
 			}).where(table.name.in_(all_rice)).execute()
 		
+		table.update({table.ext_co: 1}).where(table.name == 'berm').execute()
 		table.update({table.ext_co: 0.8}).where(table.name == 'bsvg').execute()
+		table.update({table.ext_co: 1.1}).where(table.name == 'blug').execute()
 		table.update({table.ext_co: 0.85}).where(table.name == 'crdy').execute()
 		table.update({table.ext_co: 0.85}).where(table.name == 'crgr').execute()
 		table.update({table.ext_co: 0.85}).where(table.name == 'crir').execute()
@@ -279,16 +281,39 @@ class UpdateProject(ExecutableApi):
 		table.update({table.ext_co: 0.77}).where(table.name == 'foeb').execute()
 		table.update({table.ext_co: 0.77}).where(table.name == 'foen').execute()
 		table.update({table.ext_co: 0.79}).where(table.name == 'fomi').execute()
-		table.update({table.ext_co: 0.84}).where(table.name == 'gras').execute()
+		table.update({table.ext_co: 0.84, table.bm_dieoff: 1}).where(table.name == 'gras').execute()
+		table.update({table.ext_co: 0.82, table.bm_dieoff: 1}).where(table.name == 'migs').execute()
+		table.update({table.ext_co: 0.82}).where(table.name == 'sava').execute()
+		table.update({table.ext_co: 1}).where(table.name == 'sept').execute()
+		table.update({table.ext_co: 1.12}).where(table.name == 'side').execute()
+		table.update({table.ext_co: 0.79}).where(table.name == 'tubg').execute()
+		table.update({table.ext_co: 0.79}).where(table.name == 'tumi').execute()
+		table.update({table.ext_co: 0.79}).where(table.name == 'tuwo').execute()
+		table.update({table.ext_co: 1}).where(table.name == 'urbn_warm').execute()
 
+		table.update({table.bm_dieoff: 1}).where(table.name.in_(['fesc', 'hay', 'indn', 'jhgr', 'lbls', 'past', 'rnge', 'rnge_sudrf', 'rnge_suds', 'rnge_suhf', 'rnge_sums', 'rnge_sust', 'rnge_tecf', 'rnge_teds', 'rnge_tems', 'rnge_teof', 'rnge_test', 'ryea', 'ryeg', 'ryer', 'sava', 'sghy', 'side', 'spas', 'swch', 'swgr', 'teff', 'timo'])).execute()
+
+		all_fracs = ['euca', 'fodb', 'fodn', 'foeb', 'foen', 'fomi', 'frsd', 'frsd_suhf', 'frsd_sums', 'frsd_sust', 'frsd_tecf', 'frsd_tems', 'frsd_teof', 'frsd_test', 'frse', 'frse_sudrf', 'frse_suds', 'frse_suhf', 'frse_sums', 'frse_sust', 'frse_tecf', 'frse_teds', 'frse_tems', 'frse_teof', 'frse_test', 'frst', 'frst_suhf', 'frst_sums', 'frst_sust', 'frst_tecf', 'frst_tems', 'frst_teof', 'frst_test', 'oilp', 'oliv', 'oran', 'orcd', 'pine', 'wetf', 'wewo', 'will', 'wspr']
+		table.update({
+			table.frac_n_em: 0.06,	
+			table.frac_n_50: 0.02,	
+			table.frac_n_mat: 0.015,	
+			table.frac_p_em: 0.007,	
+			table.frac_p_50:0.004,	
+			table.frac_p_mat: 0.003
+		}).where(table.name.in_(all_fracs)).execute()
+
+	def name_exists(self, table, name):
+		return table.select().where(table.name == name).count() > 0
+	
 	def cal_parms_value_updates_for_3_0_0(self, table):
-		table.insert(name='nperco_lchtile', obj_typ='bsn', abs_min=0, abs_max=1, units=None).execute()
+		if not self.name_exists(table, 'nperco_lchtile'): table.insert(name='nperco_lchtile', obj_typ='bsn', abs_min=0, abs_max=1, units=None).execute()
 		table.delete().where(table.name == 'spcon').execute()
 		table.delete().where(table.name == 'spexp').execute()
 		table.update({
 				table.name: 'bankfull_flo',
-				table.abs_min: 0.2,
-				table.abs_max: 3,
+				table.abs_min: 0.5,
+				table.abs_max: 1.5,
 				table.units: 'fraction'
 			}).where(table.name == 'bedldcoef').execute()
 		table.update({
@@ -297,6 +322,34 @@ class UpdateProject(ExecutableApi):
 				table.abs_max: 0.9,
 				table.units: 'fraction'
 			}).where(table.name == 'chseq').execute()
+		
+		table.update({ table.abs_min: 0.00001 }).where(table.name == 'd50').execute()
+		table.update({ table.abs_min: 0.8, table.abs_max: 1.2 }).where(table.name == 'petco').execute()	
+		table.update({ table.abs_max: 400 }).where(table.name == 'phoskd').execute()		
+		table.update({ table.abs_min: 5, table.abs_max: 20 }).where(table.name == 'pperco').execute()
+		table.update({ table.abs_max: 11000000 }).where(table.name == 'pst_solub').execute()
+		table.update({ table.abs_max: 0.5 }).where(table.name == 'rs2').execute()
+		table.update({ table.abs_max: 2 }).where(table.name == 'rs3').execute()
+		table.update({ table.name: 'withdraw_rate' }).where(table.name == 'withdrawal_rate').execute()
+		if not self.name_exists(table, 'arc_len_fr'): table.insert(name='arc_len_fr', obj_typ='rte', abs_min=0.5, abs_max=2, units='frac').execute()
+		if not self.name_exists(table, 'ch_n_conc'): table.insert(name='ch_n_conc', obj_typ='rte', abs_min=0, abs_max=500, units='mg/kg').execute()
+		if not self.name_exists(table, 'ch_p_bio'): table.insert(name='ch_p_bio', obj_typ='rte', abs_min=0, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'ch_p_conc'): table.insert(name='ch_p_conc', obj_typ='rte', abs_min=0, abs_max=50.9, units='mg/kg').execute()
+		if not self.name_exists(table, 'fp_inun_days'): table.insert(name='fp_inun_days', obj_typ='rte', abs_min=0.05, abs_max=30, units='days').execute()
+		if not self.name_exists(table, 'hum_c_n'): table.insert(name='hum_c_n', obj_typ='sol', abs_min=0, abs_max=20, units='mg/kg').execute()
+		if not self.name_exists(table, 'hum_c_p'): table.insert(name='hum_c_p', obj_typ='sol', abs_min=0, abs_max=160, units='mg/kg').execute()
+		if not self.name_exists(table, 'lab_p'): table.insert(name='lab_p', obj_typ='sol', abs_min=0, abs_max=30, units='mg/kg').execute()
+		if not self.name_exists(table, 'n_dep_enr'): table.insert(name='n_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'n_setl'): table.insert(name='n_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
+		if not self.name_exists(table, 'n_sol_part'): table.insert(name='n_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
+		if not self.name_exists(table, 'p_dep_enr'): table.insert(name='p_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'p_setl'): table.insert(name='p_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
+		if not self.name_exists(table, 'p_sol_part'): table.insert(name='p_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
+		if not self.name_exists(table, 'part_size'): table.insert(name='part_size', obj_typ='rte', abs_min=0.001, abs_max=0.01, units='mm').execute()
+		if not self.name_exists(table, 'pk_rto'): table.insert(name='pk_rto', obj_typ='rte', abs_min=1, abs_max=3, units=None).execute()
+		if not self.name_exists(table, 'sed_stlr'): table.insert(name='sed_stlr', obj_typ='res', abs_min=0.1, abs_max=2, units=None).execute()
+		if not self.name_exists(table, 'velsetlr'): table.insert(name='velsetlr', obj_typ='res', abs_min=0.1, abs_max=15, units='m/day').execute()
+		if not self.name_exists(table, 'wash_bed_fr'): table.insert(name='wash_bed_fr', obj_typ='rte', abs_min=0, abs_max=0.8, units='frac').execute()
 	
 	def updates_for_2_3_0(self, project_db, datasets_db, rollback_db):
 		try:

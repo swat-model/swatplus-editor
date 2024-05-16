@@ -150,6 +150,6 @@
 				</v-form>
 			</div>
 		</div>
-		<router-view></router-view>
+		<router-view v-else></router-view>
 	</project-container>
 </template>
