@@ -22,6 +22,8 @@ import sys, traceback
 import argparse
 import math
 
+DO_DEBUG = False
+
 min_qgis_version = 13
 min_arcgis_version = 10
 
@@ -131,7 +133,7 @@ class GisImport(ExecutableApi):
 						self.emit_progress(40, "Importing reservoirs from GIS...")
 						self.insert_reservoirs()
 
-						self.emit_progress(50, "Importing point source from GIS...")
+						self.emit_progress(50, "Importing point sources from GIS...")
 						self.insert_recall()
 
 						self.emit_progress(60, "Importing hrus from GIS...")
@@ -692,6 +694,11 @@ class GisImport(ExecutableApi):
 				recs = []
 				rec_data = []
 
+				con_dict = dict()
+				con_rows = gis.Gis_routing.select().where((gis.Gis_routing.sourcecat == RouteCat.PT) & (gis.Gis_routing.sinkcat == RouteCat.CH))
+				for row in con_rows:
+					con_dict[row.sourceid] = row
+
 				i = 1
 				for row in rec_query:
 					rec_name = get_name('pt', row.id, cnt)
@@ -746,9 +753,10 @@ class GisImport(ExecutableApi):
 					}
 					rec_data.append(data)
 
-					con = gis.Gis_routing.get_or_none((gis.Gis_routing.sourcecat == RouteCat.PT) 
+					"""con = gis.Gis_routing.get_or_none((gis.Gis_routing.sourcecat == RouteCat.PT) 
 						& (gis.Gis_routing.sourceid == row.id)
-						& (gis.Gis_routing.sinkcat == RouteCat.CH))
+						& (gis.Gis_routing.sinkcat == RouteCat.CH))"""
+					con = con_dict.get(row.id, None)
 
 					if con is not None:
 						rec_con_outs.append({
@@ -777,6 +785,17 @@ class GisImport(ExecutableApi):
 		lum_default_cons_prac = 1
 		lum_default_ov_mann = 2
 
+		ds_plant_comms = dict()
+		for row in ds_init.Plant_ini.select():
+			ds_plant_comms[row.name] = row
+
+		ds_lums = dict()
+		for row in ds_lum.Landuse_lum.select():
+			ds_lums[row.name] = row
+
+		summer_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_summer1')
+		winter_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_winter1')
+
 		distinct_lu = gis.Gis_hrus.select(gis.Gis_hrus.landuse).where((gis.Gis_hrus.landuse.is_null(False)) & (gis.Gis_hrus.landuse != 'NULL')).distinct()
 		lus = [item.landuse.lower() for item in distinct_lu]
 		for lu in lus:
@@ -788,7 +807,8 @@ class GisImport(ExecutableApi):
 				comm_name = '{name}_comm'.format(name=lu)
 				try:
 					pcom = None
-					ds_pi = ds_init.Plant_ini.get(ds_init.Plant_ini.name == comm_name)
+					#ds_pi = ds_init.Plant_ini.get(ds_init.Plant_ini.name == comm_name)
+					ds_pi = ds_plant_comms.get(comm_name, None)
 					pi = init.Plant_ini.create(
 						name=ds_pi.name,
 						rot_yr_ini=ds_pi.rot_yr_ini
@@ -808,20 +828,21 @@ class GisImport(ExecutableApi):
 							rsd_init=p.rsd_init
 						)
 
-					ds_m = ds_lum.Landuse_lum.get(ds_lum.Landuse_lum.name == lum_name)
+					#ds_m = ds_lum.Landuse_lum.get(ds_lum.Landuse_lum.name == lum_name)
+					ds_m = ds_lums.get(lum_name, None)
 
 					mgt_id = None
 					new_d_table_id = None
 					plant1 = None
 					if plant.plnt_typ.startswith('warm_annual'):
-						summer_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_summer1')
+						#summer_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_summer1')
 						if summer_table is None:
 							new_d_table_id = self.insert_d_table(plant.name, 'pl_hv_corn')
 						else:
 							new_d_table_id = summer_table.id
 							plant1 = plant.name
 					elif plant.plnt_typ.startswith('cold_annual'):
-						winter_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_winter1')
+						#winter_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_winter1')
 						if winter_table is None:
 							new_d_table_id = self.insert_d_table(plant.name, 'pl_hv_wwht')
 						else:
@@ -841,7 +862,7 @@ class GisImport(ExecutableApi):
 								management_sch=mgt_id,
 								d_table=new_d_table_id,
 								plant1=plant1
-							).execute()
+							).execute() 
 
 					lum.Landuse_lum.create(
 						name=ds_m.name,
@@ -947,6 +968,11 @@ class GisImport(ExecutableApi):
 
 		bsn_area = gis.Gis_subbasins.select(fn.Sum(gis.Gis_subbasins.area)).scalar()
 
+		soil_rows = soils.Soils_sol.select()
+		soils_dict = dict()
+		for soil in soil_rows:
+			soils_dict[soil.name] = soil
+
 		cnt = get_max_id(gis.Gis_hrus)
 		topo_id = hydrology.Topography_hyd.select().count() + 1
 		i = 1
@@ -954,7 +980,8 @@ class GisImport(ExecutableApi):
 		for row in gis.Gis_hrus.select():
 			hru_name = get_name('hru', row.id, cnt)
 
-			soil = soils.Soils_sol.get_or_none(soils.Soils_sol.name == row.soil)
+			#soil = soils.Soils_sol.get_or_none(soils.Soils_sol.name == row.soil)
+			soil = soils_dict.get(row.soil, None)
 			if soil is None:
 				raise ValueError('Soil "{s}" does not exist in your soils_sol table. Check your project in GIS and make '
 								 'sure all soils from the gis_hrus table exist in soils_sol.'.format(s=row.soil))
@@ -1337,20 +1364,34 @@ class GisImport(ExecutableApi):
 			db_lib.bulk_insert(self.project_db, connect.Aquifer_con, aquifer_cons)
 
 	def insert_connections(self):
-		rtu_con_outs = self.get_connections([RouteCat.LSU], 'rtu_con', self.gis_to_rtu_ids)
+		pt_source_row_dict = dict()
+		pt_source_rows = gis.Gis_routing.select().where(gis.Gis_routing.sourcecat == RouteCat.PT)
+		for row in pt_source_rows:
+			pt_source_row_dict[row.sourceid] = row
+
+		rtu_con_outs = self.get_connections([RouteCat.LSU], 'rtu_con', self.gis_to_rtu_ids, pt_source_row_dict)
+		utils.debug_stdout(DO_DEBUG, 'Inserting rtu_con_outs: {}'.format(len(rtu_con_outs)))
 		db_lib.bulk_insert(self.project_db, connect.Rout_unit_con_out, rtu_con_outs)
 
-		cha_con_outs = self.get_connections([RouteCat.CH], 'chandeg_con', self.gis_to_cha_ids)
+		cha_con_outs = self.get_connections([RouteCat.CH], 'chandeg_con', self.gis_to_cha_ids, pt_source_row_dict)
+		utils.debug_stdout(DO_DEBUG, 'Inserting cha_con_outs: {}'.format(len(cha_con_outs)))
 		db_lib.bulk_insert(self.project_db, connect.Chandeg_con_out, cha_con_outs)
 
-		aqu_con_outs = self.get_connections([RouteCat.AQU], 'aquifer_con', self.gis_to_aqu_ids)
+		aqu_con_outs = self.get_connections([RouteCat.AQU], 'aquifer_con', self.gis_to_aqu_ids, pt_source_row_dict)
+		utils.debug_stdout(DO_DEBUG, 'Inserting aqu_con_outs: {}'.format(len(aqu_con_outs)))
 		db_lib.bulk_insert(self.project_db, connect.Aquifer_con_out, aqu_con_outs)
 
-		res_con_outs = self.get_connections([RouteCat.WTR, RouteCat.PND, RouteCat.RES], 'reservoir_con', self.gis_to_res_ids)
+		res_con_outs = self.get_connections([RouteCat.WTR, RouteCat.PND, RouteCat.RES], 'reservoir_con', self.gis_to_res_ids, pt_source_row_dict)
+		utils.debug_stdout(DO_DEBUG, 'Inserting res_con_outs: {}'.format(len(res_con_outs)))
 		db_lib.bulk_insert(self.project_db, connect.Reservoir_con_out, res_con_outs)
 
 	def insert_connections_lte(self):
-		cha_con_outs = self.get_connections([RouteCat.CH], 'chandeg_con', self.gis_to_cha_ids, True)
+		pt_source_row_dict = dict()
+		pt_source_rows = gis.Gis_routing.select().where(gis.Gis_routing.sourcecat == RouteCat.PT)
+		for row in pt_source_rows:
+			pt_source_row_dict[row.sourceid] = row
+
+		cha_con_outs = self.get_connections([RouteCat.CH], 'chandeg_con', self.gis_to_cha_ids, pt_source_row_dict, True)
 		db_lib.bulk_insert(self.project_db, connect.Chandeg_con_out, cha_con_outs)
 
 		# Send 100% HRU to channel
@@ -1369,7 +1410,7 @@ class GisImport(ExecutableApi):
 			})
 		db_lib.bulk_insert(self.project_db, connect.Hru_lte_con_out, hru_con_outs)
 
-	def get_connections(self, sourcecats, attach_key, id_list, is_lte=False):
+	def get_connections(self, sourcecats, attach_key, id_list, pt_source_row_dict, is_lte=False):
 		con_outs = []
 
 		cats_to_obj_typ = {
@@ -1410,13 +1451,33 @@ class GisImport(ExecutableApi):
 		rows = gis.Gis_routing.select().where((gis.Gis_routing.sourcecat << sourcecats) 
 				& (gis.Gis_routing.percent > 0) 
 				& (gis.Gis_routing.sinkcat != RouteCat.OUTLET)).order_by(gis.Gis_routing.sourceid)
+		
+		num_rows = len(rows)
+		utils.debug_stdout(DO_DEBUG, '{}, routing rows: {}'.format(attach_key, num_rows))
+
+		ch_source_rows_dict = dict()
+		res_source_rows_dict = dict()
+		if RouteCat.AQU in sourcecats:
+			ch_source_rows = gis.Gis_routing.select().where((gis.Gis_routing.sourcecat == RouteCat.CH) & (gis.Gis_routing.sinkcat == RouteCat.PT))
+			for row in ch_source_rows:
+				ch_source_rows_dict[row.sinkid] = row
+
+			res_source_rows = gis.Gis_routing.select().where((gis.Gis_routing.sourcecat == RouteCat.RES) & (gis.Gis_routing.sinkcat == RouteCat.PT))
+			for row in res_source_rows:
+				res_source_rows_dict[row.sinkid] = row
 
 		orders = dict()
+		row_cnt = 1
 		for row in rows:
+			utils.debug_stdout(DO_DEBUG, '{}, row: {} of {}'.format(attach_key, row_cnt, num_rows))
+			row_cnt += 1
 			if row.sinkcat == RouteCat.PT and RouteCat.AQU in sourcecats:
-				source_row = gis.Gis_routing.get_or_none((gis.Gis_routing.sourcecat == RouteCat.CH) & (gis.Gis_routing.sinkcat == RouteCat.PT) & (gis.Gis_routing.sinkid == row.sinkid))
+				"""source_row = gis.Gis_routing.get_or_none((gis.Gis_routing.sourcecat == RouteCat.CH) & (gis.Gis_routing.sinkcat == RouteCat.PT) & (gis.Gis_routing.sinkid == row.sinkid))
 				if source_row is None:
-					source_row = gis.Gis_routing.get_or_none((gis.Gis_routing.sourcecat == RouteCat.RES) & (gis.Gis_routing.sinkcat == RouteCat.PT) & (gis.Gis_routing.sinkid == row.sinkid))
+					source_row = gis.Gis_routing.get_or_none((gis.Gis_routing.sourcecat == RouteCat.RES) & (gis.Gis_routing.sinkcat == RouteCat.PT) & (gis.Gis_routing.sinkid == row.sinkid))"""
+				source_row = ch_source_rows_dict.get(row.sinkid, None)
+				if source_row is None:
+					source_row = res_source_rows_dict.get(row.sinkid, None)
 
 				if source_row is not None:
 					id = id_list[row.sourceid]
@@ -1438,8 +1499,17 @@ class GisImport(ExecutableApi):
 						raise KeyError('Check gis_routing. It is referencing a missing element. Key error id {}, source_row.sinkcat {}, source_row.sinkid {}. Error: {}'.format(id, source_row.sourcecat, source_row.sourceid, str(ke)))
 			else:
 				con_row = row
-				while con_row.sinkcat == RouteCat.PT:
-					con_row = gis.Gis_routing.get_or_none((gis.Gis_routing.sourcecat == RouteCat.PT) & (gis.Gis_routing.sourceid == con_row.sinkid))
+				#pt_cnt = 1
+				#used_sinkids = []
+				while con_row is not None and con_row.sinkcat == RouteCat.PT:
+					con_row = pt_source_row_dict.get(con_row.sinkid, None)
+					#con_row = gis.Gis_routing.get_or_none((gis.Gis_routing.sourcecat == RouteCat.PT) & (gis.Gis_routing.sourceid == con_row.sinkid))
+					"""if con_row is not None:
+						if con_row.sinkid in used_sinkids:
+							raise KeyError('Check gis_routing - loop detected with source/sink id {}'.format(con_row.sinkid))
+						used_sinkids.append(con_row.sinkid)
+					utils.debug_stdout(DO_DEBUG, 'con_row.sinkid {}, pt_cnt: {}'.format(con_row.sinkid, pt_cnt))
+					pt_cnt += 1"""
 				
 				if con_row is not None and con_row.sinkcat in supported_sinkcats:
 					id = id_list[row.sourceid]
@@ -1470,9 +1540,15 @@ class GisImport(ExecutableApi):
 			bsn_area = connect.Hru_con.select(fn.Sum(connect.Hru_con.area)).scalar()
 			if bsn_area <= 0:
 				raise ValueError('Project watershed area cannot be zero. Error summing HRU areas.')
+			
+			ele_exists_dict = dict()
+			ele_rows = connect.Rout_unit_ele.select()
+			for row in ele_rows:
+				ele_exists_dict[row.rtu_id] = 1
 
 			for row in connect.Rout_unit_con.select().order_by(connect.Rout_unit_con.id):
-				if connect.Rout_unit_ele.select().where(connect.Rout_unit_ele.rtu_id == row.rtu.id).count() > 0:
+				#if connect.Rout_unit_ele.select().where(connect.Rout_unit_ele.rtu_id == row.rtu.id).count() > 0:
+				if row.rtu.id in ele_exists_dict:
 					lsu_def = {
 						'id': row.rtu.id,
 						'name': row.name,
@@ -1487,11 +1563,17 @@ class GisImport(ExecutableApi):
 			lsu_eles = []
 			lsu_defs = []
 
+			hru_exists_dict = dict()
+			hru_rows = gis.Gis_hrus.select()
+			for row in hru_rows:
+				hru_exists_dict[row.lsu] = 1
+
 			cnt = get_max_id(gis.Gis_lsus)
 			i = 1
 			for row in gis.Gis_lsus.select().order_by(gis.Gis_lsus.id):
 				self.gis_to_rtu_ids[row.id] = i
-				if gis.Gis_hrus.select().where(gis.Gis_hrus.lsu == row.id).count() > 0:
+				#if gis.Gis_hrus.select().where(gis.Gis_hrus.lsu == row.id).count() > 0:
+				if row.id in hru_exists_dict:
 					lsu_def = {
 						'id': i,
 						'name': get_name('lsu', row.id, cnt),

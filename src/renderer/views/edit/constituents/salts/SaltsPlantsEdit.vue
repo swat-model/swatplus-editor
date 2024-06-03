@@ -123,7 +123,7 @@
 						@input="v$.b.$touch" @blur="v$.b.$touch"></v-text-field>
 				</div>
 
-				<h2 class="my-4 text-h4">Daily root update mass</h2>
+				<h2 class="my-4 text-h5">Daily root uptake mass</h2>
 
 				<div class="form-group mb-0">
 					<v-text-field v-model="data.item.so4" 

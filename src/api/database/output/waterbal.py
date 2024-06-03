@@ -35,14 +35,16 @@ class Waterbal(OutputBase):
 	latq_cha = DoubleField(null=True)
 	latq_res = DoubleField(null=True)
 	latq_ls = DoubleField(null=True)
-	gwtranq = DoubleField(null=True)
+	gwsoilq = DoubleField(null=True)
 	satex = DoubleField(null=True)
 	satex_chan = DoubleField(null=True)
 	sw_change = DoubleField(null=True)
 	lagsurf = DoubleField(null=True)
 	laglatq = DoubleField(null=True)
 	lagsatex = DoubleField(null=True)
-	wet_out = DoubleField(null=True)
+	wet_evap = DoubleField(null=True)
+	wet_oflo = DoubleField(null=True)
+	wet_stor = DoubleField(null=True)
 
 
 class Basin_wb_day(Waterbal):

@@ -13,6 +13,7 @@ class Plantwx(OutputBase):
 	strstmp = DoubleField(null=True)
 	strsn = DoubleField(null=True)
 	strsp = DoubleField(null=True)
+	strss = DoubleField(null=True)
 	nplt = DoubleField(null=True)
 	percn = DoubleField(null=True)
 	pplnt = DoubleField(null=True)

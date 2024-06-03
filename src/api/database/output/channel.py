@@ -118,6 +118,11 @@ class Channel_sdmorph(OutputBase):
 	flo_in_mm = DoubleField(null=True)
 	aqu_in_mm = DoubleField(null=True)
 	flo_out_mm = DoubleField(null=True)
+	sed_stor = DoubleField(null=True)
+	n_tot = DoubleField(null=True)
+	p_tot = DoubleField(null=True)
+	dep_bf = DoubleField(null=True)
+	velav_bf = DoubleField(null=True)
 
 
 class Basin_sd_chamorph_day(Channel_sdmorph):

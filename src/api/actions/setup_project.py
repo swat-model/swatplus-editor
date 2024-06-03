@@ -9,6 +9,7 @@ from database.datasets.definitions import Version
 from database.project.hru_parm_db import Plants_plt as project_plants
 from database.datasets.hru_parm_db import Plants_plt as dataset_plants
 from .import_gis import GisImport
+from . import update_project
 
 import sys
 import argparse
@@ -79,6 +80,11 @@ class SetupProject(ExecutableApi):
 			self.emit_progress(50, 'Copying data from SWAT+ datasets database...')
 			description = project_description if project_description is not None and project_description != 'null' else project_name
 			SetupProjectDatabase.initialize_data(description, is_lte, overwrite_plants=OVERWRITE_PLANTS)
+
+			# Run updates if needed
+			existing_config = Project_config.get_or_none()
+			if existing_config is not None and existing_config.editor_version is not None and existing_config.editor_version[:3] in update_project.available_to_update:
+				update_project.UpdateProject(project_db, editor_version, update_project_values=True)
 
 			config = Project_config.get_or_create_default(
 				editor_version=editor_version,

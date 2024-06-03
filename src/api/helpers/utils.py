@@ -4,6 +4,7 @@ import calendar
 import json
 import urllib.parse
 import os.path
+import sys
 from decimal import Decimal
 
 DEFAULT_STR_PAD = 16
@@ -18,6 +19,8 @@ NULL_STR = "null"
 NULL_NUM = "0"
 NON_ZERO_MIN = 0.00001
 
+def debug_stdout(is_debug, value):
+	sys.stdout.write(value + "\n") if is_debug else None
 
 def get_valid_filename(s):
 	s = s.strip().replace(' ', '_')
