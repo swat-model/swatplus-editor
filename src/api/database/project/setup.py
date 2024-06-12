@@ -112,7 +112,8 @@ class SetupProjectDatabase():
 						  salts.Salt_aqu_ini,
 						  salts.Salt_channel_ini,
 						  salts.Salt_res_ini,
-						  salts.Salt_hru_ini_cs])
+						  salts.Salt_hru_ini_cs,
+						  salts.Salt_module])
 
 	@staticmethod
 	def initialize_data(project_name, is_lte=False, overwrite_plants=False):
