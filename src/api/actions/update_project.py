@@ -210,6 +210,9 @@ class UpdateProject(ExecutableApi):
 			hru_parm_db.Pesticide_pst.update({hru_parm_db.Pesticide_pst.aq_hlife: 142.85, hru_parm_db.Pesticide_pst.ben_hlife: 20}).execute()
 			datasets_hru_parm_db.Pesticide_pst.update({datasets_hru_parm_db.Pesticide_pst.aq_hlife: 142.85, datasets_hru_parm_db.Pesticide_pst.ben_hlife: 20}).execute()
 
+			basin.Codes_bsn.update({basin.Codes_bsn.i_fpwet: 2}).execute()
+			datasets_basin.Codes_bsn.update({datasets_basin.Codes_bsn.i_fpwet: 2}).execute()
+
 			self.plant_value_updates_for_3_0_0(hru_parm_db.Plants_plt)
 			self.plant_value_updates_for_3_0_0(datasets_hru_parm_db.Plants_plt)
 
@@ -350,6 +353,14 @@ class UpdateProject(ExecutableApi):
 		if not self.name_exists(table, 'sed_stlr'): table.insert(name='sed_stlr', obj_typ='res', abs_min=0.1, abs_max=2, units=None).execute()
 		if not self.name_exists(table, 'velsetlr'): table.insert(name='velsetlr', obj_typ='res', abs_min=0.1, abs_max=15, units='m/day').execute()
 		if not self.name_exists(table, 'wash_bed_fr'): table.insert(name='wash_bed_fr', obj_typ='rte', abs_min=0, abs_max=0.8, units='frac').execute()
+		
+		if not self.name_exists(table, 'aquifer_K'): table.insert(name='aquifer_K', obj_typ='gwf', abs_min=0.0001, abs_max=40, units='m/day').execute()
+		if not self.name_exists(table, 'aquifer_Sy'): table.insert(name='aquifer_Sy', obj_typ='gwf', abs_min=0.001, abs_max=0.6, units='m3/m3').execute()
+		if not self.name_exists(table, 'aquifer_delay'): table.insert(name='aquifer_delay', obj_typ='hru', abs_min=0, abs_max=1000, units='days').execute()
+		if not self.name_exists(table, 'aquifer_exdp'): table.insert(name='aquifer_exdp', obj_typ='gwf', abs_min=0, abs_max=4, units='m').execute()
+		if not self.name_exists(table, 'stream_K'): table.insert(name='stream_K', obj_typ='gwf_riv', abs_min=0.0000001, abs_max=0.01, units='m/day').execute()
+		if not self.name_exists(table, 'stream_thk'): table.insert(name='stream_thk', obj_typ='gwf_riv', abs_min=0.01, abs_max=2, units='m').execute()
+		if not self.name_exists(table, 'stream_bed'): table.insert(name='stream_bed', obj_typ='gwf_sgl', abs_min=0, abs_max=20, units='m').execute()
 	
 	def updates_for_2_3_0(self, project_db, datasets_db, rollback_db):
 		try:
