@@ -155,7 +155,7 @@
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-globe</v-icon></template>
 								SWAT+ Website
 							</v-list-item>
-							<v-list-item @click="utilities.openUrl('https://github.com/swat-model/swatplus')" border="t" class="text-primary">
+							<v-list-item @click="utilities.openUrl('https://bitbucket.org/blacklandgrasslandmodels/modular_swatplus/src/master/')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fab fa-github</v-icon></template>
 								SWAT+ Source Code Repository
 							</v-list-item>

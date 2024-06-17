@@ -101,19 +101,19 @@ class Soil_plant_ini(BaseFileModel):
 		cols = [col(table.name, direction="left"),
 				col(table.sw_frac),
 				col(table.nutrients, query_alias="nutrients"),
-				col(table.pest, query_alias="pest"),
-				col(table.path, query_alias="path"),
-				col(table.hmet, query_alias="hmet"),
+				col("pest", not_in_db=True, value_override="null"),
+				col("path", not_in_db=True, value_override="null"),
+				col("hmet", not_in_db=True, value_override="null"),
 				col("salt", not_in_db=True, value_override="null")]
 		self.write_query(query, cols)
 
 		module, created = Salt_module.get_or_create(id=1)
-		if module.enabled:
+		if module.enabled or db.Pest_hru_ini.select().count() > 0 or db.Path_hru_ini.select().count() > 0 or db.Hmet_hru_ini.select().count() > 0:
 			self.file_name = self.file_name + "_cs"
 			cols_cs = [col(table.name, direction="left"),
-					col("pest", not_in_db=True, value_override="null"),
-					col("path", not_in_db=True, value_override="null"),
-					col("hmet", not_in_db=True, value_override="null"),
+					col(table.pest, query_alias="pest"),
+					col(table.path, query_alias="path"),
+					col(table.hmet, query_alias="hmet"),
 					col(table.salt_cs, query_alias="salt"),
 					col("cs", not_in_db=True, value_override="null")]
 			self.write_query(query, cols_cs)
@@ -142,24 +142,20 @@ class Pest_hru_ini(BaseFileModel):
 					file.write(self.get_meta_line())
 
 					file.write(utils.string_pad("name", direction="left", default_pad=25))
-					for c in constits:
-						file.write(utils.num_pad(c))
+					file.write(utils.string_pad("SOIL(ppm)", direction="left", default_pad=25))
+					file.write(utils.string_pad("PLANT", direction="left", default_pad=25))
 					file.write("\n")
 
 					for row in query:
 						file.write(utils.string_pad(row.name, direction="left", default_pad=25))
 						file.write("\n")
 
-						soil_line = "  " + utils.string_pad("soil", direction="left", default_pad=23)
-						plant_line = "  " + utils.string_pad("plant", direction="left", default_pad=23)
 						for item in row.pest_hrus:
-							soil_line += utils.num_pad(item.soil, decimals=3)
-							plant_line += utils.num_pad(item.plant, decimals=3)
-
-						file.write(soil_line)
-						file.write("\n")
-						file.write(plant_line)
-						file.write("\n")
+							file.write(" ")
+							file.write(utils.string_pad(item.name.name, direction="left", default_pad=24))
+							file.write(utils.num_pad(item.soil, decimals=3, direction="left", default_pad=25))
+							file.write(utils.num_pad(item.plant, decimals=3, direction="left", default_pad=25))
+							file.write("\n")
 
 
 class Pest_water_ini(BaseFileModel):
@@ -184,24 +180,20 @@ class Pest_water_ini(BaseFileModel):
 					file.write(self.get_meta_line())
 
 					file.write(utils.string_pad("name", direction="left", default_pad=25))
-					for c in constits:
-						file.write(utils.num_pad(c))
+					file.write(utils.string_pad("water", direction="left", default_pad=25))
+					file.write(utils.string_pad("benthic", direction="left", default_pad=25))
 					file.write("\n")
 
 					for row in query:
 						file.write(utils.string_pad(row.name, direction="left", default_pad=25))
 						file.write("\n")
 
-						water_line = "  " + utils.string_pad("water", direction="left", default_pad=23)
-						benthic_line = "  " + utils.string_pad("benthic", direction="left", default_pad=23)
 						for item in row.pest_waters:
-							water_line += utils.num_pad(item.water, decimals=3)
-							benthic_line += utils.num_pad(item.benthic, decimals=3)
-
-						file.write(water_line)
-						file.write("\n")
-						file.write(benthic_line)
-						file.write("\n")
+							file.write(" ")
+							file.write(utils.string_pad(item.name.name, direction="left", default_pad=24))
+							file.write(utils.num_pad(item.water, decimals=3, direction="left", default_pad=25))
+							file.write(utils.num_pad(item.benthic, decimals=3, direction="left", default_pad=25))
+							file.write("\n")
 
 
 class Path_hru_ini(BaseFileModel):
@@ -226,24 +218,20 @@ class Path_hru_ini(BaseFileModel):
 					file.write(self.get_meta_line())
 
 					file.write(utils.string_pad("name", direction="left", default_pad=25))
-					for c in constits:
-						file.write(utils.num_pad(c))
+					file.write(utils.string_pad("SOIL(cfu/ml)", direction="left", default_pad=25))
+					file.write(utils.string_pad("PLANT", direction="left", default_pad=25))
 					file.write("\n")
 
 					for row in query:
 						file.write(utils.string_pad(row.name, direction="left", default_pad=25))
 						file.write("\n")
 
-						soil_line = "  " + utils.string_pad("soil", direction="left", default_pad=23)
-						plant_line = "  " + utils.string_pad("plant", direction="left", default_pad=23)
 						for item in row.path_hrus:
-							soil_line += utils.num_pad(item.soil, decimals=3)
-							plant_line += utils.num_pad(item.plant, decimals=3)
-
-						file.write(soil_line)
-						file.write("\n")
-						file.write(plant_line)
-						file.write("\n")
+							file.write(" ")
+							file.write(utils.string_pad(item.name.name, direction="left", default_pad=24))
+							file.write(utils.num_pad(item.soil, decimals=3, direction="left", default_pad=25))
+							file.write(utils.num_pad(item.plant, decimals=3, direction="left", default_pad=25))
+							file.write("\n")
 
 
 class Path_water_ini(BaseFileModel):
@@ -268,21 +256,17 @@ class Path_water_ini(BaseFileModel):
 					file.write(self.get_meta_line())
 
 					file.write(utils.string_pad("name", direction="left", default_pad=25))
-					for c in constits:
-						file.write(utils.num_pad(c))
+					file.write(utils.string_pad("water", direction="left", default_pad=25))
+					file.write(utils.string_pad("benthic", direction="left", default_pad=25))
 					file.write("\n")
 
 					for row in query:
 						file.write(utils.string_pad(row.name, direction="left", default_pad=25))
 						file.write("\n")
 
-						water_line = "  " + utils.string_pad("water", direction="left", default_pad=23)
-						benthic_line = "  " + utils.string_pad("benthic", direction="left", default_pad=23)
 						for item in row.path_waters:
-							water_line += utils.num_pad(item.water, decimals=3)
-							benthic_line += utils.num_pad(item.benthic, decimals=3)
-
-						file.write(water_line)
-						file.write("\n")
-						file.write(benthic_line)
-						file.write("\n")
+							file.write(" ")
+							file.write(utils.string_pad(item.name.name, direction="left", default_pad=24))
+							file.write(utils.num_pad(item.water, decimals=3, direction="left", default_pad=25))
+							file.write(utils.num_pad(item.benthic, decimals=3, direction="left", default_pad=25))
+							file.write("\n")

@@ -72,20 +72,20 @@ class Initial_aqu(BaseFileModel):
 
 		cols = [col(table.name, direction="left"),
 				col(table.org_min, query_alias="org_min"),
-				col(table.pest, query_alias="pest"),
-				col(table.path, query_alias="path"),
-				col(table.hmet, query_alias="hmet"),
+				col("pest", not_in_db=True, value_override="null"),
+				col("path", not_in_db=True, value_override="null"),
+				col("hmet", not_in_db=True, value_override="null"),
 				col("salt", not_in_db=True, value_override="null"),
 				col(table.description, direction="left")]
 		self.write_query(query, cols)
 
 		module, created = Salt_module.get_or_create(id=1)
-		if module.enabled:
+		if module.enabled or init.Pest_water_ini.select().count() > 0 or init.Path_water_ini.select().count() > 0 or init.Hmet_water_ini.select().count() > 0:
 			self.file_name = self.file_name + "_cs"
 			cols_cs = [col(table.name, direction="left"),
-					col("pest", not_in_db=True, value_override="null"),
-					col("path", not_in_db=True, value_override="null"),
-					col("hmet", not_in_db=True, value_override="null"),
+					col(table.pest, query_alias="pest"),
+					col(table.path, query_alias="path"),
+					col(table.hmet, query_alias="hmet"),
 					col(table.salt_cs, query_alias="salt"),
 					col("cs", not_in_db=True, value_override="null")]
 			self.write_query(query, cols_cs)

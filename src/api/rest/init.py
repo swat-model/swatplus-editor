@@ -339,6 +339,8 @@ def constituents():
 				if len(args['pests']) < 1:
 					db.Pest_hru_ini_item.delete().execute()
 					db.Pest_water_ini_item.delete().execute()
+					db.Pest_hru_ini.delete().execute()
+					db.Pest_water_ini.delete().execute()
 					result = Constituents_cs.update(pest_coms=None).execute()
 				else:
 					pest_coms = None if len(args['pests']) < 1 else ','.join(args['pests'])
@@ -350,6 +352,8 @@ def constituents():
 				if len(args['paths']) < 1:
 					db.Path_hru_ini_item.delete().execute()
 					db.Path_water_ini_item.delete().execute()
+					db.Path_hru_ini.delete().execute()
+					db.Path_water_ini.delete().execute()
 					result = Constituents_cs.update(path_coms=None).execute()
 				else:
 					path_coms = None if 'paths' not in args or len(args['paths']) < 1 else ','.join(args['paths'])

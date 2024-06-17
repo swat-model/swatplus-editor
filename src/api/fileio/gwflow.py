@@ -512,7 +512,10 @@ class Gwflow_files(BaseFileModel):
 					self.write_meta_line(file, file_names[1])
 					file.write('\n')
 
-					file.write('{}\t\t\tNumber of cells that intersect HRUs\n'.format(len(grid_cells)))
+					#file.write('{}\t\t\tNumber of cells that intersect HRUs\n'.format(len(grid_cells)))
+
+					num_intersect = gwflow.Gwflow_hrucell.select(gwflow.Gwflow_hrucell.cell_id).distinct().count()
+					file.write('{}\t\t\tNumber of cells that intersect HRUs\n'.format(num_intersect))
 
 					header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
 					col('hru', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),

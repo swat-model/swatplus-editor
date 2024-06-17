@@ -99,8 +99,10 @@ const getLibPath = () => {
 	return join(app.getAppPath(), 'static', 'lib', osqual).replace('app.asar', 'app.asar.unpacked');
 }
 
-const getSwatPlusToolboxPath = () => {
+const getSwatPlusToolboxPath = (useNewPath:boolean = false) => {
 	let path = 'C:/SWAT/SWATPlus/SWAT+ Toolbox/SWAT+ Toolbox.exe';
+	if (useNewPath) path = 'C:/SWAT/SWATPlus/SWATPlusToolbox/SWATPlusToolbox.exe';
+
 	if (process.platform === 'linux') path = '';
 	else if (process.platform === 'darwin') path = '';
 
@@ -459,7 +461,8 @@ ipcMain.on('get-swatplustoolbox-path', (event) => {
 ipcMain.on('launch-swatplustoolbox', (event, projectDb:string) => {
 	if (process.platform !== 'win32') event.returnValue = 'SWAT+ Toolbox is currently only available on Windows.';
 	else {
-		let path = getSwatPlusToolboxPath();
+		let path = getSwatPlusToolboxPath(true);
+		if (!fs.existsSync(path)) path = getSwatPlusToolboxPath(false);
 		if (!fs.existsSync(path)) event.returnValue = `Could not find SWAT+ Toolbox at "${path}"`;
 		else {
 			child_process.exec(`"${path}" "${projectDb}"`)
