@@ -529,10 +529,10 @@
 							From Harmel, D., et al.  2006 Compilation of Measured Nutrient Load Data for Agricultural Land Uses in the United States. <em>Journal of the American Water Resources Association</em> 42(5):1163-1178.
 						</p>
 						<p>
-							<img class="img-fluid" :src="`/swat-check/nut_croptype2.png`" alt="nut_croptype2.png" />
+							<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/nut_croptype2.png`" alt="nut_croptype2.png" />
 						</p>
 						<p>
-							<img class="img-fluid" :src="`/swat-check/nut_croptype3.png`" alt="nut_croptype3.png" />
+							<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/nut_croptype3.png`" alt="nut_croptype3.png" />
 						</p>
 					</div>
 					<div v-if="data.page.tabIndex == 7" title="Land Use Summary">
@@ -920,7 +920,7 @@
 							</v-col>
 							<v-col md>
 								<p>
-									<img class="img-fluid" :src="`/swat-check/res.jpg`" alt="res image" />
+									<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/res.jpg`" alt="res image" />
 								</p>
 							</v-col>
 						</v-row>

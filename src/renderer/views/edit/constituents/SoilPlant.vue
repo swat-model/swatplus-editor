@@ -8,8 +8,8 @@
 			{ key: 'name', label: 'Name' },
 			{ key: 'sw_frac', label: 'Soil Water Fraction', type: 'number', class: 'text-right' },
 			{ key: 'nutrients', label: 'Nutrients', type: 'object', class: 'text-right', objectRoutePath: '/edit/soils/soil-nutrients/edit/' },
-			{ key: 'pest', label: 'Pesticide', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/pest/edit/' },
-			{ key: 'path', label: 'Pathogen', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/path/edit/' },
+			{ key: 'pest', label: 'Pesticide', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/pest/', ignoreObjectRouteId: true },
+			{ key: 'path', label: 'Pathogen', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/path/', ignoreObjectRouteId: true },
 			//{ key: 'hmet', label: 'Heavy Metal', type: 'object', class: 'text-right' }, 
 			{ key: 'salt_cs', label: 'Salt', type: 'object', class: 'text-right' }
 		],

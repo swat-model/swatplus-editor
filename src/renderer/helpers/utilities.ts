@@ -15,6 +15,8 @@ export function useUtilities() {
 	const appPath = electron.getAppPath().replace('app.asar', 'app.asar.unpacked');
 	const appPathUrl = encodeURIComponent(appPath||'');
 
+	const publicPath = constants.globals.dev_mode ? '' : electron.getAppPath().replace('static', 'renderer');
+
 	function appendRoute(pathToAppend:string) {
 		return route.path + (route.path.endsWith('/') ? '' : '/') + pathToAppend
 	}
@@ -237,7 +239,7 @@ export function useUtilities() {
 	}
 
 	return {
-		appPath, appPathUrl, appendRoute, pathExists, joinPaths,
+		appPath, appPathUrl, publicPath, appendRoute, pathExists, joinPaths,
 		getAutoComplete, getAutoCompleteId,
 		getVersionSupport,
 		getMostRecentProject, getRecentProjects, pushRecentProject, deleteRecentProject,

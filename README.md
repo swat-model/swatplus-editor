@@ -1,7 +1,5 @@
 # README #
 
-:warning: **This is a new repository using updated frameworks.** Due to the breaking changes from the framework updates (Vue.js 2 -> 3, Vue Bootstrap -> Vuetify, Python Flask 2.3 URL path issues), a new repository was created. This is a work in progress and not complete nor functional at this time. Please continue to use the [Bitbucket repository](https://bitbucket.org/swatplus/swatplus.editor) for functional SWAT+ Editor source code until this message is removed.
-
 Desktop interface to SWAT+ allowing the user to import a project from GIS, modify SWAT+ input, write the text files, and run the model.
 
 Read the documentation at [swatplus.gitbook.io/docs](https://swatplus.gitbook.io/docs) and [join the user group](https://groups.google.com/g/swatplus-editor) to be notified of new releases.
