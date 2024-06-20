@@ -1,9 +1,27 @@
-* Release 2.3.0.
+* Release 3.0.0.
 * We recommend users please visit the SWAT+ website to update your QSWAT+ version
-* SWAT+ model updated to revision 60.5.7; see model revision notes for input/output changes
-* swatplus_datasets.sqlite updated to version 2.3
-* Due to the change to plants.plt, if you're updating an existing project, consider reloading your plants database with the new data through the interface. Download the plants CSV file from plus.swat.tamu.edu (browse to version 2.3), and from SWAT+ Editor go to Edit -> Databases -> Plants, click the Import button, then select the Import tab and downloaded CSV file.
-* Added basic interface for building water allocation tables. Water allocation tables are very specific to the watershed and new feature in SWAT+. We recommend working with the model development team if you are unsure. Because this is a new addition, the interface is still limited if you're trying to build a large table with many source and demand objects.
-* Bug fix in SWAT+ Check - urban codes now displayed in the Land Use Summary section
+* SWAT+ model update to revision 61.0
+  * See [model release notes](https://swatplus.gitbook.io/docs/release-notes) for a full list of changes
+* Added editor interfaces for groundwater flow module (GWFLOW):
+  * Requires initial model setup using GWFLOW option in the latest QSWAT+
+  * Found in the editor under Connection -> Groundwater Flow
+* Updated model support for constituents:
+  * Fixed bugs in file format for pest/path_hru/water.ini files
+  * Updated interface to simplify enabling and adding pesticides and pathogens
+  * Added new salinity module and interfaces
+* Updated the soft calibration interfaces and functionality
+* Some menu reorganization:
+  * Move plant communities udner Land Use Management
+  * Rename Initialization to Constituents
+* Add the ability to choose which model input text files to write or not write
+  * Under the Run page, expand 'Choose where to write your input files' and click the 'Advanced: Customize files to write' button
+* Add a link to the model executable folder in the Run page so you can more easily update the model if neeeded
+  * On the Run page, click the folder icon to the right of the model version number
+* Underlying code framework updates:
+  * Update python rest API code to link to the project database in the request header
+  * No longer use python flask restful package and just use the main flask to serve the API
+  * Update to Vue.js 3.x
+  * Change from Bootstrap Vue to Vuetify GUI framework
+* Various bug fixes and GUI enhancements
 
 View the full list of changes at swat.tamu.edu/software/plus
