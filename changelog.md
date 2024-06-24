@@ -15,11 +15,11 @@
   * Added new salinity module and interfaces
 * Updated the soft calibration interfaces and functionality
 * Some menu reorganization:
-  * Move plant communities udner Land Use Management
+  * Move plant communities under Land Use Management
   * Rename Initialization to Constituents
 * Add the ability to choose which model input text files to write or not write
   * Under the Run page, expand 'Choose where to write your input files' and click the 'Advanced: Customize files to write' button
-* Add a link to the model executable folder in the Run page so you can more easily update the model if neeeded
+* Add a link to the model executable folder in the Run page so you can more easily update the model if needed
   * On the Run page, click the folder icon to the right of the model version number
 * Underlying code framework updates:
   * Update python rest API code to link to the project database in the request header

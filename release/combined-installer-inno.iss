@@ -5,8 +5,8 @@
 #define SWATPlusToolsPatchVersion "0"
 #define QSWATPlusVersion "2.5"
 #define QSWATPlusPatchVersion "3"
-#define ToolboxVersion "1.0"
-#define ToolboxPatchVersion "5"
+#define ToolboxVersion "2.0"
+#define ToolboxPatchVersion "0"
 #define ModelVersion "61.0"
 #define SWATURL "https://swat.tamu.edu/"
 
@@ -31,9 +31,9 @@ DirExistsWarning=no
 DisableDirPage=no
 
 [Files]
-Source: "data\downloads\QSWATPlus3_9install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: qswat; 
+Source: "data\downloads\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: qswat; 
 Source: "dist\swatplus.editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: editor; 
-Source: "data\downloads\SWAT+ Toolbox - v{#ToolboxVersion}.{#ToolboxPatchVersion}.msi"; DestDir: "{tmp}"; Components: toolbox;  
+Source: "data\downloads\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; DestDir: "{tmp}"; Components: toolbox;  
 Source: "{tmp}\swatplus_soils.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 44190170; Components: soils
 Source: "{tmp}\swatplus_wgn.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 188325993; Components: wgn
 
@@ -57,15 +57,15 @@ Name: "custom"; Description: "Custom installation"; Flags: iscustom
 [Files]
 Source: "data\downloads\SWATPlus\*"; DestDir: "{app}"; Excludes: "\Tools\SWATGraph, \Documents"; Components: qswat; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "data\downloads\SWATPlus\Tools\SWATGraph\runSWATGraph.bat"; DestDir: "{app}\Tools\SWATGraph"; Components: qswat\swatGraph; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "data\downloads\SWATPlus\Documents\QSWATPlus_Manual_v{#QSWATPlusVersion}.pdf"; DestDir: "{app}\Documents"; Components: qswat\manual;  Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v{#QSWATPlusVersion}.pdf"; DestDir: "{app}\Documents"; Components: qswat\manual;  Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Run]
-Filename: "{tmp}\QSWATPlus3_9install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
+Filename: "{tmp}\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
 Filename: "{tmp}\swatplus.editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; Parameters: "/D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
-Filename: "{tmp}\SWAT+ Toolbox - v{#ToolboxVersion}.{#ToolboxPatchVersion}.msi"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent shellexec
-Filename: "{tmp}\QSWATPlus3_9install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
+Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent shellexec
+Filename: "{tmp}\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
 Filename: "{tmp}\swatplus.editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; Parameters: "/S /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
-Filename: "{tmp}\SWAT+ Toolbox - v{#ToolboxVersion}.{#ToolboxPatchVersion}.msi"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent shellexec
+Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent shellexec
 
 [Messages]
 SelectDirBrowseLabel=If you select a different location from the default, you will need to set this location in the QSWAT+ Parameters form the first time you run QSWAT+.
@@ -77,12 +77,8 @@ Filename: "{app}\SWATPlusEditor\Uninstall SWATPlusEditor.exe"; WorkingDir: "{app
 [Code]
 procedure InitializeWizard;
 begin
-    //idpAddFileSizeComp('https://bitbucket.org/swatplus/swatplus.editor/downloads/swatplus_soils.sqlite', ExpandConstant('{tmp}\swatplus_soils.sqlite'), 196940800, 'soils');
-    //idpAddFileSizeComp('https://bitbucket.org/swatplus/swatplus.editor/downloads/swatplus_wgn.sqlite', ExpandConstant('{tmp}\swatplus_wgn.sqlite'), 350517248, 'wgn');
-    //Possible bug in above? Seems to download regardless if comp selected or not. So need to use no size given below for now.
     idpAddFileComp('https://plus.swat.tamu.edu/downloads/swatplus_soils.zip', ExpandConstant('{tmp}\swatplus_soils.zip'), 'soils');
     idpAddFileComp('https://plus.swat.tamu.edu/downloads/swatplus_wgn.zip', ExpandConstant('{tmp}\swatplus_wgn.zip'), 'wgn');
-
     idpDownloadAfter(wpReady);
 end;
 
