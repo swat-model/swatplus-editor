@@ -26,7 +26,11 @@ Read the documentation at [swatplus.gitbook.io/docs](https://swatplus.gitbook.io
 ### Running the source code ###
 
 1. From command prompt, go to the root directory of the source code
-2. Run `npm run dev`
+2. In Linux/Mac, you may need to set permissions on the electron package distribution:
+   * `cd node_modules/electron/dist`
+   * `sudo chown root chrome-sandbox`
+   * `sudo chmod 4755 chrome-sandbox`
+3. Run `npm run dev`
 
 ### Development tools ###
 
