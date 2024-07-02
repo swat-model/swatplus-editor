@@ -14,6 +14,7 @@ class CheckInfo(CheckBase):
 		self.weatherMethod = 'simulated'
 		self.watershedArea = 0
 		self.swatVersion = 'development'
+		self.gwflow = False
 
 
 class CheckHydrology(CheckBase):

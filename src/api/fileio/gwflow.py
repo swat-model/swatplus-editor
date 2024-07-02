@@ -1,6 +1,6 @@
 from playhouse.shortcuts import model_to_dict
 from .base import BaseFileModel, FileColumn as col
-from database.project import gis, gwflow, connect, reservoir, basin, base
+from database.project import gis, gwflow, connect, reservoir, basin, base, setup
 from database.project.config import Project_config
 from database import lib
 from helpers import table_mapper
@@ -620,6 +620,7 @@ class Gwflow_files(BaseFileModel):
 
 	def write_wetland(self, file_name='gwflow.wetland'):
 		if self.gwflow_base is not None and self.gwflow_base.wetland_exchange == 1:
+			setup.SetupProjectDatabase.create_these_tables([gwflow.Gwflow_wetland])
 			with open(os.path.join(self.file_name, file_name), 'w') as file:
 				file.write('gwflow.wetland: parameters for groundwater-wetland interactions ')
 				self.write_meta_line(file, file_name)

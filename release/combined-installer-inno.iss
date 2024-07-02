@@ -1,13 +1,13 @@
 #include <idp.iss>
 
 #define SWATPlusVersion "3.0"
-#define SWATPlusPatchVersion "0"
-#define SWATPlusToolsPatchVersion "0"
+#define SWATPlusPatchVersion "1"
+#define SWATPlusToolsPatchVersion "1"
 #define QSWATPlusVersion "2.5"
 #define QSWATPlusPatchVersion "3"
 #define ToolboxVersion "2.0"
 #define ToolboxPatchVersion "0"
-#define ModelVersion "61.0"
+#define ModelVersion "61.0.1"
 #define SWATURL "https://swat.tamu.edu/"
 
 [Setup]

@@ -2,6 +2,14 @@
 
 ## Version 3 ##
 
+### Revision 3.0.1 ###
+
+* SWAT+ model update to revision 61.0.1
+  * See [model release notes](https://swatplus.gitbook.io/docs/release-notes) for a full list of changes
+* Bug fix: check for old version of swatplus_datasets.sqlite in new projects
+* SWAT+ Check and GWFLOW are not fully compatible at this time. Added a fix so that you can still run SWAT+ Check, but with a warning about some missing values in the hydrology and landscape nitrogen losses sections.
+* Bug fix: gwflow_wetlands table wasn't always created by default causing an error writing inputs.
+
 ### Revision 3.0.0 ###
 
 * SWAT+ model update to revision 61.0

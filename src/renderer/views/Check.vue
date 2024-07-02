@@ -163,6 +163,20 @@
 							of various model outputs to aid novice users.
 						</p>
 
+						<v-alert type="warning" icon="$warning" variant="tonal" border="start" class="my-4">
+							<p>
+								Your model is using the GWFLOW module. SWAT+ Check is not fully compatible with GWFLOW at this time.
+								We will update this as soon as possible. For now the following values are unavailable:
+							</p>
+							<ul>
+								<li>Hydrology: return flow, revap, recharge, baseflow total flow, deep recharge precipitation</li>
+								<li>Landscape Nitrogen Losses: leached, groundwater yield</li>
+							</ul>
+							<p>
+								We encourage you to look in the GWFLOW output files on your own until a fix is available.
+							</p>
+						</v-alert>
+
 						<v-row>
 							<v-col cols="12" md="6">
 								<v-table small density="compact">

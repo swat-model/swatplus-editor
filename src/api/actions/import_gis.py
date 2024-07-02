@@ -809,70 +809,100 @@ class GisImport(ExecutableApi):
 					pcom = None
 					#ds_pi = ds_init.Plant_ini.get(ds_init.Plant_ini.name == comm_name)
 					ds_pi = ds_plant_comms.get(comm_name, None)
-					pi = init.Plant_ini.create(
-						name=ds_pi.name,
-						rot_yr_ini=ds_pi.rot_yr_ini
-					)
-					pcom = pi.id
+					if ds_pi is not None:
+						pi = init.Plant_ini.create(
+							name=ds_pi.name,
+							rot_yr_ini=ds_pi.rot_yr_ini
+						)
+						pcom = pi.id
 
-					for p in ds_pi.plants:
+						for p in ds_pi.plants:
+							init.Plant_ini_item.create(
+								plant_ini=pi.id,
+								plnt_name=p_id,
+								lc_status=p.lc_status,
+								lai_init=p.lai_init,
+								bm_init=p.bm_init,
+								phu_init=p.phu_init,
+								plnt_pop=p.plnt_pop,
+								yrs_init=p.yrs_init,
+								rsd_init=p.rsd_init
+							)
+
+						#ds_m = ds_lum.Landuse_lum.get(ds_lum.Landuse_lum.name == lum_name)
+						ds_m = ds_lums.get(lum_name, None)
+
+						mgt_id = None
+						new_d_table_id = None
+						plant1 = None
+						if plant.plnt_typ.startswith('warm_annual'):
+							#summer_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_summer1')
+							if summer_table is None:
+								new_d_table_id = self.insert_d_table(plant.name, 'pl_hv_corn')
+							else:
+								new_d_table_id = summer_table.id
+								plant1 = plant.name
+						elif plant.plnt_typ.startswith('cold_annual'):
+							#winter_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_winter1')
+							if winter_table is None:
+								new_d_table_id = self.insert_d_table(plant.name, 'pl_hv_wwht')
+							else:
+								new_d_table_id = winter_table.id
+								plant1 = plant.name
+
+						if new_d_table_id is not None:
+							mgt_name = '{plant}_rot'.format(plant=plant.name)
+							curr_mgt = lum.Management_sch.get_or_none(lum.Management_sch.name == mgt_name)
+							if curr_mgt is not None:
+								mgt_id = curr_mgt.id
+							else:
+								mgt_id = lum.Management_sch.insert(
+									name = mgt_name
+								).execute()
+								lum.Management_sch_auto.insert(
+									management_sch=mgt_id,
+									d_table=new_d_table_id,
+									plant1=plant1
+								).execute() 
+
+						lum.Landuse_lum.create(
+							name=ds_m.name,
+							plnt_com=pcom,
+							mgt=mgt_id,
+							cn2=ds_m.cn2.id,
+							cons_prac=ds_m.cons_prac.id,
+							ov_mann=ds_m.ov_mann.id,
+							cal_group=ds_m.cal_group
+						)
+					else:
+						pcom = None
+						pi = init.Plant_ini.create(
+							name='{name}_comm'.format(name=lu),
+							rot_yr_ini=1
+						)
+						pcom = pi.id
+
 						init.Plant_ini_item.create(
 							plant_ini=pi.id,
 							plnt_name=p_id,
-							lc_status=p.lc_status,
-							lai_init=p.lai_init,
-							bm_init=p.bm_init,
-							phu_init=p.phu_init,
-							plnt_pop=p.plnt_pop,
-							yrs_init=p.yrs_init,
-							rsd_init=p.rsd_init
+							lc_status=0,
+							lai_init=0,
+							bm_init=0,
+							phu_init=0,
+							plnt_pop=0,
+							yrs_init=0,
+							rsd_init=10000
 						)
 
-					#ds_m = ds_lum.Landuse_lum.get(ds_lum.Landuse_lum.name == lum_name)
-					ds_m = ds_lums.get(lum_name, None)
-
-					mgt_id = None
-					new_d_table_id = None
-					plant1 = None
-					if plant.plnt_typ.startswith('warm_annual'):
-						#summer_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_summer1')
-						if summer_table is None:
-							new_d_table_id = self.insert_d_table(plant.name, 'pl_hv_corn')
-						else:
-							new_d_table_id = summer_table.id
-							plant1 = plant.name
-					elif plant.plnt_typ.startswith('cold_annual'):
-						#winter_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_winter1')
-						if winter_table is None:
-							new_d_table_id = self.insert_d_table(plant.name, 'pl_hv_wwht')
-						else:
-							new_d_table_id = winter_table.id
-							plant1 = plant.name
-
-					if new_d_table_id is not None:
-						mgt_name = '{plant}_rot'.format(plant=plant.name)
-						curr_mgt = lum.Management_sch.get_or_none(lum.Management_sch.name == mgt_name)
-						if curr_mgt is not None:
-							mgt_id = curr_mgt.id
-						else:
-							mgt_id = lum.Management_sch.insert(
-								name = mgt_name
-							).execute()
-							lum.Management_sch_auto.insert(
-								management_sch=mgt_id,
-								d_table=new_d_table_id,
-								plant1=plant1
-							).execute() 
-
-					lum.Landuse_lum.create(
-						name=ds_m.name,
-						plnt_com=pcom,
-						mgt=mgt_id,
-						cn2=ds_m.cn2.id,
-						cons_prac=ds_m.cons_prac.id,
-						ov_mann=ds_m.ov_mann.id,
-						cal_group=ds_m.cal_group
-					)
+						lum.Landuse_lum.create(
+							name='{name}_lum'.format(name=lu),
+							plnt_com=pcom,
+							mgt=lum_default_mgt,
+							cn2=lum_default_cn2,
+							cons_prac=lum_default_cons_prac,
+							ov_mann=lum_default_ov_mann,
+							cal_group=lum_default_cal_group
+						)
 
 				except ds_init.Plant_ini.DoesNotExist:
 					pcom = None

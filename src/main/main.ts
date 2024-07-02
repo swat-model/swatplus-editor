@@ -559,6 +559,11 @@ const template: Electron.MenuItemConstructorOptions[] = [
 			{
 				label: 'Report a model error',
 				click () { shell.openExternal('https://groups.google.com/d/forum/swatplus') }
+			},
+			{type: 'separator'},
+			{
+				label: 'Check for updates',
+				click () { shell.openExternal('https://github.com/swat-model/swatplus-editor/releases') }
 			}
 		]
 	}

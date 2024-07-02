@@ -48,10 +48,10 @@ class SetupDatasetsDatabase():
 	@staticmethod
 	def check_version(datasets_db, editor_version, updateable = False):
 		min_updateable_version = 2.1
-		min_version = 2.3
+		min_version = 3.0
 		if updateable:
 			min_version = min_updateable_version
-		download_link = 'https://bitbucket.org/swatplus/swatplus.editor/downloads/swatplus_datasets.sqlite'
+		download_link = 'https://plus.swat.tamu.edu/downloads/3.0/3.0.0/swatplus_datasets.sqlite'
 		
 		conn = db_lib.open_db(datasets_db)
 		if db_lib.exists_table(conn, 'version'):

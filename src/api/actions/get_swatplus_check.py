@@ -4,7 +4,7 @@ from peewee import *
 from database.project.setup import SetupProjectDatabase
 from database.output.setup import SetupOutputDatabase
 from database.output import check, aquifer, channel, hyd, losses, misc, nutbal, plantwx, reservoir, waterbal, pest, base
-from database.project import connect, climate, gis, regions, simulation, hru_parm_db
+from database.project import connect, climate, gis, regions, simulation, hru_parm_db, config
 from database import lib
 
 import traceback
@@ -15,7 +15,7 @@ def get_in_out_percent(value_in, value_out):
 	return 0 if value_in == 0 else (value_in - value_out) / value_in * 100
 
 
-def get_info(has_project_config):
+def get_info(has_project_config, use_gwflow):
 	info = check.CheckInfo()
 
 	time_sim = simulation.Time_sim.get_or_none()
@@ -31,6 +31,7 @@ def get_info(has_project_config):
 	info.lsus = regions.Ls_unit_def.select().count()
 	info.weatherMethod = 'Observed' if climate.Weather_sta_cli.observed_count() > 0 else 'Simulated'
 	info.watershedArea = connect.Rout_unit_con.select(fn.Sum(connect.Rout_unit_con.area)).scalar()
+	info.gwflow = use_gwflow
 
 	if has_project_config:
 		pc = base.Project_config.get_or_none()
@@ -40,7 +41,7 @@ def get_info(has_project_config):
 	return info
 
 
-def get_hyd(wb, aqu):
+def get_hyd(wb, aqu, use_gwflow):
 	hyd = check.CheckHydrology()
 	if wb is not None:
 		hyd.averageCn = wb.cn
@@ -59,9 +60,10 @@ def get_hyd(wb, aqu):
 		hyd.returnFlow = aqu.flo
 		hyd.revap = aqu.revap
 
-	deep_aqu = aquifer.Aquifer_aa.select(fn.SUM(aquifer.Aquifer_aa.rchrg).alias('rchrg_total')).where(aquifer.Aquifer_aa.name.contains('_deep')).get()
-	if deep_aqu is not None and deep_aqu.rchrg_total is not None:
-		hyd.recharge = deep_aqu.rchrg_total
+	if not use_gwflow:
+		deep_aqu = aquifer.Aquifer_aa.select(fn.SUM(aquifer.Aquifer_aa.rchrg).alias('rchrg_total')).where(aquifer.Aquifer_aa.name.contains('_deep')).get()
+		if deep_aqu is not None and deep_aqu.rchrg_total is not None:
+			hyd.recharge = deep_aqu.rchrg_total
 
 	totalFlow = hyd.returnFlow + hyd.lateralFlow + hyd.surfaceRunoff
 	if totalFlow > 0:
@@ -809,10 +811,14 @@ class GetSwatplusCheck(ExecutableApi):
 	def get(self):
 		required_tables = [
 			'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa', 'basin_psc_aa',
-			'basin_aqu_aa', 'aquifer_aa', 'recall_aa',
+			'recall_aa',
 			'basin_sd_cha_aa', 'channel_sd_aa', 'channel_sdmorph_aa', 
 			'hru_ls_aa', 'hru_wb_aa', 'hru_pw_aa', 'crop_yld_aa'
 		]
+		#no longer required because of gwflow: 'basin_aqu_aa', 'aquifer_aa', 
+
+		pc = config.Project_config.get()
+		use_gwflow = pc.use_gwflow == 1
 
 		conn = lib.open_db(self.output_db_file)
 		sys.stdout.write(self.output_db_file)
@@ -837,8 +843,8 @@ class GetSwatplusCheck(ExecutableApi):
 			basin_cha = channel.Basin_sd_cha_aa.get_or_none()
 			cha = channel.Channel_sd_aa.select()
 
-			info = get_info(has_project_config)
-			hydrology = get_hyd(wb, aqu)
+			info = get_info(has_project_config, use_gwflow)
+			hydrology = get_hyd(wb, aqu, use_gwflow)
 			ncycle = get_ncycle(nb, pw, ls)
 			pcycle = get_pcycle(nb, pw, ls)
 			pg = get_pg(nb, pw)
