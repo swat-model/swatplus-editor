@@ -163,7 +163,7 @@
 							of various model outputs to aid novice users.
 						</p>
 
-						<v-alert type="warning" icon="$warning" variant="tonal" border="start" class="my-4">
+						<v-alert v-if="data.check.setup.gwflow" type="warning" icon="$warning" variant="tonal" border="start" class="my-4">
 							<p>
 								Your model is using the GWFLOW module. SWAT+ Check is not fully compatible with GWFLOW at this time.
 								We will update this as soon as possible. For now the following values are unavailable:
