@@ -1022,8 +1022,17 @@
 						<v-btn type="submit" :loading="data.page.saving" :disabled="data.page.saving || noneSelected" variant="flat" color="primary" class="mr-2">
 							Save Settings &amp; Run Selected
 						</v-btn>
-						<v-btn v-if="!formatters.isNullOrEmpty(data.config.output_last_imported) && !currentProject.isLte" type="button" variant="flat" color="primary" to="/check" class="mr-2">Run SWAT+ Check</v-btn>
-						<v-btn type="button" variant="flat" color="primary" class="mr-2" @click="data.page.saveScenario.show = true">Save Scenario</v-btn>
+						<v-menu>
+							<template v-slot:activator="{ props }">
+								<v-btn type="button" variant="flat" color="primary" class="mr-2" v-bind="props">More Actions...</v-btn>
+							</template>
+							<v-list>
+								<v-list-item v-if="!formatters.isNullOrEmpty(data.config.output_last_imported) && !currentProject.isLte" to="/check"><v-list-item-title>Run SWAT+ Check</v-list-item-title></v-list-item>
+								<swat-plus-toolbox-button v-if="!formatters.isNullOrEmpty(data.config.swat_last_run) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.swat_last_run)" as-list-item text="Open SWAT+ Toolbox"></swat-plus-toolbox-button>
+								<v-list-item @click="data.page.completed.show = false; data.page.saveScenario.show = true"><v-list-item-title>Save Scenario</v-list-item-title></v-list-item>
+								<open-file as-list-item :file-path="currentResultsPath">Open Results Directory</open-file>
+							</v-list>
+						</v-menu>
 						<v-btn type="button" variant="flat" color="secondary" @click="utilities.exit" class="ml-auto">Exit SWAT+ Editor</v-btn>
 					</action-bar>
 				</v-form>
