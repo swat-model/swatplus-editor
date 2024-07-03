@@ -6,7 +6,7 @@ from playhouse.migrate import *
 
 from actions import import_gis
 from actions.get_swatplus_check import GetSwatplusCheck
-from database.project import config, gis, climate, connect, simulation, regions
+from database.project import config, gis, climate, connect, simulation, regions, basin
 from database import lib
 from fileio import config as fileio_config
 
@@ -378,6 +378,14 @@ Helper functions
 
 def automatic_updates(project_db):
 	conn = lib.open_db(project_db)
+	if lib.exists_table(conn, 'codes_bsn'):
+		m = config.Project_config.get_or_none()
+		if m is not None and (m.editor_version == '3.0.0' or m.editor_version == '3.0.1'):
+			cb = basin.Codes_bsn.get_or_none()
+			if cb is not None and cb.i_fpwet == 2:
+				basin.Codes_bsn.update({basin.Codes_bsn.i_fpwet: 1}).execute()
+				config.Project_config.update({config.Project_config.editor_version: '3.0.2'}).execute()
+
 	if lib.exists_table(conn, 'file_cio'):
 		config_cols = lib.get_column_names(conn, 'file_cio')
 		col_names = [v['name'] for v in config_cols]

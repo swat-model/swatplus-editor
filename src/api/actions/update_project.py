@@ -210,8 +210,8 @@ class UpdateProject(ExecutableApi):
 			hru_parm_db.Pesticide_pst.update({hru_parm_db.Pesticide_pst.aq_hlife: 142.85, hru_parm_db.Pesticide_pst.ben_hlife: 20}).execute()
 			datasets_hru_parm_db.Pesticide_pst.update({datasets_hru_parm_db.Pesticide_pst.aq_hlife: 142.85, datasets_hru_parm_db.Pesticide_pst.ben_hlife: 20}).execute()
 
-			basin.Codes_bsn.update({basin.Codes_bsn.i_fpwet: 2}).execute()
-			datasets_basin.Codes_bsn.update({datasets_basin.Codes_bsn.i_fpwet: 2}).execute()
+			basin.Codes_bsn.update({basin.Codes_bsn.i_fpwet: 1}).execute()
+			datasets_basin.Codes_bsn.update({datasets_basin.Codes_bsn.i_fpwet: 1}).execute()
 
 			self.plant_value_updates_for_3_0_0(hru_parm_db.Plants_plt)
 			self.plant_value_updates_for_3_0_0(datasets_hru_parm_db.Plants_plt)

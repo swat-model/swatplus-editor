@@ -2,6 +2,13 @@
 
 ## Version 3 ##
 
+### Revision 3.0.2 ###
+
+* Change default of codes.bsn i_fpwet from 2 to 1 due to model issue in rev. 61.0.1
+* Bug fix in landuse management editor where Manning's N dropdown was using CN2 values
+* Bug fix in SWAT+ Check dark mode theme where text on images was not visible
+* Added 'More Actions...' buttons to the Run and SWAT+ Check pages for easier navigation 
+
 ### Revision 3.0.1 ###
 
 * SWAT+ model update to revision 61.0.1

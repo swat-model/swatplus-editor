@@ -15,7 +15,8 @@
 		block?: boolean,
 		rounded?: string | number | boolean | undefined,
 		size?: string | number | undefined,
-		class?: string | undefined
+		class?: string | undefined,
+		asListItem?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -27,7 +28,8 @@
 		block: false,
 		rounded: undefined,
 		size: undefined,
-		class: undefined
+		class: undefined,
+		asListItem: false
 	});
 
 	let unavailable = reactive({
@@ -65,7 +67,10 @@
 </script>
 
 <template>
-	<v-btn v-if="constants.globals.platform === 'win32' && !noIcon" @click="open" :active="false">
+	<v-list-item v-if="constants.globals.platform === 'win32' && asListItem" @click="open">
+		<v-list-item-title>{{ props.text }}</v-list-item-title>
+	</v-list-item>
+	<v-btn v-else-if="constants.globals.platform === 'win32' && !noIcon" @click="open" :active="false">
 		<v-icon>fas fa-toolbox</v-icon> {{ props.text }}
 	</v-btn>
 	<v-btn v-else-if="constants.globals.platform === 'win32' && noIcon" @click="open" :variant="variant" :color="color" :block="block" :rounded="rounded" :size="size" :class="class">

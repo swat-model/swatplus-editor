@@ -1,7 +1,8 @@
 <script setup lang="ts">
-	import { reactive, watch, onMounted } from 'vue';
+	import { reactive, watch, onMounted, computed } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	import SwatPlusToolboxButton from '../components/SwatPlusToolboxButton.vue';
 	
 	const route = useRoute();
 	const { api, constants, errors, formatters, runProcess, utilities, currentProject } = useHelpers();
@@ -57,6 +58,10 @@
 				table: false
 			}
 		}
+	});
+
+	const currentResultsPath = computed(() => {
+		return runProcess.resultsPath(data.config.input_files_dir);
 	});
 
 	async function get() {
@@ -943,7 +948,17 @@
 					<action-bar>
 						<v-btn variant="flat" @click="nextTab(-1)" class="border mr-2" :disabled="data.page.tabIndex == 0" title="Previous tab"><font-awesome-icon icon="chevron-left" /></v-btn>
 						<v-btn variant="flat" @click="nextTab(1)" class="border mr-2" :disabled="data.page.tabIndex == data.page.tabs.length - 1" title="Next tab"><font-awesome-icon icon="chevron-right" /></v-btn>
-						<v-btn type="button" variant="flat" color="secondary" @click="utilities.exit" class="ml-auto">Exit SWAT+ Editor</v-btn>
+						<v-menu>
+							<template v-slot:activator="{ props }">
+								<v-btn type="button" variant="flat" color="primary" class="ml-auto mr-2" v-bind="props">More Actions...</v-btn>
+							</template>
+							<v-list>
+								<v-list-item to="/run"><v-list-item-title>Back to Model Run / Save Scenario</v-list-item-title></v-list-item>
+								<swat-plus-toolbox-button :ran-swat="true" as-list-item text="Open SWAT+ Toolbox"></swat-plus-toolbox-button>
+								<open-file as-list-item :file-path="currentResultsPath">Open Results Directory</open-file>
+							</v-list>
+						</v-menu>
+						<v-btn type="button" variant="flat" color="secondary" @click="utilities.exit">Exit SWAT+ Editor</v-btn>
 					</action-bar>
 				</div>
 			</div>
@@ -968,6 +983,7 @@
 		line-height: 1.4em;
 		margin: 0 auto;
 		position: relative;
+		color: #000;
 	}
 
 	.picture-holder span {

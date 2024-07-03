@@ -195,7 +195,7 @@
 						<v-checkbox v-if="page.bulk.show" v-model="selected.vars" value="ov_mann_name" class="flex-shrink-1 flex-grow-0"></v-checkbox>
 						<auto-complete label="Overland Flow Manning's n" class="flex-grow-1 flex-shrink-0"
 							v-model="item.ov_mann_name" :value="item.ov_mann_name" :show-item-link="props.isUpdate"
-							table-name="cntable" route-name="CntableEdit"
+							table-name="ovntable" route-name="OvntableEdit"
 							section="Land Use Management / Overland Flow Manning's n" help-file="ovn_table.lum" help-db="ovn_table_lum"
 							api-url="lum/ovntable"></auto-complete>
 					</div>

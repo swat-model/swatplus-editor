@@ -10,7 +10,8 @@
 		block?: boolean,
 		icon?: string,
 		rounded?: string | number | boolean | undefined,
-		size?: string
+		size?: string,
+		asListItem?: boolean
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -23,7 +24,8 @@
 		block: false,
 		icon: undefined,
 		rounded: undefined,
-		size: undefined
+		size: undefined,
+		asListItem: false
 	});
 
 	function open(e:any) {
@@ -33,7 +35,10 @@
 </script>
 
 <template>
-	<v-btn v-if="props.button && props.icon" @click="open" :title="filePath" :color="props.color" :variant="variant" :icon="icon" :size="size" :class="class"></v-btn>
+	<v-list-item v-if="asListItem" @click="open">
+		<v-list-item-title>{{ text }}<slot></slot></v-list-item-title>
+	</v-list-item>
+	<v-btn v-else-if="props.button && props.icon" @click="open" :title="filePath" :color="props.color" :variant="variant" :icon="icon" :size="size" :class="class"></v-btn>
 	<v-btn v-else-if="props.button" @click="open" :title="filePath" :color="props.color" :variant="variant" :block="block" :size="size" :rounded="rounded">{{ text }}<slot></slot></v-btn>
 	<a v-else :href="filePath" @click="open" :class="class" :title="filePath">{{ text }}<slot></slot></a>
 </template>

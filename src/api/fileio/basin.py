@@ -27,6 +27,10 @@ class Codes_bsn(BaseFileModel):
 			self.read_default_table(datasets_basin.Codes_bsn, datasets_base.db, 24, ignore_id_col=True)
 
 	def write(self):
+		"""cb = db.Codes_bsn.get_or_none()
+		if cb is not None and cb.i_fpwet == 2:
+			db.Codes_bsn.update({db.Codes_bsn.i_fpwet: 1}).execute()"""
+
 		self.write_default_table(db.Codes_bsn, True)
 
 
