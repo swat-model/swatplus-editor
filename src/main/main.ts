@@ -9,6 +9,8 @@ import child_process from 'child_process';
 import axios from 'axios';
 import portfinder from 'portfinder';
 import kill from 'tree-kill';
+import { autoUpdater } from 'electron-updater';
+autoUpdater.autoDownload = false;
 
 const store = new Store();
 let DEV_MODE = process.env.NODE_ENV === 'development';
@@ -283,6 +285,55 @@ app.on('window-all-closed', function () {
 
 app.on('before-quit', async () => {
 	await closeProcesses();
+});
+
+//Auto Updater
+function sendUpdateStatus(message:any, isAvailable:boolean) {
+	let data = {
+		message: message,
+		isAvailable: isAvailable
+	};
+	mainWindow.webContents.send('app-update-status', data.toString());
+}
+
+autoUpdater.on('checking-for-update', () => {
+	sendUpdateStatus('Checking for updates...', false);
+});
+
+autoUpdater.on('update-available', (info) => {
+	sendUpdateStatus(info.releaseNotes, true);
+});
+
+autoUpdater.on('update-not-available', (info) => {
+	sendUpdateStatus('You are using the most recent version of SWAT+ Editor.', false);
+});
+
+autoUpdater.on('error', (err) => {
+	sendUpdateStatus('Error in auto-updater. ' + err, false);
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+	let data = {
+		percent: progressObj.percent,
+		message: 'Downloading update: (' + progressObj.transferred + "/" + progressObj.total + ')'
+	}
+	mainWindow.webContents.send('app-update-downloading', data.toString());
+})
+autoUpdater.on('update-downloaded', (info) => {
+	mainWindow.webContents.send('app-update-downloaded', 'Update downloaded.');
+});
+
+app.on('ready', function()  {
+	autoUpdater.checkForUpdates();
+});
+
+ipcMain.on('download-update', (event, arg) => {
+	autoUpdater.downloadUpdate();
+});
+
+ipcMain.on('quit-and-install-update', async (event, arg) => {
+	await closeProcesses();
+	autoUpdater.quitAndInstall();
 });
 
 //IPC functions to connect to renderer

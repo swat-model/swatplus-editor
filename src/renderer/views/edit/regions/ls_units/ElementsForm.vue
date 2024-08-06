@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, computed } from 'vue';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required } from '@vuelidate/validators';
+	import { decimal, required } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 
@@ -33,9 +33,9 @@
 		ls_unit_def_name: { required },
 		obj_typ: { required },
 		obj_name: { required },
-		bsn_frac: { required, numeric },
-		sub_frac: { required, numeric },
-		reg_frac: { required, numeric }
+		bsn_frac: { required, decimal },
+		sub_frac: { required, decimal },
+		reg_frac: { required, decimal }
 	}))
 	const v$ = useVuelidate(itemRules, props.item);
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, computed } from 'vue';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required } from '@vuelidate/validators';
+	import { decimal, required } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 
@@ -77,10 +77,10 @@
 	const valueRules = computed(() => ({
 		sta_id: { required },
 		timestep: { required },
-		nh4_wet: { required, numeric },
-		no3_wet: { required, numeric },
-		nh4_dry: { required, numeric },
-		no3_dry: { required, numeric }
+		nh4_wet: { required, decimal },
+		no3_wet: { required, decimal },
+		nh4_dry: { required, decimal },
+		no3_dry: { required, decimal }
 	}))
 	const vo$ = useVuelidate(valueRules, page.values.obj);
 

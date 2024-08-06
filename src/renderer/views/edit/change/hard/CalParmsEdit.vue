@@ -2,7 +2,7 @@
 	import { reactive, computed, onMounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required } from '@vuelidate/validators';
+	import { decimal, required } from '@vuelidate/validators';
 	import { useHelpers } from '@/helpers';
 
 	const route = useRoute();
@@ -28,8 +28,8 @@
 	});
 
 	const itemRules = computed(() => ({
-		abs_min: { required, numeric },
-		abs_max: { required, numeric }
+		abs_min: { required, decimal },
+		abs_max: { required, decimal }
 	}))
 	const v$ = useVuelidate(itemRules, data.item);
 

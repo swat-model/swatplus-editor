@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, computed, onMounted } from 'vue';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required, maxLength } from '@vuelidate/validators';
+	import { required, maxLength } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 

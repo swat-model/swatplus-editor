@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, computed } from 'vue';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required, maxLength } from '@vuelidate/validators';
+	import { decimal, required, maxLength } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 
@@ -100,29 +100,29 @@
 
 	const itemRules = computed(() => ({
 		name: { required, maxLength: maxLength(constants.formNameMaxLength) },
-		lat: { required, numeric },
-		lon: { required, numeric },
-		elev: { required, numeric },
-		rain_yrs: { required, numeric }
+		lat: { required, decimal },
+		lon: { required, decimal },
+		elev: { required, decimal },
+		rain_yrs: { required, decimal }
 	}))
 	const v$ = useVuelidate(itemRules, props.item);
 
 	const monthlyRules = computed(() => ({
-		month: { required, numeric },
-		tmp_max_ave: { required, numeric },
-		tmp_min_ave: { required, numeric },
-		tmp_max_sd: { required, numeric },
-		tmp_min_sd: { required, numeric },
-		pcp_ave: { required, numeric },
-		pcp_sd: { required, numeric },
-		pcp_skew: { required, numeric },
-		wet_dry: { required, numeric },
-		wet_wet: { required, numeric },
-		pcp_days: { required, numeric },
-		pcp_hhr: { required, numeric },
-		slr_ave: { required, numeric },
-		dew_ave: { required, numeric },
-		wnd_ave: { required, numeric }
+		month: { required, decimal },
+		tmp_max_ave: { required, decimal },
+		tmp_min_ave: { required, decimal },
+		tmp_max_sd: { required, decimal },
+		tmp_min_sd: { required, decimal },
+		pcp_ave: { required, decimal },
+		pcp_sd: { required, decimal },
+		pcp_skew: { required, decimal },
+		wet_dry: { required, decimal },
+		wet_wet: { required, decimal },
+		pcp_days: { required, decimal },
+		pcp_hhr: { required, decimal },
+		slr_ave: { required, decimal },
+		dew_ave: { required, decimal },
+		wnd_ave: { required, decimal }
 	}))
 	const vm$ = useVuelidate(monthlyRules, page.values.obj);
 

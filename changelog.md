@@ -2,6 +2,11 @@
 
 ## Version 3 ##
 
+### Revision 3.0.3 ###
+
+* Bug fix in hard calibration and other pages where it wasn't allowing negative numbers
+* Minor package updates
+
 ### Revision 3.0.2 ###
 
 * Change default of codes.bsn i_fpwet from 2 to 1 due to model issue in rev. 61.0.1

@@ -32,7 +32,7 @@ DisableDirPage=no
 
 [Files]
 Source: "data\downloads\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: qswat; 
-Source: "dist\swatplus.editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: editor; 
+Source: "dist\swatplus-editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: editor; 
 Source: "data\downloads\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; DestDir: "{tmp}"; Components: toolbox;  
 Source: "{tmp}\swatplus_soils.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 44190170; Components: soils
 Source: "{tmp}\swatplus_wgn.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 188325993; Components: wgn
@@ -61,10 +61,10 @@ Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v{#QSWATPlusVersion}
 
 [Run]
 Filename: "{tmp}\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
-Filename: "{tmp}\swatplus.editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; Parameters: "/D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
+Filename: "{tmp}\swatplus-editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; Parameters: "/D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
 Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent shellexec
 Filename: "{tmp}\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
-Filename: "{tmp}\swatplus.editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; Parameters: "/S /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
+Filename: "{tmp}\swatplus-editor-installer-{#SWATPlusVersion}.{#SWATPlusPatchVersion}.exe"; Parameters: "/S /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
 Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent shellexec
 
 [Messages]

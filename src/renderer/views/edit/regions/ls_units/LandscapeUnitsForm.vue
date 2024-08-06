@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, computed } from 'vue';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required } from '@vuelidate/validators';
+	import { decimal, required } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 
@@ -41,7 +41,7 @@
 
 	const itemRules = computed(() => ({
 		name: { required },
-		area: { required, numeric }
+		area: { required, decimal }
 	}))
 	const v$ = useVuelidate(itemRules, props.item);
 
