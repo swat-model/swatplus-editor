@@ -47,6 +47,18 @@ export function useRunProcess() {
 		return electron.joinPaths([resultsPath(inputDir), 'swatplus_output.sqlite']);
 	}
 
+	const appUpdateStatus = (callback:(_event:any, data:any) => any) => electron.appUpdateStatus(callback);
+	const appUpdateDownloading = (callback:(_event:any, data:any) => any) => electron.appUpdateDownloading(callback);
+	const appUpdateDownloaded = (callback:(_event:any, data:any) => any) => electron.appUpdateDownloaded(callback);
+
+	function downloadUpdate() {
+		electron.downloadUpdate();
+	}
+
+	function quitAndInstallUpdate() {
+		electron.quitAndInstallUpdate();
+	}
+
 	return {
 		runApiProc,
 		runSwatProc,
@@ -56,6 +68,11 @@ export function useRunProcess() {
 		killProcess,
 		getApiOutput,
 		resultsPath,
-		outputDbPath
+		outputDbPath,
+		appUpdateStatus,
+		appUpdateDownloading,
+		appUpdateDownloaded,
+		downloadUpdate,
+		quitAndInstallUpdate
 	}
 }

@@ -5,7 +5,9 @@
 ### Revision 3.0.3 ###
 
 * Bug fix in hard calibration and other pages where it wasn't allowing negative numbers
+* Bug fix in adding outflow to point source / inlets
 * Minor package updates
+* Add automatic software updates
 
 ### Revision 3.0.2 ###
 

@@ -546,7 +546,7 @@
 				</v-tooltip>
 			</div>
 			<v-list density="compact" nav>
-				<v-list-item prepend-icon="fas fa-folder-open" to="/" :active="$route.path === '/'">
+				<v-list-item prepend-icon="fas fa-folder-open" to="/" :active="route.path === '/'">
 					<v-tooltip activator="parent" location="end">Project setup and information</v-tooltip>
 				</v-list-item>
 				<v-list-item prepend-icon="fas fa-pencil-alt" to="/edit">
