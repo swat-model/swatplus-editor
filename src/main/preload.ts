@@ -54,6 +54,15 @@ contextBridge.exposeInMainWorld('electronApi', {
 	setColorTheme: (colorTheme:string) => {return ipcRenderer.send('set-color-theme', colorTheme) },
 	getColorTheme: () => {return ipcRenderer.sendSync('get-color-theme') },
 
+	loadFromContextMenu: (callback:(data:any) => any) => {
+		let channel = `load-from-context-menu`;
+		const subscription = (_event:any, data:any) => callback(data);
+		ipcRenderer.on(channel, subscription);
+		return () => {
+			ipcRenderer.removeListener(channel, subscription);
+		}
+	},
+
 	//Auto update
 	appUpdateStatus: (callback:(data:any) => any) => {
 		let channel = `app-update-status`;

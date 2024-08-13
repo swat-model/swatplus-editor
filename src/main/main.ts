@@ -606,7 +606,7 @@ const template: Electron.MenuItemConstructorOptions[] = [
 		submenu: [
 			{
 				label: 'Help Using SWAT+ Editor',
-				click () { setMainWindowLocation('help') }
+				click () { mainWindow.webContents.send('load-from-context-menu', 'help') }
 			},
 			{
 				label: 'SWAT+ Editor Documentation',
@@ -636,7 +636,7 @@ const template: Electron.MenuItemConstructorOptions[] = [
 			{type: 'separator'},
 			{
 				label: 'Check for updates...',
-				click () { setMainWindowLocation('update') }
+				click () { mainWindow.webContents.send('load-from-context-menu', 'update') }
 			},
 			{
 				label: 'See releases on Github',

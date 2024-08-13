@@ -47,6 +47,7 @@ export function useRunProcess() {
 		return electron.joinPaths([resultsPath(inputDir), 'swatplus_output.sqlite']);
 	}
 
+	const loadFromContextMenu = (callback:(_event:any, data:any) => any) => electron.loadFromContextMenu(callback);
 	const appUpdateStatus = (callback:(_event:any, data:any) => any) => electron.appUpdateStatus(callback);
 	const appUpdateDownloading = (callback:(_event:any, data:any) => any) => electron.appUpdateDownloading(callback);
 	const appUpdateDownloaded = (callback:(_event:any, data:any) => any) => electron.appUpdateDownloaded(callback);
@@ -69,6 +70,7 @@ export function useRunProcess() {
 		getApiOutput,
 		resultsPath,
 		outputDbPath,
+		loadFromContextMenu,
 		appUpdateStatus,
 		appUpdateDownloading,
 		appUpdateDownloaded,

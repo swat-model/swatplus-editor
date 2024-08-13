@@ -1,8 +1,27 @@
 <script setup lang="ts">
-	import { useRoute } from 'vue-router';
-	import { useFormatters } from '@/helpers/formatters';
+	import { reactive, onMounted, onUnmounted, computed } from 'vue';
+	import { useRoute, useRouter } from 'vue-router';
+	import { useHelpers } from '@/helpers';
 	const route = useRoute();
-	const formatters = useFormatters();
+	const router = useRouter();
+	const { formatters, runProcess } = useHelpers();
+
+	onMounted(() => initRunProcessHandlers());	
+	onUnmounted(() => removeRunProcessHandlers());
+
+	let listeners:any = {
+		loadFromContextMenu: undefined
+	}
+
+	function initRunProcessHandlers() {
+		listeners.loadFromContextMenu = runProcess.loadFromContextMenu((stdData:any) => {
+			router.push({ path: `/${stdData}` });
+		});
+	}
+
+	function removeRunProcessHandlers() {
+		if (listeners.loadFromContextMenu) listeners.loadFromContextMenu();
+	}
 </script>
 
 <template>

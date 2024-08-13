@@ -30,6 +30,7 @@ export default interface ElectronApi {
 	launchSwatPlusToolbox: (projectDb:string) => string,
 	setColorTheme: (colorTheme:string) => void,
 	getColorTheme: () => string,
+	loadFromContextMenu: (callback:any) => void,
 	appUpdateStatus: (callback:any) => void,
 	appUpdateDownloading: (callback:any) => void,
 	appUpdateDownloaded: (callback:any) => void,
