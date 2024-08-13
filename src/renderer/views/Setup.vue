@@ -9,7 +9,7 @@
 	const route = useRoute();
 	const theme = useTheme();
 	const { mobile } = useDisplay();
-	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = useHelpers();
+	const { api, constants, errors, formatters, currentProject, runProcess, utilities, appUpdate } = useHelpers();
 	
 	let page:any = reactive({
 		error: null,
@@ -437,10 +437,12 @@
 	let listeners:any = {
 		stdout: undefined,
 		stderr: undefined,
-		close: undefined
+		close: undefined,
+		appUpdateStatus: undefined,
 	}
 
 	function initRunProcessHandlers() {
+		errors.log('Adding run process handlers');
 		listeners.stdout = runProcess.processStdout('setup', (data:any) => {
 			task.progress = runProcess.getApiOutput(data);
 		});
@@ -469,12 +471,19 @@
 				}
 			}
 		});
+
+		listeners.appUpdateStatus = runProcess.appUpdateStatus((stdData:any) => {
+			let status:any = runProcess.getApiOutput(stdData);
+			appUpdate.setStatus(status.message, status.isAvailable);
+		});
 	}
 
 	function removeRunProcessHandlers() {
+		errors.log('Removing run process handlers');
 		if (listeners.stdout) listeners.stdout();
 		if (listeners.stderr) listeners.stderr();
 		if (listeners.close) listeners.close();
+		if (listeners.appUpdateStatus) listeners.appUpdateStatus();
 	}
 
 	function cancelTask() {
@@ -546,7 +555,7 @@
 				</v-tooltip>
 			</div>
 			<v-list density="compact" nav>
-				<v-list-item prepend-icon="fas fa-folder-open" to="/" :active="$route.path === '/'">
+				<v-list-item prepend-icon="fas fa-folder-open" to="/" :active="route.path === '/'">
 					<v-tooltip activator="parent" location="end">Project setup and information</v-tooltip>
 				</v-list-item>
 				<v-list-item prepend-icon="fas fa-pencil-alt" to="/edit">
@@ -573,6 +582,12 @@
 					</v-list-item>
 					<v-list-item prepend-icon="fas fa-circle-question" to="/help">
 						<v-tooltip activator="parent" location="end">Help</v-tooltip>
+					</v-list-item>
+					<v-list-item v-if="appUpdate.isAvailable" to="/update">
+						<template v-slot:prepend>
+							<v-badge :content="1" color="error"><v-icon>fas fa-bell</v-icon></v-badge>
+						</template>
+						<v-tooltip activator="parent" location="end">Software update available</v-tooltip>
 					</v-list-item>
 					<v-list-item :prepend-icon="page.colorTheme === 'light' ? 'fas fa-sun' : 'fas fa-moon'" @click="toggleColorTheme">
 						<v-tooltip activator="parent" location="end">Toggle color theme</v-tooltip>

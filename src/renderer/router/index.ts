@@ -5,6 +5,7 @@ import Help from '../views/Help.vue';
 import Edit from '../views/edit/Edit.vue';
 import Run from '../views/Run.vue';
 import Check from '../views/Check.vue';
+import Update from '../views/Update.vue';
 import TableBrowser from '../views/TableBrowser.vue';
 
 import connect from './connect';
@@ -37,7 +38,8 @@ export default createRouter({
 				{ 
 					path: 'edit', name: 'Edit', component: Edit,
 					children: editRoutes
-				}
+				},
+				{ path: 'update', name: 'Update', component: Update }
 			]
 		},
 		{ path: '/table-browser', name: 'TableBrowser', component: TableBrowser },

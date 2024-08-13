@@ -61,14 +61,14 @@ def conId(id):
 
 @bp.route('/out', methods=['POST'])
 def conOut():
-	return DefaultRestMethods.post_con_out('aquifer_con', Recall_con_out)
+	return DefaultRestMethods.post_con_out('recall_con', Recall_con_out)
 
 @bp.route('/out/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def conOutId(id):
 	if request.method == 'GET':
 		return DefaultRestMethods.get(id, Recall_con_out, 'Outflow', True)
 	elif request.method == 'PUT':
-		return DefaultRestMethods.put_con_out(id, 'aquifer_con', Recall_con_out)
+		return DefaultRestMethods.put_con_out(id, 'recall_con', Recall_con_out)
 	elif request.method == 'DELETE':
 		return DefaultRestMethods.delete(id, Recall_con_out, 'Outflow')
 	abort(405, 'HTTP Method not allowed.')

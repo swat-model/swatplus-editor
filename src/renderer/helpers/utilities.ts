@@ -221,7 +221,7 @@ export function useUtilities() {
 	}
 
 	function setWindowTitle() {
-		let title = `SWAT+ Editor ${constants.appSettings.version}`;
+		let title = `SWAT+ Editor ${constants.appSettings.version} / SWAT+ rev. ${constants.appSettings.swatplus}`;
 		if (!formatters.isNullOrEmpty(currentProject.name))  title += ' / ' + currentProject.name;
 		electron.setWindowTitle(title);
 	}

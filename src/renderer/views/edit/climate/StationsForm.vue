@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, computed, onMounted } from 'vue';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required, maxLength } from '@vuelidate/validators';
+	import { decimal, required, maxLength } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 
@@ -37,8 +37,8 @@
 
 	const itemRules = computed(() => ({
 		name: { required },
-		lat: { required, numeric },
-		lon: { required, numeric },
+		lat: { required, decimal },
+		lon: { required, decimal },
 		wgn_name: {},
 		pcp: {},
 		tmp: {},

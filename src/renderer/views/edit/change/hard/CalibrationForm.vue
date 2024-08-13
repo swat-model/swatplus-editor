@@ -2,7 +2,7 @@
 	import { reactive, onMounted, computed, watch } from 'vue';
 	import { useRouter } from 'vue-router';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required, requiredIf, helpers } from '@vuelidate/validators';
+	import { decimal, required, requiredIf, helpers } from '@vuelidate/validators';
 	import { useHelpers } from '@/helpers';
 
 	const router = useRouter();
@@ -31,13 +31,13 @@
 
 	const itemRules = computed(() => ({
 		chg_typ: { required },
-		chg_val: { required, numeric },
-		soil_lyr1: { numeric, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.sol.includes(props.item.cal_parm_name) })) },
-		soil_lyr2: { numeric, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.sol.includes(props.item.cal_parm_name) })) },
-		yr1: { numeric, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.cli.includes(props.item.cal_parm_name) })) },
-		yr2: { numeric, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.cli.includes(props.item.cal_parm_name) })) },
-		day1: { numeric, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.cli.includes(props.item.cal_parm_name) })) },
-		day2: { numeric, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.cli.includes(props.item.cal_parm_name) })) },
+		chg_val: { required, decimal },
+		soil_lyr1: { decimal, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.sol.includes(props.item.cal_parm_name) })) },
+		soil_lyr2: { decimal, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.sol.includes(props.item.cal_parm_name) })) },
+		yr1: { decimal, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.cli.includes(props.item.cal_parm_name) })) },
+		yr2: { decimal, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.cli.includes(props.item.cal_parm_name) })) },
+		day1: { decimal, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.cli.includes(props.item.cal_parm_name) })) },
+		day2: { decimal, required: helpers.withMessage('Value is required', requiredIf(() => { return data.parmTypes.cli.includes(props.item.cal_parm_name) })) },
 	}))
 	const v$ = useVuelidate(itemRules, props.item);
 

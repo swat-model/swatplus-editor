@@ -3,7 +3,7 @@
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required } from '@vuelidate/validators';
+	import { decimal, required } from '@vuelidate/validators';
 
 	const route = useRoute();
 	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
@@ -35,16 +35,16 @@
 	});
 
 	const rules = computed(() => ({
-		a: { required, numeric },
-		b: { required, numeric },
-		so4: { required, numeric },
-		ca: { required, numeric },
-		mg: { required, numeric },
-		na: { required, numeric },
-		k: { required, numeric },
-		cl: { required, numeric },
-		co3: { required, numeric },
-		hco3: { required, numeric }
+		a: { required, decimal },
+		b: { required, decimal },
+		so4: { required, decimal },
+		ca: { required, decimal },
+		mg: { required, decimal },
+		na: { required, decimal },
+		k: { required, decimal },
+		cl: { required, decimal },
+		co3: { required, decimal },
+		hco3: { required, decimal }
 	}))
 	const v$ = useVuelidate(rules, data.item);
 

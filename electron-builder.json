@@ -1,6 +1,6 @@
 {
-    "appId": "TAMU.SWATPlusEditor",
-	"artifactName": "${name}-installer-${version}.${ext}",
+    "appId": "com.github.swat-model.swatplus-editor",
+	"artifactName": "${name}-${version}-${platform}-${arch}.${ext}",
 	"productName": "SWATPlusEditor",
     "win": {
 		"target": "nsis",

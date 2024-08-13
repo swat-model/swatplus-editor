@@ -989,7 +989,7 @@
 									<span class="text-secondary" v-if="!formatters.isNullOrEmpty(data.config.swat_last_run)">
 										<br>Last run {{ formatters.toDate(data.config.swat_last_run) }}
 									</span>
-									<div class="mt-1" v-if="data.selection.model">
+									<div class="mt-1" v-if="data.selection.model && constants.globals.platform == 'win32'">
 										<v-checkbox density="compact" hide-details v-model="data.selection.debug" label="Use debug version?"></v-checkbox>
 									</div>
 								</div>

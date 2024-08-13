@@ -3,7 +3,7 @@
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required } from '@vuelidate/validators';
+	import { decimal, required } from '@vuelidate/validators';
 
 	const route = useRoute();
 	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
@@ -99,22 +99,22 @@
 	const valueRules = computed(() => ({
 		sta_id: { required },
 		timestep: { required },
-		so4_wet: { required, numeric },
-		ca_wet: { required, numeric },
-		mg_wet: { required, numeric },
-		na_wet: { required, numeric },
-		k_wet: { required, numeric },
-		cl_wet: { required, numeric },
-		co3_wet: { required, numeric },
-		hco3_wet: { required, numeric },
-		so4_dry: { required, numeric },
-		ca_dry: { required, numeric },
-		mg_dry: { required, numeric },
-		na_dry: { required, numeric },
-		k_dry: { required, numeric },
-		cl_dry: { required, numeric },
-		co3_dry: { required, numeric },
-		hco3_dry: { required, numeric }
+		so4_wet: { required, decimal },
+		ca_wet: { required, decimal },
+		mg_wet: { required, decimal },
+		na_wet: { required, decimal },
+		k_wet: { required, decimal },
+		cl_wet: { required, decimal },
+		co3_wet: { required, decimal },
+		hco3_wet: { required, decimal },
+		so4_dry: { required, decimal },
+		ca_dry: { required, decimal },
+		mg_dry: { required, decimal },
+		na_dry: { required, decimal },
+		k_dry: { required, decimal },
+		cl_dry: { required, decimal },
+		co3_dry: { required, decimal },
+		hco3_dry: { required, decimal }
 	}))
 	const v$ = useVuelidate(valueRules, data.page.values.obj);
 

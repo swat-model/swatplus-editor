@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	import { reactive, computed, onMounted } from 'vue';
 	import { useVuelidate } from '@vuelidate/core';
-	import { numeric, required, maxLength } from '@vuelidate/validators';
+	import { decimal, required, maxLength } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 	import TrVarEditor from '@/components/TrVarEditor.vue';
@@ -75,7 +75,7 @@
 
 	const itemRules = computed(() => ({
 		name: { required, maxLength: maxLength(constants.formNameMaxLength) },
-		rot_yr_ini: { required, numeric },
+		rot_yr_ini: { required, decimal },
 		description: {}
 	}))
 	const v$ = useVuelidate(itemRules, props.item);

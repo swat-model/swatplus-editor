@@ -52,5 +52,42 @@ contextBridge.exposeInMainWorld('electronApi', {
 	getSwatPlusToolboxPath: () => {return ipcRenderer.sendSync('get-swatplustoolbox-path') },
 	launchSwatPlusToolbox: (projectDb:string) => {return ipcRenderer.sendSync('launch-swatplustoolbox', projectDb) },
 	setColorTheme: (colorTheme:string) => {return ipcRenderer.send('set-color-theme', colorTheme) },
-	getColorTheme: () => {return ipcRenderer.sendSync('get-color-theme') }
+	getColorTheme: () => {return ipcRenderer.sendSync('get-color-theme') },
+
+	loadFromContextMenu: (callback:(data:any) => any) => {
+		let channel = `load-from-context-menu`;
+		const subscription = (_event:any, data:any) => callback(data);
+		ipcRenderer.on(channel, subscription);
+		return () => {
+			ipcRenderer.removeListener(channel, subscription);
+		}
+	},
+
+	//Auto update
+	appUpdateStatus: (callback:(data:any) => any) => {
+		let channel = `app-update-status`;
+		const subscription = (_event:any, data:any) => callback(data);
+		ipcRenderer.on(channel, subscription);
+		return () => {
+			ipcRenderer.removeListener(channel, subscription);
+		}
+	},
+	appUpdateDownloading: (callback:(data:any) => any) => {
+		let channel = `app-update-downloading`;
+		const subscription = (_event:any, data:any) => callback(data);
+		ipcRenderer.on(channel, subscription);
+		return () => {
+			ipcRenderer.removeListener(channel, subscription);
+		}
+	},
+	appUpdateDownloaded: (callback:(data:any) => any) => {
+		let channel = `app-update-downloaded`;
+		const subscription = (_event:any, data:any) => callback(data);
+		ipcRenderer.on(channel, subscription);
+		return () => {
+			ipcRenderer.removeListener(channel, subscription);
+		}
+	},
+	downloadUpdate: () => ipcRenderer.send('download-update', ''),
+	quitAndInstallUpdate: () => ipcRenderer.send('quit-and-install-update', ''),
 })

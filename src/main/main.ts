@@ -9,6 +9,8 @@ import child_process from 'child_process';
 import axios from 'axios';
 import portfinder from 'portfinder';
 import kill from 'tree-kill';
+import { autoUpdater } from 'electron-updater';
+autoUpdater.autoDownload = false;
 
 const store = new Store();
 let DEV_MODE = process.env.NODE_ENV === 'development';
@@ -91,6 +93,16 @@ const getSwatExeFile = (debug:boolean) => {
 	return join(app.getAppPath(), 'static', 'swat_exe', 'rev' + appsettings.swatplus + '_64' + d).replace('app.asar', 'app.asar.unpacked');
 }
 
+const getSwatExeFileNew = (debug:boolean) => {
+	let d = debug ? '-debug' : '';
+
+	let p = '-win-amd64';
+	if (process.platform === 'linux') p = '-lin-x86_64';
+	else if (process.platform === 'darwin') p = '-mac-x86_64';
+
+	return join(app.getAppPath(), 'static', 'swat_exe', 'swatplus-' + appsettings.swatplus + p + d).replace('app.asar', 'app.asar.unpacked');
+}
+
 const getLibPath = () => {
 	let osqual = 'win';
 	if (process.platform === 'linux') osqual = 'linux';
@@ -156,12 +168,19 @@ function createWindow () {
 	})
 }
 
+function setMainWindowLocation(location:string) {
+	if (process.env.NODE_ENV === 'development') {
+		const rendererPort = process.argv[2];
+		mainWindow.loadURL(`http://localhost:${rendererPort}/#/${location}`);
+	}
+	else {
+		mainWindow.loadFile(join(app.getAppPath(), 'renderer', `index.html/#/${location}`));
+	}
+}
+
 app.whenReady().then(() => {
 	if (cli.flags.cmdOnly) {
-		let linux_suf = '';
-		if (process.platform === 'linux') linux_suf = '_linux';
-		else if (process.platform === 'darwin') linux_suf = '_mac';
-		const swat_exe = join(app.getAppPath(), 'static', 'swat_exe', 'rev' + appsettings.swatplus + '_64rel' + linux_suf).replace('app.asar', 'app.asar.unpacked');
+		const swat_exe = getSwatExeFile(false);
 
 		var script_args = [
 			'run',
@@ -283,6 +302,56 @@ app.on('window-all-closed', function () {
 
 app.on('before-quit', async () => {
 	await closeProcesses();
+});
+
+//Auto Updater
+function sendUpdateStatus(message:any, isAvailable:boolean) {
+	let data = {
+		message: message,
+		isAvailable: isAvailable
+	};
+	mainWindow.webContents.send('app-update-status', data.toString());
+}
+
+autoUpdater.on('checking-for-update', () => {
+	sendUpdateStatus('Checking for updates...', false);
+});
+
+autoUpdater.on('update-available', (info) => {
+	sendUpdateStatus(info.releaseNotes, true);
+});
+
+autoUpdater.on('update-not-available', (info) => {
+	sendUpdateStatus('You are using the most recent version of SWAT+ Editor.', false);
+});
+
+autoUpdater.on('error', (err) => {
+	sendUpdateStatus('Error in auto-updater. ' + err, false);
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+	let data = {
+		percent: progressObj.percent,
+		message: `Downloading update ${Math.round(progressObj.percent)}%`
+	};
+	mainWindow.webContents.send('app-update-downloading', data.toString());
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+	mainWindow.webContents.send('app-update-downloaded', 'Update downloaded.');
+});
+
+app.on('ready', function()  {
+	if (process.platform === 'win32') autoUpdater.checkForUpdates();
+});
+
+ipcMain.on('download-update', (event, arg) => {
+	autoUpdater.downloadUpdate();
+});
+
+ipcMain.on('quit-and-install-update', async (event, arg) => {
+	await closeProcesses();
+	autoUpdater.quitAndInstall();
 });
 
 //IPC functions to connect to renderer
@@ -536,6 +605,10 @@ const template: Electron.MenuItemConstructorOptions[] = [
 		role: 'help',
 		submenu: [
 			{
+				label: 'Help Using SWAT+ Editor',
+				click () { mainWindow.webContents.send('load-from-context-menu', 'help') }
+			},
+			{
 				label: 'SWAT+ Editor Documentation',
 				click () { shell.openExternal('https://swatplus.gitbook.io/docs/') }
 			},
@@ -562,7 +635,11 @@ const template: Electron.MenuItemConstructorOptions[] = [
 			},
 			{type: 'separator'},
 			{
-				label: 'Check for updates',
+				label: 'Check for updates...',
+				click () { mainWindow.webContents.send('load-from-context-menu', 'update') }
+			},
+			{
+				label: 'See releases on Github',
 				click () { shell.openExternal('https://github.com/swat-model/swatplus-editor/releases') }
 			}
 		]

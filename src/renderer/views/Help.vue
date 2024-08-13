@@ -71,6 +71,29 @@
 					</v-card>
 
 					<v-card class="mb-6">
+						<v-card-title>Tools Compatibility with SWAT+ Editor {{ constants.appSettings.version }}</v-card-title>
+						<v-card-text>
+							<p class="text-medium-emphasis mb-0">
+								We realize we have many tools with many different versions. Please ensure that when you update one tool, it is still compatible with your other tools.
+							</p>
+						</v-card-text>
+						<v-table density="compact">
+							<tbody>
+								<tr><th class="min">SWAT+ Model</th><td>{{ constants.appSettings.swatplus }} (*see note below)</td></tr>
+								<tr><th class="min">QSWAT+</th><td>&gt;= 2.5.3</td></tr>
+								<tr><th class="min">SWAT+ Toolbox</th><td>&gt;= 2.0</td></tr>
+							</tbody>
+						</v-table>
+						<v-card-text>
+							<p class="text-medium-emphasis mb-0">
+								*Note: While you may change your version of SWAT+ used in the editor, we recommend only doing so with caution and knowledge of model changes between the versions. 
+								If there are input and output file changes, you may run into errors or inaccurate results. To change your model version, go to the <router-link to="/run">Run</router-link> tab and click on the 
+								folder icon to the right of "Run SWAT+ rev. {{ constants.appSettings.swatplus }}".
+							</p>
+						</v-card-text>
+					</v-card>
+
+					<v-card class="mb-6">
 						<v-card-title>About SWAT+</v-card-title>
 						<v-card-text>
 							<p class="text-medium-emphasis mb-0">
@@ -155,13 +178,17 @@
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-globe</v-icon></template>
 								SWAT+ Website
 							</v-list-item>
-							<v-list-item @click="utilities.openUrl('https://bitbucket.org/blacklandgrasslandmodels/modular_swatplus/src/master/')" border="t" class="text-primary">
+							<v-list-item @click="utilities.openUrl('https://github.com/swat-model/swatplus')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fab fa-github</v-icon></template>
-								SWAT+ Source Code Repository
+								SWAT+ Github
 							</v-list-item>
 							<v-list-item @click="utilities.openUrl('https://github.com/swat-model/swatplus-editor')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fab fa-github</v-icon></template>
-								SWAT+ Editor Source Code Repository
+								SWAT+ Editor Github
+							</v-list-item>
+							<v-list-item @click="utilities.openUrl('https://github.com/swat-model/QSWATPlus')" border="t" class="text-primary">
+								<template #prepend><v-icon class="text-medium-emphasis">fab fa-github</v-icon></template>
+								QSWAT+ Github
 							</v-list-item>
 							<v-list-item @click="utilities.openUrl('https://plus.swat.tamu.edu')" border="t" class="text-primary">
 								<template #prepend><v-icon class="text-medium-emphasis">fas fa-box-archive</v-icon></template>
