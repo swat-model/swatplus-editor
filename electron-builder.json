@@ -2,6 +2,7 @@
     "appId": "com.github.swat-model.swatplus-editor",
 	"artifactName": "${name}-${version}-${platform}-${arch}.${ext}",
 	"productName": "SWATPlusEditor",
+	"afterPack": "./linux-sandbox-fix.js",
     "win": {
 		"target": "nsis",
 		"icon": "release/build/icons/ico/256x256.ico",
@@ -24,7 +25,7 @@
 			"src/main/static"
 		],
 		"executableName": "SWATPlusEditor",
-		"artifactName": "${name}-${version}.${ext}"
+		"artifactName": "${name}-${version}-${platform}-${arch}.${ext}"
 	},
 	"mac": {
 		"target": "dmg",
@@ -36,7 +37,7 @@
 	},
 	"appImage": {
 		"license": "license.txt",
-		"artifactName": "${name}-${version}.${ext}",
+		"artifactName": "${name}-${version}-${platform}-${arch}.${ext}",
 		"category": "Science"
 	},
 	"directories": {
