@@ -3,10 +3,10 @@
 #define SWATPlusVersion "3.0"
 #define SWATPlusPatchVersion "3"
 #define SWATPlusToolsPatchVersion "3"
-#define QSWATPlusVersion "2.5"
-#define QSWATPlusPatchVersion "3"
+#define QSWATPlusVersion "3.0"
+#define QSWATPlusPatchVersion "0"
 #define ToolboxVersion "2.0"
-#define ToolboxPatchVersion "0"
+#define ToolboxPatchVersion "7"
 #define ModelVersion "61.0.1"
 #define SWATURL "https://swat.tamu.edu/"
 
@@ -22,7 +22,7 @@ AppPublisher=Texas A&M AgriLife Research
 AppPublisherURL={#SWATURL}
 AppSupportURL={#SWATURL}
 AppUpdatesURL={#SWATURL}
-OutputBaseFilename=swatplustools-installer-{#SWATPlusVersion}.{#SWATPlusToolsPatchVersion}
+OutputBaseFilename=swatplus-windows-installer-{#SWATPlusVersion}.{#SWATPlusToolsPatchVersion}
 OutputDir=output
 ArchitecturesInstallIn64BitMode=x64
 LicenseFile=..\license.txt
@@ -31,7 +31,7 @@ DirExistsWarning=no
 DisableDirPage=no
 
 [Files]
-Source: "data\downloads\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: qswat; 
+Source: "data\downloads\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: qswat; 
 Source: "dist\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; DestDir: "{tmp}"; Components: editor; 
 Source: "data\downloads\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; DestDir: "{tmp}"; Components: toolbox;  
 Source: "{tmp}\swatplus_soils.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 44190170; Components: soils
@@ -60,10 +60,10 @@ Source: "data\downloads\SWATPlus\Tools\SWATGraph\runSWATGraph.bat"; DestDir: "{a
 Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v{#QSWATPlusVersion}.pdf"; DestDir: "{app}\Documents"; Components: qswat\manual;  Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Run]
-Filename: "{tmp}\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
+Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
 Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
 Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent shellexec
-Filename: "{tmp}\QSWATPlus3_12install{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
+Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
 Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
 Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent shellexec
 
