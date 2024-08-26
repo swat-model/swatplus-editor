@@ -473,6 +473,7 @@
 		});
 
 		listeners.appUpdateStatus = runProcess.appUpdateStatus((stdData:any) => {
+			console.log(`Update status received: ${stdData}`);
 			let status:any = runProcess.getApiOutput(stdData);
 			appUpdate.setStatus(status.message, status.isAvailable);
 		});

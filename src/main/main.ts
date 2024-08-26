@@ -259,6 +259,11 @@ app.whenReady().then(() => {
 			
 				createWindow();
 				initColorTheme();
+
+				if (process.platform === 'win32') {
+					console.log('Checking for updates...');
+					autoUpdater.checkForUpdates();
+				}
 			})
 			.catch((err) => {
 				console.log('Could not find port: ' + err);
@@ -310,7 +315,7 @@ function sendUpdateStatus(message:any, isAvailable:boolean) {
 		message: message,
 		isAvailable: isAvailable
 	};
-	mainWindow.webContents.send('app-update-status', data.toString());
+	mainWindow.webContents.send('app-update-status', JSON.stringify(data));
 }
 
 autoUpdater.on('checking-for-update', () => {
@@ -334,16 +339,19 @@ autoUpdater.on('download-progress', (progressObj) => {
 		percent: progressObj.percent,
 		message: `Downloading update ${Math.round(progressObj.percent)}%`
 	};
-	mainWindow.webContents.send('app-update-downloading', data.toString());
+	mainWindow.webContents.send('app-update-downloading', JSON.stringify(data));
 });
 
 autoUpdater.on('update-downloaded', (info) => {
 	mainWindow.webContents.send('app-update-downloaded', 'Update downloaded.');
 });
 
-app.on('ready', function()  {
-	if (process.platform === 'win32') autoUpdater.checkForUpdates();
-});
+/*app.on('ready', function()  {
+	if (process.platform === 'win32') {
+		console.log('Checking for updates...');
+		autoUpdater.checkForUpdates();
+	}
+});*/
 
 ipcMain.on('download-update', (event, arg) => {
 	autoUpdater.downloadUpdate();
