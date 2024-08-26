@@ -279,7 +279,11 @@ class GisImport(ExecutableApi):
 
 	def get_cn2(self, soil, lu):
 		lum_name = '{name}_lum'.format(name=lu)
-		ds_m = ds_lum.Landuse_lum.get(ds_lum.Landuse_lum.name == lum_name)
+		ds_m = ds_lum.Landuse_lum.get_or_none(ds_lum.Landuse_lum.name == lum_name)
+		if ds_m is None:
+			lum_default_cn2 = 5
+			ds_m = ds_lum.Landuse_lum.get(ds_lum.Landuse_lum.id == lum_default_cn2)
+		
 		cntable = ds_m.cn2
 
 		texture_map = {

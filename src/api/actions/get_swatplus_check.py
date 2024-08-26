@@ -353,8 +353,11 @@ def get_landscape(ls, ncycle, aqu):
 
 def get_landuse():
 	#get plant name for each hru
-	hru_to_crop = { c.unit: c.plantnm for c in misc.Crop_yld_aa.select() }
-	hru_name_to_area = { h.name: h.area for h in connect.Hru_con.select() }
+	#hru_to_crop = { c.unit: c.plantnm for c in misc.Crop_yld_aa.select() }
+
+	hru_cons = connect.Hru_con.select()
+	hru_to_crop = { h.name: h.hru.lu_mgt.name.replace('_lum', '') for h in hru_cons }
+	hru_name_to_area = { h.name: h.area for h in hru_cons }
 	hru_wb = waterbal.Hru_wb_aa.select().order_by(waterbal.Hru_wb_aa.unit)
 	hru_ls = losses.Hru_ls_aa.select().order_by(losses.Hru_ls_aa.unit)
 	hru_pw = plantwx.Hru_pw_aa.select().order_by(plantwx.Hru_pw_aa.unit)
@@ -366,7 +369,7 @@ def get_landuse():
 	if len(hru_wb) == len(hru_ls) and len(hru_wb) == len(hru_pw):
 		i = 0
 		for wb in hru_wb:
-			landuse = hru_to_crop.get(wb.unit, 'NA').strip()
+			"""landuse = hru_to_crop.get(wb.unit, 'NA').strip()
 
 			if landuse == 'NA':
 				try:
@@ -375,8 +378,13 @@ def get_landuse():
 					if urban is not None:
 						landuse = urban.name
 				except:
-					pass
+					pass"""
 
+			landuse = hru_to_crop.get(wb.name, '--').strip()
+			if landuse == '--':
+				warnings.append('Could not successfully lookup landuse name for {}. SWAT+ Check expects landuse.lum names in the format of "[cropname]_lum".'.format(wb.name))
+
+			landuse = '{} landuse'.format(wb.name)
 			area = hru_name_to_area.get(wb.name, 0)
 			match = rows.get(landuse, None)
 
