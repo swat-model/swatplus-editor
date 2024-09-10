@@ -12,7 +12,7 @@
 			{ key: 'elev', label: 'Elev (m)', type: 'number', class: 'text-right' },
 			{ key: 'wst', label: 'Weather Station', type: 'object', class: 'text-right', objectRoutePath: '/edit/climate/stations/edit/' },
 			{ key: 'topo', label: 'Topography', type: 'object', class: 'text-right', objectRoutePath: '/edit/hydrology/topography/edit/' },
-			{ key: 'hydro', label: 'Hydrology', type: 'object', class: 'text-right', objectRoutePath: '/edit/hydrology/edit/' },
+			{ key: 'hydro', label: 'Hydrology', type: 'object', class: 'text-right', objectRoutePath: '/edit/hydrology/hydrology/edit/' },
 			{ key: 'soil', label: 'Soils', type: 'object', class: 'text-right', objectRoutePath: '/edit/soils/soils/edit/' },
 			{ key: 'lu_mgt', label: 'Landuse', type: 'object', class: 'text-right', objectRoutePath: '/edit/lum/landuse/edit/' },
 			{ key: 'soil_plant_init', label: 'Soil Plant', type: 'object', class: 'text-right', objectRoutePath: '/edit/constituents/soil_plant/edit/' },

@@ -45,7 +45,7 @@
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<file-header input-file="field.fld" docs-path="hydrology/field.fld" use-io>
-			<router-link to="/edit/fields">Fields</router-link>
+			<router-link to="/edit/hydrology/fields">Fields</router-link>
 			/ Edit
 		</file-header>
 

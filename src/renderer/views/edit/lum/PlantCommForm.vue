@@ -348,7 +348,7 @@
 		</v-form>
 
 		<v-dialog v-model="data.plants.form.show" :max-width="constants.dialogSizes.lg">
-			<v-card :title="(data.plants.form.update ? 'Update' : 'Add') + ' Soil Layer'">
+			<v-card :title="(data.plants.form.update ? 'Update' : 'Add') + ' Plant'">
 				<v-card-text>
 					<error-alert :text="data.plants.form.error"></error-alert>
 					

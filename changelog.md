@@ -2,6 +2,12 @@
 
 ## Version 3 ##
 
+### Revision 3.0.5 ###
+
+* Bug fix in some tables with broken link to Hydrology section tables
+* Bug fix listing HRU elements in Landscape Units section
+* Added copy function to LUM
+
 ### Revision 3.0.4 ###
 
 * SWAT+ Check bug fix - the the Land Use Summary tab, urban land use codes were not being looked up correctly resulting in 'NA'. Updated SWAT+ Check to refer to the name in landuse.lum, but this will require standard names in the form of "cropname_lum". More detailed warnings given when this naming lookup is unsuccessful.
