@@ -383,8 +383,8 @@ def get_landuse():
 			landuse = hru_to_crop.get(wb.name, '--').strip()
 			if landuse == '--':
 				warnings.append('Could not successfully lookup landuse name for {}. SWAT+ Check expects landuse.lum names in the format of "[cropname]_lum".'.format(wb.name))
-
-			landuse = '{} landuse'.format(wb.name)
+				landuse = '{} landuse'.format(wb.name)
+			
 			area = hru_name_to_area.get(wb.name, 0)
 			match = rows.get(landuse, None)
 
