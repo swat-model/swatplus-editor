@@ -29,7 +29,14 @@
 			{ value: null, title: 'not applicable' },
 			{ value: 'buildup_washoff', title: 'buildup_washoff' },
 			{ value: 'usgs_reg', title: 'usgs_reg' }
-		]
+		],
+		copy: {
+			show: false,
+			error: null,
+			saving: false,
+			saveSuccess: false,
+			name: null
+		}
 	});
 
 	let selected:any = reactive({
@@ -44,6 +51,31 @@
 			return api.put(`lum/landuse/${props.item.id}`, data, currentProject.getApiHeader());
 		else
 			return api.post(`lum/landuse`, data, currentProject.getApiHeader());
+	}
+
+	async function copy() {
+		page.copy.error = null;
+		page.copy.saving = true;
+		page.copy.saveSuccess = false;
+
+		if (formatters.isNullOrEmpty(page.copy.name)) {
+			page.copy.error = 'Please enter a name.';
+		} else {
+			try {
+				let item:any = props.item;
+				item.id = null;
+				item.name = formatters.toValidName(page.copy.name);
+
+				await api.post(`lum/landuse`, item, currentProject.getApiHeader());
+
+				page.copy.saveSuccess = true;
+				router.push({ name: 'Landuse'});
+			} catch (error) {
+				page.copy.error = errors.logError(error, 'Unable to save changes to database.');
+			}
+		}
+		
+		page.copy.saving = false;
 	}
 
 	async function save() {
@@ -265,11 +297,36 @@
 				<v-btn type="submit" :loading="page.saving" variant="flat" color="primary" class="mr-2">
 					{{ page.bulk.show ? 'Save Bulk Changes' : 'Save Changes' }}
 				</v-btn>
+				<v-btn v-if="isUpdate && !page.bulk.show" 
+					@click="page.copy.show = true"
+					type="button" variant="flat" color="info" class="mr-2">Copy</v-btn>
 				<back-button></back-button>
 				<div class="ml-auto">
 					<v-checkbox v-model="page.bulk.show" hide-details label="Edit multiple rows"></v-checkbox>
 				</div>
 			</action-bar>
 		</v-form>
+
+		<v-dialog v-model="page.copy.show" :max-width="constants.dialogSizes.md">
+			<v-card title="Copy Item">
+				<v-card-text>
+					<error-alert :text="page.copy.error"></error-alert>	
+
+					<p>
+						Would you like to make a copy of this entry? Enter a name for the copy below. Once copied, you'll be redirected to the list of items.
+					</p>
+
+					<div class="form-group">
+						<v-text-field v-model="page.copy.name" :rules="[constants.formRules.required, constants.formRules.nameLength]" 
+							label="Name of item copy" hint="Must be unique"></v-text-field>
+					</div>
+				</v-card-text>
+				<v-divider></v-divider>
+				<v-card-actions>
+					<v-btn :loading="page.copy.saving" @click="copy" color="primary" variant="text">Copy</v-btn>
+					<v-btn @click="page.copy.show = false">Cancel</v-btn>
+				</v-card-actions>
+			</v-card>
+		</v-dialog>
 	</div>
 </template>

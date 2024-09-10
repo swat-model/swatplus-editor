@@ -11,8 +11,8 @@
 			{ key: 'lon', label: 'Lon', type: 'number', class: 'text-right' },
 			{ key: 'elev', label: 'Elev (m)', type: 'number', class: 'text-right' },
 			{ key: 'wst', label: 'Weather Station', type: 'object', class: 'text-right', objectRoutePath: '/edit/climate/stations/edit/' },
-			{ key: 'topo', label: 'Topography', type: 'object', class: 'text-right', objectRoutePath: '/edit/topography/edit/' },
-			{ key: 'field', label: 'Field', type: 'object', class: 'text-right', objectRoutePath: '/edit/fields/edit/' },
+			{ key: 'topo', label: 'Topography', type: 'object', class: 'text-right', objectRoutePath: '/edit/hydrology/topography/edit/' },
+			{ key: 'field', label: 'Field', type: 'object', class: 'text-right', objectRoutePath: '/edit/hydrology/fields/edit/' },
 			{ key: 'outflow', label: '# Outflow', class: 'text-right' }
 		],
 	};

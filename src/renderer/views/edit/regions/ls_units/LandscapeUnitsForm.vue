@@ -19,7 +19,7 @@
 	});
 
 	let table:any = {
-		apiUrl: 'regions/ls_units/elements',
+		apiUrl: 'regions/ls_units/elements-table',
 		editPathPrefix: '/edit/regions/ls_units/elements/',
 		headers: [
 			{ key: 'name', label: 'Name' },
@@ -113,7 +113,7 @@
 					This unit does not have any elements. 
 				</div>
 				<div v-else>
-					<grid-view :api-url="table.apiUrl" :headers="table.headers" :edit-path-prefix="table.editPathPrefix"></grid-view>
+					<grid-view :api-url="`${table.apiUrl}/${props.item.id}`" :headers="table.headers" :edit-path-prefix="table.editPathPrefix"></grid-view>
 				</div>
 			</div>
 

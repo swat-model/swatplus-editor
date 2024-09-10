@@ -41,7 +41,7 @@
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<file-header input-file="topography.hyd" docs-path="hydrology/topography.hyd" use-io>
-			<router-link to="/edit/topography">Topography</router-link> 
+			<router-link to="/edit/hydrology/topography">Topography</router-link> 
 			/ Create
 		</file-header>
 

@@ -1,8 +1,8 @@
 #include <idp.iss>
 
 #define SWATPlusVersion "3.0"
-#define SWATPlusPatchVersion "4"
-#define SWATPlusToolsPatchVersion "4"
+#define SWATPlusPatchVersion "5"
+#define SWATPlusToolsPatchVersion "5"
 #define QSWATPlusVersion "3.0"
 #define QSWATPlusPatchVersion "0"
 #define ToolboxVersion "2.0"
