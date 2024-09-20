@@ -80,20 +80,20 @@ class Soils_sol(BaseFileModel):
 
 					for layer in row.layers:
 						layer_row_cols = [col(" ", padding_override=total_pad),
-										  col(layer.dp),
-										  col(layer.bd),
-										  col(layer.awc),
-										  col(layer.soil_k),
-										  col(layer.carbon),
-										  col(layer.clay),
-										  col(layer.silt),
-										  col(layer.sand),
-										  col(layer.rock),
-										  col(layer.alb),
-										  col(layer.usle_k),
-										  col(layer.ec),
-										  col(layer.caco3),
-										  col(layer.ph)]
+										  col(layer.dp, text_if_null="0.0"),
+										  col(layer.bd, text_if_null="0.0"),
+										  col(layer.awc, text_if_null="0.0"),
+										  col(layer.soil_k, text_if_null="0.0"),
+										  col(layer.carbon, text_if_null="0.0"),
+										  col(layer.clay, text_if_null="0.0"),
+										  col(layer.silt, text_if_null="0.0"),
+										  col(layer.sand, text_if_null="0.0"),
+										  col(layer.rock, text_if_null="0.0"),
+										  col(layer.alb, text_if_null="0.0"),
+										  col(layer.usle_k, text_if_null="0.0"),
+										  col(layer.ec, text_if_null="0.0"),
+										  col(layer.caco3, text_if_null="0.0"),
+										  col(layer.ph, text_if_null="0.0")]
 						self.write_row(file, layer_row_cols)
 						file.write("\n")
 

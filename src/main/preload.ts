@@ -90,4 +90,5 @@ contextBridge.exposeInMainWorld('electronApi', {
 	},
 	downloadUpdate: () => ipcRenderer.send('download-update', ''),
 	quitAndInstallUpdate: () => ipcRenderer.send('quit-and-install-update', ''),
+	manualUpdateCheck: () => ipcRenderer.send('manual-update-check', ''),
 })

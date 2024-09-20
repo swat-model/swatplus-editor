@@ -209,6 +209,31 @@ def wgnId(id):
 
 	abort(405, 'HTTP Method not allowed.')
 
+@bp.route('/wgn/validate', methods=['GET'])
+def wgnValidate():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	if request.method == 'GET':
+		"""query = (Weather_wgn_cli
+			.select(Weather_wgn_cli.id, fn.COUNT(Weather_wgn_cli_mon.id).alias('months'))
+			.join(Weather_wgn_cli_mon, JOIN.LEFT_OUTER, on=(Weather_wgn_cli.id == Weather_wgn_cli_mon.weather_wgn_cli_id))
+			.where(SQL('months') < 12)
+			.group_by(Weather_wgn_cli.id))"""
+		
+		data = []
+		for wgn in Weather_wgn_cli.select():
+			months = Weather_wgn_cli_mon.select().where(Weather_wgn_cli_mon.weather_wgn_cli_id == wgn.id).count()
+			if months < 12:
+				data.append({ 'id': wgn.id, 'name': wgn.name, 'months': months })
+		
+		rh.close()
+		return {
+			'is_invalid': len(data) > 0,
+			'data': data
+		}
+
 @bp.route('/wgn/db', methods=['GET', 'PUT'])
 def wgnDb():
 	project_db = request.headers.get(rh.PROJECT_DB)

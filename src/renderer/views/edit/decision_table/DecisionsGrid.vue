@@ -38,8 +38,8 @@
 		<v-alert v-if="decisionsTable==='flo_con.dtl'" type="warning" icon="$warning" variant="tonal" border="start" class="mb-4">
 			We recommend not using flow condition tables at this time unless you are an advanced user who has already been in touch with the SWAT+ model development team to discuss your needs.
 		</v-alert>
-		<v-alert v-if="decisionsTable==='scen_lu.dtl'" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-			Any land use scenarios added to your project tables below will be applied to your model. <br />Browse the datasets library tab and copy a scenario to your project as needed.
+		<v-alert v-if="decisionsTable==='scen_lu.dtl'" type="warning" icon="$warning" variant="tonal" border="start" class="mb-4">
+			Support for scenario land use decision tables is planned for a <b>SWAT+ Editor 3.1 release</b>. In the interim, please add these tables and a scen_dtl.upd file outside of the interface. Contact the model development team for assistance.
 		</v-alert>
 		
 		<v-card>

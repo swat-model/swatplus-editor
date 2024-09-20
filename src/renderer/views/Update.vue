@@ -37,7 +37,8 @@
 
 	let listeners:any = {
 		appUpdateDownloading: undefined,
-		appUpdateDownloaded: undefined
+		appUpdateDownloaded: undefined,
+		appUpdateStatus: undefined,
 	}
 
 	function initRunProcessHandlers() {
@@ -49,6 +50,12 @@
 			data.task.isDownloaded = true;
 			data.task.isDownloading = false;
 		});
+
+		listeners.appUpdateStatus = runProcess.appUpdateStatus((stdData:any) => {
+			console.log(`Update status received: ${stdData}`);
+			let status:any = runProcess.getApiOutput(stdData);
+			appUpdate.setStatus(status.message, status.isAvailable);
+		});
 	}
 
 	function downloadUpdate() {
@@ -59,6 +66,7 @@
 	function removeRunProcessHandlers() {
 		if (listeners.appUpdateDownloading) listeners.appUpdateDownloading();
 		if (listeners.appUpdateDownloaded) listeners.appUpdateDownloaded();
+		if (listeners.appUpdateStatus) listeners.appUpdateStatus();
 	}
 
 	const messageHtml = computed(() => {
@@ -125,6 +133,7 @@
 					</p>
 				</v-card-text>
 				<v-card-actions class="pb-3">
+					<v-btn @click="runProcess.manualUpdateCheck" color="primary" variant="flat"><v-icon class="mr-1">fa-arrows-rotate</v-icon> Check Again</v-btn>	
 					<v-btn to="/" color="secondary" variant="text">Return to Project</v-btn>
 				</v-card-actions>
 			</v-card>

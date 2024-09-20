@@ -6,7 +6,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'DecisionsFloCon'">
+		<div v-if="route.name == 'DecisionsFloCon'">
 			<decisions-grid decisions-table="flo_con.dtl" description="Flow Conditions"></decisions-grid>
 		</div>
 		<router-view></router-view>

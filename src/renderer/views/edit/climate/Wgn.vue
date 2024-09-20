@@ -53,6 +53,12 @@
 			show: false,
 			error: <string|null>null,
 			saving: false
+		},
+		validate: {
+			is_invalid: false,
+			data: <any[]>[],
+			error: <string|null>null,
+			saving: false
 		}
 	});
 
@@ -85,8 +91,9 @@
 	}));
 	const v$ = useVuelidate(formRules, page.import.form);
 
-	function getTableTotal(total:any) {
+	async function getTableTotal(total:any) {
 		table.total = total;
+		await validateStations();
 	}
 
 	async function get() {
@@ -102,11 +109,29 @@
 
 			page.import.form.db = formatters.toValue(response.data.wgn_db, defaultDb);
 			page.import.form.table = formatters.toValue(response.data.wgn_table_name, defaultTable);
+
+			await validateStations();
 		} catch (error) {
 			page.error = errors.logError(error, 'Unable to get project information from database.');
 		}
 		
 		page.loading = false;
+	}
+
+	async function validateStations() {
+		page.validate.loading = true;
+		page.validate.error = null;
+
+		try {
+			const response = await api.get(`climate/wgn/validate`, currentProject.getApiHeader());
+			errors.log(response.data);
+			page.validate.is_invalid = response.data.is_invalid;
+			page.validate.data = response.data.data;
+		} catch (error) {
+			page.validate.error = errors.logError(error, 'Unable to get project information from database.');
+		}
+		
+		page.validate.loading = false;
 	}
 
 	async function confirmDelete() {
@@ -118,6 +143,7 @@
 			errors.log(response);
 			page.delete.show = false;
 			await grid?.value?.get();
+			await validateStations();
 		} catch (error) {
 			page.delete.error = errors.logError(error, 'Unable to delete from database.');
 		}
@@ -242,10 +268,26 @@
 
 <template>
 	<project-container :loading="page.loading" :load-error="page.error">
-		<div v-if="$route.name === 'Wgn'">
+		<div v-if="route.name === 'Wgn'">
 			<file-header input-file="weather-wgn.cli" docs-path="climate">
 				Weather Generator
 			</file-header>
+
+			<error-alert :text="page.validate.error"></error-alert>
+			<page-loading :loading="page.validate.loading"></page-loading>
+			<v-alert v-if="!page.validate.loading && page.validate.is_invalid" type="warning" icon="$warning" variant="tonal" border="start" class="mb-4">
+				<p>
+					You have weather generators in your model that do not have corresponding monthly values. 
+					Non-zero monthly values for each statistic are required for SWAT+ to run. 
+					Please use the import function with the SWAT+ WGN database if you are unsure, or refer to the SWAT+ documentation.
+					Stations with missing data are listed below.
+				</p>
+				<ul>
+					<li v-for="station in page.validate.data">
+						Station <router-link class="text-warning" :to="`/edit/climate/wgn/edit/${station.id}`">{{ station.name }}</router-link> has <b>{{ station.months }}</b> months of data; 12 are required.
+					</li>
+				</ul>
+			</v-alert>
 
 			<grid-view ref="grid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal">
 				<template #actions>

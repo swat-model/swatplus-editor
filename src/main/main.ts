@@ -362,6 +362,11 @@ ipcMain.on('quit-and-install-update', async (event, arg) => {
 	autoUpdater.quitAndInstall();
 });
 
+ipcMain.on('manual-update-check', (event, arg) => {
+	console.log('Checking for updates...');
+	autoUpdater.checkForUpdates();
+});
+
 //IPC functions to connect to renderer
 ipcMain.on('message', (event, message) => {
 	console.log(message);

@@ -869,15 +869,26 @@ class GisImport(ExecutableApi):
 									plant1=plant1
 								).execute() 
 
-						lum.Landuse_lum.create(
-							name=ds_m.name,
-							plnt_com=pcom,
-							mgt=mgt_id,
-							cn2=ds_m.cn2.id,
-							cons_prac=ds_m.cons_prac.id,
-							ov_mann=ds_m.ov_mann.id,
-							cal_group=ds_m.cal_group
-						)
+						if ds_m is not None:
+							lum.Landuse_lum.create(
+								name=ds_m.name,
+								plnt_com=pcom,
+								mgt=mgt_id,
+								cn2=ds_m.cn2.id,
+								cons_prac=ds_m.cons_prac.id,
+								ov_mann=ds_m.ov_mann.id,
+								cal_group=ds_m.cal_group
+							)
+						else:
+							lum.Landuse_lum.create(
+								name=lum_name,
+								plnt_com=pcom,
+								mgt=mgt_id,
+								cn2=lum_default_cn2,
+								cons_prac=lum_default_cons_prac,
+								ov_mann=lum_default_ov_mann,
+								cal_group=lum_default_cal_group
+							)
 					else:
 						pcom = None
 						pi = init.Plant_ini.create(

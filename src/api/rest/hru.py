@@ -102,14 +102,22 @@ def properties():
 			m = Hru_data_hru()
 			m.name = args['name']
 			m.description = None if 'description' not in args else args['description']
-			m.topo_id = RestHelpers.get_id_from_name(Topography_hyd, args['topo_name'])
-			m.hydro_id = RestHelpers.get_id_from_name(Hydrology_hyd, args['hyd_name'])
-			m.soil_id = RestHelpers.get_id_from_name(Soils_sol, args['soil_name'])
-			m.lu_mgt_id = RestHelpers.get_id_from_name(Landuse_lum, args['lu_mgt_name'])
-			m.soil_plant_init_id = RestHelpers.get_id_from_name(Soil_plant_ini, args['soil_plant_init_name'])
-			m.surf_stor_id = RestHelpers.get_id_from_name(Wetland_wet, args['surf_stor'])
-			m.snow_id = RestHelpers.get_id_from_name(Snow_sno, args['snow_name'])
-			m.field_id = RestHelpers.get_id_from_name(Field_fld, args['field_name'])
+			if 'topo_name' in args:
+				m.topo_id = RestHelpers.get_id_from_name(Topography_hyd, args['topo_name'])
+			if 'hyd_name' in args:
+				m.hydro_id = RestHelpers.get_id_from_name(Hydrology_hyd, args['hyd_name'])
+			if 'soil_name' in args:
+				m.soil_id = RestHelpers.get_id_from_name(Soils_sol, args['soil_name'])
+			if 'lu_mgt_name' in args:
+				m.lu_mgt_id = RestHelpers.get_id_from_name(Landuse_lum, args['lu_mgt_name'])
+			if 'soil_plant_init_name' in args:
+				m.soil_plant_init_id = RestHelpers.get_id_from_name(Soil_plant_ini, args['soil_plant_init_name'])
+			if 'surf_stor' in args:
+				m.surf_stor_id = RestHelpers.get_id_from_name(Wetland_wet, args['surf_stor'])
+			if 'snow_name' in args:
+				m.snow_id = RestHelpers.get_id_from_name(Snow_sno, args['snow_name'])
+			if 'field_name' in args:
+				m.field_id = RestHelpers.get_id_from_name(Field_fld, args['field_name'])
 
 			result = m.save()
 

@@ -6,7 +6,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'DecisionsLum'">
+		<div v-if="route.name == 'DecisionsLum'">
 			<decisions-grid decisions-table="lum.dtl" description="Land Use Management"></decisions-grid>
 		</div>
 		<router-view></router-view>
