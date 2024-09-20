@@ -8,6 +8,8 @@ from helpers import utils, table_mapper
 from database import lib as db_lib
 from enum import Enum
 
+DO_DEBUG = False
+
 
 class FileOverwrite(Enum):
 	ignore = 1
@@ -55,6 +57,7 @@ def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, conv
 
 	if hasHeader:
 		headerLine = next(csv_reader)
+		utils.debug_stdout(DO_DEBUG, 'Header line: {}'.format(headerLine))
 
 	i = 1
 	rows = []
@@ -77,10 +80,13 @@ def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, conv
 			if ignore_id_col and field.name == "id":
 				skip = True
 				row_id = val[j]
+				if hasHeader and "id" in headerLine:
+					j += 1
 
 			if field.name == primary_key:
 				table_key = field
 
+			utils.debug_stdout(DO_DEBUG, 'Skip: {}'.format(skip))
 			if not skip:
 				value = None
 				if len(val) > j:
@@ -99,10 +105,14 @@ def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, conv
 				
 				row[field.name] = value if field.name not in remove_spaces_cols else utils.remove_space(value)
 
-			j += 1
+				j += 1
 
 		add_row = True
 		if overwrite != FileOverwrite.ignore:
+			"""utils.debug_stdout(DO_DEBUG, 'Primary key: {} {}'.format(primary_key, table_key))
+			utils.debug_stdout(DO_DEBUG, 'Overwrite method: {}'.format(overwrite))
+			utils.debug_stdout(DO_DEBUG, 'Row: {}'.format(row))
+			utils.debug_stdout(DO_DEBUG, 'Val: {}'.format(val))"""
 			try:
 				if table_key is not None:
 					m = table.get(table_key == row[primary_key])
@@ -115,6 +125,7 @@ def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, conv
 					else:
 						query = table.update(row).where(table.id == m.id)
 					result = query.execute()
+					utils.debug_stdout(DO_DEBUG, 'Update query result: {}'.format(result))
 					add_row = False
 				elif overwrite == FileOverwrite.rename:
 					k = 1
@@ -123,6 +134,10 @@ def read_csv_file(file_name, table, db, expected_cols, ignore_id_col=False, conv
 
 					row['name'] = '{name}{num}'.format(name=row['name'], num=k)
 			except table.DoesNotExist:
+				if table_key is not None:
+					utils.debug_stdout(DO_DEBUG, 'Table pk row does not exist: {}'.format(row[primary_key]))
+				else:
+					utils.debug_stdout(DO_DEBUG, 'Table name row does not exist: {}'.format(row['name']))
 				pass
 
 		if add_row:
