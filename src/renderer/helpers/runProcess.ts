@@ -60,6 +60,10 @@ export function useRunProcess() {
 		electron.quitAndInstallUpdate();
 	}
 
+	function manualUpdateCheck() {
+		electron.manualUpdateCheck();
+	}
+
 	return {
 		runApiProc,
 		runSwatProc,
@@ -75,6 +79,7 @@ export function useRunProcess() {
 		appUpdateDownloading,
 		appUpdateDownloaded,
 		downloadUpdate,
-		quitAndInstallUpdate
+		quitAndInstallUpdate,
+		manualUpdateCheck
 	}
 }

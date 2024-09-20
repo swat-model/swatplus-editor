@@ -36,6 +36,7 @@ export default interface ElectronApi {
 	appUpdateDownloaded: (callback:any) => void,
 	downloadUpdate: () => void,
 	quitAndInstallUpdate: () => void,
+	manualUpdateCheck: () => void,
 }
 
 declare global {

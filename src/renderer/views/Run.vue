@@ -216,6 +216,31 @@
 		}
 	});
 
+	let modelIssues:any = reactive({
+		wgn: {
+			is_invalid: false,
+			data: <any[]>[],
+			error: <string|null>null,
+			saving: false
+		}
+	});
+
+	async function validateWgn() {
+		modelIssues.wgn.loading = true;
+		modelIssues.wgn.error = null;
+
+		try {
+			const response = await api.get(`climate/wgn/validate`, currentProject.getApiHeader());
+			errors.log(response.data);
+			modelIssues.wgn.is_invalid = response.data.is_invalid;
+			modelIssues.wgn.data = response.data.data;
+		} catch (error) {
+			modelIssues.wgn.error = errors.logError(error, 'Unable to get project information from database.');
+		}
+		
+		modelIssues.wgn.loading = false;
+	}
+
 	const noneSelected = computed(() => {
 		return !(data.selection.inputs || data.selection.model || data.selection.output);
 	});
@@ -291,6 +316,8 @@
 			if (formatters.isNullOrEmpty(data.config.input_files_dir)) {
 				data.config.input_files_dir = currentProject.txtInOutPath;
 			}
+
+			await validateWgn();
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');
 		}
@@ -342,7 +369,7 @@
 					inputs: data.inputs
 				};
 				await api.put(`setup/run-settings`, infoData, currentProject.getApiHeader());
-				data.page.validated = false;
+				data.modelIssues.wgnd = false;
 				
 				if (data.selection.inputs) {
 					data.page.run.show = true;
@@ -948,6 +975,25 @@
 					</v-expansion-panels>
 
 					<v-divider class="my-6"></v-divider>
+
+					<error-alert :text="modelIssues.wgn.error"></error-alert>
+					<page-loading :loading="modelIssues.wgn.loading"></page-loading>
+					<div v-if="!modelIssues.wgn.loading && modelIssues.wgn.is_invalid">
+						<h1 class="text-h5 mb-4">Model Issues</h1>
+						<v-alert type="warning" icon="$warning" variant="tonal" border="start" class="mb-4">
+							<p>
+								You have <router-link class="text-warning" to="/edit/climate/wgn">weather generators</router-link> in your model that do not have corresponding monthly values. 
+								Non-zero monthly values for each statistic are required for SWAT+ to run. 
+								Please use the import function with the SWAT+ WGN database if you are unsure, or refer to the SWAT+ documentation.
+								Stations with missing data are listed below.
+							</p>
+							<ul>
+								<li v-for="station in modelIssues.wgn.data">
+									Station <router-link class="text-warning" :to="`/edit/climate/wgn/edit/${station.id}`">{{ station.name }}</router-link> has <b>{{ station.months }}</b> months of data; 12 are required.
+								</li>
+							</ul>
+						</v-alert>
+					</div>
 
 					<h1 class="text-h5 mb-4">Run SWAT+</h1>
 

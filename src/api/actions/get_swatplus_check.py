@@ -356,7 +356,7 @@ def get_landuse():
 	#hru_to_crop = { c.unit: c.plantnm for c in misc.Crop_yld_aa.select() }
 
 	hru_cons = connect.Hru_con.select()
-	hru_to_crop = { h.name: h.hru.lu_mgt.name.replace('_lum', '') for h in hru_cons }
+	hru_to_crop = { h.name: 'No Land Use' if h.hru.lu_mgt is None else h.hru.lu_mgt.name.replace('_lum', '') for h in hru_cons }
 	hru_name_to_area = { h.name: h.area for h in hru_cons }
 	hru_wb = waterbal.Hru_wb_aa.select().order_by(waterbal.Hru_wb_aa.unit)
 	hru_ls = losses.Hru_ls_aa.select().order_by(losses.Hru_ls_aa.unit)
