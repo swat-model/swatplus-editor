@@ -1,8 +1,12 @@
+<script setup lang="ts">
+	import { useRoute } from 'vue-router';
+	const route = useRoute();
+</script>
 <template>
 	<project-container>
-		<div v-if="$route.name == 'ReservoirsNutrients'">
+		<div v-if="route.name == 'ReservoirsNutrients'">
 			<file-header input-file="nutrients.res" docs-path="reservoirs/nutrients.res" use-io>
-				<router-link to="/edit/reservoirs">Reservoirs</router-link> 
+				<router-link to="/edit/cons/reservoirs">Reservoirs</router-link> 
 				/ Nutrients
 			</file-header>
 

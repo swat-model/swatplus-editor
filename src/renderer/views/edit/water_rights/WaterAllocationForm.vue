@@ -201,10 +201,10 @@
 			'divert': ''
 		},
 		objTypeRouteWaterAllocation: {
-			'hru': { path: '/edit/hrus/edit/', name: 'HrusEdit' },
-			'aqu': { path: '/edit/aquifers/edit/', name: 'AquifersEdit' },
-			'cha': { path: '/edit/channels/edit/', name: 'ChannelsEdit' },
-			'res': { path: '/edit/reservoirs/edit/', name: 'ReservoirsEdit' },
+			'hru': { path: '/edit/cons/hrus/edit/', name: 'HrusEdit' },
+			'aqu': { path: '/edit/cons/aquifers/edit/', name: 'AquifersEdit' },
+			'cha': { path: '/edit/cons/channels/edit/', name: 'ChannelsEdit' },
+			'res': { path: '/edit/cons/reservoirs/edit/', name: 'ReservoirsEdit' },
 			'unl': { path: '#', name: '#' },
 			'muni': { path: '#', name: '#' },
 			'divert': { path: '#', name: '#' }

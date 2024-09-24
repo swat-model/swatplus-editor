@@ -2,6 +2,11 @@
 
 ## Version 3 ##
 
+### Revision 3.0.8 ###
+
+* Fix bug in routing to connections/reservoirs/wetlands
+* Fix bug retreiving data from wetlands table due to gwflow conflict
+
 ### Revision 3.0.7 ###
 
 * Fix bug related to data table importing.
