@@ -369,7 +369,7 @@
 					inputs: data.inputs
 				};
 				await api.put(`setup/run-settings`, infoData, currentProject.getApiHeader());
-				data.modelIssues.wgnd = false;
+				data.page.validated = false;
 				
 				if (data.selection.inputs) {
 					data.page.run.show = true;
@@ -390,6 +390,7 @@
 					}
 				}
 			} catch (error) {
+				console.log(error);
 				data.page.saveError = errors.logError(error, 'Unable to update input files directory.');
 			}
 		}
