@@ -768,7 +768,7 @@
 										<v-table>
 											<tbody>
 												<tr>
-													<th>Software</th>
+													<th>Created with</th>
 													<td>SWAT+ Editor {{info.editor_version}}<span v-if="info.status.using_gis">, {{info.gis_version}}</span></td>
 												</tr>
 												<tr>

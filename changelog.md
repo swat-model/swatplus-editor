@@ -2,6 +2,11 @@
 
 ## Version 3 ##
 
+### Revision 3.0.7 ###
+
+* Fix bug related to data table importing.
+* Fix bug introduced in 3.0.6 during run due to typo.
+
 ### Revision 3.0.6 ###
 
 * Fix SWAT+ Check to allow null land use management pointer in HRUs.
