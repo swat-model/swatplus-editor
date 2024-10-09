@@ -241,7 +241,7 @@
 
 <template>
 	<project-container :loading="page.loading" :load-error="page.error">
-		<div v-if="$route.name === 'Stations'">
+		<div v-if="route.name === 'Stations'">
 			<file-header input-file="weather-sta.cli" docs-path="climate">
 				Weather Stations
 			</file-header>
@@ -312,7 +312,7 @@
 									<open-in-browser url="https://swatplus.gitbook.io/docs/user/editor/inputs/climate#swat+-format" text="read the instructions"></open-in-browser>.
 								</span>
 
-								Please ensure all characters in the files are UTF-8 encoding. Replace any accent or non-unicode characters in the station names or comment lines of all files.
+								Please ensure the files you're importing are saved with UTF-8 encoding. Replace any accent or non-unicode characters in the station names or comment lines of all files.
 							</v-alert>
 
 							<div class="form-group mb-0">

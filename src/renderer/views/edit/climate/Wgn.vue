@@ -357,7 +357,7 @@
 							<div v-else-if="page.import.form.method === 'two_file'">
 								<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 									<div>
-										Two CSV files are required. 
+										Two CSV files are required. Please ensure the files you're importing are saved with UTF-8 encoding. 
 										<open-in-browser url="https://plus.swat.tamu.edu/downloads/sample_files/wgn/swatplus_tf_wgn_template.zip" text="Download a template."></open-in-browser>
 									</div>
 									<ol class="mb-0">
@@ -395,7 +395,7 @@
 							</div>
 							<div v-else-if="page.import.form.method === 'one_file'">
 								<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-									One CSV file is required. One station per row; all 12 months of data are in a single row. 
+									One CSV file is required. One station per row; all 12 months of data are in a single row. Please ensure the files you're importing are saved with UTF-8 encoding. 
 									<open-in-browser url="https://plus.swat.tamu.edu/downloads/sample_files/wgn/swatplus_sf_wgn_template.csv" text="Download a template."></open-in-browser>
 								</v-alert>
 

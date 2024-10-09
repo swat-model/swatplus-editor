@@ -112,7 +112,8 @@ const getLibPath = () => {
 }
 
 const getSwatPlusToolboxPath = () => {
-	let path = 'C:/SWAT/SWATPlus/SWATPlusToolbox/SWATPlusToolbox.exe';
+	let path = join(app.getAppPath(), '../../../', 'SWATPlusToolbox', 'SWATPlusToolbox.exe');
+	if (!fs.existsSync(path)) path = 'C:/SWAT/SWATPlus/SWATPlusToolbox/SWATPlusToolbox.exe';
 
 	if (process.platform === 'linux') path = '';
 	else if (process.platform === 'darwin') path = '';
