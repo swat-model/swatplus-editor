@@ -40,7 +40,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="grassedww.str" docs-path="structural/grassedww.str" use-io>
+		<file-header input-file="grassedww.str" docs-path="structural-practices/grassedww.str" use-io>
 			<router-link to="/edit/structural/grassedww">Grassed Waterways</router-link>
 			/ Create
 		</file-header>

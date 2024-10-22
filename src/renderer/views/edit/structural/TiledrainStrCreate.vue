@@ -40,7 +40,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="tiledrain.str" docs-path="structural/tiledrain.str" use-io>
+		<file-header input-file="tiledrain.str" docs-path="structural-practices/tiledrain.str" use-io>
 			<router-link to="/edit/structural/tiledrain">Tile Drains</router-link>
 			/ Create
 		</file-header>

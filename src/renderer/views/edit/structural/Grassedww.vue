@@ -5,8 +5,8 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'GrassedwwStr'">
-			<file-header input-file="grassedww.str" docs-path="structural/grassedww.str" use-io>
+		<div v-if="route.name == 'GrassedwwStr'">
+			<file-header input-file="grassedww.str" docs-path="structural-practices/grassedww.str" use-io>
 				Grassed Waterways
 			</file-header>
 

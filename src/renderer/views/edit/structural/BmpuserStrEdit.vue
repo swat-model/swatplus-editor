@@ -44,7 +44,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="bmpuser.str" docs-path="structural/bmpuser.str" use-io>
+		<file-header input-file="bmpuser.str" docs-path="structural-practices/bmpuser.str" use-io>
 			<router-link to="/edit/structural/bmpuser">User Best Management Practices</router-link>
 			/ Edit
 		</file-header>

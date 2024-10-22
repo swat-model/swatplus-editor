@@ -87,12 +87,16 @@
 		if (!formatters.isNullOrEmpty(name)) {
 			try {
 				const response = await utilities.getAutoCompleteId(props.tableName, name);
-				var id = response.data.id;
+				let id = response.data.id;
 				
-				if (props.noRouteId)
+				if (props.noRouteId) {
 					router.push({ name: props.routeName });
-				else
-					router.push({ name: props.routeName, params: { id: id }});
+				} else {
+					if (props.routeName === 'DecisionsEdit')
+						router.push({ path: `/edit/decision-table/type/project/edit/${id}`});
+					else
+						router.push({ name: props.routeName, params: { id: id }});
+				}
 			} catch (error) {
 				errors.logError(error, `Cannot find ${name} in database table ${props.tableName}.`);
 			}

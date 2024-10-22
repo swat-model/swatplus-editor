@@ -5,7 +5,7 @@
 #define SWATPlusToolsPatchVersion "8"
 #define QSWATPlusVersion "3.0"
 #define QSWATPlusPatchVersion "2"
-#define ToolboxVersion "2.1"
+#define ToolboxVersion "2.3"
 #define ToolboxPatchVersion "0"
 #define ModelVersion "61.0.1"
 #define SWATURL "https://swat.tamu.edu/"
@@ -65,26 +65,24 @@ Source: "data\downloads\SWATPlus\Tools\SWATGraph\runSWATGraph.bat"; DestDir: "{a
 Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v{#QSWATPlusVersion}.pdf"; DestDir: "{app}\Documents"; Components: qswat\manual;  Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Run]
-Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/SILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
-Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S {code:InstallTypeFlag} /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
-Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/SILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent shellexec
-Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/VERYSILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
-Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S {code:InstallTypeFlag} /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
-Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/VERYSILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent shellexec
+Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/SILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
+Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S {code:InstallTypeFlag} /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
+Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "{code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
 
 [Messages]
 SelectDirBrowseLabel=If you select a different location from the default, you will need to set this location in the QSWAT+ Parameters form the first time you run QSWAT+.
 ConfirmUninstall=Are you sure you want to remove %1? SWAT+ Editor, tools, and documents will be removed. The QSWAT+ plugin and SWAT+ Toolbox will need to be uninstalled separately.
 
 [UninstallRun]
-Filename: "{app}\SWATPlusEditor\Uninstall SWATPlusEditor.exe"; WorkingDir: "{app}\SWATPlusEditor"; Flags: skipifdoesntexist
+Filename: "{app}\SWATPlusEditor\Uninstall SWATPlusEditor.exe"; WorkingDir: "{app}\SWATPlusEditor"; Flags: skipifdoesntexist; RunOnceId: "SWATPlusEditor"
 
 [Code]      
 var
   CustomInstallDir: string;
   InstallTypeFlagResult: string;
+  TbInstallTypeFlagResult: string;
   
-function InstallTypeFlag(Param: String): String;
+function InstallTypeFlag(Param:String): String;
 begin
   if IsAdminInstallMode then begin
     InstallTypeFlagResult := '/ALLUSERS';
@@ -92,6 +90,16 @@ begin
     InstallTypeFlagResult := '/CURRENTUSER';
   end;
   Result := InstallTypeFlagResult;
+end;
+
+function TbInstallTypeFlag(Param:String): String;
+begin
+  if IsAdminInstallMode then begin
+    TbInstallTypeFlagResult := '/system';
+  end else begin
+    TbInstallTypeFlagResult := '/user';
+  end;
+  Result := TbInstallTypeFlagResult;
 end;
 
 procedure InitializeWizard;
