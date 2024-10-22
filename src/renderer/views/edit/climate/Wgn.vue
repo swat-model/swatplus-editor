@@ -105,6 +105,7 @@
 			errors.log(response.data);
 			
 			let defaultDb = utilities.getDatabaseInstallPath('swatplus_wgn.sqlite');
+			errors.log(defaultDb);
 			let defaultTable = formatters.isNullOrEmpty(defaultDb) ? null : page.import.defaults.table
 
 			page.import.form.db = formatters.toValue(response.data.wgn_db, defaultDb);

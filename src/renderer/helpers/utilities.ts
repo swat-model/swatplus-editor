@@ -134,13 +134,16 @@ export function useUtilities() {
 	}
 
 	function getDatabaseInstallPath(database_file:string='swatplus_datasets.sqlite') {
-		let installPath = electron.joinPaths([appPath, '../../../Databases/' + database_file]);
+		let installPath = electron.joinPaths([appPath, '../../../../Databases/' + database_file]);
 		let installPathMac = electron.joinPaths([appPath, '../../../../../Databases/' + database_file]);
 		let searchPaths = [
 			installPath,
 			installPathMac,
 			'C:/SWAT/SWATPlus/Databases/' + database_file
 		];
+
+		//console.log(installPath);
+		//console.log(installPathMac);
 
 		for (let p of searchPaths) {
 			if (pathExists(p)) return p;
