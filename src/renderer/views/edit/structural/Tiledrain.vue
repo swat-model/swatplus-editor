@@ -5,8 +5,8 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'TiledrainStr'">
-			<file-header input-file="tiledrain.str" docs-path="structural/tiledrain.str" use-io>
+		<div v-if="route.name == 'TiledrainStr'">
+			<file-header input-file="tiledrain.str" docs-path="structural-practices/tiledrain.str" use-io>
 				Tile Drains
 			</file-header>
 

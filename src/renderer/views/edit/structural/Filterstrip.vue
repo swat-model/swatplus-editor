@@ -5,8 +5,8 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'FilterstripStr'">
-			<file-header input-file="filterstrip.str" docs-path="structural/filterstrip.str" use-io>
+		<div v-if="route.name == 'FilterstripStr'">
+			<file-header input-file="filterstrip.str" docs-path="structural-practices/filterstrip.str" use-io>
 				Filter Strips
 			</file-header>
 

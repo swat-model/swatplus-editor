@@ -5,8 +5,8 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'BmpuserStr'">
-			<file-header input-file="bmpuser.str" docs-path="structural/bmpuser.str" use-io>
+		<div v-if="route.name == 'BmpuserStr'">
+			<file-header input-file="bmpuser.str" docs-path="structural-practices/bmpuser.str" use-io>
 				User Best Management Practices
 			</file-header>
 

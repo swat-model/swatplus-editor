@@ -12,8 +12,8 @@
 		]
 	},
 	"nsis": {
-		"oneClick": true,
-		"allowToChangeInstallationDirectory": false,
+		"oneClick": false,
+		"allowToChangeInstallationDirectory": true,
 		"include": "release/installer.nsh",
 		"runAfterFinish": false,
 		"shortcutName": "SWAT+ Editor"

@@ -11,6 +11,7 @@ from database.project.climate import Weather_sta_cli
 from database.project.init import Om_water_ini, Pest_water_ini, Path_water_ini, Hmet_water_ini
 from database.project.decision_table import D_table_dtl
 from database.project.salts import Salt_res_ini
+from database.project import gwflow, setup
 
 bp = Blueprint('reservoirs', __name__, url_prefix='/reservoirs')
 
@@ -523,6 +524,7 @@ def nutrientsMany():
 @bp.route('/wetlands', methods=['GET', 'POST'])
 def wetlands():
 	if request.method == 'GET':
+		setup.SetupProjectDatabase.create_these_tables([gwflow.Gwflow_wetland])
 		table = Wetland_wet
 		filter_cols = [table.name]
 		return DefaultRestMethods.get_paged_list(table, filter_cols, True)
@@ -579,6 +581,7 @@ def wetlands():
 @bp.route('/wetlands/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 def wetlandsId(id):
 	if request.method == 'GET':
+		setup.SetupProjectDatabase.create_these_tables([gwflow.Gwflow_wetland])
 		return DefaultRestMethods.get(id, Wetland_wet, 'Reservoir', back_refs=True)
 	elif request.method == 'DELETE':
 		return DefaultRestMethods.delete(id, Wetland_wet, 'Reservoir')

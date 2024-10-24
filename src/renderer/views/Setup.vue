@@ -866,7 +866,7 @@
 							<v-icon>fas fa-circle-up</v-icon> Update Project
 						</v-btn>
 
-						<swat-plus-toolbox-button v-if="versionSupport.supported && !info.is_lte" text="SWAT+ Toolbox" :ran-swat="info.status.ran_swat"></swat-plus-toolbox-button>
+						<swat-plus-toolbox-button v-if="versionSupport.supported && !info.is_lte" text="SWAT+ Toolbox" :ran-swat="info.status.wrote_inputs"></swat-plus-toolbox-button>
 
 						<v-btn v-if="versionSupport.supported" @click="openEditProject" :active="false">
 							<v-icon>fas fa-pen-to-square</v-icon> Change Name

@@ -44,7 +44,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="septic.str" docs-path="structural/septic.str" use-io>
+		<file-header input-file="septic.str" docs-path="structural-practices/septic.str" use-io>
 			<router-link to="/edit/structural/septic">Septic Systems</router-link>
 			/ Edit
 		</file-header>

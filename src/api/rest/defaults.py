@@ -570,11 +570,13 @@ class RestHelpers:
 				else: o['obj_name'] = c_table.get(c_table.id == o['obj_id']).name
 		if 'dmd_obs' in d:
 			for o in d['dmd_obs']:
-				c_table = table_mapper.obj_typs.get(o['obj_typ'], None)
+				cobj_typ = o['obj_typ'] if o['obj_typ'] != 'cha' else 'sdc'
+				c_table = table_mapper.obj_typs.get(cobj_typ, None)
 				if c_table is None: o['obj_name'] = None
 				else: o['obj_name'] = c_table.get(c_table.id == o['obj_id']).name
 
-				r_table = table_mapper.obj_typs.get(o['rcv_obj'], None)
+				robj_typ = o['rcv_obj'] if o['rcv_obj'] != 'cha' else 'sdc'
+				r_table = table_mapper.obj_typs.get(robj_typ, None)
 				if r_table is None: o['rcv_obj_name'] = None
 				else: o['rcv_obj_name'] = r_table.get(r_table.id == o['rcv_obj_id']).name
 		if 'elements' in d:

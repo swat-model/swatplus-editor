@@ -1,12 +1,12 @@
 #include <idp.iss>
 
 #define SWATPlusVersion "3.0"
-#define SWATPlusPatchVersion "7"
-#define SWATPlusToolsPatchVersion "7"
+#define SWATPlusPatchVersion "8"
+#define SWATPlusToolsPatchVersion "8"
 #define QSWATPlusVersion "3.0"
-#define QSWATPlusPatchVersion "0"
-#define ToolboxVersion "2.0"
-#define ToolboxPatchVersion "7"
+#define QSWATPlusPatchVersion "3"
+#define ToolboxVersion "2.4"
+#define ToolboxPatchVersion "0"
 #define ModelVersion "61.0.1"
 #define SWATURL "https://swat.tamu.edu/"
 
@@ -15,7 +15,6 @@ AppId={{31E602D4-5220-421E-BE21-8F0A111FC4AD}
 AppName=SWAT+ Tools
 AppVersion={#SWATPlusVersion}.{#SWATPlusToolsPatchVersion}
 DefaultDirName=C:\SWAT\SWATPlus
-PrivilegesRequired=lowest
 SetupIconFile=build\icons\256x256.ico
 DisableProgramGroupPage=yes
 AppPublisher=Texas A&M AgriLife Research
@@ -24,11 +23,17 @@ AppSupportURL={#SWATURL}
 AppUpdatesURL={#SWATURL}
 OutputBaseFilename=swatplus-windows-installer-{#SWATPlusVersion}.{#SWATPlusToolsPatchVersion}
 OutputDir=output
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64compatible
 LicenseFile=..\license.txt
 EnableDirDoesntExistWarning=True
 DirExistsWarning=no
-DisableDirPage=no
+DisableDirPage=no  
+PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
+UsePreviousPrivileges=no
+Compression=lzma
+SolidCompression=yes
+WizardStyle=modern
 
 [Files]
 Source: "data\downloads\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: qswat; 
@@ -42,7 +47,7 @@ Name: "{app}\Databases"
 
 [Components]
 Name: "qswat"; Description: "QSWAT+ QGIS interface {#QSWATPlusVersion}.{#QSWATPlusPatchVersion}"; Types: typical full custom
-Name: "qswat\swatGraph"; Description: "SWATGraph tool.  Not needed if you have QSWAT."; Types: typical full custom
+Name: "qswat\swatGraph"; Description: "SWATGraph tool. Not needed if you have QSWAT."; Types: typical full custom
 Name: "qswat\manual"; Description: "QSWAT+ user manual"; Types: typical full custom
 Name: "editor"; Description: "SWAT+ Editor {#SWATPlusVersion}.{#SWATPlusPatchVersion} (includes model rev. {#ModelVersion})"; Types: typical full custom
 Name: "toolbox"; Description: "SWAT+ Toolbox {#ToolboxVersion}.{#ToolboxPatchVersion}"; Types: typical full custom
@@ -60,23 +65,58 @@ Source: "data\downloads\SWATPlus\Tools\SWATGraph\runSWATGraph.bat"; DestDir: "{a
 Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v{#QSWATPlusVersion}.pdf"; DestDir: "{app}\Documents"; Components: qswat\manual;  Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Run]
-Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
-Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent
-Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifsilent shellexec
-Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
-Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent
-Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/VERYSILENT /CURRENTUSER"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist skipifnotsilent shellexec
+Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/SILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
+Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S {code:InstallTypeFlag} /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
+Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/silent {code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
 
 [Messages]
 SelectDirBrowseLabel=If you select a different location from the default, you will need to set this location in the QSWAT+ Parameters form the first time you run QSWAT+.
-ConfirmUninstall=Are you sure you want to remove %1? SWAT+ Editor, tools, and documents will be removed. The QSWAT+ plugin and SWAT+ Toolbox will need to be uninstalled separately.
+ConfirmUninstall=Are you sure you want to remove %1? SWAT+ Editor, SWAT+ Toolbox, tools, and documents will be removed. The QSWAT+ plugin will need to be uninstalled separately.
 
 [UninstallRun]
-Filename: "{app}\SWATPlusEditor\Uninstall SWATPlusEditor.exe"; WorkingDir: "{app}\SWATPlusEditor"; Flags: skipifdoesntexist
+Filename: "{app}\SWATPlusEditor\Uninstall SWATPlusEditor.exe"; WorkingDir: "{app}\SWATPlusEditor"; Flags: skipifdoesntexist; RunOnceId: "SWATPlusEditor"
+Filename: "{app}\SWATPlusToolbox\Uninstall.exe"; WorkingDir: "{app}\SWATPlusToolbox"; Flags: skipifdoesntexist; RunOnceId: "SWATPlusToolbox"
 
-[Code]
+[UninstallDelete]
+Type: files; Name: "{app}\Databases\swatplus_soils.sqlite"
+Type: files; Name: "{app}\Databases\swatplus_wgn.sqlite"
+Type: dirifempty; Name: "{app}\SWATPlusEditor"
+
+[Code]      
+var
+  CustomInstallDir: string;
+  InstallTypeFlagResult: string;
+  TbInstallTypeFlagResult: string;
+  
+function InstallTypeFlag(Param:String): String;
+begin
+  if IsAdminInstallMode then begin
+    InstallTypeFlagResult := '/ALLUSERS';
+  end else begin
+    InstallTypeFlagResult := '/CURRENTUSER';
+  end;
+  Result := InstallTypeFlagResult;
+end;
+
+function TbInstallTypeFlag(Param:String): String;
+begin
+  if IsAdminInstallMode then begin
+    TbInstallTypeFlagResult := '/system';
+  end else begin
+    TbInstallTypeFlagResult := '/user';
+  end;
+  Result := TbInstallTypeFlagResult;
+end;
+
 procedure InitializeWizard;
 begin
+    if IsAdminInstallMode then begin
+      CustomInstallDir := ExpandConstant('{app}');
+    end else begin
+      CustomInstallDir := ExpandConstant('{%USERPROFILE}\SWATPlus');
+    end;
+    WizardForm.DirEdit.Text := CustomInstallDir;
+
     idpAddFileComp('https://plus.swat.tamu.edu/downloads/swatplus_soils.zip', ExpandConstant('{tmp}\swatplus_soils.zip'), 'soils');
     idpAddFileComp('https://plus.swat.tamu.edu/downloads/swatplus_wgn.zip', ExpandConstant('{tmp}\swatplus_wgn.zip'), 'wgn');
     idpDownloadAfter(wpReady);

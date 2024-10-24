@@ -100,11 +100,11 @@
 
 	async function get() {
 		if (route.params.id === undefined) return;
-		if (route.params.dbtype === undefined) return;
+		//if (route.params.dbtype === undefined) return;
 		page.loading = true;
 		page.error = null;
 		let tableId = route.params.id;
-		let dbType = route.params.dbtype;
+		let dbType = route.params.dbtype === undefined ? 'project' : route.params.dbtype;
 		console.log(route.params.id)
 
 		try {

@@ -5,8 +5,8 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'SepticStr'">
-			<file-header input-file="septic.str" docs-path="structural/septic.str" use-io>
+		<div v-if="route.name == 'SepticStr'">
+			<file-header input-file="septic.str" docs-path="structural-practices/septic.str" use-io>
 				Septic Systems
 			</file-header>
 

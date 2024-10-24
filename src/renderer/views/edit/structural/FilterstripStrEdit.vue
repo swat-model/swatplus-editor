@@ -44,7 +44,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="filterstrip.str" docs-path="structural/filterstrip.str" use-io>
+		<file-header input-file="filterstrip.str" docs-path="structural-practices/filterstrip.str" use-io>
 			<router-link to="/edit/structural/filterstrip">Filter Strips</router-link>
 			/ Edit
 		</file-header>

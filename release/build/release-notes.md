@@ -1,6 +1,8 @@
-### SWAT+ Editor v3.0.7 ###
+### SWAT+ Editor v3.0.8 ###
 
-* Fix bug related to data table importing.
-* Fix bug introduced in 3.0.6 during run due to typo.
+* Update to allow per-user install into the user's profile directory
+* Fix bug in routing to connections/reservoirs/wetlands
+* Fix bug retreiving data from wetlands table due to gwflow conflict
+* Broken documentation link fixes
 
 _No breaking changes from v3.0.0 and later._
