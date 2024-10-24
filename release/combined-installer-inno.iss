@@ -4,8 +4,8 @@
 #define SWATPlusPatchVersion "8"
 #define SWATPlusToolsPatchVersion "8"
 #define QSWATPlusVersion "3.0"
-#define QSWATPlusPatchVersion "2"
-#define ToolboxVersion "2.3"
+#define QSWATPlusPatchVersion "3"
+#define ToolboxVersion "2.4"
 #define ToolboxPatchVersion "0"
 #define ModelVersion "61.0.1"
 #define SWATURL "https://swat.tamu.edu/"
@@ -67,14 +67,20 @@ Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v{#QSWATPlusVersion}
 [Run]
 Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/SILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
 Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S {code:InstallTypeFlag} /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
-Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "{code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
+Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/silent {code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
 
 [Messages]
 SelectDirBrowseLabel=If you select a different location from the default, you will need to set this location in the QSWAT+ Parameters form the first time you run QSWAT+.
-ConfirmUninstall=Are you sure you want to remove %1? SWAT+ Editor, tools, and documents will be removed. The QSWAT+ plugin and SWAT+ Toolbox will need to be uninstalled separately.
+ConfirmUninstall=Are you sure you want to remove %1? SWAT+ Editor, SWAT+ Toolbox, tools, and documents will be removed. The QSWAT+ plugin will need to be uninstalled separately.
 
 [UninstallRun]
 Filename: "{app}\SWATPlusEditor\Uninstall SWATPlusEditor.exe"; WorkingDir: "{app}\SWATPlusEditor"; Flags: skipifdoesntexist; RunOnceId: "SWATPlusEditor"
+Filename: "{app}\SWATPlusToolbox\Uninstall.exe"; WorkingDir: "{app}\SWATPlusToolbox"; Flags: skipifdoesntexist; RunOnceId: "SWATPlusToolbox"
+
+[UninstallDelete]
+Type: files; Name: "{app}\Databases\swatplus_soils.sqlite"
+Type: files; Name: "{app}\Databases\swatplus_wgn.sqlite"
+Type: dirifempty; Name: "{app}\SWATPlusEditor"
 
 [Code]      
 var
