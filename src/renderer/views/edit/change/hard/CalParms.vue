@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'HardCalibrationParms'">
+		<div v-if="route.name == 'HardCalibrationParms'">
 			<file-header input-file="cal_parms.cal" docs-path="calibration/cal_parms.cal" use-io>
 				<router-link to="/edit/change/hard">Hard Calibration</router-link>
 				/ Parameters

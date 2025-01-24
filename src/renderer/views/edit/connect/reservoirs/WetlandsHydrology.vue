@@ -1,6 +1,6 @@
 <template>
 	<project-container>
-		<div v-if="$route.name == 'ReservoirsWetlandsHydrology'">
+		<div v-if="route.name == 'ReservoirsWetlandsHydrology'">
 			<file-header input-file="hydrology.wet" docs-path="wetlands/hydrology.wet" use-io>
 				<router-link to="/edit/cons/reservoirs">Reservoirs</router-link> 
 				/ Wetlands Hydrology

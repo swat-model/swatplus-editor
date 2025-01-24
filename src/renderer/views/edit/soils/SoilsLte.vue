@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'SoilsLte'">
+		<div v-if="route.name == 'SoilsLte'">
 			<file-header input-file="soils_lte.sol" docs-path="soils/soils-lte.sol" use-io>
 				Soil Textures
 			</file-header>

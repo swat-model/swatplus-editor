@@ -6,7 +6,7 @@
 
 * Update to allow per-user install into the user's profile directory
 * Fix bug in routing to connections/reservoirs/wetlands
-* Fix bug retreiving data from wetlands table due to gwflow conflict
+* Fix bug retrieving data from wetlands table due to gwflow conflict
 * Broken documentation link fixes
 
 ### Revision 3.0.7 ###

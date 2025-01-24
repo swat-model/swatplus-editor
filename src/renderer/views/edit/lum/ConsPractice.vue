@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'ConsPractice'">
+		<div v-if="route.name == 'ConsPractice'">
 			<file-header input-file="cons_practice.lum" docs-path="/landuse-and-management/cons_practice.lum" use-io>
 				Conservation Practices
 			</file-header>

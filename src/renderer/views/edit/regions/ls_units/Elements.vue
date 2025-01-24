@@ -18,7 +18,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name === 'LandscapeUnitsElements'">
+		<div v-if="route.name === 'LandscapeUnitsElements'">
 			<file-header input-file="ls_unit.ele" docs-path="landscape-units/ls_unit.ele" use-io>
 				<router-link to="/edit/regions/ls_units">Landscape Units</router-link> 
 				/ Elements

@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'GwflowFpcell'">
+		<div v-if="route.name == 'GwflowFpcell'">
 			<file-header input-file="gwflow.floodplain" docs-path="modflow" use-io>
 				<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
 				/ Floodplain

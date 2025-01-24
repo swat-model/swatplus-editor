@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'OperationsSweep'">
+		<div v-if="route.name == 'OperationsSweep'">
 			<file-header input-file="sweep.ops" docs-path="management-practices/sweep.ops" use-io>
 				<router-link to="/edit/lum/ops">Operations</router-link> 
 				/ Sweep

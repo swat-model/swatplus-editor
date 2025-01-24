@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Hydrology'">
+		<div v-if="route.name == 'Hydrology'">
 			<file-header input-file="hydrology.hyd" docs-path="hydrology/hydrology.hyd" use-io>
 				Hydrology
 			</file-header>

@@ -17,7 +17,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'OperationsGraze'">
+		<div v-if="route.name == 'OperationsGraze'">
 			<file-header input-file="graze.ops" docs-path="management-practices/graze.ops" use-io>
 				<router-link to="/edit/lum/ops">Operations</router-link> 
 				/ Graze

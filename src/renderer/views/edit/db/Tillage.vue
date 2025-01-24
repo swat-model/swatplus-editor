@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Tillage'">
+		<div v-if="route.name == 'Tillage'">
 			<file-header input-file="tillage.til" docs-path="databases/tillage.til" use-io>
 				Tillage
 			</file-header>

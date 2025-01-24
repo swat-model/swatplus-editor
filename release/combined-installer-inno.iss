@@ -111,7 +111,7 @@ end;
 procedure InitializeWizard;
 begin
     if IsAdminInstallMode then begin
-      CustomInstallDir := ExpandConstant('{app}');
+      CustomInstallDir := ExpandConstant('C:\SWAT\SWATPlus');
     end else begin
       CustomInstallDir := ExpandConstant('{%USERPROFILE}\SWATPlus');
     end;

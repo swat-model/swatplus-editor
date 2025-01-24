@@ -158,7 +158,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Recall'">
+		<div v-if="route.name == 'Recall'">
 			<file-header input-file="recall.con" docs-path="connections/recall">
 				Point Source / Inlet Data
 			</file-header>

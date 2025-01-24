@@ -55,7 +55,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<div v-if="$route.name == 'GwflowRescell'">
+		<div v-if="route.name == 'GwflowRescell'">
 			<file-header input-file="gwflow.rescells" docs-path="modflow" use-io>
 				<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
 				/ Reservoirs

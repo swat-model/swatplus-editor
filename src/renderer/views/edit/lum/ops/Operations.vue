@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name === 'Operations'">
+		<div v-if="route.name === 'Operations'">
 			<h1 class="file-header text-h5 d-flex align-end mb-6">
 				Operations Databases
 			</h1>

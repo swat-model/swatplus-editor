@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'WaterAllocation'">
+		<div v-if="route.name == 'WaterAllocation'">
 			<file-header input-file="water_allocation.wro" docs-path="water-allocation/water_allocation.wro" use-io>
 				Water Allocation
 			</file-header>

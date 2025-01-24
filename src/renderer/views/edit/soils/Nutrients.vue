@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'SoilNutrients'">
+		<div v-if="route.name == 'SoilNutrients'">
 			<file-header input-file="nutrients.sol" docs-path="soils/nutrients.sol" use-io>
 				Soil Nutrients
 			</file-header>

@@ -189,7 +189,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<div v-if="$route.name == 'ConstituentsSaltsRoadEdit'">
+		<div v-if="route.name == 'ConstituentsSaltsRoadEdit'">
 			<file-header input-file="constituents.cs" docs-path="constituents" use-io>
 				<router-link to="/edit/constituents/salts">Salt Constituents</router-link>
 				/ <router-link to="/edit/constituents/salts/road">Road Salt</router-link>

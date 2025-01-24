@@ -39,7 +39,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<div v-if="$route.name == 'ConstituentsSaltsRecallEdit'">
+		<div v-if="route.name == 'ConstituentsSaltsRecallEdit'">
 			<file-header input-file="constituents.cs" docs-path="constituents" use-io>
 				<router-link to="/edit/constituents/salts">Salt Constituents</router-link>
 				/ <router-link to="/edit/constituents/salts/recall">Point Source</router-link>

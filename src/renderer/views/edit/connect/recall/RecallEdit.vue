@@ -62,7 +62,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<div v-if="$route.name == 'RecallEdit'">
+		<div v-if="route.name == 'RecallEdit'">
 			<file-header input-file="recall.con" docs-path="connections/recall">
 				<router-link to="/edit/cons/recall">Point Source</router-link>
 				/ Edit

@@ -4,7 +4,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'ChannelsHydSedLte'">
+		<div v-if="route.name == 'ChannelsHydSedLte'">
 			<file-header input-file="hyd-sed-lte.cha" docs-path="channels/hyd-sed-lte.cha" use-io>
 				<router-link to="/edit/cons/channels">Channels</router-link> 
 				/ Hydrology &amp; Sediment
