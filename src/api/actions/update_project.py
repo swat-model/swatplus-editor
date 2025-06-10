@@ -23,7 +23,7 @@ from playhouse.migrate import *
 import datetime
 
 available_to_update = [
-	'3.0',
+	#'3.0',
 	'2.3',
 	'2.2',
 	'2.1',
@@ -144,7 +144,7 @@ class UpdateProject(ExecutableApi):
 			
 		return m
 	
-	def updates_for_3_1_0(self, project_db, datasets_db, rollback_db):
+	"""def updates_for_3_1_0(self, project_db, datasets_db, rollback_db):
 		try:
 			self.emit_progress(15, 'Updating database with new defaults...')
 
@@ -158,7 +158,7 @@ class UpdateProject(ExecutableApi):
 				self.emit_progress(50, "Error occurred. Rolling back database...")
 				SetupProjectDatabase.rollback(project_db, rollback_db)
 				self.emit_progress(100, "Error occurred.")
-			sys.exit(str(ex))
+			sys.exit(str(ex))"""
 	
 	def updates_for_3_0_0(self, project_db, datasets_db, rollback_db):
 		try:
