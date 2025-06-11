@@ -103,9 +103,10 @@ def write_con_table(file_name, meta_line, con_table, con_out_table, elem_name, e
 				elif elem_name == "lhru":
 					elem_id = con.lhru_id
 
-				con_to_index = elem_id
-				if con.id != elem_id:
-					con_to_index = elem_ids.index(elem_id) + 1
+				con_to_index = elem_ids.index(elem_id) + 1
+				#con_to_index = elem_id
+				#if con.id != elem_id:
+					#con_to_index = elem_ids.index(elem_id) + 1
 					#con_to_index = elem_table.select().where(elem_table.id <= elem_id).count()
 				write_row(file, con, i, con_to_index, con.con_outs.order_by(con_out_table.order), con_out_id_dict, using_gwflow)
 				i += 1
