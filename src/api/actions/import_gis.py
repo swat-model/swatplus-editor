@@ -968,7 +968,8 @@ class GisImport(ExecutableApi):
 
 		lum_dict = {}
 		for lu in lus:
-			l = lum.Landuse_lum.get(lum.Landuse_lum.name.contains(lu))
+			lu_name = '{name}_lum'.format(name=lu)
+			l = lum.Landuse_lum.get(lum.Landuse_lum.name.contains(lu_name))
 			lum_dict[lu] = l.id
 
 		return lum_dict
