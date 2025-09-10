@@ -26,7 +26,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name === 'Landuse'">
+		<div v-if="route.name === 'Landuse'">
 			<file-header input-file="landuse.lum" docs-path="land-use-management">
 				Land Use Management
 			</file-header>

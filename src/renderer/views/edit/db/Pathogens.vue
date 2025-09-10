@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Pathogens'">
+		<div v-if="route.name == 'Pathogens'">
 			<file-header input-file="pathogens.pth" docs-path="databases/pathogens.pth" use-io>
 				Pathogens
 			</file-header>

@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name === 'SoftCalibration'">
+		<div v-if="route.name === 'SoftCalibration'">
 			<file-header input-file="codes.sft" docs-path="calibration" use-io>
 				Soft Calibration
 			</file-header>

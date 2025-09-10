@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Urban'">
+		<div v-if="route.name == 'Urban'">
 			<file-header input-file="urban.urb" docs-path="databases/urban.urb" use-io>
 				Urban
 			</file-header>

@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Snow'">
+		<div v-if="route.name == 'Snow'">
 			<file-header input-file="snow.sno" docs-path="databases/snow.sno">
 				Snow
 			</file-header>

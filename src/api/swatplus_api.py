@@ -10,6 +10,7 @@ from actions.update_project import UpdateProject
 from actions.reimport_gis import ReimportGis
 from actions.run_all import RunAll
 from actions.load_scenarios import LoadScenarios
+from actions.get_swatplus_check import GetSwatplusCheck
 from database import soils
 
 import sys
@@ -117,6 +118,9 @@ if __name__ == '__main__':
 	elif args.action == "read_output":
 		api = ReadOutput(args.output_files_dir, args.output_db_file, args.swat_version, args.editor_version, args.project_name)
 		api.read()
+	elif args.action == "get_swatplus_check":
+		api = GetSwatplusCheck(args.project_db_file, args.output_db_file)
+		print(api.get())
 	elif args.action == "write_files":
 		api = WriteFiles(args.project_db_file, args.swat_version, args.ignore_files, args.ignore_cio_files, args.custom_cio_files)
 		api.write()

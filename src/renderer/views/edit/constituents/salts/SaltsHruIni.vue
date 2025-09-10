@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'ConstituentsSaltsHruIni'">
+		<div v-if="route.name == 'ConstituentsSaltsHruIni'">
 			<file-header input-file="constituents.cs" docs-path="constituents" use-io>
 				<router-link to="/edit/constituents/salts">Salt Constituents</router-link>
 				/ HRU Initial Conditions

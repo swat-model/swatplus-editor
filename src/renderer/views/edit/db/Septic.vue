@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Septic'">
+		<div v-if="route.name == 'Septic'">
 			<file-header input-file="septic.sep" docs-path="databases/septic.sep" use-io>
 				Septic
 			</file-header>

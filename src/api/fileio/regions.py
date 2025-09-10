@@ -61,6 +61,12 @@ class Ls_unit_ele(BaseFileModel):
 		table = db.Ls_unit_ele
 		order_by = db.Ls_unit_ele.id
 
+		con_out_types = table.select(table.obj_typ).distinct()
+		con_out_id_dict = {}
+		for out_typ in con_out_types:
+			obj_table = table_mapper.obj_typs.get(out_typ.obj_typ, None)
+			con_out_id_dict[out_typ.obj_typ] = [o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)]
+
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:
 				file.write(self.get_meta_line())
@@ -75,11 +81,12 @@ class Ls_unit_ele(BaseFileModel):
 
 				i = 1
 				for row in table.select().order_by(order_by):
+					obj_id = con_out_id_dict[row.obj_typ].index(row.obj_typ_no) + 1
 					file.write(utils.int_pad(i))
 					i += 1
 					file.write(utils.string_pad(row.name, direction="left"))
 					file.write(utils.code_pad(row.obj_typ))
-					file.write(utils.int_pad(row.obj_typ_no, default_pad=10))
+					file.write(utils.int_pad(obj_id, default_pad=10))
 					file.write(utils.exp_pad(row.bsn_frac, use_non_zero_min=True))
 					file.write(utils.num_pad(row.sub_frac))
 					file.write(utils.num_pad(row.reg_frac))

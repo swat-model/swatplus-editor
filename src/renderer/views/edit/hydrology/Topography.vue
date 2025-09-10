@@ -18,7 +18,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Topography'">
+		<div v-if="route.name == 'Topography'">
 			<file-header input-file="topography.hyd" docs-path="hydrology/topography.hyd" use-io>
 				Topography
 			</file-header>

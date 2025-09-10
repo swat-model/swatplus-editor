@@ -310,7 +310,7 @@
 
 <template>
 	<project-container :loading="page.loading" :load-error="page.error">
-		<div v-if="$route.name === 'StationsAtmo'">
+		<div v-if="route.name === 'StationsAtmo'">
 			<file-header input-file="atmo.cli" docs-path="climate/atmo.cli" use-io>
 				<router-link to="/edit/climate/stations">Weather Stations</router-link>
 				/ Atmospheric Deposition

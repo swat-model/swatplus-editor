@@ -291,7 +291,7 @@
 		</v-navigation-drawer>
 		<v-main>
 			<div class="py-3 px-6">
-				<div v-if="$route.path == '/edit'">
+				<div v-if="route.path == '/edit'">
 					<h1 class="text-h5 mb-3">Edit SWAT+ inputs</h1>
 
 					<p>

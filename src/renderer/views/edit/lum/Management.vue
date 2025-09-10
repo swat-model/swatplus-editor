@@ -14,7 +14,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name === 'Management'">
+		<div v-if="route.name === 'Management'">
 			<file-header input-file="management.sch" docs-path="land-use-management#management-schedules">
 				Management Schedules
 			</file-header>

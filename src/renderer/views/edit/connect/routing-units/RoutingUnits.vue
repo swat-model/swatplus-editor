@@ -20,7 +20,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'RoutingUnits'">
+		<div v-if="route.name == 'RoutingUnits'">
 			<file-header input-file="rout_unit.con" docs-path="routing-units/untitled" use-io>
 				Routing Units
 			</file-header>

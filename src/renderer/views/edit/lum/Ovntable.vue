@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Ovntable'">
+		<div v-if="route.name == 'Ovntable'">
 			<file-header input-file="ovn_table.lum" docs-path="/landuse-and-management/ovn_table.lum" use-io>
 				Manning's n Tables
 			</file-header>

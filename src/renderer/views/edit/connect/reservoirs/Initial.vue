@@ -18,7 +18,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'ReservoirsInitial'">
+		<div v-if="route.name == 'ReservoirsInitial'">
 			<file-header input-file="initial.res" docs-path="reservoirs/initial.res" use-io>
 				<router-link to="/edit/cons/reservoirs">Reservoirs</router-link> 
 				/ Initial

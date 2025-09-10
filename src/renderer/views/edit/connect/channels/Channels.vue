@@ -21,7 +21,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Channels'">
+		<div v-if="route.name == 'Channels'">
 			<file-header input-file="chandeg.con" docs-path="channels/channel-lte.cha" use-io>
 				Channels
 			</file-header>

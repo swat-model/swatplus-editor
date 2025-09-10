@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name === 'Plants'">
+		<div v-if="route.name === 'Plants'">
 			<file-header input-file="plants.plt" docs-path="databases/plants.plt" use-io>
 				Plants
 			</file-header>

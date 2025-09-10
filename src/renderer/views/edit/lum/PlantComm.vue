@@ -15,7 +15,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'PlantComm'">
+		<div v-if="route.name == 'PlantComm'">
 			<file-header input-file="plant.ini" docs-path="landuse-and-management/plant.ini" use-io>
 				Plant Communities
 			</file-header>

@@ -73,7 +73,7 @@
 
 <template>
 	<project-container :loading="data.page.loading">
-		<div v-if="$route.name == 'ConstituentsSalts'">
+		<div v-if="route.name == 'ConstituentsSalts'">
 			<file-header input-file="constituents.cs" docs-path="constituents" use-io>
 				Salt Constituents
 			</file-header>

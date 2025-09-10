@@ -66,7 +66,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<div v-if="$route.name == 'Aquifers'">
+		<div v-if="route.name == 'Aquifers'">
 			<file-header input-file="aquifer.con" docs-path="aquifers/aquifer.aqu" use-io>
 				Aquifers
 			</file-header>

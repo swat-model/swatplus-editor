@@ -18,7 +18,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'ConstituentsSoilPlant'">
+		<div v-if="route.name == 'ConstituentsSoilPlant'">
 			<file-header input-file="soil_plant.ini" docs-path="constituents/soil_plant.ini" use-io>
 				Soil Plant
 			</file-header>

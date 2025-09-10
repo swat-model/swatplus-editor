@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'OperationsIrrigation'">
+		<div v-if="route.name == 'OperationsIrrigation'">
 			<file-header input-file="irr.ops" docs-path="management-practices/irr.ops" use-io>
 				<router-link to="/edit/lum/ops">Operations</router-link> 
 				/ Irrigation

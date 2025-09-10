@@ -23,6 +23,7 @@ from playhouse.migrate import *
 import datetime
 
 available_to_update = [
+	#'3.0',
 	'2.3',
 	'2.2',
 	'2.1',
@@ -142,6 +143,22 @@ class UpdateProject(ExecutableApi):
 			sys.exit("Unable to update this project to {new_version}. Updates from {current_version} unavailable.".format(new_version=new_version, current_version=m.editor_version))
 			
 		return m
+	
+	"""def updates_for_3_1_0(self, project_db, datasets_db, rollback_db):
+		try:
+			self.emit_progress(15, 'Updating database with new defaults...')
+
+			self.cal_parms_value_updates_for_3_1_0(change.Cal_parms_cal)
+			self.cal_parms_value_updates_for_3_1_0(datasets_change.Cal_parms_cal)
+			
+			Version.update({Version.value: '3.1.0', Version.release_date: datetime.datetime.now()}).execute()
+			
+		except Exception as ex:
+			if rollback_db is not None:
+				self.emit_progress(50, "Error occurred. Rolling back database...")
+				SetupProjectDatabase.rollback(project_db, rollback_db)
+				self.emit_progress(100, "Error occurred.")
+			sys.exit(str(ex))"""
 	
 	def updates_for_3_0_0(self, project_db, datasets_db, rollback_db):
 		try:
@@ -308,6 +325,37 @@ class UpdateProject(ExecutableApi):
 
 	def name_exists(self, table, name):
 		return table.select().where(table.name == name).count() > 0
+	
+	def cal_parms_value_updates_for_3_1_0(self, table):
+		table.delete().where(table.name == 'rch_dox').execute()
+		table.delete().where(table.name == 'rch_cbod').execute()
+		table.delete().where(table.name == 'algae').execute()
+		table.delete().where(table.name == 'organicn').execute()
+		table.delete().where(table.name == 'ammonian').execute()
+		table.delete().where(table.name == 'nitriten').execute()
+		table.delete().where(table.name == 'organicp').execute()
+		table.delete().where(table.name == 'disolvp').execute()
+		
+		if not self.name_exists(table, 'bank_exp'): table.insert(name='bank_exp', obj_typ='rte', abs_min=1.5, abs_max=6, units=None).execute()
+		if not self.name_exists(table, 'mumax'): table.insert(name='mumax', obj_typ='swq', abs_min=1, abs_max=3, units='1/day').execute()
+		if not self.name_exists(table, 'res_d50'): table.insert(name='res_d50', obj_typ='res', abs_min=0.1, abs_max=1000, units='um').execute()
+		if not self.name_exists(table, 'rsd_covco'): table.insert(name='rsd_covco', obj_typ='bsn', abs_min=0.001, abs_max=1.25, units=None).execute()
+		if not self.name_exists(table, 'usle_c'): table.insert(name='usle_c', obj_typ='plt', abs_min=0.001, abs_max=1.95, units=None).execute()
+		if not self.name_exists(table, 'vcr_coef'): table.insert(name='vcr_coef', obj_typ='rte', abs_min=0.5, abs_max=2, units=None).execute()
+		
+		table.update({ table.abs_min: 0.0001 }).where(table.name == 'cherod').execute()
+		table.update({ table.abs_min: 0.00001 }).where(table.name == 'chk').execute()
+		table.update({ table.abs_min: 0.001 }).where(table.name == 'chl').execute()
+		table.update({ table.abs_min: 0.001 }).where(table.name == 'chn').execute()
+		table.update({ table.abs_min: 0.0001 }).where(table.name == 'chs').execute()
+		table.update({ table.abs_min: 0.001 }).where(table.name == 'cov').execute()
+		table.update({ table.abs_min: 0.0001 }).where(table.name == 'sp_yld').execute()
+		table.update({ table.abs_min: 0.0000001 }).where(table.name == 'stream_K').execute()
+		table.update({ table.abs_min: 250, table.abs_max: 700 }).where(table.name == 'prf').execute()
+		
+		table.update({ table.obj_typ: 'hru' }).where(table.name == 'harv_idx').execute()
+		table.update({ table.obj_typ: 'hru' }).where(table.name == 'lai_pot').execute()
+		table.update({ table.obj_typ: 'hru' }).where(table.name == 'phu_mat').execute()
 	
 	def cal_parms_value_updates_for_3_0_0(self, table):
 		if not self.name_exists(table, 'nperco_lchtile'): table.insert(name='nperco_lchtile', obj_typ='bsn', abs_min=0, abs_max=1, units=None).execute()

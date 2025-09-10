@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'Cntable'">
+		<div v-if="route.name == 'Cntable'">
 			<file-header input-file="cntable.lum" docs-path="/landuse-and-management/cntable.lum" use-io>
 				Curve Numbers
 			</file-header>

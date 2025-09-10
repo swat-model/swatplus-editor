@@ -22,7 +22,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'HardCalibration'">
+		<div v-if="route.name == 'HardCalibration'">
 			<file-header input-file="calibration.cal" docs-path="calibration/calibration.cal" use-io>
 				Hard Calibration
 			</file-header>

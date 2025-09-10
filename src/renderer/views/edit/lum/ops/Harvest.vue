@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'OperationsHarvest'">
+		<div v-if="route.name == 'OperationsHarvest'">
 			<file-header input-file="harv.ops" docs-path="management-practices/harv.ops" use-io>
 				<router-link to="/edit/lum/ops">Operations</router-link> 
 				/ Harvest

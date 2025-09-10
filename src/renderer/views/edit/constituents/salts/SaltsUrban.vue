@@ -75,7 +75,7 @@
 
 <template>
 	<project-container :loading="data.page.loading">
-		<div v-if="$route.name == 'ConstituentsSaltsUrban'">
+		<div v-if="route.name == 'ConstituentsSaltsUrban'">
 			<file-header input-file="constituents.cs" docs-path="constituents" use-io>
 				<router-link to="/edit/constituents/salts">Salt Constituents</router-link>
 				/ Urban Runoff

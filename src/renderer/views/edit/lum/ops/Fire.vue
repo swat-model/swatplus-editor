@@ -5,7 +5,7 @@
 
 <template>
 	<project-container>
-		<div v-if="$route.name == 'OperationsFire'">
+		<div v-if="route.name == 'OperationsFire'">
 			<file-header input-file="fire.ops" docs-path="management-practices/fire.ops" use-io>
 				<router-link to="/edit/lum/ops">Operations</router-link> 
 				/ Fire
