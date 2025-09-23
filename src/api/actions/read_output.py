@@ -271,7 +271,8 @@ class ReadOutput(ExecutableApi):
 						pass
 				db_lib.bulk_insert(db, base.Column_description, col_descs)
 			elif i >= start_line:
-				val = line.strip().split()
+				#val = line.replace("********", " 0 ").strip().split()
+				val = self.clean_and_split(line)
 
 				row = {}
 				j = 0
@@ -308,6 +309,33 @@ class ReadOutput(ExecutableApi):
 		base.Table_description.delete().execute()
 		base.Column_description.delete().execute()
 		base.Project_config.delete().execute()
+	
+	def clean_and_split(self, line):
+		# Step 1: replace ******** with " 0 "
+		line = re.sub(r"\*+", " 0 ", line)
+
+		# Step 2: split on whitespace
+		tokens = line.strip().split()
+
+		# Step 3: find the first non-numeric token (the text column)
+		text_index = None
+		for i, tok in enumerate(tokens):
+			if not tok.replace('.', '', 1).isdigit():  # allows floats like 50.301
+				text_index = i
+				break
+
+		if text_index is None:
+			return tokens  # no text column, just return as-is
+
+		# Step 4: check the token right before the text column
+		before_text = tokens[text_index - 1]
+		if before_text.isdigit() and len(before_text) > 8:
+			# split so the last 8 chars are the "fixed" column
+			left = before_text[:-8]
+			right = before_text[-8:]
+			tokens = tokens[:text_index - 1] + [left, right] + tokens[text_index:]
+
+		return tokens
 
 
 if __name__ == '__main__':
