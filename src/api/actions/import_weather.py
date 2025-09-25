@@ -41,6 +41,7 @@ WEATHER_DESC = {
 	"hmd": "Relative humidity",
 	"pcp": "Precipitation",
 	"slr": "Solar radiation",
+	"tem": "Temperature",
 	"tmp": "Temperature",
 	"wnd": "Wind speed",
 	"pet": "Potential evapotranspiration"
@@ -434,7 +435,7 @@ class Swat2012WeatherImport(ExecutableApi):
 		slr_res = self.write_weather(slr_file, os.path.join(self.output_dir, SLR_CLI), "slr", pcp_res[0], total_files)
 
 		if self.__abort: return
-		tmp_res = self.write_weather(os.path.join(dir, TMP_TXT), os.path.join(self.output_dir, TMP_CLI), "tmp", slr_res[0], total_files)
+		tmp_res = self.write_weather(os.path.join(dir, TMP_TXT), os.path.join(self.output_dir, TMP_CLI), "tem", slr_res[0], total_files)
 
 		if self.__abort: return
 		wnd_file = os.path.join(dir, WND_TXT)
@@ -550,7 +551,7 @@ class Swat2012WeatherImport(ExecutableApi):
 						new_file.write(str(day_of_year).rjust(5))
 						new_file.write(' ')
 
-						if weather_type == "tmp":
+						if weather_type == "tmp" or weather_type == "tem":
 							tmp = [x.strip() for x in line.split(',')]
 							utils.write_num(new_file, tmp[0], default_pad=10)
 							utils.write_num(new_file, tmp[1], default_pad=10)
