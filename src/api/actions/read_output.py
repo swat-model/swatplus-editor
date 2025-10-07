@@ -235,68 +235,80 @@ class ReadOutput(ExecutableApi):
 		fields = table._meta.sorted_fields
 		file_fields = []
 		for line in file:
-			if read_units and i == start_line - 2:
-				for h in line.strip().split():
-					file_fields.append(h.strip())
-			elif read_units and i == start_line - 1:
-				units = line.strip().split()
-				ui = units_start_column_index.get(desc_key, default_units_column_index)
-				reverse_index = True if desc_key in reversed_unit_lines else False
-				col_descs = []
-				null_skip = 0
-				for x in range(0, len(units)):					
-					try:
-						column_name_val = file_fields[x] if reverse_index else file_fields[ui + x]
-						if column_name_val == 'null':
-							units_val = ''
-							null_skip += 1
-						else:
-							units_val = units[ui + x - null_skip] if reverse_index else units[x - null_skip]
-
-						col_desc_text = None
-						table_cat = data.table_categories.get(desc_key, None)
-						if table_cat is not None:
-							cat_cols = data.category_descriptions.get(table_cat, None)
-							if cat_cols is not None:
-								col_desc_text = cat_cols.get(column_name_val, None)
-
-						col_desc = {
-							'table_name': name,
-							'column_name': column_name_val,
-							'units': units_val, 
-							'description': col_desc_text
-						}
-						col_descs.append(col_desc)
-					except IndexError:
-						pass
-				db_lib.bulk_insert(db, base.Column_description, col_descs)
-			elif i >= start_line:
-				#val = line.replace("********", " 0 ").strip().split()
-				val = self.clean_and_split(line)
-
-				row = {}
-				j = 0
-				for field in fields:
-					skip = False
-					if ignore_id_col and field.name == 'id':
-						skip = True
-
-					if not skip:
+			try:
+				if read_units and i == start_line - 2:
+					for h in line.strip().split():
+						file_fields.append(h.strip())
+				elif read_units and i == start_line - 1:
+					units = line.strip().split()
+					ui = units_start_column_index.get(desc_key, default_units_column_index)
+					reverse_index = True if desc_key in reversed_unit_lines else False
+					col_descs = []
+					null_skip = 0
+					for x in range(0, len(units)):					
 						try:
-							row[field.name] = None if j >= len(val) or '*' in str(val[j]) else val[j]
+							column_name_val = file_fields[x] if reverse_index else file_fields[ui + x]
+							if column_name_val == 'null':
+								units_val = ''
+								null_skip += 1
+							else:
+								units_val = units[ui + x - null_skip] if reverse_index else units[x - null_skip]
+
+							col_desc_text = None
+							table_cat = data.table_categories.get(desc_key, None)
+							if table_cat is not None:
+								cat_cols = data.category_descriptions.get(table_cat, None)
+								if cat_cols is not None:
+									col_desc_text = cat_cols.get(column_name_val, None)
+
+							col_desc = {
+								'table_name': name,
+								'column_name': column_name_val,
+								'units': units_val, 
+								'description': col_desc_text
+							}
+							col_descs.append(col_desc)
 						except IndexError:
 							pass
-						j += 1
+					db_lib.bulk_insert(db, base.Column_description, col_descs)
+				elif i >= start_line:
+					#val = line.replace("********", " 0 ").strip().split()
+					val = self.clean_and_split(line)
 
-				if 'gis_id' in row.keys() and int(row['gis_id']) == 0:
-					subbed = re.sub('[^0-9]','', row['name'])
-					row['gis_id'] = int(subbed)
+					row = {}
+					j = 0
+					for field in fields:
+						skip = False
+						if ignore_id_col and field.name == 'id':
+							skip = True
 
-				rows.append(row)
+						if not skip:
+							try:
+								row[field.name] = None if j >= len(val) or '*' in str(val[j]) else val[j]
+							except IndexError:
+								pass
+							j += 1
 
-				if len(rows) == 1000:
-					db_lib.bulk_insert(db, table, rows)
-					rows = []
+					if 'gis_id' in row.keys() and str(row['gis_id']).isdigit() and int(row['gis_id']) == 0:
+						subbed = re.sub('[^0-9]','', row['name'])
+						if subbed.isdigit():
+							row['gis_id'] = int(subbed)
+						else:
+							row['gis_id'] = 0
+
+					rows.append(row)
+
+					if len(rows) == 1000:
+						db_lib.bulk_insert(db, table, rows)
+						rows = []
+			except Exception as e:
+				# Get character position if parsing fails
+				err_pos = getattr(e, 'offset', None)
+				char_pos = err_pos if err_pos is not None else '?'
+				raise ValueError(
+					f"Error in file '{file_name}', line {i}, char {char_pos}: {e}\n"
+					f"--> {line.strip()[:200]}"
+				) from e
 			i += 1
 
 		db_lib.bulk_insert(db, table, rows)

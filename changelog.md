@@ -2,6 +2,10 @@
 
 ## Version 3 ##
 
+### Revision 3.0.11 ###
+
+* Fix bug importing output files where gis_id is 0 and can't be determined from the object name.
+
 ### Revision 3.0.10 ###
 
 * When converting SWAT2012 weather files to SWAT+, change temperature extension from .tmp to .tem because Windows auto-deletes .tmp files
