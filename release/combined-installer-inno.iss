@@ -1,12 +1,13 @@
 #include <idp.iss>
 
 #define SWATPlusVersion "3.0"
-#define SWATPlusPatchVersion "8"
-#define SWATPlusToolsPatchVersion "8"
-#define QSWATPlusVersion "3.0"
-#define QSWATPlusPatchVersion "3"
-#define ToolboxVersion "2.4"
+#define SWATPlusPatchVersion "12"
+#define SWATPlusToolsPatchVersion "12"
+#define QSWATPlusVersion "3.1"
+#define QSWATPlusPatchVersion "2"
+#define ToolboxVersion "3.1"
 #define ToolboxPatchVersion "0"
+#define IahrisVersion "1.1"
 #define ModelVersion "61.0.1"
 #define SWATURL "https://swat.tamu.edu/"
 
@@ -38,7 +39,8 @@ WizardStyle=modern
 [Files]
 Source: "data\downloads\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: qswat; 
 Source: "dist\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; DestDir: "{tmp}"; Components: editor; 
-Source: "data\downloads\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; DestDir: "{tmp}"; Components: toolbox;  
+Source: "data\downloads\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; DestDir: "{tmp}"; Components: toolbox; 
+Source: "data\downloads\SWATPlus-IAHRIS_{#IahrisVersion}_Setup.exe"; DestDir: "{tmp}"; Components: iahris;  
 Source: "{tmp}\swatplus_soils.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 44190170; Components: soils
 Source: "{tmp}\swatplus_wgn.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 188325993; Components: wgn
 
@@ -51,6 +53,7 @@ Name: "qswat\swatGraph"; Description: "SWATGraph tool. Not needed if you have QS
 Name: "qswat\manual"; Description: "QSWAT+ user manual"; Types: typical full custom
 Name: "editor"; Description: "SWAT+ Editor {#SWATPlusVersion}.{#SWATPlusPatchVersion} (includes model rev. {#ModelVersion})"; Types: typical full custom
 Name: "toolbox"; Description: "SWAT+ Toolbox {#ToolboxVersion}.{#ToolboxPatchVersion}"; Types: typical full custom
+Name: "iahris"; Description: "SWAT+ IAHRIS {#IahrisVersion}"; Types: typical full custom
 Name: "wgn"; Description: "Global weather generator data for SWAT+ (download)"; Types: full
 Name: "soils"; Description: "US SSURGO/STATSGO soil data for SWAT+ (download)"; Types: full
 
@@ -62,12 +65,13 @@ Name: "custom"; Description: "Custom installation"; Flags: iscustom
 [Files]
 Source: "data\downloads\SWATPlus\*"; DestDir: "{app}"; Excludes: "\Tools\SWATGraph, \Documents"; Components: qswat; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "data\downloads\SWATPlus\Tools\SWATGraph\runSWATGraph.bat"; DestDir: "{app}\Tools\SWATGraph"; Components: qswat\swatGraph; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v{#QSWATPlusVersion}.pdf"; DestDir: "{app}\Documents"; Components: qswat\manual;  Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v3.0.pdf"; DestDir: "{app}\Documents"; Components: qswat\manual;  Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Run]
 Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/SILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
 Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S {code:InstallTypeFlag} /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
 Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/silent {code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
+Filename: "{tmp}\SWATPlus-IAHRIS_{#IahrisVersion}_Setup.exe"; Parameters: "/silent {code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
 
 [Messages]
 SelectDirBrowseLabel=If you select a different location from the default, you will need to set this location in the QSWAT+ Parameters form the first time you run QSWAT+.

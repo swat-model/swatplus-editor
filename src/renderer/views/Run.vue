@@ -3,6 +3,7 @@
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 	import SwatPlusToolboxButton from '../components/SwatPlusToolboxButton.vue';
+	import SwatPlusIahrisButton from '../components/SwatPlusIahrisButton.vue';
 	import moment from 'moment';
 
 	const route = useRoute();
@@ -1076,6 +1077,7 @@
 							<v-list>
 								<v-list-item v-if="!formatters.isNullOrEmpty(data.config.output_last_imported) && !currentProject.isLte" to="/check"><v-list-item-title>Run SWAT+ Check</v-list-item-title></v-list-item>
 								<swat-plus-toolbox-button v-if="!formatters.isNullOrEmpty(data.config.input_files_last_written) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.input_files_last_written)" as-list-item text="Open SWAT+ Toolbox"></swat-plus-toolbox-button>
+								<swat-plus-iahris-button v-if="!formatters.isNullOrEmpty(data.config.swat_last_run) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.swat_last_run)" as-list-item text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
 								<v-list-item @click="data.page.completed.show = false; data.page.saveScenario.show = true"><v-list-item-title>Save Scenario</v-list-item-title></v-list-item>
 								<open-file as-list-item :file-path="currentResultsPath">Open Results Directory</open-file>
 							</v-list>
@@ -1122,6 +1124,7 @@
 							<div class="mb-8">
 								<v-btn v-if="!formatters.isNullOrEmpty(data.config.output_last_imported) && !currentProject.isLte" type="button" variant="flat" color="primary" size="large" rounded="xl" to="/check" block class="my-2">Run SWAT+ Check</v-btn>
 								<swat-plus-toolbox-button v-if="!formatters.isNullOrEmpty(data.config.input_files_last_written) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.input_files_last_written)" variant="flat" color="primary" size="large" rounded="xl" block class="my-2" no-icon text="Open SWAT+ Toolbox"></swat-plus-toolbox-button>
+								<swat-plus-iahris-button v-if="!formatters.isNullOrEmpty(data.config.swat_last_run) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.swat_last_run)" variant="flat" color="primary" size="large" rounded="xl" block class="my-2" no-icon text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
 								<v-btn type="button" block variant="flat" color="primary" size="large" rounded="xl" @click="data.page.completed.show = false; data.page.saveScenario.show = true" class="my-2">Save Scenario</v-btn>
 								<open-file button block variant="flat" color="primary" size="large" rounded="xl" :file-path="currentResultsPath" class="my-2">Open Results Directory</open-file>
 								<v-row class="mt-2" no-gutters>

@@ -2,6 +2,11 @@
 
 ## Version 3 ##
 
+### Revision 3.0.12 ###
+
+* Add SWATPlus-IAHRIS program linkage if it is installed on Windows.
+* Remove SWAT+ LTE model option since it is discontinued.
+
 ### Revision 3.0.11 ###
 
 * Fix bug importing output files where gis_id is 0 and can't be determined from the object name.

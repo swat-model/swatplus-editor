@@ -40,6 +40,16 @@ export const useCurrentProject = defineStore('project', () => {
 		return txtinout;
 	})
 
+	const scenariosPath = computed(() => {
+		let pp = electron.pathDirectoryName(projectDb.value||'');
+		let scenarios = electron.joinPaths([pp, 'Scenarios']);
+
+		if (!electron.pathExists(scenarios))
+			scenarios = pp;
+
+		return scenarios;
+	})
+
 	function setHasLoadedCommandLine(loaded:boolean):void {
 		hasLoadedCommandLine.value = loaded;
 	}
@@ -78,7 +88,7 @@ export const useCurrentProject = defineStore('project', () => {
 
 	return {
 		projectDb, datasetsDb, name, description, version, isLte, hasLoadedCommandLine,
-		hasCurrentProject, projectPath, txtInOutPath, projectDbUrl,
+		hasCurrentProject, projectPath, txtInOutPath, scenariosPath, projectDbUrl,
 		setHasLoadedCommandLine, getObject, setCurrentProject, getApiHeader, getTempApiHeader, isSupported
 	}
 })

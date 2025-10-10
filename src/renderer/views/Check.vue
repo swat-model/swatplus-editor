@@ -3,6 +3,7 @@
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
 	import SwatPlusToolboxButton from '../components/SwatPlusToolboxButton.vue';
+	import SwatPlusIahrisButton from '../components/SwatPlusIahrisButton.vue';
 	
 	const route = useRoute();
 	const { api, constants, errors, formatters, runProcess, utilities, currentProject } = useHelpers();
@@ -955,6 +956,7 @@
 							<v-list>
 								<v-list-item to="/run"><v-list-item-title>Back to Model Run / Save Scenario</v-list-item-title></v-list-item>
 								<swat-plus-toolbox-button :ran-swat="true" as-list-item text="Open SWAT+ Toolbox"></swat-plus-toolbox-button>
+								<swat-plus-iahris-button :ran-swat="true" as-list-item text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
 								<open-file as-list-item :file-path="currentResultsPath">Open Results Directory</open-file>
 							</v-list>
 						</v-menu>
