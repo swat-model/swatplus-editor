@@ -121,6 +121,34 @@ const getSwatPlusToolboxPath = () => {
 	return path;
 }
 
+const getIahrisPath = () => {
+	let path =
+		findIahrisExe(join(__dirname, '../../../SWATPlus-IAHRIS')) ||
+		findIahrisExe('C:/Program Files/SWATPlus-IAHRIS');
+
+	if (process.platform === 'linux') path = '';
+	else if (process.platform === 'darwin') path = '';
+
+	return path;
+}
+
+function findIahrisExe(directory: string): string {
+	if (!fs.existsSync(directory)) {
+		return '';
+	}
+
+	const files = fs.readdirSync(directory);
+	const exeRegex = /^SWATPlus-IAHRIS_v[\d.]+\.exe$/i;
+
+	for (const file of files) {
+		if (exeRegex.test(file)) {
+			return join(directory, file);
+		}
+	}
+
+	return '';
+}
+
 let mainWindow:BrowserWindow;
 
 function createWindow () {
@@ -547,6 +575,22 @@ ipcMain.on('launch-swatplustoolbox', (event, projectDb:string) => {
 		if (!fs.existsSync(path)) event.returnValue = `Could not find SWAT+ Toolbox at "${path}"`;
 		else {
 			child_process.exec(`"${path}" "${projectDb}"`)
+			event.returnValue = null;
+		}
+	}
+})
+
+ipcMain.on('get-iahris-path', (event) => {
+	event.returnValue = getIahrisPath();
+})
+
+ipcMain.on('launch-iahris', (event, scenariosPath:string) => {
+	if (process.platform !== 'win32') event.returnValue = 'SWATPlus-IAHRIS is currently only available on Windows.';
+	else {
+		let path = getIahrisPath();
+		if (!fs.existsSync(path)) event.returnValue = `Could not find SWATPlus-IAHRIS at "${path}"`;
+		else {
+			child_process.exec(`"${path}" "${scenariosPath}"`)
 			event.returnValue = null;
 		}
 	}

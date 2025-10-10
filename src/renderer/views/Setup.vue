@@ -4,6 +4,7 @@
 	import { useTheme, useDisplay } from 'vuetify';
 	import { useHelpers } from '@/helpers';
 	import SwatPlusToolboxButton from '../components/SwatPlusToolboxButton.vue';
+	import SwatPlusIahrisButton from '../components/SwatPlusIahrisButton.vue';
 	import { ProjectSettings } from '@/typings';
 
 	const route = useRoute();
@@ -74,7 +75,8 @@
 			show: false,
 			error: null,
 			running: false
-		}
+		},
+		existingIsLte: false
 	})
 
 	let recentProjects:any[] = reactive([])
@@ -161,6 +163,7 @@
 			} else if (response.data.imported_gis) {
 				page.openConfirm.project = project;
 				page.openConfirm.show = true;
+				page.existingIsLte = page.openConfirm.project.isLte;
 			} else {
 				project.version = constants.appSettings.version;
 				page.import.project = project;
@@ -867,6 +870,7 @@
 						</v-btn>
 
 						<swat-plus-toolbox-button v-if="versionSupport.supported && !info.is_lte" text="SWAT+ Toolbox" :ran-swat="info.status.wrote_inputs"></swat-plus-toolbox-button>
+						<swat-plus-iahris-button v-if="versionSupport.supported && !info.is_lte" text="SWAT+ IAHRIS" :ran-swat="info.status.ran_swat"></swat-plus-iahris-button>
 
 						<v-btn v-if="versionSupport.supported" @click="openEditProject" :active="false">
 							<v-icon>fas fa-pen-to-square</v-icon> Change Name
@@ -959,7 +963,7 @@
 									label="Briefly describe your project location (main river, country)" 
 									hint="25 character limit; spaces will be converted to underscores"></v-text-field>
 
-								<v-checkbox v-model="page.import.project.isLte" class="mt-4">
+								<v-checkbox v-if="false" v-model="page.import.project.isLte" class="mt-4">
 									<template #label>
 										Use SWAT+ lte? This is a lite version of the model that greatly simplifies hydrology and plant growth and 
 										does not simulate nutrients, concentrating on gully formation and stream degradation.
@@ -1054,7 +1058,7 @@
 									fileType="sqlite" required 
 									invalidFeedback="Please select a SQLite database file"></select-file-input>
 
-								<v-checkbox v-model="page.create.isLte" class="mt-4">
+								<v-checkbox v-if="false" v-model="page.create.isLte" class="mt-4">
 									<template #label>
 										Use SWAT+ lte? This is a lite version of the model that greatly simplifies hydrology and plant growth and 
 										does not simulate nutrients, concentrating on gully formation and stream degradation. 
@@ -1094,7 +1098,7 @@
 								Warning: you may lose any changes you've made in the editor so far.
 							</p>
 
-							<v-checkbox v-model="page.openConfirm.project.isLte" class="mt-4">
+							<v-checkbox v-if="page.existingIsLte" v-model="page.openConfirm.project.isLte" class="mt-4">
 								<template #label>
 									Use SWAT+ lte? This is a lite version of the model that greatly simplifies hydrology and plant growth and 
 									does not simulate nutrients, concentrating on gully formation and stream degradation. 

@@ -28,6 +28,8 @@ export default interface ElectronApi {
 	runSwat: (debug:boolean, inputDir:string) => any,
 	getSwatPlusToolboxPath: () => string,
 	launchSwatPlusToolbox: (projectDb:string) => string,
+	getIahrisPath: () => string,
+	launchIahris: (scenariosPath:string) => string,
 	setColorTheme: (colorTheme:string) => void,
 	getColorTheme: () => string,
 	loadFromContextMenu: (callback:any) => void,
