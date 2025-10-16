@@ -1037,7 +1037,7 @@
 									<span class="text-secondary" v-if="!formatters.isNullOrEmpty(data.config.swat_last_run)">
 										<br>Last run {{ formatters.toDate(data.config.swat_last_run) }}
 									</span>
-									<div class="mt-1" v-if="data.selection.model && constants.globals.platform == 'win32'">
+									<div class="mt-1" v-if="false && data.selection.model && constants.globals.platform == 'win32'">
 										<v-checkbox density="compact" hide-details v-model="data.selection.debug" label="Use debug version?"></v-checkbox>
 									</div>
 								</div>
@@ -1094,7 +1094,7 @@
 
 							<v-alert variant="tonal" type="error" icon="$error" border="start" v-if="!formatters.isNullOrEmpty(data.task.error) && data.status.model" class="mb-4">
 								{{data.task.error}}
-								<span v-if="!data.selection.debug">Please run the model in debug mode to get a detailed error report.</span>
+								<span v-if="false && !data.selection.debug">Please run the model in debug mode to get a detailed error report.</span>
 								<span v-else>
 									If you cannot determine the cause of the error, please copy and paste the output log below to the 
 									<open-in-browser url="https://groups.google.com/d/forum/swatplus" text="SWAT+ model user group" />.

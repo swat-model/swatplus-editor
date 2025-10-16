@@ -168,13 +168,17 @@ class Print_prt(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write("\n")
 
+				already_written = []
 				for obj in row.objects.order_by(obj_table.id):
+					if obj.name in already_written:
+						continue
 					utils.write_string(file, obj.name, direction="left")
 					utils.write_bool_yn(file, obj.daily)
 					utils.write_bool_yn(file, obj.monthly)
 					utils.write_bool_yn(file, obj.yearly)
 					utils.write_bool_yn(file, obj.avann)
 					file.write("\n")
+					already_written.append(obj.name)
 
 
 class Object_cnt(BaseFileModel):
