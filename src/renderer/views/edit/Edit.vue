@@ -227,12 +227,12 @@
 				{ name: 'User BMPs', path: '/edit/structural/bmpuser', show: true, routeName: '', subItems: [] }
 			]
 		},
-		{
+		/*{
 			name: 'Water Rights', routeName: 'WaterRights', show: !currentProject.isLte,
 			items: [
 				{ name: 'Water Allocation', path: '/edit/water-rights/allocation', show: true, routeName: '', subItems: [] }
 			]
-		}
+		}*/
 	])
 
 	function shownNavItems(items:NavItem[]) {

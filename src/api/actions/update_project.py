@@ -23,7 +23,7 @@ from playhouse.migrate import *
 import datetime
 
 available_to_update = [
-	#'3.0',
+	'3.0',
 	'2.3',
 	'2.2',
 	'2.1',
@@ -70,7 +70,11 @@ class UpdateProject(ExecutableApi):
 				sys.exit(err)
 			
 			did_update = False
-			if m.editor_version.startswith('2.3.'):
+			if m.editor_version.startswith('3.0.'):
+				self.updates_for_3_1_0(project_db, datasets_db, backup_db_file)
+				did_update = True
+				reimport_gis = False
+			elif m.editor_version.startswith('2.3.'):
 				self.updates_for_3_0_0(project_db, datasets_db, backup_db_file)
 				did_update = True
 				reimport_gis = False
@@ -144,12 +148,17 @@ class UpdateProject(ExecutableApi):
 			
 		return m
 	
-	"""def updates_for_3_1_0(self, project_db, datasets_db, rollback_db):
+	def updates_for_3_1_0(self, project_db, datasets_db, rollback_db):
 		try:
 			self.emit_progress(15, 'Updating database with new defaults...')
 
 			self.cal_parms_value_updates_for_3_1_0(change.Cal_parms_cal)
 			self.cal_parms_value_updates_for_3_1_0(datasets_change.Cal_parms_cal)
+
+			bsnp = basin.Parameters_bsn.get_or_none()
+			if bsnp is not None and bsnp.adj_pkrt_sed < 250:
+					basin.Parameters_bsn.update({ basin.Parameters_bsn.adj_pkrt_sed: 484 }).execute()
+			datasets_basin.Parameters_bsn.update({ datasets_basin.Parameters_bsn.adj_pkrt_sed: 484 }).execute()
 			
 			Version.update({Version.value: '3.1.0', Version.release_date: datetime.datetime.now()}).execute()
 			
@@ -158,7 +167,7 @@ class UpdateProject(ExecutableApi):
 				self.emit_progress(50, "Error occurred. Rolling back database...")
 				SetupProjectDatabase.rollback(project_db, rollback_db)
 				self.emit_progress(100, "Error occurred.")
-			sys.exit(str(ex))"""
+			sys.exit(str(ex))
 	
 	def updates_for_3_0_0(self, project_db, datasets_db, rollback_db):
 		try:

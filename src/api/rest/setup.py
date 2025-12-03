@@ -377,6 +377,13 @@ Helper functions
 """
 
 def automatic_updates(project_db):
+	#Remove duplicate print objects
+	try:
+		subq = (simulation.Print_prt_object.select(fn.MIN(simulation.Print_prt_object.id).alias('min_id')).group_by(simulation.Print_prt_object.name))
+		(simulation.Print_prt_object.delete().where(simulation.Print_prt_object.id.not_in(subq)).execute())
+	except:
+		pass
+
 	conn = lib.open_db(project_db)
 	if lib.exists_table(conn, 'codes_bsn'):
 		m = config.Project_config.get_or_none()

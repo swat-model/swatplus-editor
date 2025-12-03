@@ -2,6 +2,15 @@
 
 ## Version 3 ##
 
+### Revision 3.1.0 ###
+
+* Update to SWAT+ rev. 61.0.2
+* Fix printing day_lag_max in the parameters.bsn to integer.
+* Fix bug in print.prt where salts and constituents objects were duplicated.
+* Remove water allocation editor because it is outdated (will rework in a future release).
+* Update Basin Parameters ->  adj_pkrt_sed, set default to 484 and recommended range to 250-800.
+* Update Hard Calibration / Parameters (cal_parms.cal) to remove unused parameters and non-zero minimums.
+
 ### Revision 3.0.12 ###
 
 * Add SWATPlus-IAHRIS program linkage if it is installed on Windows.

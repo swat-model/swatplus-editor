@@ -303,6 +303,7 @@ class BaseFileModel:
 			string_null = file_col.text_if_null if file_col.text_if_null is not None else utils.NULL_STR
 			num_null = file_col.text_if_null if file_col.text_if_null is not None else utils.NULL_NUM
 			val = file_col.value_override if file_col.value_override is not None else file_col.value
+			decimals = file_col.precision_override if file_col.precision_override is not None else utils.DEFAULT_DECIMALS
 
 			if file_col.is_desc:
 				utils.write_desc_string(file, val)
@@ -312,7 +313,7 @@ class BaseFileModel:
 				elif isinstance(file_col.value, int):
 					utils.write_int(file, val, default_pad=file_col.padding_override, direction=file_col.direction)
 				elif isinstance(file_col.value, float):
-					utils.write_num(file, val, default_pad=file_col.padding_override, direction=file_col.direction, text_if_null=num_null, use_non_zero_min=file_col.use_non_zero_min)
+					utils.write_num(file, val, default_pad=file_col.padding_override, direction=file_col.direction, text_if_null=num_null, use_non_zero_min=file_col.use_non_zero_min, decimals=decimals)
 				else:
 					utils.write_string(file, val, default_pad=file_col.padding_override, direction=file_col.direction, text_if_null=string_null)
 			elif file_col.force_bool_type:
@@ -320,7 +321,7 @@ class BaseFileModel:
 			elif isinstance(file_col.value, int):
 				utils.write_int(file, val, direction=file_col.direction)
 			elif isinstance(file_col.value, float):
-				utils.write_num(file, val, direction=file_col.direction, text_if_null=num_null, use_non_zero_min=file_col.use_non_zero_min)
+				utils.write_num(file, val, direction=file_col.direction, text_if_null=num_null, use_non_zero_min=file_col.use_non_zero_min, decimals=decimals)
 			elif isinstance(file_col.value, bool):
 				utils.write_bool_yn(file, val, direction=file_col.direction, text_if_null=num_null)
 			else:
@@ -329,15 +330,16 @@ class BaseFileModel:
 	def write_table(self, table, cols, write_cnt_line=False):
 		self.write_query(table.select().order_by(table.id), cols, write_cnt_line)
 
-	def write_default_table(self, table, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines=''):
-		self.write_custom_query_table(table, table.select().order_by(table.id), ignore_id_col=ignore_id_col, ignored_cols=ignored_cols, non_zero_min_cols=non_zero_min_cols, write_cnt_line=write_cnt_line, value_overrides=value_overrides, extra_lines=extra_lines)
+	def write_default_table(self, table, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines='', precision_overrides={}):
+		self.write_custom_query_table(table, table.select().order_by(table.id), ignore_id_col=ignore_id_col, ignored_cols=ignored_cols, non_zero_min_cols=non_zero_min_cols, write_cnt_line=write_cnt_line, value_overrides=value_overrides, extra_lines=extra_lines, precision_overrides=precision_overrides)
 
-	def write_custom_query_table(self, table, query, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines=''):
+	def write_custom_query_table(self, table, query, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines='', precision_overrides={}):
 		if table.select().count() > 0:
 			cols = []
 			for field in table._meta.sorted_fields:
 				value_override = value_overrides.get(field.name, None)
-				col = FileColumn(field, value_override=value_override)
+				precision_override = precision_overrides.get(field.name, None)
+				col = FileColumn(field, value_override=value_override, precision_override=precision_override)
 
 				if field.name == "desc" or field.name == "description":
 					col = FileColumn(field, is_desc=True, value_override=value_override)
@@ -382,7 +384,7 @@ class BaseFileModel:
 							col_value = col.value_override
 						else:
 							col_value = i if col_name == "id" else row[col_name]
-						row_cols.append(FileColumn(col_value, direction=col.direction, padding_override=col.padding_override, text_if_null=col.text_if_null, is_desc=col.is_desc, use_non_zero_min=col.use_non_zero_min))
+						row_cols.append(FileColumn(col_value, direction=col.direction, padding_override=col.padding_override, text_if_null=col.text_if_null, is_desc=col.is_desc, use_non_zero_min=col.use_non_zero_min, precision_override=col.precision_override, force_bool_type=isinstance(col.value, bool)))
 
 					self.write_row(file, row_cols)
 					file.write("\n")
@@ -476,7 +478,7 @@ class BaseFileModel:
 
 
 class FileColumn:
-	def __init__(self, value, direction="right", padding_override=None, not_in_db=False, repeat=None, alt_header_name="", query_alias="", text_if_null=None, is_desc=False, use_non_zero_min=False, force_bool_type=False, value_override=None):
+	def __init__(self, value, direction="right", padding_override=None, not_in_db=False, repeat=None, alt_header_name="", query_alias="", text_if_null=None, is_desc=False, use_non_zero_min=False, force_bool_type=False, value_override=None, precision_override=None):
 		self.value = value
 		self.direction = direction
 		self.padding_override = padding_override
@@ -489,3 +491,4 @@ class FileColumn:
 		self.use_non_zero_min = use_non_zero_min
 		self.force_bool_type = force_bool_type
 		self.value_override = value_override
+		self.precision_override = precision_override

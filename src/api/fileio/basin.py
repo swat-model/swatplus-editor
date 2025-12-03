@@ -52,4 +52,4 @@ class Parameters_bsn(BaseFileModel):
 			self.read_default_table(datasets_basin.Parameters_bsn, datasets_base.db, 43, ignore_id_col=True)
 
 	def write(self):
-		self.write_default_table(db.Parameters_bsn, True, value_overrides={'lin_sed': '0.0', 'exp_sed': '0.0'})
+		self.write_default_table(db.Parameters_bsn, True, value_overrides={'lin_sed': '0.0', 'exp_sed': '0.0'}, precision_overrides={'day_lag_max': 0})
