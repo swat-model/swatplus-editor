@@ -1,4 +1,8 @@
-### SWAT+ Editor v3.1.0 ###
+### SWAT+ Editor v3.1.1 ###
+
+* Bug fix where Channels -> Hydrology & Sediment and Nutrients pages were not displaying
+
+### Revision 3.1.0 ###
 
 * Update to SWAT+ rev. 61.0.2
 * Fix printing day_lag_max in the parameters.bsn to integer.

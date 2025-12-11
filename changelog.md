@@ -2,6 +2,10 @@
 
 ## Version 3 ##
 
+### Revision 3.1.1 ###
+
+* Bug fix where Channels -> Hydrology & Sediment and Nutrients pages were not displaying
+
 ### Revision 3.1.0 ###
 
 * Update to SWAT+ rev. 61.0.2
