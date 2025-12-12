@@ -140,7 +140,7 @@ class Hyd_sed_lte_cha(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		self.write_default_table(db.Hyd_sed_lte_cha, ignore_id_col=True, non_zero_min_cols=['wd','dp','slp','len'])
+		self.write_default_table(db.Hyd_sed_lte_cha, ignore_id_col=True, non_zero_min_cols=['wd','dp','slp','len'], non_zero_min_vals=[0.001,0.001])
 
 
 class Channel_lte_cha(BaseFileModel):

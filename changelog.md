@@ -2,9 +2,13 @@
 
 ## Version 3 ##
 
+### Revision 3.1.2 ###
+
+* Set minimum wd and dp in hyd-sed-lte.cha to 0.001 instead of 0.00001 due to error in values less that 0.001 introduced in 61.0.2.
+
 ### Revision 3.1.1 ###
 
-* Bug fix where Channels -> Hydrology & Sediment and Nutrients pages were not displaying
+* Bug fix where Channels -> Hydrology & Sediment and Nutrients pages were not displaying.
 
 ### Revision 3.1.0 ###
 
