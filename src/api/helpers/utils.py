@@ -60,11 +60,11 @@ def key_name_pad(prop, default_pad=DEFAULT_KEY_PAD, direction=DEFAULT_DIRECTION,
 	return string_pad(val, default_pad, direction, text_if_null)
 
 
-def num_pad(val, decimals=DEFAULT_DECIMALS, default_pad=DEFAULT_NUM_PAD, direction=DEFAULT_DIRECTION, text_if_null=NULL_NUM, use_non_zero_min=False):
+def num_pad(val, decimals=DEFAULT_DECIMALS, default_pad=DEFAULT_NUM_PAD, direction=DEFAULT_DIRECTION, text_if_null=NULL_NUM, use_non_zero_min=False, non_zero_min=NON_ZERO_MIN):
 	val_text = val
 	if is_number(val):
-		if use_non_zero_min and val < NON_ZERO_MIN:
-			val = NON_ZERO_MIN
+		if use_non_zero_min and val < non_zero_min:
+			val = non_zero_min
 		val_text = "{:.{prec}f}".format(float(val), prec=decimals)
 
 	return string_pad(val_text, default_pad, direction, text_if_null)
@@ -106,8 +106,8 @@ def write_key_name(file, prop, default_pad=DEFAULT_KEY_PAD, direction=DEFAULT_DI
 	file.write(key_name_pad(prop, default_pad, direction, text_if_null))
 
 
-def write_num(file, val, decimals=DEFAULT_DECIMALS, default_pad=DEFAULT_NUM_PAD, direction=DEFAULT_DIRECTION, text_if_null=NULL_NUM, use_non_zero_min=False):
-	file.write(num_pad(val, decimals, default_pad, direction, text_if_null, use_non_zero_min))
+def write_num(file, val, decimals=DEFAULT_DECIMALS, default_pad=DEFAULT_NUM_PAD, direction=DEFAULT_DIRECTION, text_if_null=NULL_NUM, use_non_zero_min=False, non_zero_min=NON_ZERO_MIN):
+	file.write(num_pad(val, decimals, default_pad, direction, text_if_null, use_non_zero_min, non_zero_min))
 
 
 def write_exp(file, val, decimals=DEFAULT_DECIMALS, default_pad=DEFAULT_NUM_PAD, direction=DEFAULT_DIRECTION, text_if_null=NULL_NUM, use_non_zero_min=False):
