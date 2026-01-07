@@ -4,6 +4,8 @@
 	import { decimal, required, maxLength } from '@vuelidate/validators';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	// @ts-ignore
+	import _ from 'underscore';
 
 	const router = useRouter();
 	const { api, constants, currentProject, errors, formatters, utilities } = useHelpers();
@@ -31,7 +33,15 @@
 				hmd: true,
 				wnd: true
 			},
-			obsNote: 'If the observed file is left blank, simulated is used by default'
+			obsNote: 'If the observed file is left blank, simulated is used by default',
+			files: {
+				pcp: [] as string[],
+				tmp: [] as string[],
+				slr: [] as string[],
+				hmd: [] as string[],
+				wnd: [] as string[],
+				pet: [] as string[]
+			}
 		}
 	});
 
@@ -90,6 +100,19 @@
 
 	function getFilesUrl(type:string) {
 		return `climate/files/${type}`;
+	}
+
+	async function getFiles(type:string) {
+		try {
+			const response = await api.get(`climate/files/${type}/${props.item[type]}`, currentProject.getApiHeader());
+			page.form.files[type] = response.data;
+		} catch (error) {
+			errors.logError(error, `Unable to get list of ${type} files from database.`);
+		}
+	}
+
+	async function debouncedGetFiles(type:string) {
+		_.debounce(async () => await getFiles(type), 500)();
 	}
 
 	async function save() {
@@ -186,32 +209,32 @@
 					<tr>
 						<th>Precipitation</th>
 						<td class="text-center"><v-checkbox v-model="page.form.isSim.pcp" @update:model-value="checkSim" hide-details></v-checkbox></td>
-						<td><auto-complete v-if="!page.form.isSim.pcp" v-model="item.pcp" :value="item.pcp" :custom-search-url="getFilesUrl('pcp')" hide-details></auto-complete></td>
+						<td><v-combobox v-if="!page.form.isSim.pcp" v-model="item.pcp" :items="page.form.files.pcp" @update:search="debouncedGetFiles('pcp')" hide-details></v-combobox></td>
 					</tr>
 					<tr>
 						<th>Temperature</th>
 						<td class="text-center"><v-checkbox v-model="page.form.isSim.tmp" @update:model-value="checkSim" hide-details></v-checkbox></td>
-						<td><auto-complete v-if="!page.form.isSim.tmp" v-model="item.tmp" :value="item.tmp" :custom-search-url="getFilesUrl('tmp')" hide-details></auto-complete></td>
+						<td><v-combobox v-if="!page.form.isSim.tmp" v-model="item.tmp" :items="page.form.files.tmp" @update:search="debouncedGetFiles('tmp')" hide-details></v-combobox></td>
 					</tr>
 					<tr>
 						<th>Solar radiation</th>
 						<td class="text-center"><v-checkbox v-model="page.form.isSim.slr" @update:model-value="checkSim" hide-details></v-checkbox></td>
-						<td><auto-complete v-if="!page.form.isSim.slr" v-model="item.slr" :value="item.slr" :custom-search-url="getFilesUrl('slr')" hide-details></auto-complete></td>
+						<td><v-combobox v-if="!page.form.isSim.slr" v-model="item.slr" :items="page.form.files.slr" @update:search="debouncedGetFiles('slr')" hide-details></v-combobox></td>
 					</tr>
 					<tr>
 						<th>Relative humidity</th>
 						<td class="text-center"><v-checkbox v-model="page.form.isSim.hmd" @update:model-value="checkSim" hide-details></v-checkbox></td>
-						<td><auto-complete v-if="!page.form.isSim.hmd" v-model="item.hmd" :value="item.hmd" :custom-search-url="getFilesUrl('hmd')" hide-details></auto-complete></td>
+						<td><v-combobox v-if="!page.form.isSim.hmd" v-model="item.hmd" :items="page.form.files.hmd" @update:search="debouncedGetFiles('hmd')" hide-details></v-combobox></td>
 					</tr>
 					<tr>
 						<th>Wind speed</th>
 						<td class="text-center"><v-checkbox v-model="page.form.isSim.wnd" @update:model-value="checkSim" hide-details></v-checkbox></td>
-						<td><auto-complete v-if="!page.form.isSim.wnd" v-model="item.wnd" :value="item.wnd" :custom-search-url="getFilesUrl('wnd')" hide-details></auto-complete></td>
+						<td><v-combobox v-if="!page.form.isSim.wnd" v-model="item.wnd" :items="page.form.files.wnd" @update:search="debouncedGetFiles('wnd')" hide-details></v-combobox></td>
 					</tr>
 					<tr>
 						<th>Potential evapotranspiration</th>
 						<td class="text-center"></td>
-						<td><auto-complete v-model="item.pet" :value="item.pet" :custom-search-url="getFilesUrl('pet')" hide-details></auto-complete></td>
+						<td><v-combobox v-model="item.pet" :items="page.form.files.pet" @update:search="debouncedGetFiles('pet')" hide-details></v-combobox></td>
 					</tr>
 					<tr>
 						<th class="min">Atmospheric deposition</th>
