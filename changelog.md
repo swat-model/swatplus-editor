@@ -2,6 +2,10 @@
 
 ## Version 3 ##
 
+### Revision 3.1.4 ###
+
+* Fix bug in weather station import: multiple blank lines in weather files were causing errors.
+
 ### Revision 3.1.3 ###
 
 * Fix bug in weather station manual entry form: allow any text in the box when choosing weather files.
