@@ -287,6 +287,7 @@
 							<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 								Need weather data? 
 								<open-in-browser url="https://swat.tamu.edu/data/" text="See options on the SWAT website."></open-in-browser>
+								<br>Have <b>hourly</b> data? This is only supported in SWAT+ format, not SWAT2012.
 							</v-alert>
 							
 							<div class="form-group mb-0">

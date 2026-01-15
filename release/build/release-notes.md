@@ -1,3 +1,7 @@
+### SWAT+ Editor v3.1.4 ###
+
+* Fix bug in weather station import: multiple blank lines in weather files were causing errors.
+
 ### SWAT+ Editor v3.1.3 ###
 
 * Fix bug in weather station manual entry form: allow any text in the box when choosing weather files.

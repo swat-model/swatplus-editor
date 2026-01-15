@@ -324,9 +324,8 @@ class WeatherImport(ExecutableApi):
 							if not os.path.exists(station_file):
 								raise IOError("File {file} not found. Weather data import aborted.".format(file=station_file))
 
-							try:
-								existing = Weather_file.get((Weather_file.filename == station_name) & (Weather_file.type == weather_type))
-							except Weather_file.DoesNotExist:
+							existing = Weather_file.get_or_none((Weather_file.filename == station_name) & (Weather_file.type == weather_type))
+							if existing is None:
 								try:
 									with open(station_file, "r") as station_data:
 										j = 0
@@ -363,8 +362,10 @@ class WeatherImport(ExecutableApi):
 
 											j += 1
 
-										non_empty_lines = [sline for sline in station_data if sline]
-										last_line = non_empty_lines[len(non_empty_lines)-1].strip().split()
+										#non_empty_lines = [sline for sline in station_data if sline]
+										#last_line = non_empty_lines[len(non_empty_lines)-1].strip().split()
+										last_line = list(filter(str.strip, station_data))[-1].strip().split()
+										
 										date = datetime.datetime(int(last_line[0]), 1, 1)
 										current_end_date = date + datetime.timedelta(days=int(last_line[1])-1)
 										#if end_date is not None and current_end_date != end_date:
