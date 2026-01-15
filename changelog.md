@@ -2,6 +2,14 @@
 
 ## Version 3 ##
 
+### Revision 3.1.4 ###
+
+* Fix bug in weather station import: multiple blank lines in weather files were causing errors.
+
+### Revision 3.1.3 ###
+
+* Fix bug in weather station manual entry form: allow any text in the box when choosing weather files.
+
 ### Revision 3.1.2 ###
 
 * Set minimum wd and dp in hyd-sed-lte.cha to 0.001 instead of 0.00001 due to error in values less that 0.001 introduced in 61.0.2.
