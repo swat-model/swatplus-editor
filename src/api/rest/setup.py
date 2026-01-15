@@ -180,7 +180,7 @@ def getFileCio():
 	if c is not None:
 		is_lte = c.is_lte
 
-	ignore = ['pcp_path', 'tmp_path', 'slr_path', 'hmd_path', 'wnd_path']
+	ignore = ['pcp_path', 'tmp_path', 'slr_path', 'hmd_path', 'wnd_path', 'out_path']
 	classes = config.File_cio_classification.select().where(config.File_cio_classification.name.not_in(ignore)).order_by(config.File_cio_classification.id)
 	files = config.File_cio.select().order_by(config.File_cio.order_in_class)
 	query = prefetch(classes, files)
