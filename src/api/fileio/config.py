@@ -20,29 +20,48 @@ class File_cio(BaseFileModel):
 	
 	def write(self):
 		is_lte = False
+		is_netcdf = False
+		nc_filename = None
 		c = config.Project_config.get_or_none()
 		if c is not None:
 			is_lte = c.is_lte
+			is_netcdf = c.weather_data_format == 'netcdf'
+			if is_netcdf and c.netcdf_data_file:
+				import os
+				nc_filename = os.path.basename(c.netcdf_data_file)
 
 		classes = db.File_cio_classification.select().order_by(db.File_cio_classification.id)
 		files = db.File_cio.select().order_by(db.File_cio.order_in_class)
 		query = prefetch(classes, files)
 		
 		null_str = utils.NULL_STR
+		
+		# Path classifications that should get the nc filename when using netcdf
+		nc_path_names = ['pcp_path', 'tmp_path', 'slr_path', 'hmd_path', 'wnd_path']
 
 		with open(self.file_name, 'w') as file:
 			self.write_meta_line(file)
-			classifications = self.get_classifications(is_lte)
+			classifications = self.get_classifications(is_lte, is_netcdf)
 
 			for row in query:
 				utils.write_string(file, row.name, direction="left")
 				
 				conditions = classifications.get(row.name, {})
 				
+				# Handle path rows for netcdf format - override with nc filename
+				if is_netcdf and nc_filename and row.name in nc_path_names:
+					utils.write_string(file, nc_filename, direction="left")
+					file.write("\n")
+					continue
+				
 				for f in row.files:
 					file_name = f.file_name if conditions.get(f.order_in_class, False) or f.file_name in self.custom_files else null_str
 					if f.file_name in self.ignored_files:
 						file_name = null_str
+					
+					# For netcdf format, replace weather-sta.cli with netcdf.ncw
+					if is_netcdf and row.name == "climate" and f.order_in_class == 1:
+						file_name = "netcdf.ncw"
 					
 					if file_name is None or file_name == "":
 						file_name = null_str
@@ -54,7 +73,7 @@ class File_cio(BaseFileModel):
 
 				file.write("\n")
 
-	def get_classifications(self, is_lte=False):
+	def get_classifications(self, is_lte=False, is_netcdf=False):
 		rec_cnt = recall.Recall_rec.select().where(recall.Recall_rec.rec_typ != 4).count()
 		exco_cnt = recall.Recall_dat.select().join(recall.Recall_rec).where((recall.Recall_rec.rec_typ == 4) & (recall.Recall_dat.flo != 0)).count()
 		codes_bsn = basin.Codes_bsn.get_or_none()
@@ -72,17 +91,32 @@ class File_cio(BaseFileModel):
 			2: basin.Parameters_bsn.select().count() > 0
 		}
 		
-		climate_conditions = {
-			1: True,
-			2: True,
-			3: climate.Weather_file.select().where(climate.Weather_file.type == "pet").count() > 0,
-			4: climate.Weather_file.select().where(climate.Weather_file.type == "pcp").count() > 0,
-			5: climate.Weather_file.select().where(climate.Weather_file.type == "tmp").count() > 0,
-			6: climate.Weather_file.select().where(climate.Weather_file.type == "slr").count() > 0,
-			7: climate.Weather_file.select().where(climate.Weather_file.type == "hmd").count() > 0,
-			8: climate.Weather_file.select().where(climate.Weather_file.type == "wnd").count() > 0,
-			9: climate.Atmo_cli.select().count() > 0 and climate.Atmo_cli_sta.select().count() > 0
-		}
+		# For netcdf format: weather-sta.cli is replaced with netcdf.ncw (handled in write()),
+		# and all individual weather files (pcp, tmp, slr, hmd, wnd, pet) should be null
+		if is_netcdf:
+			climate_conditions = {
+				1: True,  # netcdf.ncw will be written instead of weather-sta.cli
+				2: True,  # wgn.cli still needed
+				3: False,  # pet.cli - null for netcdf
+				4: False,  # pcp.cli - null for netcdf
+				5: False,  # tmp.cli - null for netcdf
+				6: False,  # slr.cli - null for netcdf
+				7: False,  # hmd.cli - null for netcdf
+				8: False,  # wnd.cli - null for netcdf
+				9: climate.Atmo_cli.select().count() > 0 and climate.Atmo_cli_sta.select().count() > 0
+			}
+		else:
+			climate_conditions = {
+				1: True,
+				2: True,
+				3: climate.Weather_file.select().where(climate.Weather_file.type == "pet").count() > 0,
+				4: climate.Weather_file.select().where(climate.Weather_file.type == "pcp").count() > 0,
+				5: climate.Weather_file.select().where(climate.Weather_file.type == "tmp").count() > 0,
+				6: climate.Weather_file.select().where(climate.Weather_file.type == "slr").count() > 0,
+				7: climate.Weather_file.select().where(climate.Weather_file.type == "hmd").count() > 0,
+				8: climate.Weather_file.select().where(climate.Weather_file.type == "wnd").count() > 0,
+				9: climate.Atmo_cli.select().count() > 0 and climate.Atmo_cli_sta.select().count() > 0
+			}
 		
 		connect_conditions = {
 			1: connect.Hru_con.select().count() > 0,
@@ -275,6 +309,11 @@ class File_cio(BaseFileModel):
 			17: regions.Rec_reg_def.select().count() > 0
 		}
 
+		# Path conditions - always True to output file_name from file_cio if present
+		path_conditions = {
+			1: True
+		}
+
 		classifications = {
 			"simulation": sim_conditions,
 			"basin": basin_conditions,
@@ -299,7 +338,13 @@ class File_cio(BaseFileModel):
 			"init": init_conditions,
 			"soils": soils_conditions,
 			"decision_table": decision_table_conditions,
-			"regions": regions_conditions
+			"regions": regions_conditions,
+			"pcp_path": path_conditions,
+			"tmp_path": path_conditions,
+			"slr_path": path_conditions,
+			"hmd_path": path_conditions,
+			"wnd_path": path_conditions,
+			"out_path": path_conditions
 		}
 
 		return classifications

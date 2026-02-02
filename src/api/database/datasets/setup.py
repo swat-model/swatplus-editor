@@ -228,7 +228,8 @@ class SetupDatasetsDatabase():
 			{'id': 27, 'name': 'tmp_path'},
 			{'id': 28, 'name': 'slr_path'},
 			{'id': 29, 'name': 'hmd_path'},
-			{'id': 30, 'name': 'wnd_path'}
+			{'id': 30, 'name': 'wnd_path'},
+			{'id': 31, 'name': 'out_path'}
 		]
 		
 		file_cio = [
