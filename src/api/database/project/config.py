@@ -24,6 +24,7 @@ class Project_config(base.BaseModel):
 	wgn_table_name = CharField(null=True)
 	weather_data_dir = CharField(null=True)
 	weather_data_format = CharField(null=True)
+	netcdf_data_file = CharField(null=True)
 	input_files_dir = CharField(null=True)
 	input_files_last_written = DateTimeField(null=True)
 	swat_last_run = DateTimeField(null=True)

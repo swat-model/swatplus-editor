@@ -49,7 +49,7 @@ class SetupProjectDatabase():
 		base.db.create_tables([config.Project_config, config.File_cio_classification, config.File_cio])
 		base.db.create_tables([basin.Codes_bsn, basin.Parameters_bsn])
 		base.db.create_tables([simulation.Time_sim, simulation.Print_prt, simulation.Print_prt_aa_int, simulation.Print_prt_object, simulation.Object_prt, simulation.Object_cnt, simulation.Constituents_cs])
-		base.db.create_tables([climate.Weather_wgn_cli, climate.Weather_wgn_cli_mon, climate.Weather_sta_cli, climate.Weather_file, climate.Wind_dir_cli, climate.Atmo_cli, climate.Atmo_cli_sta, climate.Atmo_cli_sta_value])
+		base.db.create_tables([climate.Weather_wgn_cli, climate.Weather_wgn_cli_mon, climate.Weather_sta_cli, climate.Weather_sta_cli_scale, climate.Weather_file, climate.Wind_dir_cli, climate.Atmo_cli, climate.Atmo_cli_sta, climate.Atmo_cli_sta_value])
 		base.db.create_tables([link.Chan_aqu_lin, link.Chan_aqu_lin_ob, link.Chan_surf_lin, link.Chan_surf_lin_ob])
 		base.db.create_tables([channel.Initial_cha, channel.Hydrology_cha, channel.Sediment_cha, channel.Nutrients_cha, channel.Channel_cha, channel.Hyd_sed_lte_cha, channel.Channel_lte_cha])
 		base.db.create_tables([reservoir.Initial_res, reservoir.Hydrology_res, reservoir.Sediment_res, reservoir.Nutrients_res, reservoir.Weir_res, reservoir.Reservoir_res, reservoir.Hydrology_wet, reservoir.Wetland_wet])

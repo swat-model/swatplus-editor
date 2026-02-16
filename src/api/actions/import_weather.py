@@ -2,7 +2,7 @@ from helpers.executable_api import ExecutableApi, Unbuffered
 from database.project import base as project_base
 from database.project.setup import SetupProjectDatabase
 from database.project.config import Project_config
-from database.project.climate import Weather_file, Weather_sta_cli, Weather_wgn_cli, Weather_wgn_cli_mon, Atmo_cli, Atmo_cli_sta, Atmo_cli_sta_value
+from database.project.climate import Weather_file, Weather_sta_cli, Weather_sta_cli_scale, Weather_wgn_cli, Weather_wgn_cli_mon, Atmo_cli, Atmo_cli_sta, Atmo_cli_sta_value
 from database.project.connect import Aquifer_con, Channel_con, Rout_unit_con, Reservoir_con, Recall_con, Hru_con, Exco_con, Chandeg_con, Hru_lte_con
 from database.project.simulation import Time_sim
 from database import lib as db_lib
@@ -385,6 +385,272 @@ class WeatherImport(ExecutableApi):
 				start_date = max(starts)
 				end_date = min(ends)
 		return start_date, end_date
+
+
+class NetCDFWeatherImport(ExecutableApi):
+	"""
+	Import weather stations from a CSV file containing station coordinates and variable availability.
+	This is used when weather data comes from NetCDF files where station locations are defined in a CSV.
+	
+	CSV format: lat,lon,elev,pcp,tmin,tmax,slr,hmd,wnd,pet
+	- elev: can be null (treated as 0)
+	- variable columns: scaling factor as float, null/-99 = no data (stored as None)
+	"""
+	def __init__(self, project_db_file, delete_existing, create_stations, stations_csv_file, nc_data_file=None):
+		self.__abort = False
+		SetupProjectDatabase.init(project_db_file)
+		self.project_db_file = project_db_file
+		self.project_db = project_base.db
+		self.create_stations = create_stations
+		self.stations_csv_file = stations_csv_file
+		self.nc_data_file = nc_data_file
+		self.coords_to_stations = {}
+		# Store scale factors per station name for later insertion
+		self.station_scale_factors = {}
+
+		# Ensure the scale table exists (for databases created before this feature)
+		project_base.db.create_tables([Weather_sta_cli_scale], safe=True)
+
+		# Ensure netcdf_data_file column exists in project_config (for databases created before this feature)
+		self._ensure_netcdf_data_file_column()
+		
+		# Ensure out_path classification exists in file_cio_classification (for databases created before this feature)
+		self._ensure_out_path_classification()
+
+		if delete_existing:
+			self.delete_existing()
+
+	def _ensure_netcdf_data_file_column(self):
+		"""Add the netcdf_data_file column to project_config if it doesn't exist."""
+		try:
+			cursor = project_base.db.execute_sql("PRAGMA table_info(project_config)")
+			columns = [row[1] for row in cursor.fetchall()]
+			if 'netcdf_data_file' not in columns:
+				project_base.db.execute_sql("ALTER TABLE project_config ADD COLUMN netcdf_data_file VARCHAR(255) NULL")
+		except Exception as e:
+			print("Warning: Could not add netcdf_data_file column: {}".format(e))
+
+	def _ensure_out_path_classification(self):
+		"""Add the out_path classification to file_cio_classification if it doesn't exist."""
+		try:
+			cursor = project_base.db.execute_sql("SELECT id FROM file_cio_classification WHERE name = 'out_path'")
+			if cursor.fetchone() is None:
+				project_base.db.execute_sql("INSERT INTO file_cio_classification (id, name) VALUES (31, 'out_path')")
+		except Exception as e:
+			print("Warning: Could not add out_path classification: {}".format(e))
+
+	def import_data(self):
+		try:
+			if not os.path.exists(self.stations_csv_file):
+				sys.exit('Stations CSV file {file} does not exist.'.format(file=self.stations_csv_file))
+
+			self.add_weather_files_from_csv()
+
+			if self.create_stations:
+				self.create_weather_stations(20, 45)
+				self.add_scale_factors(85)
+				self.match_stations(90)
+			else:
+				self.match_files_to_stations(20, 45)
+				self.add_scale_factors(85)
+			
+			# Update project_config to indicate netcdf weather format
+			self.update_project_config()
+		except Exception as e:
+			sys.exit('Error importing NetCDF stations: {}'.format(str(e)))
+
+	def delete_existing(self):
+		Weather_sta_cli_scale.delete().execute()
+		Weather_file.delete().execute()
+		Weather_sta_cli.delete().execute()
+
+	def update_project_config(self):
+		"""Update project_config to set weather_data_format to 'netcdf' and store nc data file path."""
+		self.emit_progress(95, "Updating project configuration...")
+		try:
+			config = Project_config.get()
+			config.weather_data_format = 'netcdf'
+			if self.nc_data_file:
+				config.netcdf_data_file = self.nc_data_file
+			config.save()
+		except Project_config.DoesNotExist:
+			pass
+
+	def parse_scale_value(self, val):
+		"""Parse a scale value from CSV. Returns None for null/-99, float otherwise."""
+		if val is None:
+			return None
+		val_str = val.strip().lower()
+		if val_str in ('null', '-99', ''):
+			return None
+		try:
+			return float(val)
+		except ValueError:
+			return None
+
+	def add_weather_files_from_csv(self):
+		"""Read the stations CSV file and add weather file entries for each station/variable combination."""
+		if self.__abort: return
+		
+		self.emit_progress(0, "Reading stations CSV file...")
+		
+		weather_files = []
+		
+		# Map CSV column names to weather types for weather_file table
+		# CSV has: pcp, tmin, tmax (combined as tmp), slr, hmd, wnd, pet
+		var_to_type = {
+			'pcp': 'pcp',
+			'tmin': 'tmp',  # tmin and tmax are combined as tmp
+			'tmax': 'tmp',
+			'slr': 'slr',
+			'hmd': 'hmd',
+			'wnd': 'wnd',
+			'pet': 'pet'
+		}
+		
+		# Scale factor columns in CSV (stored separately in weather_sta_cli_scale)
+		scale_cols = ['pcp', 'tmin', 'tmax', 'slr', 'hmd', 'wnd', 'pet']
+		
+		try:
+			with open(self.stations_csv_file, 'r') as csvfile:
+				reader = csv.DictReader(csvfile)
+				
+				row_count = 0
+				for row in reader:
+					if self.__abort: return
+					
+					lat = float(row['lat'])
+					lon = float(row['lon'])
+					
+					# Generate a station filename based on coordinates
+					station_name = weather_sta_name(lat, lon)
+					
+					# Store scale factors for this station
+					scale_factors = {}
+					for col in scale_cols:
+						if col in row:
+							scale_factors[col] = self.parse_scale_value(row[col])
+						else:
+							scale_factors[col] = None
+					self.station_scale_factors[station_name] = scale_factors
+					
+					# Track which weather types we've added for this station
+					# (to avoid duplicates for tmp from tmin/tmax)
+					added_types = set()
+					
+					for var_col, weather_type in var_to_type.items():
+						if var_col in row:
+							scale_val = self.parse_scale_value(row[var_col])
+							# Check if this variable has data (scale value is not None)
+							has_data = scale_val is not None
+							
+							if has_data and weather_type not in added_types:
+								filename = "{name}.{ext}".format(name=station_name, ext=weather_type)
+								
+								try:
+									existing = Weather_file.get((Weather_file.filename == filename) & (Weather_file.type == weather_type))
+								except Weather_file.DoesNotExist:
+									file_entry = {
+										"filename": filename,
+										"type": weather_type,
+										"lat": lat,
+										"lon": lon
+									}
+									weather_files.append(file_entry)
+									added_types.add(weather_type)
+					
+					row_count += 1
+					if row_count % 100 == 0:
+						self.emit_progress(min(15, row_count // 50), "Processing station {num}...".format(num=row_count))
+				
+				self.emit_progress(15, "Inserting {count} weather file entries...".format(count=len(weather_files)))
+				db_lib.bulk_insert(project_base.db, Weather_file, weather_files)
+				
+		except UnicodeDecodeError:
+			sys.exit('Non-unicode character detected in {}. Please check your CSV file encoding.'.format(self.stations_csv_file))
+
+	def create_weather_stations(self, start_prog, total_prog):
+		"""Create weather stations from unique lat/lon combinations in weather_file table."""
+		if self.__abort: return
+
+		stations = []
+		cursor = project_base.db.execute_sql("select lat, lon from weather_file group by lat, lon")
+		data = cursor.fetchall()
+		records = len(data)
+		i = 1
+		for row in data:
+			if self.__abort: return
+
+			lat = row[0]
+			lon = row[1]
+			name = weather_sta_name(lat, lon)
+
+			prog = round(i * total_prog / records) + start_prog
+			self.emit_progress(prog, "Creating weather station {name}...".format(name=name))
+
+			try:
+				existing = Weather_sta_cli.get(Weather_sta_cli.name == name)
+			except Weather_sta_cli.DoesNotExist:
+				station = {
+					"name": name,
+					"atmo_dep": None,
+					"lat": lat,
+					"lon": lon,
+				}
+				stations.append(station)
+			i += 1
+
+		db_lib.bulk_insert(project_base.db, Weather_sta_cli, stations)
+		self.match_files_to_stations(start_prog + total_prog, 20)
+
+	def match_files_to_stations(self, start_prog, total_prog):
+		"""Match weather files to weather stations based on lat/lon proximity."""
+		self.emit_progress(start_prog, "Matching files to weather station...")
+		update_closest_lat_lon("weather_sta_cli", "hmd", "weather_file", "filename", "hmd")
+		update_closest_lat_lon("weather_sta_cli", "pcp", "weather_file", "filename", "pcp")
+		update_closest_lat_lon("weather_sta_cli", "slr", "weather_file", "filename", "slr")
+		update_closest_lat_lon("weather_sta_cli", "tmp", "weather_file", "filename", "tmp")
+		update_closest_lat_lon("weather_sta_cli", "wnd", "weather_file", "filename", "wnd")
+		update_closest_lat_lon("weather_sta_cli", "pet", "weather_file", "filename", "pet")
+
+	def match_stations(self, start_prog):
+		"""Assign weather stations to spatial connection tables."""
+		self.emit_progress(start_prog, "Adding weather stations to spatial connection tables...")
+		wst_col = "wst_id"
+		wst_table = "weather_sta_cli"
+		update_closest_lat_lon("aquifer_con", wst_col, wst_table)
+		update_closest_lat_lon("channel_con", wst_col, wst_table)
+		update_closest_lat_lon("chandeg_con", wst_col, wst_table)
+		update_closest_lat_lon("rout_unit_con", wst_col, wst_table)
+		update_closest_lat_lon("reservoir_con", wst_col, wst_table)
+		update_closest_lat_lon("recall_con", wst_col, wst_table)
+		update_closest_lat_lon("exco_con", wst_col, wst_table)
+		update_closest_lat_lon("hru_con", wst_col, wst_table)
+		update_closest_lat_lon("hru_lte_con", wst_col, wst_table)
+		update_closest_lat_lon("weather_sta_cli", "wgn_id", "weather_wgn_cli")
+
+	def add_scale_factors(self, start_prog):
+		"""Add scale factors for each weather station from the stored CSV values."""
+		self.emit_progress(start_prog, "Adding scale factors for weather stations...")
+		
+		scale_entries = []
+		for station in Weather_sta_cli.select():
+			if station.name in self.station_scale_factors:
+				factors = self.station_scale_factors[station.name]
+				scale_entry = {
+					"weather_sta_cli": station.id,
+					"pcp": factors.get('pcp'),
+					"tmin": factors.get('tmin'),
+					"tmax": factors.get('tmax'),
+					"slr": factors.get('slr'),
+					"hmd": factors.get('hmd'),
+					"wnd": factors.get('wnd'),
+					"pet": factors.get('pet')
+				}
+				scale_entries.append(scale_entry)
+		
+		if scale_entries:
+			db_lib.bulk_insert(project_base.db, Weather_sta_cli_scale, scale_entries)
 
 
 class Swat2012WeatherImport(ExecutableApi):

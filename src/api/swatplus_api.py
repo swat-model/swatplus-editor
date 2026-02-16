@@ -1,7 +1,7 @@
 from helpers.executable_api import Unbuffered
 from actions.setup_project import SetupProject
 from actions.import_gis import GisImport
-from actions.import_weather import WeatherImport, Swat2012WeatherImport, WgnImport, AtmoImport
+from actions.import_weather import WeatherImport, Swat2012WeatherImport, WgnImport, AtmoImport, NetCDFWeatherImport
 from actions.read_output import ReadOutput
 from actions.write_files import WriteFiles
 from actions.create_databases import CreateDatasetsDb, CreateOutputDb, CreateProjectDb
@@ -31,6 +31,8 @@ if __name__ == '__main__':
 	parser.add_argument("--import_method", type=str, help="import method for wgn (database, two_file, one_file)", nargs="?")
 	parser.add_argument("--file1", type=str, help="full path of file", nargs="?")
 	parser.add_argument("--file2", type=str, help="full path of file", nargs="?")
+	parser.add_argument("--nc_stations_list", type=str, help="full path of CSV file with NetCDF station coordinates and variable availability", nargs="?")
+	parser.add_argument("--nc_file", type=str, help="full path of NetCDF data file (.nc4) to copy to TxtInOut", nargs="?")
 
 	# read output
 	parser.add_argument("--output_files_dir", type=str, help="full path of output files directory", nargs="?")
@@ -108,6 +110,13 @@ if __name__ == '__main__':
 			api.import_data()
 		elif args.import_type == "observed2012":
 			api = Swat2012WeatherImport(args.project_db_file, del_ex, cre_sta, args.source_dir)
+			api.import_data()
+		elif args.import_type == "netcdf":
+			# Use nc_stations_list or file1 for the CSV file path
+			stations_csv = args.nc_stations_list if args.nc_stations_list else args.file1
+			if not stations_csv:
+				sys.exit("Error: --nc_stations_list or --file1 is required for netcdf import type")
+			api = NetCDFWeatherImport(args.project_db_file, del_ex, cre_sta, stations_csv, args.nc_file)
 			api.import_data()
 		elif args.import_type == "wgn":
 			api = WgnImport(args.project_db_file, del_ex, cre_sta, args.import_method, args.file1, args.file2)
