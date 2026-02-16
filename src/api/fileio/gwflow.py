@@ -602,7 +602,19 @@ class Gwflow_files(BaseFileModel):
 
 				grid_cells = gwflow.Gwflow_fpcell.select(gwflow.Gwflow_fpcell, gwflow.Gwflow_grid).join(gwflow.Gwflow_grid)
 				cha_gis_to_con = IndexHelper(connect.Chandeg_con).get()
-				file.write('{}\t\t\t\t\tNumber of floodplain cells\n'.format(grid_cells.count()))
+				valid_cells_count = 0 
+				fpcell_lines = ''
+				for cell in grid_cells.order_by(gwflow.Gwflow_fpcell.cell_id.cell_id):
+					if cha_gis_to_con.get(cell.channel_id) is None:
+						continue
+					fpcell_lines += utils.int_pad(cell.cell_id.cell_id)
+					fpcell_lines += utils.int_pad(cha_gis_to_con.get(cell.channel_id))
+					fpcell_lines += utils.exp_pad(0, decimals=4)
+					fpcell_lines += utils.num_pad(cell.area_m2, decimals=2)
+					fpcell_lines += '\n'
+					valid_cells_count += 1
+				file.write('{}\t\t\t\t\tNumber of floodplain cells\n'.format(valid_cells_count))
+				#file.write('{}\t\t\t\t\tNumber of floodplain cells\n'.format(grid_cells.count()))
 
 				header_cols = [col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
 				col('chan_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
@@ -611,12 +623,14 @@ class Gwflow_files(BaseFileModel):
 				self.write_headers(file, header_cols)
 				file.write('\n')
 
-				for cell in grid_cells.order_by(gwflow.Gwflow_fpcell.cell_id.cell_id):
-					utils.write_int(file, cell.cell_id.cell_id)
-					utils.write_int(file, cha_gis_to_con.get(cell.channel_id, 0))
-					utils.write_exp(file, 0, decimals=4) # CAN'T FIND IN DB
-					utils.write_num(file, cell.area_m2, decimals=2) 
-					file.write('\n')
+				file.write(fpcell_lines)
+
+				#for cell in grid_cells.order_by(gwflow.Gwflow_fpcell.cell_id.cell_id):
+				#	utils.write_int(file, cell.cell_id.cell_id)
+				#	utils.write_int(file, cha_gis_to_con.get(cell.channel_id, 0))
+				#	utils.write_exp(file, 0, decimals=4) # CAN'T FIND IN DB
+				#	utils.write_num(file, cell.area_m2, decimals=2) 
+				#	file.write('\n')
 
 	def write_wetland(self, file_name='gwflow.wetland'):
 		if self.gwflow_base is not None and self.gwflow_base.wetland_exchange == 1:
