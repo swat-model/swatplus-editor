@@ -14,7 +14,7 @@ from datetime import datetime
 from playhouse.migrate import *
 
 #source_data_path = "../data/source-data/"
-source_data_path = "D:\\Repos\\swatplus.editor\\release\\data\\source-data\\"
+source_data_path = "D:\\Repos\\swatplus-editor\\release\\data\\source-data\\"
 
 
 def val_exists(val):
@@ -51,7 +51,7 @@ class SetupDatasetsDatabase():
 		min_version = 3.0
 		if updateable:
 			min_version = min_updateable_version
-		download_link = 'https://plus.swat.tamu.edu/downloads/3.0/3.0.0/swatplus_datasets.sqlite'
+		download_link = 'https://plus.swat.tamu.edu/'
 		
 		conn = db_lib.open_db(datasets_db)
 		if db_lib.exists_table(conn, 'version'):
@@ -534,33 +534,33 @@ class SetupDatasetsDatabase():
 		db_lib.bulk_insert(base.db, definitions.Var_range_option, items)
 
 	@staticmethod
-	def insert_lum(delete_first = False):
+	def insert_lum(delete_first = False, file_path = source_data_path + 'plants_landuse_rules.csv'):
 		if delete_first:
 			lum.Landuse_lum.delete().execute()
 			init.Plant_ini_item.delete().execute()
 			init.Plant_ini.delete().execute()
 
-		file = open(source_data_path + 'plants_landuse_rules.csv', "r")
+		file = open(file_path, "r")
 		
 		i = 1
 		rules = {}
 		for line in file:
 			if i > 1:
 				val = line.split(',')
-				n = val[0].lower().strip()
-				lc = int(val[6])
+				n = val[0].strip()
+				lc = int(val[5])
 				rules[n] = {
 					'mgt': None,
-					'cn2': val[3],
-					'cons_prac': val[4],
-					'ov_mann': val[5],
+					'cn2': val[2],
+					'cons_prac': val[3],
+					'ov_mann': val[4],
 					'lc_status': True if lc == 1 else False,
-					'lai_init': float(val[7]),
-					'bm_init': float(val[8]),
-					'phu_init': float(val[9]),
-					'plnt_pop': float(val[10]),
-					'yrs_init': float(val[11]),
-					'rsd_init': float(val[12])
+					'lai_init': float(val[6]),
+					'bm_init': float(val[7]),
+					'phu_init': float(val[8]),
+					'plnt_pop': float(val[9]),
+					'yrs_init': float(val[10]),
+					'rsd_init': float(val[11])
 				}
 			
 			i += 1

@@ -2,6 +2,14 @@
 
 ## Version 3 ##
 
+### Revision 3.2.0 ###
+
+* Include [pull request #24](https://github.com/swat-model/swatplus-editor/pull/24): add netcdf climate preparation to api
+  * Netcdf with SWAT+ requires a model version update that will be released at a later time
+* Include [pull request #25](https://github.com/swat-model/swatplus-editor/pull/25): gwflow bypass floodplain if channel ID not found
+* Re-work project update function and separate datasets DB updating for easier management in the future
+* Change 'Slice' to 'none/barren' in the land use pie chart on the project setup screen
+
 ### Revision 3.1.4 ###
 
 * Fix bug in weather station import: multiple blank lines in weather files were causing errors.

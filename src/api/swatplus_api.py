@@ -7,6 +7,7 @@ from actions.write_files import WriteFiles
 from actions.create_databases import CreateDatasetsDb, CreateOutputDb, CreateProjectDb
 from actions.import_export_data import ImportExportData
 from actions.update_project import UpdateProject
+from actions.update_datasets import UpdateDatasets
 from actions.reimport_gis import ReimportGis
 from actions.run_all import RunAll
 from actions.load_scenarios import LoadScenarios
@@ -96,6 +97,7 @@ if __name__ == '__main__':
 	if args.action == "setup_project":
 		api = SetupProject(args.project_db_file, args.editor_version, args.project_name, args.datasets_db_file, constant_ps, is_lte, args.project_description, copy_datasets_db)
 	elif args.action == "update_project":
+		api = UpdateDatasets(args.editor_version, None, args.project_db_file)
 		api = UpdateProject(args.project_db_file, args.editor_version, args.datasets_db_file, update_project_values, reimport_gis)
 	elif args.action == "reimport_gis":
 		api = ReimportGis(args.project_db_file, args.editor_version, args.project_name, args.datasets_db_file, constant_ps, is_lte)
@@ -146,6 +148,9 @@ if __name__ == '__main__':
 		elif args.db_type == "datasets_update_plant_landuse_rules":
 			api = CreateDatasetsDb(args.db_file)
 			api.update_plant_landuse_rules()
+		elif args.db_type == "datasets_update_plant_landuse_rules_custom":
+			api = CreateDatasetsDb(args.db_file)
+			api.update_plant_landuse_rules_custom(args.file_name)
 		elif args.db_type == "output":
 			api = CreateOutputDb(args.db_file)
 			api.create()

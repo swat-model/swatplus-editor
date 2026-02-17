@@ -1,11 +1,11 @@
 #include <idp.iss>
 
 #define SWATPlusVersion "3.1"
-#define SWATPlusPatchVersion "0"
-#define SWATPlusToolsPatchVersion "0"
+#define SWATPlusPatchVersion "4"
+#define SWATPlusToolsPatchVersion "4"
 #define QSWATPlusVersion "3.1"
 #define QSWATPlusPatchVersion "2"
-#define ToolboxVersion "3.1"
+#define ToolboxVersion "3.2"
 #define ToolboxPatchVersion "0"
 #define IahrisVersion "1.1"
 #define ModelVersion "61.0.2"
