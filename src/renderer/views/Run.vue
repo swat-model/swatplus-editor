@@ -34,6 +34,11 @@
 			inputs: {
 				show: false,
 				maxCols: 20
+			},
+			forceRerunForOutput: false,
+			outputSkip: {
+				show: false,
+				files: ''
 			}
 		},
 		hasImportedWeather: false,
@@ -297,6 +302,12 @@
 			data.file_cio = response.data.file_cio;
 			data.inputs = response.data.inputs;
 
+			data.page.forceRerunForOutput = false;
+			if (!response.data.print.prt.csvout && !formatters.isNullOrEmpty(response.data.config.swat_last_run)) {
+				data.page.forceRerunForOutput = true;
+			}
+			data.print.prt.csvout = true;
+
 			let cols = 0;
 			for (let cat of data.file_cio) {
 				if (cat.files.length > cols) cols = cat.files.length;
@@ -445,6 +456,10 @@
 			'--editor_version='+ constants.appSettings.version,
 			'--project_name='+ currentProject.name
 		];
+
+		if (!formatters.isNullOrEmpty(data.page.outputSkip.files)) {
+			args.push(`--skip_files=${data.page.outputSkip.files}`);
+		}
 
 		runTask(false, args, '', false);
 	}
@@ -701,6 +716,14 @@
 	function inputCustomizationColor(name:any) {
 		return data.inputs.ignore_files.includes(name) || data.inputs.ignore_cio_files.includes(name) || data.inputs.custom_cio_files.includes(name) ? 'primary' : undefined;
 	}
+
+	const outputLogFile = computed(() => {
+		if (formatters.isNullOrEmpty(data.config.output_last_imported)) return null;
+		if (formatters.isNullOrEmpty(data.config.input_files_dir)) return null;
+		let f = utilities.joinPaths([data.config.input_files_dir, 'output_db_log.txt']);
+		if (utilities.pathExists(f)) return f;
+		return null;
+	});
 </script>
 
 <template>
@@ -942,7 +965,16 @@
 													<div class="d-flex">
 														<div class="pr-3">
 															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.hydcon" label="Hydrograph connect output file"></v-checkbox>
-															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.csvout" label="Print output files in CSV format"></v-checkbox>
+															<div class="d-flex align-center">
+																<v-checkbox density="comfortable" hide-details v-model="data.print.prt.csvout" label="Print output files in CSV format" disabled></v-checkbox>
+																<v-tooltip location="bottom">
+																	<template v-slot:activator="{ props }">
+																		<font-awesome-icon v-bind="props" :icon="['fas', 'fa-info-circle']" class="ml-1 text-secondary"></font-awesome-icon>
+																	</template>
+																	Printing to CSV format is now required to process output files more efficiently with fewer errors.
+																</v-tooltip>
+															</div>
+															
 														</div>
 														<div>
 															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.mgtout" label="Management output file"></v-checkbox>
@@ -1032,7 +1064,7 @@
 								<div class="pt-1">
 									<label for="select_model">
 										Run SWAT+ rev. {{ constants.appSettings.swatplus }}
-										<open-file :file-path="constants.globals.swat_path" class="text-secondary"><font-awesome-icon :icon="['fas', 'fa-folder-open']" class="ml-1"></font-awesome-icon></open-file>
+										<open-file :file-path="constants.globals.swat_path" class="text-secondary"><font-awesome-icon :icon="['fas', 'fa-folder-open']" class="ml-2"></font-awesome-icon></open-file>
 									</label>
 									<span class="text-secondary" v-if="!formatters.isNullOrEmpty(data.config.swat_last_run)">
 										<br>Last run {{ formatters.toDate(data.config.swat_last_run) }}
@@ -1052,9 +1084,21 @@
 									<v-checkbox density="compact" hide-details v-model="data.selection.output" id="select_output"></v-checkbox>
 								</div>
 								<div class="pt-1">
-									<label for="select_output"><b>Analyze output for visualization</b></label>
+									<label for="select_output">
+										<b>Analyze output for visualization</b>
+										<v-tooltip>
+											<template v-slot:activator="{ props }">
+												<font-awesome-icon v-bind="props" :icon="['fas', 'fa-gear']" class="ml-2 text-secondary pointer" @click.prevent="data.page.outputSkip.show = true"></font-awesome-icon>
+											</template>
+											Advanced: Skip Output Files in Analysis
+										</v-tooltip>
+									</label>
 									<span class="text-secondary" v-if="!formatters.isNullOrEmpty(data.config.output_last_imported)">
 										<br>Last analyzed {{ formatters.toDate(data.config.output_last_imported) }}
+									</span>
+									<span class="text-warning" v-if="data.page.forceRerunForOutput">
+										<br>In a recent update, we changed how output files are processed. 
+										If you keep this boxed checked, please make sure you also check the box to <b>re-run the model</b>.
 									</span>
 								</div>
 							</div>
@@ -1080,6 +1124,7 @@
 								<swat-plus-iahris-button v-if="!formatters.isNullOrEmpty(data.config.swat_last_run) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.swat_last_run)" as-list-item text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
 								<v-list-item @click="data.page.completed.show = false; data.page.saveScenario.show = true"><v-list-item-title>Save Scenario</v-list-item-title></v-list-item>
 								<open-file as-list-item :file-path="currentResultsPath">Open Results Directory</open-file>
+								<open-file v-if="!formatters.isNullOrEmpty(outputLogFile)" as-list-item :file-path="outputLogFile">Review Output Analysis Log File</open-file>
 							</v-list>
 						</v-menu>
 						<v-btn type="button" variant="flat" color="secondary" @click="utilities.exit" class="ml-auto">Exit SWAT+ Editor</v-btn>
@@ -1127,12 +1172,40 @@
 								<swat-plus-iahris-button v-if="!formatters.isNullOrEmpty(data.config.swat_last_run) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.swat_last_run)" variant="flat" color="primary" size="large" rounded="xl" block class="my-2" no-icon text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
 								<v-btn type="button" block variant="flat" color="primary" size="large" rounded="xl" @click="data.page.completed.show = false; data.page.saveScenario.show = true" class="my-2">Save Scenario</v-btn>
 								<open-file button block variant="flat" color="primary" size="large" rounded="xl" :file-path="currentResultsPath" class="my-2">Open Results Directory</open-file>
+								<div class="my-2">
+									<open-file v-if="!formatters.isNullOrEmpty(outputLogFile)" button block variant="flat" color="primary" size="large" rounded="xl" :file-path="outputLogFile">Review Output Analysis Log File</open-file>
+								</div>
 								<v-row class="mt-2" no-gutters>
 									<v-col md class="mr-2"><v-btn type="button" variant="flat" color="secondary" size="large" rounded="xl" @click="data.page.completed.show = false" block class="mr-1">Back to Editor</v-btn></v-col>
 									<v-col md><v-btn type="button" variant="flat" color="secondary" size="large" rounded="xl" @click="utilities.exit" block>Exit SWAT+ Editor</v-btn></v-col>
 								</v-row>
 							</div>
 						</v-card-item>
+					</v-card>
+				</v-dialog>
+
+				<v-dialog v-model="data.page.outputSkip.show" :max-width="constants.dialogSizes.md">
+					<v-card title="Advanced: Skip Output Files in Analysis">
+						<v-card-item>
+							<p>
+								In general, we recommend choosing your output to print within the model itself and allowing the editor to read all output files. 
+								However, if you are running a model with a large number of output files or have limited disk space, you may choose to skip reading some output files into the editor's database.
+							</p>
+							<p>
+								Skipped files will still print in .txt/.csv according to your model print settings, but the editor will ignore them when importing output.
+								Enter the names of any output files you want to skip below. Be sure to enter the exact name of the file as it appears in your output directory, including the file extension.
+								Separate multiple file names with commas. 
+							</p>
+							<div class="form-group">
+								<v-text-field v-model="data.page.outputSkip.fileNames" 
+									label="Output files to skip (comma-separated)" type="text"
+									hint="Enter the exact names of output files to skip, separated by commas. Example: output1.csv,output2.csv" persistent-hint></v-text-field>
+							</div>
+						</v-card-item>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<v-btn @click="data.page.outputSkip.show = false">Close</v-btn>
+						</v-card-actions>
 					</v-card>
 				</v-dialog>
 

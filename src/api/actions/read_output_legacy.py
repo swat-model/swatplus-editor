@@ -143,7 +143,7 @@ time_series_labels = {
 }
 
 
-class ReadOutput(ExecutableApi):
+class ReadOutputLegacy(ExecutableApi):
 	def __init__(self, output_files_dir, db_file, swat_version, editor_version, project_name):
 		self.__abort = False
 		try:
@@ -348,17 +348,3 @@ class ReadOutput(ExecutableApi):
 			tokens = tokens[:text_index - 1] + [left, right] + tokens[text_index:]
 
 		return tokens
-
-
-if __name__ == '__main__':
-	sys.stdout = Unbuffered(sys.stdout)
-	parser = argparse.ArgumentParser(description='Create the SWAT+ output database')
-	parser.add_argument('output_files_dir', type=str, help='full path of output files directory')
-	parser.add_argument('db_file', type=str, help='full path of output SQLite database file')
-	parser.add_argument("--project_name", type=str, help="project name", nargs="?")
-	parser.add_argument("--editor_version", type=str, help="editor version", nargs="?")
-	parser.add_argument("--swat_version", type=str, help="editor version", nargs="?")
-	args = parser.parse_args()
-
-	api = ReadOutput(args.output_files_dir, args.db_file, args.swat_version, args.editor_version, args.project_name)
-	api.read()

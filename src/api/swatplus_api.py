@@ -38,6 +38,7 @@ if __name__ == '__main__':
 	# read output
 	parser.add_argument("--output_files_dir", type=str, help="full path of output files directory", nargs="?")
 	parser.add_argument("--output_db_file", type=str, help="full path of output SQLite database file", nargs="?")
+	parser.add_argument("--skip_files", type=str, help="comma-separated list of output files to skip", nargs="?")
 
 	# create databases
 	parser.add_argument("--db_type", type=str, help="which database: datasets, output, project", nargs="?")
@@ -127,7 +128,8 @@ if __name__ == '__main__':
 			api = AtmoImport(args.project_db_file, del_ex, args.import_method, args.file1, args.file2)
 			api.import_data()
 	elif args.action == "read_output":
-		api = ReadOutput(args.output_files_dir, args.output_db_file, args.swat_version, args.editor_version, args.project_name)
+		skip_files = [item.strip() for item in args.skip_files.split(',')] if args.skip_files else []
+		api = ReadOutput(args.output_files_dir, args.output_db_file, args.swat_version, args.editor_version, args.project_name, skip_files=skip_files)
 		api.read()
 	elif args.action == "get_swatplus_check":
 		api = GetSwatplusCheck(args.project_db_file, args.output_db_file)

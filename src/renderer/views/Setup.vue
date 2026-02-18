@@ -626,7 +626,7 @@
 							<h2 class="text-h5 mb-6">Welcome to SWAT+ Editor {{constants.appSettings.version}}</h2>
 
 							<p class="mb-4 text-medium-emphasis">
-								<open-in-browser url="https://swatplus.gitbook.io/docs/release-notes"  text="Read our release notes" /> to learn more about this release.
+								<open-in-browser url="https://github.com/swat-model/swatplus-editor/blob/main/changelog.md"  text="Read our release notes" /> to learn more about this release.
 							</p>
 
 							<div v-if="recentProjects.length > 0" class="my-5">

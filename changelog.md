@@ -7,6 +7,8 @@
 * Include [pull request #24](https://github.com/swat-model/swatplus-editor/pull/24): add netcdf climate preparation to api
   * Netcdf with SWAT+ requires a model version update that will be released at a later time
 * Include [pull request #25](https://github.com/swat-model/swatplus-editor/pull/25): gwflow bypass floodplain if channel ID not found
+* Re-work output file analysis to read .csv instead of .txt files and auto-populate all tables
+  * Added advanced option for skipping specified files in the interface
 * Re-work project update function and separate datasets DB updating for easier management in the future
 * Change 'Slice' to 'none/barren' in the land use pie chart on the project setup screen
 

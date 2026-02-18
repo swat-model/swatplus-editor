@@ -121,6 +121,15 @@ class UpdateProject(ExecutableApi):
 				ReimportGis(project_db, new_version, m.project_name, datasets_db, False, m.is_lte)
 	
 	def updates_for_3_2_0(self, project_db):
+		conn = lib.open_db(project_db)
+		if lib.exists_table(conn, 'project_config'):
+			config_cols = lib.get_column_names(conn, 'project_config')
+			col_names = [v['name'] for v in config_cols]
+			if 'netcdf_data_file' not in col_names:
+				migrator = SqliteMigrator(SqliteDatabase(project_db))
+				migrate(
+					migrator.add_column('project_config', 'netcdf_data_file', TextField(null=True)),
+				)
 		if not self.name_exists(File_cio_classification, 'out_path'): File_cio_classification.insert(name='out_path').execute()
 		base.db.create_tables([climate.Weather_sta_cli_scale])
 	

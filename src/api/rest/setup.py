@@ -282,7 +282,7 @@ def putRunSettings():
 			yrc_start=prt['yrc_start'],
 			yrc_end=prt['yrc_end'],
 			interval=prt['interval'],
-			csvout=prt['csvout'],
+			csvout=True,
 			dbout=prt['dbout'],
 			cdfout=prt['cdfout'],
 			crop_yld=prt['crop_yld'],

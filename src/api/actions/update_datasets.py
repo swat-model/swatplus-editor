@@ -4,6 +4,7 @@ from database import lib
 from database.datasets.setup import SetupDatasetsDatabase
 from database.project.setup import SetupProjectDatabase
 from database.output.base import Project_config
+from database.project.config import Project_config as project_config_table
 
 from database.datasets.hru_parm_db import Plants_plt as dataset_plants
 from database.datasets.definitions import File_cio as dataset_file_cio, Var_range, Version, Print_prt as dataset_print_prt, Print_prt_object as dataset_print_prt_object, File_cio_classification as dataset_file_cio_classification
@@ -51,7 +52,7 @@ class UpdateDatasets(ExecutableApi):
 	def __init__(self, new_version, datasets_db=None, project_db=None):
 		if datasets_db is None and project_db is not None:
 			SetupProjectDatabase.init(project_db)
-			c = Project_config.get_or_none()
+			c = project_config_table.get_or_none()
 			if c is None:
 				sys.exit("Could not retrieve project configuration data.")
 			datasets_db = utils.full_path(project_db, c.reference_db)
@@ -63,7 +64,7 @@ class UpdateDatasets(ExecutableApi):
 			sys.exit('No version found in datasets database. Please download the latest datasets database from plus.swat.tamu.edu.')
 
 		# Find matching upgrade path
-		version = m.editor_version
+		version = m.value
 		upgrade_chain = None
 		for pattern, upgrades in UPGRADE_PATHS.items():
 			if matches_pattern(version, pattern):
