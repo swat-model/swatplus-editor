@@ -151,6 +151,8 @@ class ReadOutput(ExecutableApi):
 		log_issue_count = 0
 		for file in files:
 			if file in self.skip_files:
+				with open(log_file, 'a') as f:
+					f.write('Skipping file per user\'s request: {}\n'.format(file))
 				continue
 			self.emit_progress(prog, 'Importing {}...'.format(file))
 			try:

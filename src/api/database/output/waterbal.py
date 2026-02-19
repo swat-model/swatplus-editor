@@ -11,7 +11,7 @@ class Waterbal(OutputBase):
 	wateryld = DoubleField(null=True)
 	perc = DoubleField(null=True)
 	et = DoubleField(null=True)
-	tloss = DoubleField(null=True)
+	ecanopy = DoubleField(null=True)
 	eplant = DoubleField(null=True)
 	esoil = DoubleField(null=True)
 	surq_cont = DoubleField(null=True)

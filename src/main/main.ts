@@ -1,6 +1,7 @@
 import {app, BrowserWindow, ipcMain, session, Menu, dialog, shell, nativeTheme} from 'electron';
 import {join, dirname} from 'path';
 import fs from 'fs';
+import { readFile } from 'fs/promises';
 
 import windowStateKeeper from 'electron-window-state';
 import parseArgs from 'electron-args';
@@ -10,6 +11,8 @@ import axios from 'axios';
 import portfinder from 'portfinder';
 import kill from 'tree-kill';
 import { autoUpdater } from 'electron-updater';
+import Papa from 'papaparse';
+import { get } from 'http';
 autoUpdater.autoDownload = false;
 
 const store = new Store();
@@ -85,22 +88,30 @@ const getSwatExeDirectory = () => {
 	return join(app.getAppPath(), 'static', 'swat_exe').replace('app.asar', 'app.asar.unpacked');
 }
 
-const getSwatExeFile = (debug:boolean) => {
-	let d = debug ? 'debug' : 'rel';
-	if (process.platform === 'linux') d += '_linux';
-	else if (process.platform === 'darwin') d += '_mac';
+async function readCSV(filePath: string): Promise<any[]> {
+	const fileContent = await readFile(filePath, 'utf-8');
 
-	return join(app.getAppPath(), 'static', 'swat_exe', 'rev' + appsettings.swatplus + '_64' + d).replace('app.asar', 'app.asar.unpacked');
+	return new Promise((resolve, reject) => {
+		Papa.parse(fileContent, {
+			header: true,
+			skipEmptyLines: true,
+			complete: (results) => resolve(results.data),
+			error: (error) => reject(error)
+		});
+	});
 }
 
-const getSwatExeFileNew = (debug:boolean) => {
-	let d = debug ? '-debug' : '';
+const getSwatExeOptions = async () => {
+	try {
+		return await readCSV(join(app.getAppPath(), 'static', 'swat_exe', 'exe-options.csv').replace('app.asar', 'app.asar.unpacked'));
+	} catch (error) {
+		console.error('Error reading CSV:', error);
+		return null;
+	}
+}
 
-	let p = '-win-amd64';
-	if (process.platform === 'linux') p = '-lin-x86_64';
-	else if (process.platform === 'darwin') p = '-mac-x86_64';
-
-	return join(app.getAppPath(), 'static', 'swat_exe', 'swatplus-' + appsettings.swatplus + p + d).replace('app.asar', 'app.asar.unpacked');
+const getSwatExeFile = (fileName:string) => {
+	return join(app.getAppPath(), 'static', 'swat_exe', fileName).replace('app.asar', 'app.asar.unpacked');
 }
 
 const getLibPath = () => {
@@ -207,9 +218,11 @@ function setMainWindowLocation(location:string) {
 	}
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
 	if (cli.flags.cmdOnly) {
-		const swat_exe = getSwatExeFile(false);
+		let swatExeOptions = await getSwatExeOptions();
+		let defaultSwatExe = swatExeOptions?.find((r) => r.isDefault === '1')?.fileName || swatExeOptions?.[0]?.fileName || '';
+		const swat_exe = getSwatExeFile(defaultSwatExe);
 
 		var script_args = [
 			'run',
@@ -528,8 +541,8 @@ ipcMain.on('kill-process', (event, pid) => {
 	}
 })
 
-ipcMain.on('run-swat', (event, debug:boolean, inputDir:string) => {
-	let swatExe = getSwatExeFile(debug);
+ipcMain.on('run-swat', (event, inputDir:string, modelExe:string) => {
+	let swatExe = getSwatExeFile(modelExe);
 
 	//Set env var for linking to libiomp5 library
 	if (process.platform === 'darwin') {
@@ -562,6 +575,10 @@ ipcMain.on('run-swat', (event, debug:boolean, inputDir:string) => {
 	});
 
 	event.returnValue = ipcProcess.pid;
+})
+
+ipcMain.handle('get-swat-exe-options', async (event) => {
+	return await getSwatExeOptions();
 })
 
 ipcMain.on('get-swatplustoolbox-path', (event) => {

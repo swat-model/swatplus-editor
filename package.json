@@ -30,6 +30,7 @@
 		"highcharts": "^11.4.8",
 		"highcharts-vue": "^2.0.1",
 		"moment": "^2.30.1",
+		"papaparse": "^5.5.3",
 		"pinia": "^2.3.1",
 		"portfinder": "^1.0.38",
 		"showdown": "^2.1.0",
@@ -41,6 +42,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^22.19.11",
+		"@types/papaparse": "^5.5.2",
 		"@types/showdown": "^2.0.6",
 		"@vitejs/plugin-vue": "^5.1.2",
 		"@vue/eslint-config-typescript": "^13.0.0",

@@ -5,7 +5,7 @@ from .base import OutputBase
 class Plantwx(OutputBase):
 	lai = DoubleField(null=True)
 	bioms = DoubleField(null=True)
-	yld = DoubleField(null=True)
+	yld = DoubleField(null=True, db_column='yield')
 	residue = DoubleField(null=True)
 	sol_tmp = DoubleField(null=True)
 	strsw = DoubleField(null=True)

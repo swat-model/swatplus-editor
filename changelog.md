@@ -11,6 +11,7 @@
   * Added advanced option for skipping specified files in the interface
 * Re-work project update function and separate datasets DB updating for easier management in the future
 * Change 'Slice' to 'none/barren' in the land use pie chart on the project setup screen
+* Remove option to create weather station manually; added more warning/instruction on manual edit screen
 
 ### Revision 3.1.4 ###
 

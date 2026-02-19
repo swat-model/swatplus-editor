@@ -818,8 +818,8 @@ class GetSwatplusCheck(ExecutableApi):
 
 	def get(self):
 		required_tables = [
-			'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa', 'basin_psc_aa',
-			'recall_aa',
+			'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa', #'basin_psc_aa',
+			#'recall_aa',
 			'basin_sd_cha_aa', 'channel_sd_aa', 'channel_sdmorph_aa', 
 			'hru_ls_aa', 'hru_wb_aa', 'hru_pw_aa', 'crop_yld_aa'
 		]
