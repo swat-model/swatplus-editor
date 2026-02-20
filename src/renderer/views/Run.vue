@@ -49,7 +49,8 @@
 		config: {
 			swat_last_run: null,
 			input_files_dir: null,
-			input_files_last_written: null
+			input_files_last_written: null,
+			swat_exe_filename: null
 		},
 		timeDisplay: {
 			startDate: null,
@@ -306,7 +307,8 @@
 		}
 
 		if (!data.exeOptions.some((x:any) => x.fileName === data.selection.exeFile)) {
-			data.selection.exeFile = data.exeOptions.find((x:any) => x.isDefault)?.fileName || data.exeOptions[0]?.fileName || '';
+			data.selection.exeFile = data.exeOptions.find((x:any) => x.fileName === data.config.swat_exe_filename)?.fileName 
+				|| data.exeOptions.find((x:any) => x.isDefault)?.fileName || data.exeOptions[0]?.fileName || '';
 		}
 	}
 
@@ -329,7 +331,8 @@
 			if (data.exeOptions === null || data.exeOptions.length === 0) {
 				throw new Error('No SWAT+ executable options found. It is possible your install is corrupted. Please try reinstalling the application.');
 			}
-			data.selection.exeFile = data.exeOptions.find((x:any) => x.isDefault)?.fileName || data.exeOptions[0]?.fileName || '';
+			data.selection.exeFile = data.exeOptions.find((x:any) => x.fileName === data.config.swat_exe_filename)?.fileName 
+				|| data.exeOptions.find((x:any) => x.isDefault)?.fileName || data.exeOptions[0]?.fileName || '';
 
 			data.page.forceRerunForOutput = false;
 			if (!response.data.print.prt.csvout && !formatters.isNullOrEmpty(response.data.config.swat_last_run)) {
@@ -402,8 +405,13 @@
 				data.print.prt.day_end = endPrintUpdate.day;
 				data.print.prt.yrc_end = endPrintUpdate.year;
 
+				currentProject.setSwatVersion(selectedExeDescription.value);
+				utilities.pushRecentProject(currentProject);
+				utilities.setWindowTitle();
+
 				let infoData = { 
 					input_files_dir: data.config.input_files_dir.replace(/\\/g,"/"),
+					swat_exe_filename: data.selection.exeFile,
 					time: data.time,
 					print: data.print.prt,
 					print_objects: data.print.objects,
@@ -1240,7 +1248,7 @@
 							</p>
 							<p>
 								Caution: providing your own executables may cause errors if it is not compatible with the editor's default official release version. 
-								Changes in input file formats between model versions may cause errors.
+								Changes in input or output file formats between model versions may cause errors.
 							</p>
 						</v-card-item>
 						<v-divider></v-divider>

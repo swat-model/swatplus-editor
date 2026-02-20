@@ -21,6 +21,7 @@ export interface ProjectSettings {
 	description: string|null;
 	version: string|null;
 	isLte: boolean;
+	swatVersion: string|null;
 }
 
 export interface GridViewHeader {

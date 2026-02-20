@@ -87,6 +87,7 @@
 		name: '',
 		description: '',
 		file_path: '',
+		swat_exe_filename: '',
 		last_modified: Date.now(),
 		is_lte: false,
 		status: {
@@ -141,6 +142,22 @@
 		}		
 	}
 
+	async function getSwatVersionTitle(config_swat_exe_filename:string|null) {
+		let v = `rev. ${constants.appSettings.swatplus}`;
+		if (!formatters.isNullOrEmpty(config_swat_exe_filename)) {
+			try {
+				let exeOptions = await runProcess.getSwatExeOptions();
+				if (exeOptions !== null && exeOptions.length > 0) {
+					let exeOption = exeOptions.find((x:any) => x.fileName === config_swat_exe_filename);
+					if (exeOption) v = exeOption.description.split('(')[0].trim();
+				}
+			} catch (error) {
+				errors.log(error);
+			}
+		}
+		return v;
+	}
+
 	async function openProject() {
 		page.open.loading = true;
 		page.open.error = null;
@@ -149,13 +166,16 @@
 			const response = await api.get(`setup/config`, currentProject.getTempApiHeader(page.open.projectDb));
 			errors.log(response.data);
 
+			let swatVersionTitle = await getSwatVersionTitle(response.data.swat_exe_filename);
+
 			let project:ProjectSettings = {
 				projectDb: page.open.projectDb,
 				datasetsDb: response.data.reference_db,
 				name: response.data.project_name,
 				description: response.data.project_description,
 				version: response.data.editor_version,
-				isLte: response.data.is_lte
+				isLte: response.data.is_lte,
+				swatVersion: swatVersionTitle
 			}
 
 			if (formatters.isNullOrEmpty(response.data.gis_version)) {
@@ -312,7 +332,8 @@
 				name: formatters.toValidName(page.create.name),
 				description: formatters.toValidName(page.create.description),
 				version: constants.appSettings.version,
-				isLte: page.create.isLte
+				isLte: page.create.isLte,
+				swatVersion: `rev. ${constants.appSettings.swatplus}`
 			};
 			let lte = project.isLte ? 'y' : 'n';
 

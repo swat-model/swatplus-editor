@@ -28,6 +28,7 @@ class Project_config(base.BaseModel):
 	input_files_dir = CharField(null=True)
 	input_files_last_written = DateTimeField(null=True)
 	swat_last_run = DateTimeField(null=True)
+	swat_exe_filename = CharField(null=True)
 	delineation_done = BooleanField(default=False)
 	hrus_done = BooleanField(default=False)
 	soil_table = CharField(null=True)  # Delete?

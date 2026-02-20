@@ -13,6 +13,7 @@ export const useCurrentProject = defineStore('project', () => {
 	const description = ref<string|null>(null);
 	const version = ref<string|null>(null);
 	const isLte = ref<boolean>(false);
+	const swatVersion = ref<string|null>(null);
 	const hasLoadedCommandLine = ref<boolean>(false);
 
 	const hasCurrentProject = computed(() => !!projectDb.value)
@@ -54,6 +55,10 @@ export const useCurrentProject = defineStore('project', () => {
 		hasLoadedCommandLine.value = loaded;
 	}
 
+	function setSwatVersion(version:string):void {
+		swatVersion.value = version;
+	}
+
 	function getObject():ProjectSettings {
 		let project:ProjectSettings = {
 			projectDb: projectDb.value,
@@ -62,6 +67,7 @@ export const useCurrentProject = defineStore('project', () => {
 			description: description.value,
 			version: version.value,
 			isLte: isLte.value,
+			swatVersion: swatVersion.value
 		};
 		return project;
 	}
@@ -73,6 +79,7 @@ export const useCurrentProject = defineStore('project', () => {
 		description.value = project.description;
 		version.value = project.version;
 		isLte.value = project.isLte;
+		swatVersion.value = project.swatVersion;
 	}
 
 	function getApiHeader() {
@@ -87,8 +94,8 @@ export const useCurrentProject = defineStore('project', () => {
 	}
 
 	return {
-		projectDb, datasetsDb, name, description, version, isLte, hasLoadedCommandLine,
+		projectDb, datasetsDb, name, description, version, isLte, swatVersion, hasLoadedCommandLine,
 		hasCurrentProject, projectPath, txtInOutPath, scenariosPath, projectDbUrl,
-		setHasLoadedCommandLine, getObject, setCurrentProject, getApiHeader, getTempApiHeader, isSupported
+		setHasLoadedCommandLine, setSwatVersion, getObject, setCurrentProject, getApiHeader, getTempApiHeader, isSupported
 	}
 })

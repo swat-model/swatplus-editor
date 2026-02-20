@@ -128,7 +128,12 @@ class UpdateProject(ExecutableApi):
 			if 'netcdf_data_file' not in col_names:
 				migrator = SqliteMigrator(SqliteDatabase(project_db))
 				migrate(
-					migrator.add_column('project_config', 'netcdf_data_file', TextField(null=True)),
+					migrator.add_column('project_config', 'netcdf_data_file', CharField(null=True)),
+				)
+			if 'swat_exe_filename' not in col_names:
+				migrator = SqliteMigrator(SqliteDatabase(project_db))
+				migrate(
+					migrator.add_column('project_config', 'swat_exe_filename', CharField(null=True)),
 				)
 		if not self.name_exists(File_cio_classification, 'out_path'): File_cio_classification.insert(name='out_path').execute()
 		base.db.create_tables([climate.Weather_sta_cli_scale])

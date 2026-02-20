@@ -135,6 +135,7 @@ def getInfo():
 			'name': m.project_name,
 			'description': oc.name,
 			'file_path': current_path,
+			'swat_exe_filename': m.swat_exe_filename,
 			'last_modified': utils.json_encode_datetime(datetime.fromtimestamp(os.path.getmtime(project_db))),
 			'is_lte': m.is_lte,
 			'status': {
@@ -269,6 +270,7 @@ def putRunSettings():
 	try:
 		m = config.Project_config.get()			
 		m.input_files_dir = utils.rel_path(project_db, args['input_files_dir'])
+		m.swat_exe_filename = args['swat_exe_filename']
 		result = m.save()
 
 		time = args['time']
@@ -392,7 +394,12 @@ def automatic_updates(project_db):
 		if 'netcdf_data_file' not in col_names:
 			migrator = SqliteMigrator(SqliteDatabase(project_db))
 			migrate(
-				migrator.add_column('project_config', 'netcdf_data_file', TextField(null=True)),
+				migrator.add_column('project_config', 'netcdf_data_file', CharField(null=True)),
+			)
+		if 'swat_exe_filename' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'swat_exe_filename', CharField(null=True)),
 			)
 		if 'use_gwflow' not in col_names:
 			migrator = SqliteMigrator(SqliteDatabase(project_db))

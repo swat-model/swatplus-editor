@@ -514,7 +514,7 @@ def get_landuse():
 	return landuse
 
 
-def get_psrc(ls, total_area):
+def get_psrc(ls, total_area, has_recall):
 	subLoad = check.CheckPointSourcesLoad()
 	psLoad = check.CheckPointSourcesLoad()
 	fromLoad = check.CheckPointSourcesLoad()
@@ -526,13 +526,14 @@ def get_psrc(ls, total_area):
 		subLoad.nitrogen = cha.orgn_out + cha.no3_out + cha.nh3_out + cha.no2_out
 		subLoad.phosphorus = cha.sedp_out + cha.solp_out
 
-	ptable = hyd.Recall_aa
-	if ptable.select().count() > 0:
-		pts = ptable.select(fn.SUM(ptable.flo).alias('flow_total'), fn.SUM(ptable.sed).alias('sed_total'), fn.SUM(ptable.orgn).alias('orgn_total'), fn.SUM(ptable.sedp).alias('sedp_total'), fn.SUM(ptable.no3).alias('no3_total'), fn.SUM(ptable.nh3).alias('nh3_total'), fn.SUM(ptable.no2).alias('no2_total'), fn.SUM(ptable.solp).alias('solp_total')).get()
-		psLoad.flow = pts.flow_total / 365
-		psLoad.sediment = pts.sed_total
-		psLoad.nitrogen = pts.orgn_total + pts.no3_total + pts.nh3_total + pts.no2_total
-		psLoad.phosphorus = pts.sedp_total + pts.solp_total
+	if has_recall:
+		ptable = hyd.Recall_aa
+		if ptable.select().count() > 0:
+			pts = ptable.select(fn.SUM(ptable.flo).alias('flow_total'), fn.SUM(ptable.sed).alias('sed_total'), fn.SUM(ptable.orgn).alias('orgn_total'), fn.SUM(ptable.sedp).alias('sedp_total'), fn.SUM(ptable.no3).alias('no3_total'), fn.SUM(ptable.nh3).alias('nh3_total'), fn.SUM(ptable.no2).alias('no2_total'), fn.SUM(ptable.solp).alias('solp_total')).get()
+			psLoad.flow = pts.flow_total / 365
+			psLoad.sediment = pts.sed_total
+			psLoad.nitrogen = pts.orgn_total + pts.no3_total + pts.nh3_total + pts.no2_total
+			psLoad.phosphorus = pts.sedp_total + pts.solp_total
 
 	fromLoad.flow = 0 if subLoad.flow == 0 else psLoad.flow / (psLoad.flow + subLoad.flow) * 100
 	fromLoad.sediment = 0 if subLoad.sediment == 0 else psLoad.sediment / (psLoad.sediment + subLoad.sediment) * 100
@@ -756,7 +757,7 @@ def get_instream(basin_cha, cha, wb, ls, total_area, psrc):
 		seep = 0
 		water_yld = wb.wateryld
 		if water_yld != 0:
-			tloss = wb.tloss #already in mm?
+			tloss = wb.ecanopy #already in mm?
 			tevap = basin_cha.evap / (total_area / 100 * 1000000) #ha-m to mm? 
 
 			total_streamflow_loss = (tloss + tevap) / water_yld * 100
@@ -816,6 +817,12 @@ class GetSwatplusCheck(ExecutableApi):
 		SetupOutputDatabase.close()
 		SetupProjectDatabase.close()
 
+	def table_exists(self, table_name):
+		conn = lib.open_db(self.output_db_file)
+		exists = lib.exists_table(conn, table_name)
+		conn.close()
+		return exists
+
 	def get(self):
 		required_tables = [
 			'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa', #'basin_psc_aa',
@@ -839,6 +846,7 @@ class GetSwatplusCheck(ExecutableApi):
 			has_res = lib.exists_table(conn, 'basin_res_aa')
 			has_yr_res = lib.exists_table(conn, 'reservoir_yr')
 			has_project_config = lib.exists_table(conn, 'project_config')
+			has_recall = lib.exists_table(conn, 'recall_aa')
 			conn.close()
 
 			total_area = connect.Rout_unit_con.select(fn.Sum(connect.Rout_unit_con.area)).scalar()
@@ -858,7 +866,7 @@ class GetSwatplusCheck(ExecutableApi):
 			pg = get_pg(nb, pw)
 			landscape = get_landscape(ls, ncycle, aqu)
 			landuse = get_landuse()
-			psrc = get_psrc(ls, total_area)
+			psrc = get_psrc(ls, total_area, has_recall)
 			res = get_res(has_res, has_yr_res)
 			instream = get_instream(basin_cha, cha, wb, ls, total_area, psrc)
 			sed = get_sed(instream, psrc, ls, wb)
