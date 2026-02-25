@@ -34,6 +34,10 @@ class CreateDatasetsDb(ExecutableApi):
 		SetupDatasetsDatabase.insert_lum(True)
 		SetupDatasetsDatabase.close()
 
+	def update_plant_landuse_rules_custom(self, file_path):
+		SetupDatasetsDatabase.insert_lum(True, file_path)
+		SetupDatasetsDatabase.close()
+
 
 class CreateOutputDb(ExecutableApi):
 	def __init__(self, db_file):
@@ -85,6 +89,7 @@ if __name__ == '__main__':
 	parser.add_argument("db_file2", type=str, help="full path of SQLite database file", nargs="?")
 	parser.add_argument("project_name", type=str, help="project name", nargs="?")
 	parser.add_argument("editor_version", type=str, help="editor version", nargs="?")
+	parser.add_argument("csv_file", type=str, help="full path of CSV file", nargs="?")
 	args = parser.parse_args()
 
 	if args.db_type == "datasets":
@@ -96,6 +101,9 @@ if __name__ == '__main__':
 	elif args.db_type == "datasets_update_plant_landuse_rules":
 		api = CreateDatasetsDb(args.db_file)
 		api.update_plant_landuse_rules()
+	elif args.db_type == "datasets_update_plant_landuse_rules_custom":
+		api = CreateDatasetsDb(args.db_file)
+		api.update_plant_landuse_rules_custom(args.csv_file)
 	elif args.db_type == "output":
 		api = CreateOutputDb(args.db_file)
 		api.create()

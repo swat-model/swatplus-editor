@@ -32,7 +32,7 @@ class HydBase(BaseModel):
 	sag = DoubleField(null=True)
 	lag = DoubleField(null=True)
 	grv = DoubleField(null=True)
-	temp = DoubleField(null=True)
+	undefined1 = DoubleField(null=True)
 
 
 class Hydout_day(HydBase):
@@ -93,7 +93,7 @@ class PtsBase(BaseModel):
 	sag = DoubleField(null=True)
 	lag = DoubleField(null=True)
 	grv = DoubleField(null=True)
-	temp = DoubleField(null=True)
+	undefined1 = DoubleField(null=True)
 
 
 class PtsNoTypeBase(BaseModel):
@@ -122,7 +122,7 @@ class PtsNoTypeBase(BaseModel):
 	sag = DoubleField(null=True)
 	lag = DoubleField(null=True)
 	grv = DoubleField(null=True)
-	temp = DoubleField(null=True)
+	undefined1 = DoubleField(null=True)
 
 
 class Basin_psc_day(PtsNoTypeBase):

@@ -87,8 +87,8 @@
 						<v-card-text>
 							<p class="text-medium-emphasis mb-0">
 								*Note: While you may change your version of SWAT+ used in the editor, we recommend only doing so with caution and knowledge of model changes between the versions. 
-								If there are input and output file changes, you may run into errors or inaccurate results. To change your model version, go to the <router-link to="/run">Run</router-link> tab and click on the 
-								folder icon to the right of "Run SWAT+ rev. {{ constants.appSettings.swatplus }}".
+								If there are input and output file changes, you may run into errors or inaccurate results. To change your model version, go to the <router-link to="/run">Run</router-link> tab 
+								and select one of the built-in versions from the drop down menu, or click the gear icon to get advanced instructions.
 							</p>
 						</v-card-text>
 					</v-card>

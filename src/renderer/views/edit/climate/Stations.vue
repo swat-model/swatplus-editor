@@ -246,7 +246,7 @@
 				Weather Stations
 			</file-header>
 
-			<grid-view ref="grid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal">
+			<grid-view ref="grid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal" hide-create>
 				<template #actions>
 					<v-btn variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import Data</v-btn>
 					<v-btn v-if="table.total > 0" variant="flat" color="error" class="mr-2" @click="page.delete.show = true">Delete All</v-btn>

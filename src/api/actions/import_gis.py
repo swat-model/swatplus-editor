@@ -791,11 +791,11 @@ class GisImport(ExecutableApi):
 
 		ds_plant_comms = dict()
 		for row in ds_init.Plant_ini.select():
-			ds_plant_comms[row.name] = row
+			ds_plant_comms[row.name.lower()] = row
 
 		ds_lums = dict()
 		for row in ds_lum.Landuse_lum.select():
-			ds_lums[row.name] = row
+			ds_lums[row.name.lower()] = row
 
 		summer_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_summer1')
 		winter_table = decision_table.D_table_dtl.get_or_none(decision_table.D_table_dtl.name == 'pl_hv_winter1')

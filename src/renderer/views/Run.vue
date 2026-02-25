@@ -34,14 +34,23 @@
 			inputs: {
 				show: false,
 				maxCols: 20
-			}
+			},
+			forceRerunForOutput: false,
+			outputSkip: {
+				show: false,
+				files: ''
+			},
+			exeCustomization: {
+				show: false
+			},
 		},
 		hasImportedWeather: false,
 		hasObservedWeather: false,
 		config: {
 			swat_last_run: null,
 			input_files_dir: null,
-			input_files_last_written: null
+			input_files_last_written: null,
+			swat_exe_filename: null
 		},
 		timeDisplay: {
 			startDate: null,
@@ -123,7 +132,7 @@
 			inputs: true,
 			model: true,
 			output: true,
-			debug: false
+			exeFile: '',
 		},
 		printGroups: {
 			model: {
@@ -214,7 +223,10 @@
 			hru_lte: ['hru-lte_wb', 'hru-lte_nb', 'hru-lte_ls', 'hru-lte_pw'],
 			showInactive: false,
 			changedObjects: []
-		}
+		},
+		exeOptions: [
+			{ fileName: '', description: '', isDefault: true }
+		]
 	});
 
 	let modelIssues:any = reactive({
@@ -261,7 +273,7 @@
 
 	const modalTitle = computed(() => {
 		if (data.status.inputs) return 'Writing SWAT+ Input Files';
-		else if (data.status.model) return `Running SWAT+ rev. ${constants.appSettings.swatplus}`;
+		else if (data.status.model) return `Running SWAT+ ${selectedExeDescription.value}`;
 		else if (data.status.output) return 'Reading SWAT+ Output Files';
 		return 'Running SWAT+';
 	})
@@ -282,6 +294,24 @@
 		return utilities.joinPaths([scenPath, formatters.toValidFileName(data.page.saveScenario.name)]);
 	});
 
+	const selectedExeDescription = computed(() => {
+		let selected = data.exeOptions.find((x:any) => x.fileName === data.selection.exeFile);
+		if (selected) return selected.description.split('(')[0].trim();
+		return '';
+	});
+
+	async function refreshExeOptions() {
+		data.exeOptions = await runProcess.getSwatExeOptions();
+		if (data.exeOptions === null || data.exeOptions.length === 0) {
+			data.page.error = 'No SWAT+ executable options found. It is possible your install is corrupted. Please try reinstalling the application.';
+		}
+
+		if (!data.exeOptions.some((x:any) => x.fileName === data.selection.exeFile)) {
+			data.selection.exeFile = data.exeOptions.find((x:any) => x.fileName === data.config.swat_exe_filename)?.fileName 
+				|| data.exeOptions.find((x:any) => x.isDefault)?.fileName || data.exeOptions[0]?.fileName || '';
+		}
+	}
+
 	async function get() {
 		data.page.loading = true;
 		data.page.error = null;
@@ -296,6 +326,19 @@
 			data.hasObservedWeather = response.data.has_observed_weather;
 			data.file_cio = response.data.file_cio;
 			data.inputs = response.data.inputs;
+
+			data.exeOptions = await runProcess.getSwatExeOptions();
+			if (data.exeOptions === null || data.exeOptions.length === 0) {
+				throw new Error('No SWAT+ executable options found. It is possible your install is corrupted. Please try reinstalling the application.');
+			}
+			data.selection.exeFile = data.exeOptions.find((x:any) => x.fileName === data.config.swat_exe_filename)?.fileName 
+				|| data.exeOptions.find((x:any) => x.isDefault)?.fileName || data.exeOptions[0]?.fileName || '';
+
+			data.page.forceRerunForOutput = false;
+			if (!response.data.print.prt.csvout && !formatters.isNullOrEmpty(response.data.config.swat_last_run)) {
+				data.page.forceRerunForOutput = true;
+			}
+			data.print.prt.csvout = true;
 
 			let cols = 0;
 			for (let cat of data.file_cio) {
@@ -362,8 +405,13 @@
 				data.print.prt.day_end = endPrintUpdate.day;
 				data.print.prt.yrc_end = endPrintUpdate.year;
 
+				currentProject.setSwatVersion(selectedExeDescription.value);
+				utilities.pushRecentProject(currentProject.getObject());
+				utilities.setWindowTitle();
+
 				let infoData = { 
 					input_files_dir: data.config.input_files_dir.replace(/\\/g,"/"),
+					swat_exe_filename: data.selection.exeFile,
 					time: data.time,
 					print: data.print.prt,
 					print_objects: data.print.objects,
@@ -410,14 +458,14 @@
 		let args = [
 			'write_files', 
 			'--project_db_file='+ currentProject.projectDb, 
-			'--swat_version='+ constants.appSettings.swatplus
+			'--swat_version='+ selectedExeDescription.value
 		];
 
 		if (data.inputs.ignore_files.length > 0) args.push(`--ignore_files=${data.inputs.ignore_files.join(',')}`);
 		if (data.inputs.ignore_cio_files.length > 0) args.push(`--ignore_cio_files=${data.inputs.ignore_cio_files.join(',')}`);
 		if (data.inputs.custom_cio_files.length > 0) args.push(`--custom_cio_files=${data.inputs.custom_cio_files.join(',')}`);
 
-		runTask(false, args, '', false);
+		runTask(false, args, '', '');
 	}
 
 	function runModel() {
@@ -427,7 +475,7 @@
 		data.status.output = false;
 		data.status.saveScenario = false;
 
-		runTask(true, null, data.config.input_files_dir, data.selection.debug);
+		runTask(true, null, data.config.input_files_dir, data.selection.exeFile);
 	}
 
 	function runOutput() {
@@ -441,12 +489,16 @@
 			'read_output', 
 			'--output_files_dir='+ data.config.input_files_dir.replace(/\\/g,"/"), 
 			'--output_db_file='+ runProcess.outputDbPath(data.config.input_files_dir),
-			'--swat_version='+ constants.appSettings.swatplus,
+			'--swat_version='+ selectedExeDescription.value,
 			'--editor_version='+ constants.appSettings.version,
 			'--project_name='+ currentProject.name
 		];
 
-		runTask(false, args, '', false);
+		if (!formatters.isNullOrEmpty(data.page.outputSkip.files)) {
+			args.push(`--skip_files=${data.page.outputSkip.files}`);
+		}
+
+		runTask(false, args, '', '');
 	}
 
 	function saveScenario() {
@@ -468,11 +520,11 @@
 				'--project_name='+ formatters.toValidFileName(data.page.saveScenario.name)
 			];
 
-			runTask(false, args, '', false);
+			runTask(false, args, '', '');
 		}
 	}
 
-	function runTask(isSwat:boolean, args:string[]|null, inputDir:string, debug:boolean) {
+	function runTask(isSwat:boolean, args:string[]|null, inputDir:string, exeFile:string) {
 		data.task.error = null;
 		data.task.running = true;
 		data.task.progress = {
@@ -485,7 +537,7 @@
 
 		let currentPid = null;
 		if (isSwat) {
-			currentPid = runProcess.runSwatProc(inputDir, debug);
+			currentPid = runProcess.runSwatProc(inputDir, exeFile);
 		} else {
 			currentPid = runProcess.runApiProc('runmodel', 'swatplus_api', args||[]);
 		}
@@ -701,6 +753,14 @@
 	function inputCustomizationColor(name:any) {
 		return data.inputs.ignore_files.includes(name) || data.inputs.ignore_cio_files.includes(name) || data.inputs.custom_cio_files.includes(name) ? 'primary' : undefined;
 	}
+
+	const outputLogFile = computed(() => {
+		if (formatters.isNullOrEmpty(data.config.output_last_imported)) return null;
+		if (formatters.isNullOrEmpty(data.config.input_files_dir)) return null;
+		let f = utilities.joinPaths([data.config.input_files_dir, 'output_db_log.txt']);
+		if (utilities.pathExists(f)) return f;
+		return null;
+	});
 </script>
 
 <template>
@@ -942,7 +1002,16 @@
 													<div class="d-flex">
 														<div class="pr-3">
 															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.hydcon" label="Hydrograph connect output file"></v-checkbox>
-															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.csvout" label="Print output files in CSV format"></v-checkbox>
+															<div class="d-flex align-center">
+																<v-checkbox density="comfortable" hide-details v-model="data.print.prt.csvout" label="Print output files in CSV format" disabled></v-checkbox>
+																<v-tooltip location="bottom">
+																	<template v-slot:activator="{ props }">
+																		<font-awesome-icon v-bind="props" :icon="['fas', 'fa-info-circle']" class="ml-1 text-secondary"></font-awesome-icon>
+																	</template>
+																	Printing to CSV format is now required to process output files more efficiently with fewer errors.
+																</v-tooltip>
+															</div>
+															
 														</div>
 														<div>
 															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.mgtout" label="Management output file"></v-checkbox>
@@ -1029,14 +1098,25 @@
 								<div class="mr-4">
 									<v-checkbox density="compact" hide-details v-model="data.selection.model" id="select_model"></v-checkbox>
 								</div>
-								<div class="pt-1">
-									<label for="select_model">
-										Run SWAT+ rev. {{ constants.appSettings.swatplus }}
-										<open-file :file-path="constants.globals.swat_path" class="text-secondary"><font-awesome-icon :icon="['fas', 'fa-folder-open']" class="ml-1"></font-awesome-icon></open-file>
-									</label>
-									<span class="text-secondary" v-if="!formatters.isNullOrEmpty(data.config.swat_last_run)">
-										<br>Last run {{ formatters.toDate(data.config.swat_last_run) }}
-									</span>
+								<div class="pt-0">
+									<div class="d-flex align-center">
+										<label for="select_model">
+											<b>Run SWAT+</b>
+										</label>
+										<v-select v-model="data.selection.exeFile" :items="data.exeOptions" 
+											item-title="description" item-value="fileName"
+											class="ml-2" density="compact" hide-details></v-select>
+										<v-tooltip>
+											<template v-slot:activator="{ props }">
+												<font-awesome-icon v-bind="props" :icon="['fas', 'fa-gear']" class="ml-2 text-secondary pointer" @click.prevent="data.page.exeCustomization.show = true"></font-awesome-icon>
+											</template>
+											Advanced: provide your own executables
+										</v-tooltip>
+									</div>
+									
+									<div class="text-secondary mt-1" v-if="!formatters.isNullOrEmpty(data.config.swat_last_run)">
+										Last run {{ formatters.toDate(data.config.swat_last_run) }}
+									</div>
 									<div class="mt-1" v-if="false && data.selection.model && constants.globals.platform == 'win32'">
 										<v-checkbox density="compact" hide-details v-model="data.selection.debug" label="Use debug version?"></v-checkbox>
 									</div>
@@ -1052,9 +1132,21 @@
 									<v-checkbox density="compact" hide-details v-model="data.selection.output" id="select_output"></v-checkbox>
 								</div>
 								<div class="pt-1">
-									<label for="select_output"><b>Analyze output for visualization</b></label>
+									<label for="select_output">
+										<b>Analyze output for visualization</b>
+										<v-tooltip>
+											<template v-slot:activator="{ props }">
+												<font-awesome-icon v-bind="props" :icon="['fas', 'fa-gear']" class="ml-2 text-secondary pointer" @click.prevent="data.page.outputSkip.show = true"></font-awesome-icon>
+											</template>
+											Advanced: specify output files to skip in analysis
+										</v-tooltip>
+									</label>
 									<span class="text-secondary" v-if="!formatters.isNullOrEmpty(data.config.output_last_imported)">
 										<br>Last analyzed {{ formatters.toDate(data.config.output_last_imported) }}
+									</span>
+									<span class="text-warning" v-if="data.page.forceRerunForOutput">
+										<br>In a recent update, we changed how output files are processed. 
+										If you keep this boxed checked, please make sure you also check the box to <b>re-run the model</b>.
 									</span>
 								</div>
 							</div>
@@ -1080,6 +1172,7 @@
 								<swat-plus-iahris-button v-if="!formatters.isNullOrEmpty(data.config.swat_last_run) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.swat_last_run)" as-list-item text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
 								<v-list-item @click="data.page.completed.show = false; data.page.saveScenario.show = true"><v-list-item-title>Save Scenario</v-list-item-title></v-list-item>
 								<open-file as-list-item :file-path="currentResultsPath">Open Results Directory</open-file>
+								<open-file v-if="!formatters.isNullOrEmpty(outputLogFile)" as-list-item :file-path="outputLogFile">Review Output Analysis Log File</open-file>
 							</v-list>
 						</v-menu>
 						<v-btn type="button" variant="flat" color="secondary" @click="utilities.exit" class="ml-auto">Exit SWAT+ Editor</v-btn>
@@ -1127,12 +1220,68 @@
 								<swat-plus-iahris-button v-if="!formatters.isNullOrEmpty(data.config.swat_last_run) && !currentProject.isLte" :ran-swat="!formatters.isNullOrEmpty(data.config.swat_last_run)" variant="flat" color="primary" size="large" rounded="xl" block class="my-2" no-icon text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
 								<v-btn type="button" block variant="flat" color="primary" size="large" rounded="xl" @click="data.page.completed.show = false; data.page.saveScenario.show = true" class="my-2">Save Scenario</v-btn>
 								<open-file button block variant="flat" color="primary" size="large" rounded="xl" :file-path="currentResultsPath" class="my-2">Open Results Directory</open-file>
+								<div class="my-2">
+									<open-file v-if="!formatters.isNullOrEmpty(outputLogFile)" button block variant="flat" color="primary" size="large" rounded="xl" :file-path="outputLogFile">Review Output Analysis Log File</open-file>
+								</div>
 								<v-row class="mt-2" no-gutters>
 									<v-col md class="mr-2"><v-btn type="button" variant="flat" color="secondary" size="large" rounded="xl" @click="data.page.completed.show = false" block class="mr-1">Back to Editor</v-btn></v-col>
 									<v-col md><v-btn type="button" variant="flat" color="secondary" size="large" rounded="xl" @click="utilities.exit" block>Exit SWAT+ Editor</v-btn></v-col>
 								</v-row>
 							</div>
 						</v-card-item>
+					</v-card>
+				</v-dialog>
+
+				<v-dialog v-model="data.page.exeCustomization.show" :max-width="constants.dialogSizes.md">
+					<v-card title="Advanced: Customize SWAT+ Model Executables">
+						<v-card-item>
+							<p>
+								By default, we typically ship SWAT+ Editor with three versions of the model: the official stable release, the latest development version, and the previous model release version.
+								You may select any of these three versions from the dropdown menu.
+							</p>
+							<p>
+								If you would like to provide your own SWAT+ model version, you may do so by first opening 
+								<open-file :file-path="constants.globals.swat_path" class="text-primary">this folder <font-awesome-icon :icon="['fas', 'fa-folder-open']" class="ml-2"></font-awesome-icon></open-file> 
+								containing the executables.
+								Copy your executable files into this folder, then open the exe-options.csv file and add a new row with the description and file name of your custom executable.
+								Finally, refresh the list in the editor by <a href="#" @click.prevent="refreshExeOptions" class="text-primary">clicking here</a>.
+							</p>
+							<p>
+								Caution: providing your own executables may cause errors if it is not compatible with the editor's default official release version. 
+								Changes in input or output file formats between model versions may cause errors.
+							</p>
+						</v-card-item>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<open-file :file-path="constants.globals.swat_path" button color="primary" variant="text">Open SWAT+ Exec. Folder</open-file>
+							<v-btn @click="refreshExeOptions();data.page.exeCustomization.show = false" color="primary">Refresh Options</v-btn>
+							<v-btn @click="data.page.exeCustomization.show = false">Close</v-btn>
+						</v-card-actions>
+					</v-card>
+				</v-dialog>
+
+				<v-dialog v-model="data.page.outputSkip.show" :max-width="constants.dialogSizes.md">
+					<v-card title="Advanced: Skip Output Files in Analysis">
+						<v-card-item>
+							<p>
+								In general, we recommend choosing your output to print within the model itself and allowing the editor to read all output files. 
+								However, if you are running a model with a large number of output files or have limited disk space, you may choose to skip reading some output files into the editor's database.
+							</p>
+							<p>
+								Skipped files will still print in .txt/.csv according to your model print settings, but the editor will ignore them when importing output.
+								Enter the names of any output files you want to skip below. Be sure to enter the exact name of the file as it appears in your output directory, including the file extension.
+								Separate multiple file names with commas. 
+							</p>
+							<div class="form-group">
+								<v-text-field v-model="data.page.outputSkip.files" 
+									label="Output files to skip (comma-separated)" type="text"
+									hint="Enter the exact names of output files to skip, separated by commas. Example: output1.csv,output2.csv" persistent-hint></v-text-field>
+							</div>
+						</v-card-item>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<v-btn @click="data.page.outputSkip.show = false">Close</v-btn>
+						</v-card-actions>
 					</v-card>
 				</v-dialog>
 

@@ -150,8 +150,11 @@
 		<error-alert :text="page.error"></error-alert>
 		<success-alert v-model="page.saveSuccess" :show="page.saveSuccess"></success-alert>
 
-		<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-			When creating a weather station manually, it does not automatically get assigned to your spatial objects.
+		<v-alert type="warning" icon="$warning" variant="tonal" border="start" class="mb-4" v-if="!props.isUpdate">
+			<b>We strongly recommend using the import functions to add weather stations.</b>
+			When creating a weather station manually, we <b>DO NOT</b> create your .cli files for you. You will need to 
+			create your .cli files and put them in your input files directory (e.g., TxtInOut) yourself and ensure they're included in your file.cio. 
+			Also, when creating a weather station manually, it does not automatically get assigned to your spatial objects.
 			You will need to edit each spatial object and assign it this weather station in order to use it.
 			To automatically assign weather stations, use the import function for weather generators or observed weather data.
 		</v-alert>
@@ -191,10 +194,15 @@
 				</v-col>
 			</v-row>
 
-			<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-				Important: when entering an observed weather file name below, you may start typing to search for existing weather files adding during the import step.
-				If adding observed files manually, just type the name of the file (e.g., p326953.pcp), and put that file in the directory you plan to write input files (e.g., your TxtInOut).
-				Files must be in SWAT+ format. If your weather data is in SWAT2012 format or from the Global Weather CFSR website, please use the import step to convert them to SWAT+.
+			<v-alert type="warning" icon="$warning" variant="tonal" border="start" class="mb-4">
+				<p>
+					When entering an observed weather file name below, you may start typing to search for existing weather files adding during the import step. Or, just type in the full name of the file.
+				</p>
+				<p>
+					<b>WARNING:</b> if you add an observed weather file below that was not in your imported .cli files, you will need to manually edit the appropriate .cli file to include the new observed file name.
+					You will also need to put that file in the directory you plan to write input files (e.g., your TxtInOut).
+					Files must be in SWAT+ format. If your weather data is in SWAT2012 format or from the Global Weather CFSR website, please use the import step to convert them to SWAT+.
+				</p>
 			</v-alert>
 
 			<v-table class="table-editor" density="compact">

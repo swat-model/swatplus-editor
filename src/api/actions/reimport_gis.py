@@ -7,7 +7,7 @@ from database.project.setup import SetupProjectDatabase
 from database.datasets.setup import SetupDatasetsDatabase
 from database.datasets.definitions import Version
 from .import_gis import GisImport
-from . import update_project
+from . import update_project, update_datasets
 
 import sys
 import argparse
@@ -40,9 +40,14 @@ class ReimportGis(ExecutableApi):
 		rel_datasets_db = os.path.relpath(datasets_db, base_path)
 
 		# Run updates if needed
+		SetupDatasetsDatabase.init(datasets_db)
+		version = Version.get_or_none()
+		if version is not None and update_datasets.available_to_update(version.value):
+			update_datasets.UpdateDatasets(editor_version, datasets_db)
+
 		SetupProjectDatabase.init(project_db, datasets_db)
 		config = Project_config.get()
-		if config.editor_version[:3] in update_project.available_to_update:
+		if update_project.available_to_update(config.editor_version):
 			update_project.UpdateProject(project_db, editor_version, update_project_values=True)
 
 		# Backup original db before beginning

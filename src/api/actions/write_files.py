@@ -51,6 +51,8 @@ class WriteFiles(ExecutableApi):
 			self.__swat_version = swat_version
 			self.__current_progress = 0
 			self.__is_lte = config.is_lte
+			self.__weather_data_format = config.weather_data_format
+			self.__netcdf_data_file = config.netcdf_data_file
 		except Project_config.DoesNotExist:
 			sys.exit('Could not retrieve project configuration from database')
 
@@ -182,6 +184,14 @@ class WriteFiles(ExecutableApi):
 		return file_names
 
 	def copy_weather_files(self, start_prog, allocated_prog):
+		# Skip copying weather files if using netcdf format
+		if self.__weather_data_format == 'netcdf':
+			self.emit_progress(start_prog, "Skipping weather file copy (using NetCDF format)...")
+			# Copy the netcdf data file if specified
+			if self.__netcdf_data_file is not None:
+				self.copy_netcdf_data_file(start_prog)
+			return
+			
 		if self.__weather_dir is not None and self.__dir != self.__weather_dir:
 			self.copy_weather_file("hmd.cli", start_prog)
 			self.copy_weather_file("pcp.cli", start_prog)
@@ -203,6 +213,17 @@ class WriteFiles(ExecutableApi):
 		try:
 			self.emit_progress(prog, "Copying weather file {}...".format(file_name))
 			copyfile(os.path.join(self.__weather_dir, file_name), os.path.join(self.__dir, file_name))
+		except IOError as err:
+			print(err)
+
+	def copy_netcdf_data_file(self, prog):
+		try:
+			if os.path.isfile(self.__netcdf_data_file):
+				dest_file = os.path.join(self.__dir, os.path.basename(self.__netcdf_data_file))
+				self.emit_progress(prog, "Copying NetCDF data file {}...".format(os.path.basename(self.__netcdf_data_file)))
+				copyfile(self.__netcdf_data_file, dest_file)
+			else:
+				print("NetCDF data file not found: {}".format(self.__netcdf_data_file))
 		except IOError as err:
 			print(err)
 
@@ -249,10 +270,15 @@ class WriteFiles(ExecutableApi):
 		prog_step = round(allocated_prog / num_files)
 		prog = start_prog
 
-		weather_sta_file = files[0].strip()
-		if weather_sta_file != NULL_FILE:
-			self.update_file_status(prog, weather_sta_file)
-			climate.Weather_sta_cli(os.path.join(self.__dir, weather_sta_file), self.__version, self.__swat_version).write()
+		# If using netcdf format, write netcdf.ncw instead of weather-sta.cli
+		if self.__weather_data_format == 'netcdf':
+			self.update_file_status(prog, "netcdf.ncw")
+			climate.Netcdf_ncw(os.path.join(self.__dir, "netcdf.ncw"), self.__version, self.__swat_version).write()
+		else:
+			weather_sta_file = files[0].strip()
+			if weather_sta_file != NULL_FILE:
+				self.update_file_status(prog, weather_sta_file)
+				climate.Weather_sta_cli(os.path.join(self.__dir, weather_sta_file), self.__version, self.__swat_version).write()
 
 		prog += prog_step
 		weather_wgn_file = files[1].strip()

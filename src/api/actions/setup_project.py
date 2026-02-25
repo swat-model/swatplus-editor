@@ -9,7 +9,7 @@ from database.datasets.definitions import Version
 from database.project.hru_parm_db import Plants_plt as project_plants
 from database.datasets.hru_parm_db import Plants_plt as dataset_plants
 from .import_gis import GisImport
-from . import update_project
+from . import update_project, update_datasets
 
 import sys
 import argparse
@@ -82,8 +82,13 @@ class SetupProject(ExecutableApi):
 			SetupProjectDatabase.initialize_data(description, is_lte, overwrite_plants=OVERWRITE_PLANTS)
 
 			# Run updates if needed
+			SetupDatasetsDatabase.init(datasets_db)
+			version = Version.get_or_none()
+			if version is not None and update_datasets.available_to_update(version.value):
+				update_datasets.UpdateDatasets(editor_version, datasets_db)
+
 			existing_config = Project_config.get_or_none()
-			if existing_config is not None and existing_config.editor_version is not None and existing_config.editor_version[:3] in update_project.available_to_update:
+			if existing_config is not None and existing_config.editor_version is not None and update_project.available_to_update(existing_config.editor_version):
 				update_project.UpdateProject(project_db, editor_version, update_project_values=True)
 
 			config = Project_config.get_or_create_default(

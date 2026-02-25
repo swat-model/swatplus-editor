@@ -1,3 +1,100 @@
+default_start_line = 4
+
+special_start_lines = {
+	'crop_yld': 5,
+	'basin_crop_yld': 3,
+	'soil_nutcarb_out': 3,
+	'flow_duration_curve': 3,
+	'hru_pest': 3,
+	'basin_ls_pest': 3,
+	'basin_ch_pest': 3,
+	'basin_res_pest': 3,
+	'channel_pest': 3,
+	'reservoir_pest': 3,
+	'basin_aqu_pest': 3,
+	'aquifer_pest': 3
+}
+
+ignore_units = [
+	'crop_yld',
+	'basin_crop_yld',
+	'soil_nutcarb_out',
+	'flow_duration_curve',
+	'hru_pest',
+	'basin_ls_pest',
+	'basin_ch_pest',
+	'basin_res_pest',
+	'channel_pest',
+	'reservoir_pest',
+	'basin_aqu_pest',
+	'aquifer_pest'
+]
+
+table_labels = {
+	'basin_wb': 'basin water balance',
+	'basin_nb': 'basin nutrient balance',
+	'basin_ls': 'basin losses',
+	'basin_pw': 'basin plant weather',
+	'basin_aqu': 'basin aquifer',
+	'basin_res': 'basin reservoir',
+	'basin_cha': 'basin channel',
+	'basin_sd_cha': 'basin channel water balance, incoming/outgoing sediment and nutrients and storage',
+	'basin_psc': 'basin point source',
+	'region_wb': 'region water balance',
+	'region_nb': 'region nutrient balance',
+	'region_ls': 'region losses',
+	'region_pw': 'region plant weather',
+	'region_aqu': 'region aquifer',
+	'region_res': 'region reservoir',
+	'region_cha': 'region channel',
+	'region_sd_cha': 'region channel',
+	'region_psc': 'region point source',
+	'lsunit_wb': 'routing unit water balance',
+	'lsunit_nb': 'routing unit nutrient balance',
+	'lsunit_ls': 'routing unit losses',
+	'lsunit_pw': 'routing unit plant weather',
+	'hru_wb': 'HRU water balance',
+	'hru_nb': 'HRU nutrient balance',
+	'hru_ls': 'HRU losses',
+	'hru_pw': 'HRU plant weather',
+	'hru_lte_wb': 'HRU-LTE water balance',
+	'hru_lte_nb': 'HRU-LTE nutrient balance',
+	'hru_lte_ls': 'HRU-LTE losses',
+	'hru_lte_pw': 'HRU-LTE plant weather',
+	'channel': 'channel',
+	'channel_sd': 'channel water balance, incoming/outgoing sediment and nutrients and storage',
+	'aquifer': 'aquifer',
+	'reservoir': 'reservoir',
+	'recall': 'point source (recall)',
+	'hydin': 'hydrology in',
+	'hydout': 'hydrology out',
+	'ru': 'routing unit',
+	'pest': 'pesticide constituents',
+	'crop_yld': 'crop yield',
+	'soil_nutcarb_out': 'soil nutrients carbon',
+	'flow_duration_curve': 'flow duration curve',
+	'mgt_out': 'management',
+	'deposition': 'deposition',
+	'channel_sdmorph' : 'channel morphology and sediment budget',
+	'basin_sd_chamorph' : 'basin channel morphology and sediment budget',
+	'basin_crop_yld': 'basin crop yield',
+	'hru_pest': 'HRU pesticides',
+	'basin_ls_pest': 'basin landscape unit pesticides',
+	'basin_ch_pest': 'basin channel pesticides',
+	'basin_res_pest': 'basin reservoir pesticides',
+	'channel_pest': 'channel pesticides',
+	'reservoir_pest': 'reservoir pesticides',
+	'basin_aqu_pest': 'basin aquifer pesticides',
+	'aquifer_pest': 'aquifer pesticides'
+}
+
+time_series_labels = {
+	'day': 'daily',
+	'mon': 'monthly',
+	'yr': 'yearly',
+	'aa': 'avg. annual'
+}
+
 table_categories = {
 	'basin_wb': 'wb',
 	'basin_nb': 'nb',

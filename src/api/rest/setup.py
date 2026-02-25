@@ -113,7 +113,7 @@ def getInfo():
 
 		landuse_distrib = []
 		if m.gis_version is not None:
-			landuse_distrib = gis.Gis_hrus.select(fn.Lower(gis.Gis_hrus.landuse).alias('name'), fn.Sum(gis.Gis_hrus.arslp).alias('y')).group_by(gis.Gis_hrus.landuse)
+			landuse_distrib = gis.Gis_hrus.select(fn.Lower(fn.Coalesce(gis.Gis_hrus.landuse, "none/barren")).alias('name'), fn.Sum(gis.Gis_hrus.arslp).alias('y')).group_by(gis.Gis_hrus.landuse)
 
 		current_path = os.path.dirname(project_db)
 		scenarios_path = os.path.join(current_path, 'Scenarios')
@@ -135,6 +135,7 @@ def getInfo():
 			'name': m.project_name,
 			'description': oc.name,
 			'file_path': current_path,
+			'swat_exe_filename': m.swat_exe_filename,
 			'last_modified': utils.json_encode_datetime(datetime.fromtimestamp(os.path.getmtime(project_db))),
 			'is_lte': m.is_lte,
 			'status': {
@@ -180,7 +181,7 @@ def getFileCio():
 	if c is not None:
 		is_lte = c.is_lte
 
-	ignore = ['pcp_path', 'tmp_path', 'slr_path', 'hmd_path', 'wnd_path']
+	ignore = ['pcp_path', 'tmp_path', 'slr_path', 'hmd_path', 'wnd_path', 'out_path']
 	classes = config.File_cio_classification.select().where(config.File_cio_classification.name.not_in(ignore)).order_by(config.File_cio_classification.id)
 	files = config.File_cio.select().order_by(config.File_cio.order_in_class)
 	query = prefetch(classes, files)
@@ -269,6 +270,7 @@ def putRunSettings():
 	try:
 		m = config.Project_config.get()			
 		m.input_files_dir = utils.rel_path(project_db, args['input_files_dir'])
+		m.swat_exe_filename = args['swat_exe_filename']
 		result = m.save()
 
 		time = args['time']
@@ -282,7 +284,7 @@ def putRunSettings():
 			yrc_start=prt['yrc_start'],
 			yrc_end=prt['yrc_end'],
 			interval=prt['interval'],
-			csvout=prt['csvout'],
+			csvout=True,
 			dbout=prt['dbout'],
 			cdfout=prt['cdfout'],
 			crop_yld=prt['crop_yld'],
@@ -385,6 +387,36 @@ def automatic_updates(project_db):
 		pass
 
 	conn = lib.open_db(project_db)
+
+	if lib.exists_table(conn, 'project_config'):
+		config_cols = lib.get_column_names(conn, 'project_config')
+		col_names = [v['name'] for v in config_cols]
+		if 'netcdf_data_file' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'netcdf_data_file', CharField(null=True)),
+			)
+		if 'swat_exe_filename' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'swat_exe_filename', CharField(null=True)),
+			)
+		if 'use_gwflow' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'use_gwflow', BooleanField(default=False)),
+			)
+		if 'output_last_imported' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'output_last_imported', DateTimeField(null=True)),
+				migrator.add_column('project_config', 'imported_gis', BooleanField(default=False)),
+				migrator.add_column('project_config', 'is_lte', BooleanField(default=False)),
+			)
+
+			if lib.exists_table(conn, 'plants_plt'):
+				lib.delete_table(project_db, 'plants_plt')
+	
 	if lib.exists_table(conn, 'codes_bsn'):
 		m = config.Project_config.get_or_none()
 		if m is not None and (m.editor_version == '3.0.0' or m.editor_version == '3.0.1'):
@@ -401,25 +433,6 @@ def automatic_updates(project_db):
 			migrate(
 				migrator.add_column('file_cio', 'customization', IntegerField(default=0)),
 			)
-
-	if lib.exists_table(conn, 'project_config'):
-		config_cols = lib.get_column_names(conn, 'project_config')
-		col_names = [v['name'] for v in config_cols]
-		if 'use_gwflow' not in col_names:
-			migrator = SqliteMigrator(SqliteDatabase(project_db))
-			migrate(
-				migrator.add_column('project_config', 'use_gwflow', BooleanField(default=False)),
-			)
-		if 'output_last_imported' not in col_names:
-			migrator = SqliteMigrator(SqliteDatabase(project_db))
-			migrate(
-				migrator.add_column('project_config', 'output_last_imported', DateTimeField(null=True)),
-				migrator.add_column('project_config', 'imported_gis', BooleanField(default=False)),
-				migrator.add_column('project_config', 'is_lte', BooleanField(default=False)),
-			)
-
-			if lib.exists_table(conn, 'plants_plt'):
-				lib.delete_table(project_db, 'plants_plt')
 
 	if lib.exists_table(conn, 'plants_plt'):
 		plt_cols = lib.get_column_names(conn, 'plants_plt')

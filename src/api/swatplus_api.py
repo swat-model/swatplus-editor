@@ -1,12 +1,13 @@
 from helpers.executable_api import Unbuffered
 from actions.setup_project import SetupProject
 from actions.import_gis import GisImport
-from actions.import_weather import WeatherImport, Swat2012WeatherImport, WgnImport, AtmoImport
+from actions.import_weather import WeatherImport, Swat2012WeatherImport, WgnImport, AtmoImport, NetCDFWeatherImport
 from actions.read_output import ReadOutput
 from actions.write_files import WriteFiles
 from actions.create_databases import CreateDatasetsDb, CreateOutputDb, CreateProjectDb
 from actions.import_export_data import ImportExportData
 from actions.update_project import UpdateProject
+from actions.update_datasets import UpdateDatasets
 from actions.reimport_gis import ReimportGis
 from actions.run_all import RunAll
 from actions.load_scenarios import LoadScenarios
@@ -31,10 +32,13 @@ if __name__ == '__main__':
 	parser.add_argument("--import_method", type=str, help="import method for wgn (database, two_file, one_file)", nargs="?")
 	parser.add_argument("--file1", type=str, help="full path of file", nargs="?")
 	parser.add_argument("--file2", type=str, help="full path of file", nargs="?")
+	parser.add_argument("--nc_stations_list", type=str, help="full path of CSV file with NetCDF station coordinates and variable availability", nargs="?")
+	parser.add_argument("--nc_file", type=str, help="full path of NetCDF data file (.nc4) to copy to TxtInOut", nargs="?")
 
 	# read output
 	parser.add_argument("--output_files_dir", type=str, help="full path of output files directory", nargs="?")
 	parser.add_argument("--output_db_file", type=str, help="full path of output SQLite database file", nargs="?")
+	parser.add_argument("--skip_files", type=str, help="comma-separated list of output files to skip", nargs="?")
 
 	# create databases
 	parser.add_argument("--db_type", type=str, help="which database: datasets, output, project", nargs="?")
@@ -94,6 +98,7 @@ if __name__ == '__main__':
 	if args.action == "setup_project":
 		api = SetupProject(args.project_db_file, args.editor_version, args.project_name, args.datasets_db_file, constant_ps, is_lte, args.project_description, copy_datasets_db)
 	elif args.action == "update_project":
+		api = UpdateDatasets(args.editor_version, None, args.project_db_file)
 		api = UpdateProject(args.project_db_file, args.editor_version, args.datasets_db_file, update_project_values, reimport_gis)
 	elif args.action == "reimport_gis":
 		api = ReimportGis(args.project_db_file, args.editor_version, args.project_name, args.datasets_db_file, constant_ps, is_lte)
@@ -109,6 +114,13 @@ if __name__ == '__main__':
 		elif args.import_type == "observed2012":
 			api = Swat2012WeatherImport(args.project_db_file, del_ex, cre_sta, args.source_dir)
 			api.import_data()
+		elif args.import_type == "netcdf":
+			# Use nc_stations_list or file1 for the CSV file path
+			stations_csv = args.nc_stations_list if args.nc_stations_list else args.file1
+			if not stations_csv:
+				sys.exit("Error: --nc_stations_list or --file1 is required for netcdf import type")
+			api = NetCDFWeatherImport(args.project_db_file, del_ex, cre_sta, stations_csv, args.nc_file)
+			api.import_data()
 		elif args.import_type == "wgn":
 			api = WgnImport(args.project_db_file, del_ex, cre_sta, args.import_method, args.file1, args.file2)
 			api.import_data()
@@ -116,7 +128,8 @@ if __name__ == '__main__':
 			api = AtmoImport(args.project_db_file, del_ex, args.import_method, args.file1, args.file2)
 			api.import_data()
 	elif args.action == "read_output":
-		api = ReadOutput(args.output_files_dir, args.output_db_file, args.swat_version, args.editor_version, args.project_name)
+		skip_files = [item.strip() for item in args.skip_files.split(',')] if args.skip_files else []
+		api = ReadOutput(args.output_files_dir, args.output_db_file, args.swat_version, args.editor_version, args.project_name, skip_files=skip_files)
 		api.read()
 	elif args.action == "get_swatplus_check":
 		api = GetSwatplusCheck(args.project_db_file, args.output_db_file)
@@ -137,6 +150,9 @@ if __name__ == '__main__':
 		elif args.db_type == "datasets_update_plant_landuse_rules":
 			api = CreateDatasetsDb(args.db_file)
 			api.update_plant_landuse_rules()
+		elif args.db_type == "datasets_update_plant_landuse_rules_custom":
+			api = CreateDatasetsDb(args.db_file)
+			api.update_plant_landuse_rules_custom(args.file_name)
 		elif args.db_type == "output":
 			api = CreateOutputDb(args.db_file)
 			api.create()
@@ -146,6 +162,9 @@ if __name__ == '__main__':
 			
 			api = CreateProjectDb(args.db_file, args.db_file2, project_name, editor_version)
 			api.create()
+
+			if args.editor_version is not None:
+				api_upd = UpdateDatasets(args.editor_version, None, args.db_file)
 		elif args.db_type == "ssurgo_soils":
 			soils.db.init(args.db_file)
 			api = soils.ImportSoils()

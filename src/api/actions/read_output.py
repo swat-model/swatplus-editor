@@ -1,175 +1,121 @@
 from helpers.executable_api import ExecutableApi, Unbuffered
-from database.output.setup import SetupOutputDatabase
-from database.output.aquifer import *
-from database.output.channel import *
-from database.output.hyd import *
-from database.output.losses import *
-from database.output.misc import *
-from database.output.nutbal import *
-from database.output.plantwx import *
-from database.output.reservoir import *
-from database.output.waterbal import *
-from database.output.pest import *
-from database.output import base, data
-from database import lib as db_lib
-from database.project.setup import SetupProjectDatabase
-from database.project.connect import Rout_unit_con
+from database.output import data
 
-from datetime import datetime
-import sys
-import argparse
-import os, os.path
 import csv
-import re
+import os, os.path
 import sqlite3
+import re
+import sys
+import traceback
+from pathlib import Path
+from datetime import datetime
 
-default_start_line = 4
-default_units_column_index = 7
+def clean_column_name(name):
+	"""Clean column names to be valid SQL identifiers."""
+	name = name.strip()
+	name = re.sub(r'[^\w]+', '_', name)
+	name = name.strip('_')
+	if name and name[0].isdigit():
+		name = 'col_' + name
+	return name.lower()
 
-special_start_lines = {
-	'crop_yld': 6,
-	'basin_crop_yld': 3,
-	'soil_nutcarb_out': 3,
-	'flow_duration_curve': 3,
-	'hru_pest': 3,
-	'basin_ls_pest': 3,
-	'basin_ch_pest': 3,
-	'basin_res_pest': 3,
-	'channel_pest': 3,
-	'reservoir_pest': 3,
-	'basin_aqu_pest': 3,
-	'aquifer_pest': 3
-}
+def infer_sql_type(value):
+	"""Infer SQL data type from a string value."""
+	value = value.strip()
+	
+	try:
+		int(value)
+		return 'INTEGER'
+	except ValueError:
+		pass
+	
+	try:
+		float(value)
+		return 'REAL'
+	except ValueError:
+		pass
+	
+	return 'TEXT'
 
-ignore_units = [
-	'crop_yld',
-	'basin_crop_yld',
-	'soil_nutcarb_out',
-	'flow_duration_curve',
-	'hru_pest',
-	'basin_ls_pest',
-	'basin_ch_pest',
-	'basin_res_pest',
-	'channel_pest',
-	'reservoir_pest',
-	'basin_aqu_pest',
-	'aquifer_pest',
-	#'water_allo'
-]
+def adjust_gis_id(gis_id_value, name_value):
+	"""
+	Adjust gis_id if it's 0 by extracting digits from name.
+	
+	Args:
+		gis_id_value: Current gis_id value
+		name_value: Value from the 'name' column
+	
+	Returns:
+		Adjusted gis_id value
+	"""
+	try:
+		if int(gis_id_value) == 0:
+			subbed = re.sub('[^0-9]', '', str(name_value))
+			if subbed.isdigit():
+				return int(subbed)
+			else:
+				return 0
+		return int(gis_id_value)
+	except (ValueError, TypeError):
+		return gis_id_value
 
-units_start_column_index = {
-	'basin_psc': 6,
-	'region_psc': 6,
-	'recall': 6,
-	'hydin': 10,
-	'hydout': 10,
-	'ru': 6,
-	'deposition': 6,
-	'mgt_out': 0
-}
-
-"""reversed_unit_lines = [
-	'basin_sd_cha',
-	'basin_res',
-	'channel_sd',
-	'wetland'
-]"""
-reversed_unit_lines = []
-
-table_labels = {
-	'basin_wb': 'basin water balance',
-	'basin_nb': 'basin nutrient balance',
-	'basin_ls': 'basin losses',
-	'basin_pw': 'basin plant weather',
-	'basin_aqu': 'basin aquifer',
-	'basin_res': 'basin reservoir',
-	'basin_cha': 'basin channel',
-	'basin_sd_cha': 'basin channel water balance, incoming/outgoing sediment and nutrients and storage',
-	'basin_psc': 'basin point source',
-	'region_wb': 'region water balance',
-	'region_nb': 'region nutrient balance',
-	'region_ls': 'region losses',
-	'region_pw': 'region plant weather',
-	'region_aqu': 'region aquifer',
-	'region_res': 'region reservoir',
-	'region_cha': 'region channel',
-	'region_sd_cha': 'region channel',
-	'region_psc': 'region point source',
-	'lsunit_wb': 'routing unit water balance',
-	'lsunit_nb': 'routing unit nutrient balance',
-	'lsunit_ls': 'routing unit losses',
-	'lsunit_pw': 'routing unit plant weather',
-	'hru_wb': 'HRU water balance',
-	'hru_nb': 'HRU nutrient balance',
-	'hru_ls': 'HRU losses',
-	'hru_pw': 'HRU plant weather',
-	'hru_lte_wb': 'HRU-LTE water balance',
-	'hru_lte_nb': 'HRU-LTE nutrient balance',
-	'hru_lte_ls': 'HRU-LTE losses',
-	'hru_lte_pw': 'HRU-LTE plant weather',
-	'channel': 'channel',
-	'channel_sd': 'channel water balance, incoming/outgoing sediment and nutrients and storage',
-	'aquifer': 'aquifer',
-	'reservoir': 'reservoir',
-	'recall': 'point source (recall)',
-	'hydin': 'hydrology in',
-	'hydout': 'hydrology out',
-	'ru': 'routing unit',
-	'pest': 'pesticide constituents',
-	'crop_yld': 'crop yield',
-	'soil_nutcarb_out': 'soil nutrients carbon',
-	'flow_duration_curve': 'flow duration curve',
-	'mgt_out': 'management',
-	'deposition': 'deposition',
-	'channel_sdmorph' : 'channel morphology and sediment budget',
-	'basin_sd_chamorph' : 'basin channel morphology and sediment budget',
-	'basin_crop_yld': 'basin crop yield',
-	'hru_pest': 'HRU pesticides',
-	'basin_ls_pest': 'basin landscape unit pesticides',
-	'basin_ch_pest': 'basin channel pesticides',
-	'basin_res_pest': 'basin reservoir pesticides',
-	'channel_pest': 'channel pesticides',
-	'reservoir_pest': 'reservoir pesticides',
-	'basin_aqu_pest': 'basin aquifer pesticides',
-	'aquifer_pest': 'aquifer pesticides',
-	#'water_allo': 'water allocation'
-}
-
-time_series_labels = {
-	'day': 'daily',
-	'mon': 'monthly',
-	'yr': 'yearly',
-	'aa': 'avg. annual'
-}
-
+def reset_database(db_file):
+	"""Completely reset a SQLite database."""
+	conn = sqlite3.connect(db_file)
+	cursor = conn.cursor()
+	
+	# Get all objects
+	cursor.execute("""
+		SELECT type, name FROM sqlite_master 
+		WHERE name NOT LIKE 'sqlite_%'
+		ORDER BY type DESC
+	""")
+	objects = cursor.fetchall()
+	
+	# Drop in correct order (tables last)
+	for obj_type, obj_name in objects:
+		if obj_type == 'table':
+			cursor.execute(f"DROP TABLE IF EXISTS {obj_name}")
+		elif obj_type == 'index':
+			cursor.execute(f"DROP INDEX IF EXISTS {obj_name}")
+		elif obj_type == 'view':
+			cursor.execute(f"DROP VIEW IF EXISTS {obj_name}")
+		elif obj_type == 'trigger':
+			cursor.execute(f"DROP TRIGGER IF EXISTS {obj_name}")
+	
+	conn.commit()
+	cursor.execute("VACUUM")
+	conn.close()
 
 class ReadOutput(ExecutableApi):
-	def __init__(self, output_files_dir, db_file, swat_version, editor_version, project_name):
+	def __init__(self, output_files_dir, db_file, swat_version, editor_version, project_name, skip_files=[], batch_size=100000):
 		self.__abort = False
+		db_file_sanitized = db_file.replace("\\","/")
 		try:
-			os.remove(db_file)
+			os.remove(db_file_sanitized)
 		except:
-			pass  # try to remove file, but don't report an error if it fails.
+			reset_database(db_file_sanitized)
 
-		SetupOutputDatabase.init(db_file.replace("\\","/"))
 		self.output_files_dir = output_files_dir.replace("\\","/")
 		self.swat_version = swat_version
 		self.editor_version = editor_version
 		self.project_name = project_name
-
+		self.skip_files = skip_files
+		self.batch_size = batch_size
+		self.conn = sqlite3.connect(db_file_sanitized)
+		self.cursor = self.conn.cursor()
+	
 	def __del__(self):
-		SetupOutputDatabase.close()
+		self.conn.close()
 
-	def read(self):		
+	def read(self):	
+		self.set_safety_level('fastest')	
 		self.setup_meta_tables()
+
 		files_out_file = os.path.join(self.output_files_dir, 'files_out.out')
-		dot_out_files_to_read = [
-			'crop_yld_aa.out',
-			'flow_duration_curve.out'
-		]
 
+		# Read files_out.out to get list of output CSV files
 		files = []
-
 		try:
 			with open(files_out_file, "r") as file:
 				i = 1
@@ -180,185 +126,307 @@ class ReadOutput(ExecutableApi):
 							raise ValueError('Unexpected number of columns in {}'.format(files_out_file))
 
 						file_name = val[len(val)-1].strip()
-						if file_name.endswith('.txt') or file_name in dot_out_files_to_read:
+						if file_name.endswith('.csv'):
 							files.append(file_name)
 
 					i += 1
 		except FileNotFoundError:
-			pass #sys.exit('Could not find file, {}'.format(files_out_file))
+			pass
 		except ValueError as ve:
 			sys.exit(ve)
 
+		log_file_name = 'output_db_log.txt'
+		log_file = os.path.join(self.output_files_dir, log_file_name)
+		files_with_errors = []
+
+		# Clear/create the log file
+		with open(log_file, 'w') as f:
+			f.write('SWAT+ Editor tries to read all .csv files listed in files.out generated by the model after a successful run. \n')
+			f.write('Some messages, such as "No data found" may occur if you checked to write output files that do not really apply in your simulation. \n')
+			f.write('Other errors may occur due to formatting issues and bugs in writing the output that SWAT+ Editor is unaware of. \n')
+			f.write('In these cases, a detailed stack trace is available below and should be sent to the development team at the SWAT+ Editor Google Group: https://groups.google.com/g/swatplus-editor \n\n')
+
 		prog_step = 0 if len(files) < 1 else round(100 / len(files))
 		prog = 0
+		log_issue_count = 0
 		for file in files:
-			name = file[:-4].replace('hru-lte', 'hru_lte')
-			table_name = name[:1].upper() + name[1:]
+			if file in self.skip_files:
+				with open(log_file, 'a') as f:
+					f.write('Skipping file per user\'s request: {}\n'.format(file))
+				continue
+			self.emit_progress(prog, 'Importing {}...'.format(file))
 			try:
-				existing = base.Table_description.get_or_none(base.Table_description.table_name == name)
-				if existing is None:
-					self.emit_progress(prog, 'Importing {}...'.format(file))
-
-					desc_key = name
-					time_series_key = ''
-					for key in time_series_labels:
-						desc_key = desc_key.replace('_{}'.format(key), '')
-						if key in name:
-							time_series_key = key
-
-					description = '{ts} {n}'.format(ts=time_series_labels.get(time_series_key, ''), n=table_labels.get(desc_key, name))
-					base.Table_description.get_or_create(table_name=name, description=description)
-
-					table_class = globals()[table_name]
-					base.db.create_tables([table_class])
-					table_class.delete().execute()
-
-					file_path = os.path.join(self.output_files_dir, file)
-					self.read_default_table(file_path, name, table_class, base.db, start_line=special_start_lines.get(desc_key, default_start_line), desc_key=desc_key)
-				prog += prog_step
-			except sqlite3.IntegrityError:
-				pass
-			except KeyError as e:
-				pass
-				#sys.exit('Table {table} does not exist: {e}'.format(table=table_name, e=e))
-			except ValueError as e:
-				sys.exit('Error importing {file}: {e}'.format(file=file, e=e))
-
-		base.Project_config.create(project_name=self.project_name, editor_version=self.editor_version, swat_version=self.swat_version, output_import_time=datetime.now())
-
-	def read_default_table(self, file_name, name, table, db, start_line, ignore_id_col=True, desc_key=''):
-		file = open(file_name, 'r', errors = 'ignore')
-		read_units = False if desc_key in ignore_units else True
-
-		i = 1
-		rows = []
-		fields = table._meta.sorted_fields
-		file_fields = []
-		for line in file:
-			try:
-				if read_units and i == start_line - 2:
-					for h in line.strip().split():
-						file_fields.append(h.strip())
-				elif read_units and i == start_line - 1:
-					units = line.strip().split()
-					ui = units_start_column_index.get(desc_key, default_units_column_index)
-					reverse_index = True if desc_key in reversed_unit_lines else False
-					col_descs = []
-					null_skip = 0
-					for x in range(0, len(units)):					
-						try:
-							column_name_val = file_fields[x] if reverse_index else file_fields[ui + x]
-							if column_name_val == 'null':
-								units_val = ''
-								null_skip += 1
-							else:
-								units_val = units[ui + x - null_skip] if reverse_index else units[x - null_skip]
-
-							col_desc_text = None
-							table_cat = data.table_categories.get(desc_key, None)
-							if table_cat is not None:
-								cat_cols = data.category_descriptions.get(table_cat, None)
-								if cat_cols is not None:
-									col_desc_text = cat_cols.get(column_name_val, None)
-
-							col_desc = {
-								'table_name': name,
-								'column_name': column_name_val,
-								'units': units_val, 
-								'description': col_desc_text
-							}
-							col_descs.append(col_desc)
-						except IndexError:
-							pass
-					db_lib.bulk_insert(db, base.Column_description, col_descs)
-				elif i >= start_line:
-					#val = line.replace("********", " 0 ").strip().split()
-					val = self.clean_and_split(line)
-
-					row = {}
-					j = 0
-					for field in fields:
-						skip = False
-						if ignore_id_col and field.name == 'id':
-							skip = True
-
-						if not skip:
-							try:
-								row[field.name] = None if j >= len(val) or '*' in str(val[j]) else val[j]
-							except IndexError:
-								pass
-							j += 1
-
-					if 'gis_id' in row.keys() and str(row['gis_id']).isdigit() and int(row['gis_id']) == 0:
-						subbed = re.sub('[^0-9]','', row['name'])
-						if subbed.isdigit():
-							row['gis_id'] = int(subbed)
-						else:
-							row['gis_id'] = 0
-
-					rows.append(row)
-
-					if len(rows) == 1000:
-						db_lib.bulk_insert(db, table, rows)
-						rows = []
+				warnings = self.read_file(file)
+				if warnings:
+					with open(log_file, 'a') as f:
+						f.write(warnings + '\n')
+						log_issue_count += 1
 			except Exception as e:
-				# Get character position if parsing fails
-				err_pos = getattr(e, 'offset', None)
-				char_pos = err_pos if err_pos is not None else '?'
-				raise ValueError(
-					f"Error in file '{file_name}', line {i}, char {char_pos}: {e}\n"
-					f"--> {line.strip()[:200]}"
-				) from e
-			i += 1
+				with open(log_file, 'a') as f:
+					f.write('Error processing {}:\n {}\n{}\n\n'.format(file, e, traceback.format_exc()))
+					log_issue_count += 1
+				files_with_errors.append(file)
+			prog += prog_step
 
-		db_lib.bulk_insert(db, table, rows)
+		if log_issue_count < 1:
+			with open(log_file, 'a') as f:
+				f.write('Import completed with no issues in {} files.\n'.format(len(files)))
+					
+		self.cursor.execute("""
+			INSERT INTO project_config (project_name, editor_version, swat_version, output_import_time, skip_files)
+			VALUES (?, ?, ?, ?, ?)
+		""", (self.project_name, self.editor_version, self.swat_version, datetime.now(), ','.join(self.skip_files)))
+		self.conn.commit()
+		self.conn.close()
+
+	def read_file(self, file):
+		table_name = file[:-4].replace('hru-lte', 'hru_lte')
+		desc_key = table_name
+		time_series_key = ''
+		for key in data.time_series_labels:
+			desc_key = desc_key.replace('_{}'.format(key), '')
+			if key in table_name:
+				time_series_key = key
+
+		description = '{ts} {n}'.format(ts=data.time_series_labels.get(time_series_key, ''), n=data.table_labels.get(desc_key, table_name))
+		self.cursor.execute('INSERT INTO table_description (table_name, description) VALUES (?, ?)', (table_name, description))
+
+		data_start_line = data.special_start_lines.get(desc_key, data.default_start_line)
+		read_units = False if desc_key in data.ignore_units else True
+		headings_start_line = data_start_line - 2 if read_units else data_start_line - 1
+
+		cat_cols = None
+		table_cat = data.table_categories.get(desc_key, None)
+		if table_cat is not None:
+			cat_cols = data.category_descriptions.get(table_cat, None)
+
+		file_path = os.path.join(self.output_files_dir, file)
+		check_path = Path(file_path)
+		if not check_path.is_file():
+			return 'File not found: {}'.format(file_path)
+
+		# Read column headers, units (if applicable), and first data line for type inference
+		with open(file_path, 'r') as f:
+			i = 1
+			while i < headings_start_line:
+				f.readline()
+				i += 1
+			
+			column_headers_raw = f.readline()
+			null_counter = 1
+			column_headers = []
+			seen_columns = {}
+
+			for col in column_headers_raw.split(','):
+				cleaned = clean_column_name(col)
+				
+				# Handle "null" columns
+				if cleaned == 'null':
+					column_headers.append(f'undefined{null_counter}')
+					null_counter += 1
+				else:
+					# Handle duplicate columns
+					if cleaned in seen_columns:
+						seen_columns[cleaned] += 1
+						column_headers.append(f'{cleaned}{seen_columns[cleaned]}')
+					else:
+						seen_columns[cleaned] = 0
+						column_headers.append(cleaned)
+
+			units = []
+			if read_units:
+				units_line = f.readline()
+				units = [unit.strip() for unit in units_line.split(',')]
+
+			# First data row for type inference
+			first_data_line = f.readline()
+
+		# Parse first data row
+		first_data_row = list(csv.reader([first_data_line]))[0]
+		delimiter = ','
+		if len(first_data_row) == 1:
+			# Try tab delimiter
+			first_data_row_tab = first_data_line.strip().split('\t')
+			if len(first_data_row_tab) > 1:
+				delimiter = '\t'
+				first_data_row = first_data_row_tab
+			else:
+				# Try whitespace (one or more spaces)
+				first_data_row = re.split(r'\s+', first_data_line.strip())
+				delimiter = 'whitespace'  # Special marker, not a regex
+		
+		# Find indices for gis_id and name columns if fix_gis_id is enabled
+		gis_id_idx = None
+		name_idx = None
+		fix_gis_id = True
+		if fix_gis_id:
+			try:
+				gis_id_idx = column_headers.index('gis_id')
+				name_idx = column_headers.index('name')
+			except ValueError:
+				fix_gis_id = False
+
+		# Handle missing column names - check if we have fewer headers than data columns
+		if len(column_headers) < len(first_data_row):
+			unknown_counter = 1
+			while len(column_headers) < len(first_data_row):
+				column_headers.append(f'unknown{unknown_counter}')
+				unknown_counter += 1
+		
+		# Infer data types from first data row
+		column_types = [infer_sql_type(value) for value in first_data_row]
+		
+		# Create table schema
+		columns_with_types = [f"{col_name} {col_type}" for col_name, col_type in zip(column_headers, column_types)]
+		if not columns_with_types:
+			return 'No data found in file: {}'.format(file_path)
+		
+		create_table_sql = f"""
+		CREATE TABLE IF NOT EXISTS {table_name} (
+			id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			{', '.join(columns_with_types)}
+		)
+		"""	
+		try:		
+			self.cursor.execute(create_table_sql)
+		except Exception as e:
+			raise Exception('Error creating table {} SQL: {}'.format(table_name, create_table_sql))
+
+		# Insert column descriptions (only for columns with units)
+		column_desc_count = 0
+		for col_name, unit in zip(column_headers, units):
+			# Only insert if unit is not empty
+			if unit and unit.strip():
+				description = cat_cols.get(col_name, '') if cat_cols else ''
+				self.cursor.execute("""
+					INSERT INTO column_description (table_name, column_name, units, description)
+					VALUES (?, ?, ?, ?)
+				""", (table_name, col_name, unit.strip(), description))
+				column_desc_count += 1
+		
+		self.conn.commit()
+
+		# Prepare insert statement
+		placeholders = ','.join(['?' for _ in column_headers])
+		insert_sql = f"INSERT INTO {table_name} ({','.join(column_headers)}) VALUES ({placeholders})"
+
+		# Process file in streaming fashion
+		inserted_count = 0
+		adjusted_count = 0
+		batch = []
+		
+		with open(file_path, 'r', buffering=8192*1024) as f:  # 8MB buffer
+			if delimiter == 'whitespace':
+				# Custom generator for whitespace-delimited files
+				reader = (re.split(r'\s+', line.strip()) for line in f)
+			else:
+				# Standard csv.reader for comma or tab (single character delimiters)
+				reader = csv.reader(f, delimiter=delimiter)
+
+			# Skip header lines
+			i = 0
+			for row in reader:
+				i += 1
+				if i < data_start_line or not row or len(row) != len(column_headers):
+					continue
+				
+				# Adjust gis_id if needed (before type conversion)
+				if fix_gis_id and gis_id_idx is not None and name_idx is not None:
+					gis_id_val = row[gis_id_idx].strip()
+					name_val = row[name_idx].strip()
+					
+					try:
+						if gis_id_val and int(gis_id_val) == 0:
+							adjusted_val = adjust_gis_id(gis_id_val, name_val)
+							if adjusted_val != 0:
+								row[gis_id_idx] = str(adjusted_val)
+								adjusted_count += 1
+					except (ValueError, TypeError):
+						pass
+				
+				# Convert values - minimal processing for speed
+				converted_row = []
+				for value, col_type in zip(row, column_types):
+					value = value.strip()
+					if not value:
+						converted_row.append(None)
+					elif col_type == 'INTEGER':
+						try:
+							converted_row.append(int(value))
+						except ValueError:
+							converted_row.append(None)
+					elif col_type == 'REAL':
+						try:
+							converted_row.append(float(value))
+						except ValueError:
+							converted_row.append(None)
+					else:
+						converted_row.append(value)
+				
+				batch.append(converted_row)
+				
+				# Batch insert for efficiency
+				if len(batch) >= self.batch_size:
+					self.cursor.executemany(insert_sql, batch)
+					self.conn.commit()
+					inserted_count += len(batch)
+					batch = []
+			
+			# Insert remaining rows
+			if batch:
+				self.cursor.executemany(insert_sql, batch)
+				self.conn.commit()
+				inserted_count += len(batch)
+		
+		return None
 
 	def setup_meta_tables(self):
-		base.db.create_tables([
-			base.Table_description, base.Column_description, base.Project_config
-		])
+		self.cursor.execute("""
+			CREATE TABLE IF NOT EXISTS column_description (
+				id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+				table_name VARCHAR(255) NOT NULL,
+				column_name VARCHAR(255) NOT NULL,
+				units VARCHAR(255),
+				description VARCHAR(255)
+			)
+		""")
 
-		base.Table_description.delete().execute()
-		base.Column_description.delete().execute()
-		base.Project_config.delete().execute()
+		self.cursor.execute("""
+			CREATE TABLE IF NOT EXISTS table_description (
+				table_name  VARCHAR (255) NOT NULL PRIMARY KEY,
+				description VARCHAR (255) NOT NULL
+			)
+		""")
+
+		self.cursor.execute("""
+			CREATE TABLE IF NOT EXISTS project_config (
+				id INTEGER NOT NULL PRIMARY KEY,
+				project_name VARCHAR (255),
+				editor_version VARCHAR (255),
+				swat_version VARCHAR (255),
+				output_import_time DATETIME,
+				skip_files VARCHAR (255)
+			)
+		""")
+		self.conn.commit()
 	
-	def clean_and_split(self, line):
-		# Step 1: replace ******** with " 0 "
-		line = re.sub(r"\*+", " 0 ", line)
-
-		# Step 2: split on whitespace
-		tokens = line.strip().split()
-
-		# Step 3: find the first non-numeric token (the text column)
-		text_index = None
-		for i, tok in enumerate(tokens):
-			if not tok.replace('.', '', 1).isdigit():  # allows floats like 50.301
-				text_index = i
-				break
-
-		if text_index is None:
-			return tokens  # no text column, just return as-is
-
-		# Step 4: check the token right before the text column
-		before_text = tokens[text_index - 1]
-		if before_text.isdigit() and len(before_text) > 8:
-			# split so the last 8 chars are the "fixed" column
-			left = before_text[:-8]
-			right = before_text[-8:]
-			tokens = tokens[:text_index - 1] + [left, right] + tokens[text_index:]
-
-		return tokens
-
-
-if __name__ == '__main__':
-	sys.stdout = Unbuffered(sys.stdout)
-	parser = argparse.ArgumentParser(description='Create the SWAT+ output database')
-	parser.add_argument('output_files_dir', type=str, help='full path of output files directory')
-	parser.add_argument('db_file', type=str, help='full path of output SQLite database file')
-	parser.add_argument("--project_name", type=str, help="project name", nargs="?")
-	parser.add_argument("--editor_version", type=str, help="editor version", nargs="?")
-	parser.add_argument("--swat_version", type=str, help="editor version", nargs="?")
-	args = parser.parse_args()
-
-	api = ReadOutput(args.output_files_dir, args.db_file, args.swat_version, args.editor_version, args.project_name)
-	api.read()
+	def set_safety_level(self, safety_level):
+		# Set PRAGMA based on safety level
+		if safety_level == 'safe':
+			self.cursor.execute("PRAGMA journal_mode = WAL")
+			self.cursor.execute("PRAGMA synchronous = NORMAL")
+			self.cursor.execute("PRAGMA cache_size = -2000000")
+			self.cursor.execute("PRAGMA temp_store = MEMORY")
+			
+		elif safety_level == 'balanced':
+			self.cursor.execute("PRAGMA journal_mode = MEMORY")
+			self.cursor.execute("PRAGMA synchronous = OFF")
+			self.cursor.execute("PRAGMA cache_size = -2000000")
+			self.cursor.execute("PRAGMA temp_store = MEMORY")
+			
+		else:  # fastest
+			self.cursor.execute("PRAGMA journal_mode = OFF")
+			self.cursor.execute("PRAGMA synchronous = OFF")
+			self.cursor.execute("PRAGMA cache_size = -2000000")
+			self.cursor.execute("PRAGMA temp_store = MEMORY")
+			#self.cursor.execute("PRAGMA locking_mode = EXCLUSIVE")

@@ -48,6 +48,18 @@ class Weather_sta_cli(BaseModel):
 		return cls.select().where((cls.pcp != 'sim') | (cls.tmp != 'sim') | (cls.slr != 'sim') | (cls.hmd != 'sim') | (cls.wnd != 'sim') | (cls.pet != 'sim')).count()
 
 
+class Weather_sta_cli_scale(BaseModel):
+	"""Scaling factors for weather station variables, used with NetCDF weather data."""
+	weather_sta_cli = ForeignKeyField(Weather_sta_cli, related_name='scale_factors', on_delete='CASCADE')
+	pcp = DoubleField(null=True)
+	tmin = DoubleField(null=True)
+	tmax = DoubleField(null=True)
+	slr = DoubleField(null=True)
+	hmd = DoubleField(null=True)
+	wnd = DoubleField(null=True)
+	pet = DoubleField(null=True)
+
+
 class Weather_file(BaseModel):
 	filename = CharField()
 	type = CharField()

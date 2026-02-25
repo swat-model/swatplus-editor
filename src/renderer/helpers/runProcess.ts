@@ -12,8 +12,12 @@ export function useRunProcess() {
 		return electron.spawnProcess(proc_name, script_name, args);
 	}
 	
-	function runSwatProc(inputDir:string, debug:boolean) {
-		return electron.runSwat(debug, inputDir);
+	function runSwatProc(inputDir:string, modelExe:string) {
+		return electron.runSwat(inputDir, modelExe);
+	}
+
+	async function getSwatExeOptions() {
+		return await electron.getSwatExeOptions();
 	}
 	
 	const processStdout = (proc_name:string, callback:(_event:any, data:any) => any) => electron.processStdout(proc_name, callback);
@@ -67,6 +71,7 @@ export function useRunProcess() {
 	return {
 		runApiProc,
 		runSwatProc,
+		getSwatExeOptions,
 		processStdout,
 		processStderr,
 		processClose,

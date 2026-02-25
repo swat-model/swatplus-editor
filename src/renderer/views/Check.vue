@@ -189,7 +189,7 @@
 									<tbody>
 										<tr>
 											<th>Model Version</th>
-											<td>SWAT+ rev. {{data.check.setup.swatVersion}}</td>
+											<td>SWAT+ {{data.check.setup.swatVersion}}</td>
 										</tr>
 										<tr>
 											<th>Simulation Length</th>

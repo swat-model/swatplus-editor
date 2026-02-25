@@ -250,7 +250,7 @@ class BaseFileModel:
 
 		svtxt = ""
 		if self.swat_version is not None:
-			svtxt = "for SWAT+ rev.{swat_version}".format(swat_version=self.swat_version)
+			svtxt = "for SWAT+ {swat_version}".format(swat_version=self.swat_version)
 
 		name = self.file_name if alt_file_name == "" else alt_file_name
 
