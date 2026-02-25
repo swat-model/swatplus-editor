@@ -406,7 +406,7 @@
 				data.print.prt.yrc_end = endPrintUpdate.year;
 
 				currentProject.setSwatVersion(selectedExeDescription.value);
-				utilities.pushRecentProject(currentProject);
+				utilities.pushRecentProject(currentProject.getObject());
 				utilities.setWindowTitle();
 
 				let infoData = { 

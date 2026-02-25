@@ -162,6 +162,9 @@ if __name__ == '__main__':
 			
 			api = CreateProjectDb(args.db_file, args.db_file2, project_name, editor_version)
 			api.create()
+
+			if args.editor_version is not None:
+				api_upd = UpdateDatasets(args.editor_version, None, args.db_file)
 		elif args.db_type == "ssurgo_soils":
 			soils.db.init(args.db_file)
 			api = soils.ImportSoils()

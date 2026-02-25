@@ -24,7 +24,7 @@ class Reservoir(OutputBase):
 	sag_stor = DoubleField(null=True)
 	lag_stor = DoubleField(null=True)
 	grv_stor = DoubleField(null=True)
-	temp_stor = DoubleField(null=True)
+	undefined1 = DoubleField(null=True)
 	flo_in = DoubleField(null=True)
 	sed_in = DoubleField(null=True)
 	orgn_in = DoubleField(null=True)
@@ -42,7 +42,7 @@ class Reservoir(OutputBase):
 	sag_in = DoubleField(null=True)
 	lag_in = DoubleField(null=True)
 	grv_in = DoubleField(null=True)
-	temp_in = DoubleField(null=True)
+	undefined2 = DoubleField(null=True)
 	flo_out = DoubleField(null=True)
 	sed_out = DoubleField(null=True)
 	orgn_out = DoubleField(null=True)
@@ -60,7 +60,7 @@ class Reservoir(OutputBase):
 	sag_out = DoubleField(null=True)
 	lag_out = DoubleField(null=True)
 	grv_out = DoubleField(null=True)
-	temp_out = DoubleField(null=True)
+	undefined3 = DoubleField(null=True)
 
 
 class Basin_res_day(Reservoir):

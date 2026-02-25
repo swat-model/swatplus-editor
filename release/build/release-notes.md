@@ -1,26 +1,15 @@
-### SWAT+ Editor v3.1.4 ###
+### SWAT+ Editor 3.2.0 ###
 
-* Fix bug in weather station import: multiple blank lines in weather files were causing errors.
-
-### SWAT+ Editor v3.1.3 ###
-
-* Fix bug in weather station manual entry form: allow any text in the box when choosing weather files.
-
-### SWAT+ Editor v3.1.2 ###
-
-* Set minimum wd and dp in hyd-sed-lte.cha to 0.001 instead of 0.00001 due to error in values less that 0.001 introduced in 61.0.2.
-
-### Revision 3.1.1 ###
-
-* Bug fix where Channels -> Hydrology & Sediment and Nutrients pages were not displaying.
-
-### Revision 3.1.0 ###
-
-* Update to SWAT+ rev. 61.0.2
-* Fix printing day_lag_max in the parameters.bsn to integer.
-* Fix bug in print.prt where salts and constituents objects were duplicated.
-* Remove water allocation editor because it is outdated (will rework in a future release).
-* Update Basin Parameters ->  adj_pkrt_sed, set default to 484 and recommended range to 250-800.
-* Update Hard Calibration / Parameters (cal_parms.cal) to remove unused parameters and non-zero minimums.
+* Add option to choose model revision to run
+  * Comes with official current, latest development, and previous release versions
+  * Allow user to more easily add their own executable
+* Re-work output file analysis to read .csv instead of .txt files and auto-populate all tables
+  * Added advanced option for skipping specified files in the interface
+* Re-work project update function and separate datasets DB updating for easier management in the future
+* Change 'Slice' to 'none/barren' in the land use pie chart on the project setup screen
+* Remove option to create weather station manually; added more warning/instruction on manual edit screen
+* Include [pull request #24](https://github.com/swat-model/swatplus-editor/pull/24): add netcdf climate preparation to api
+  * Netcdf with SWAT+ requires a model version update that will be released at a later time
+* Include [pull request #25](https://github.com/swat-model/swatplus-editor/pull/25): gwflow bypass floodplain if channel ID not found
 
 _No breaking changes from v3.0.0 and later._

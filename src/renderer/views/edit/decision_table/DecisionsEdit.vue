@@ -55,8 +55,8 @@
 			conditions: {
 				'w_stress': 'water stress',
 				'n_stress': 'nitrogen stress',
-				'phu_plant': 'potential heat units (plant based)',
-				'phu_base0': 'potential heat units (base zero)',
+				'phu_plant': 'plant heat units',
+				'phu_base0': 'base plant heat units',
 				'plant_gro': 'plants growing',
 				'days_harv': 'days since last harvest',
 				'day_start': 'days since last harvest',
