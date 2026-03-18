@@ -2,6 +2,10 @@
 
 ## Version 3 ##
 
+### Revision 3.2.1 ###
+
+* Bug fix writing hru-data.hru and wetland.wet sequential IDs starting at 1 in first column
+
 ### Revision 3.2.0 ###
 
 * Add option to choose model revision to run

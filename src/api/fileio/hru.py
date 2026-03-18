@@ -33,8 +33,9 @@ class Hru_data_hru(BaseFileModel):
 				file.write(utils.string_pad("field"))
 				file.write("\n")
 
+				i = 1
 				for row in table.select().order_by(order_by):
-					file.write(utils.int_pad(row.id))
+					file.write(utils.int_pad(i))
 					file.write(utils.string_pad(row.name, direction="left"))
 					file.write(utils.key_name_pad(row.topo))
 					file.write(utils.key_name_pad(row.hydro))
@@ -45,6 +46,7 @@ class Hru_data_hru(BaseFileModel):
 					file.write(utils.key_name_pad(row.snow))
 					file.write(utils.string_pad(row.field))
 					file.write("\n")
+					i += 1
 
 
 class Hru_lte_hru(BaseFileModel):
