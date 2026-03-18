@@ -179,8 +179,9 @@ class Wetland_wet(BaseFileModel):
 				file.write(utils.string_pad("nut"))
 				file.write("\n")
 
+				i = 1
 				for row in table.select().order_by(order_by):
-					file.write(utils.int_pad(row.id))
+					file.write(utils.int_pad(i))
 					file.write(utils.string_pad(row.name, direction="left"))
 					file.write(utils.key_name_pad(row.init, default_pad=utils.DEFAULT_STR_PAD))
 					file.write(utils.key_name_pad(row.hyd, default_pad=utils.DEFAULT_STR_PAD))
@@ -188,7 +189,8 @@ class Wetland_wet(BaseFileModel):
 					file.write(utils.key_name_pad(row.sed, default_pad=utils.DEFAULT_STR_PAD))
 					file.write(utils.key_name_pad(row.nut, default_pad=utils.DEFAULT_STR_PAD))
 					file.write("\n")
-			
+					i += 1
+
 			module, created = Salt_module.get_or_create(id=1)
 			if module.enabled:
 				self.file_name = self.file_name + "_cs"
@@ -201,13 +203,15 @@ class Wetland_wet(BaseFileModel):
 					file.write(utils.string_pad("cs"))
 					file.write("\n")
 
+					i = 1
 					for row in table.select().order_by(order_by):
-						file.write(utils.int_pad(row.id))
+						file.write(utils.int_pad(i))
 						file.write(utils.string_pad("null", direction="left"))
 						file.write(utils.string_pad("null", direction="left"))
 						file.write(utils.key_name_pad(row.init.salt_cs, default_pad=utils.DEFAULT_STR_PAD))
 						file.write(utils.string_pad("null", direction="left"))
 						file.write("\n")
+						i += 1
 
 
 class Hydrology_wet(BaseFileModel):
