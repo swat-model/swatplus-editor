@@ -1208,7 +1208,7 @@ class AtmoImport(ExecutableApi):
 
 		self.atmo_cli = Atmo_cli.get_or_none()
 		if self.atmo_cli is None:
-			self.atmo_cli = Atmo_cli.create(filename='atmo.cli',timestamp='aa', mo_init=0, yr_init=0, num_aa=0)
+			self.atmo_cli = Atmo_cli.create(filename='atmo.cli',timestep='aa', mo_init=0, yr_init=0, num_aa=0)
 
 	def delete_existing(self):
 		Atmo_cli_sta_value.delete().execute()
@@ -1430,8 +1430,14 @@ class AtmoImport(ExecutableApi):
 			
 			atmo_station = val[0].strip()
 			weather_station = val[1].strip()
-			if atmo_station is not None and atmo_station != 'null':
-				Weather_sta_cli.update(atmo_dep=atmo_station).where(Weather_sta_cli.name == weather_station).execute()
+			if atmo_station is not None and atmo_station != '' and atmo_station != 'null':
+				if weather_station is not None and weather_station != '' and weather_station != 'null':
+					Weather_sta_cli.update(atmo_dep=atmo_station).where(Weather_sta_cli.name == weather_station).execute()
+				else:
+					lat = float(val[2].strip())
+					lon = float(val[3].strip())
+					id = closest_lat_lon(project_base.db, "weather_sta_cli", lat, lon)
+					Weather_sta_cli.update(atmo_dep=atmo_station).where(Weather_sta_cli.id == id).execute()
 
 
 if __name__ == '__main__':
