@@ -1,3 +1,5 @@
+from itertools import groupby
+
 from helpers.executable_api import ExecutableApi, Unbuffered
 from peewee import *
 
@@ -30,8 +32,8 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 	
 	def get(self):
 		required_tables = [
-			'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa',
-			'basin_sd_cha_aa'
+			'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa', 'basin_sd_cha_aa',
+			'hru_pw_aa', 'hru_wb_aa', 'hru_ls_aa', 'hru_nb_aa',
 		]
 		
 		opt_tables = [
@@ -66,13 +68,16 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 
 			#read HRUs
 			hru_cons = connect.Hru_con.select()
-			hruDataLookup = []
+			hru_data_lookup = []
+			available_landuses = []
 			for h in hru_cons:
 				hru = check_toolbox.CheckToolboxHru()
 				hru.name = h.name
 				hru.area = h.area
 				hru.landuse = 'No Land Use' if h.hru.lu_mgt is None else h.hru.lu_mgt.name.replace('_lum', '')
-				hruDataLookup.append(hru)
+				hru_data_lookup.append(hru)
+				if hru.landuse not in available_landuses:
+					available_landuses.append(hru.landuse)
 
 			overallData = check_toolbox.CheckToolboxData()
 
@@ -143,22 +148,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			overallData.strsp = basin_pw_aa.strsp
 
 			# issue warnings
-			overallData.warnings = check_toolbox.CheckToolboxDataWarnings()
-
-			if overallData.strsp > 60:
-				overallData.warnings.plants.append('More than 60 days of phosphorus stress')
-			if overallData.strsn > 60:
-				overallData.warnings.plants.append('More than 60 days of nitrogen stress')
-			if overallData.strsw > 80:
-				overallData.warnings.plants.append('More than 80 days of water stress')
-			if overallData.strsp < 1:
-				overallData.warnings.plants.append('Unusually low phosphorus stress')
-			if overallData.strsn < 1:
-				overallData.warnings.plants.append('Unusually low nitrogen stress')
-			if overallData.yield_val < 0.5:
-				overallData.warnings.plants.append('Yield may be low if there is harvested crop')
-			if overallData.bioms < 1:
-				overallData.warnings.plants.append('Biomass averages less than 1 metric ton per hectare"')
+			overallData.warnings = check_toolbox.CheckToolboxDataWarnings()			
 
 			# read sedorg nitrogen
 			# ls stuff
@@ -169,86 +159,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			overallData.surqsolp = basin_ls_aa.surqsolp
 			overallData.sedyld = basin_ls_aa.sedyld
 
-			# issue warnings 
-			if overallData.denit == 0:
-				overallData.warnings.nb.append('Nitrogen~Denitrification is zero, consider decreasing SDNCO: (Denitrification threshold water content)')
-			elif overallData.fertn != 0:
-				calc = overallData.denit / overallData.fertn
-				if calc < 0.01:
-					overallData.warnings.nb.append('Nitrogen~Denitrification is less than 2% of the applied fertilizer amount')
-				elif calc > 0.4:
-					overallData.warnings.nb.append('Nitrogen~Denitrification is greater than 25% of the applied fertilizer amount')
-			
-			if overallData.fertn != 0:
-				calc = overallData.nplt / overallData.fertn
-				if calc < 0.5:
-					overallData.warnings.nb.append('Nitrogen~Crop is consuming less than half the amount of applied nitrogen')
-
-			overallData.nLossesTotalLoss = overallData.sedorgn + overallData.surqno3 + overallData.lat3no3
-			overallData.nLossesOrgN = overallData.sedorgn
-			overallData.nLossesSurfaceRunoff = overallData.surqno3
-			overallData.nLossesLateralFlow = overallData.lat3no3
-			overallData.totalN = overallData.nLossesOrgN + overallData.nLossesSurfaceRunoff
-
-			if overallData.totalN != 0:
-				overallData.nLossesSolubilityRatio = overallData.nLossesSurfaceRunoff / overallData.totalN
-
-			overallData.pLossesTotalLoss = overallData.sedorgp + overallData.surqsolp
-			overallData.pLossesOrgP = overallData.sedorgp
-			overallData.pLossesSurfaceRunoff = overallData.surqsolp
-
-			if overallData.pLossesTotalLoss != 0:
-				overallData.pLossesSolubilityRatio = overallData.pLossesSurfaceRunoff / overallData.pLossesTotalLoss
-
-			if overallData.nLossesTotalLoss > 0.4 * overallData.fertn:
-				overallData.warnings.nb.append("Nitrogen~Total nitrogen losses are greater than 40% of applied N")
-			elif overallData.nLossesTotalLoss < 0.1 * overallData.fertn:
-				overallData.warnings.nb.append("Nitrogen~Total nitrogen losses are less than 8% of applied N, may be incorrect in agricultural areas. Likely fine in unmanaged areas or forest dominated watersheds.")
-
-			if overallData.nLossesSurfaceRunoff > 4.7:
-				overallData.warnings.nb.append("Nitrogen~Nitrate losses in surface runoff may be high")
-			elif overallData.nLossesSurfaceRunoff < 0.15:
-				overallData.warnings.nb.append("Nitrogen~Nitrate losses in surface runoff may be low")
-
-			if overallData.nLossesOrgN > 33:
-				overallData.warnings.nb.append("Nitrogen~Organic/Particulate nitrogen losses in surface runoff may be high")
-			elif overallData.nLossesOrgN < 0.3:
-				overallData.warnings.nb.append("Nitrogen~Organic/Particulate nitrogen losses in surface runoff may be low")
-
-			if overallData.pLossesSurfaceRunoff > 1.2:
-				overallData.warnings.nb.append("Phosphorus~Soluble phosphorus losses in surface runoff may be high")
-			elif overallData.pLossesSurfaceRunoff < 0.025:
-				overallData.warnings.nb.append("Phosphorus~Soluble phosphorus losses in surface runoff may be low")
-
-			if overallData.pLossesOrgP > 14:
-				overallData.warnings.nb.append("Phosphorus~Organic/Particulate phosphorus losses in surface runoff may be high")
-			elif overallData.pLossesOrgP < 0:
-				overallData.warnings.nb.append("Phosphorus~Organic/Particulate phosphorus losses in surface runoff may be low")
-
-			if overallData.nLossesSolubilityRatio > 0.85:
-				overallData.warnings.nb.append("Nitrogen~Solubility ratio for nitrogen in runoff is high")
-			elif overallData.nLossesSolubilityRatio < 0.1:
-				overallData.warnings.nb.append("Nitrogen~Solubility ratio for nitrogen in runoff is low")
-
-			if overallData.pLossesSolubilityRatio > 0.95:
-				overallData.warnings.nb.append("Phosphorus~Solubility ratio for phosphorus in runoff is high, may be ok in uncultivated areas")
-			elif overallData.pLossesSolubilityRatio < 0.13:
-				overallData.warnings.nb.append("Phosphorus~Solubility ratio for phosphorus in runoff is low, may indicate a problem")
-
-			if overallData.lat3no3 > 50:
-				overallData.warnings.nb.append("Nitrogen~Nitrate leaching is greater than 50 kg/ha, may indicate a problem.")
-
-			if overallData.fertn != 0:
-				ratio = overallData.lat3no3 / overallData.fertn
-				if ratio < 0.21:
-					overallData.warnings.nb.append("Nitrogen~Nitrate leaching is less than 21% of the applied fertilizer.")
-				elif ratio > 0.38:
-					overallData.warnings.nb.append("Nitrogen~Nitrate leaching is greater is more than 38% of the applied fertilizer, may indicate a problem.")
-
-			if overallData.precip < 65:
-				overallData.warnings.wb.append(f"Precipitation may be too low ({overallData.precip:.2f} < 65 mm)")
-			elif overallData.precip > 3400:
-				overallData.warnings.wb.append(f"Precipitation seems too high ({overallData.precip:.2f}) > 3400 mm")
+			# issue overall warnings 			
 
 			if overallData.surfaceflowToTotal > 0.80:
 				overallData.warnings.wb.append(f"'Surface Runoff' to 'Total Flow' ratio may be too high ({overallData.surfaceflowToTotal:.2f} > 0.8)")
@@ -263,32 +174,12 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 					overallData.warnings.wb.append("Groundwater ratio may be low")
 
 			if overallData.latq > overallData.aqu_flo_cha:
-				overallData.warnings.wb.append("Lateral flow is greater than groundwater flow; may indicate a problem")
+				overallData.warnings.wb.append("Lateral flow is greater than groundwater flow; may indicate a problem")			
 
-			if overallData.et > overallData.precip:
-				overallData.warnings.wb.append("ET Greater than precipitation; may indicate a problem unless irrigated")
-
-			eWaterYield = 0.26 * overallData.precip
-			eET = 0.74 * overallData.precip
-			ratio_ = 0.0129 * overallData.cn - 0.2857
-			eSurq = ratio_ * eWaterYield
-
-			if eWaterYield != 0:
-				ratio_ = totalFlow / eWaterYield
-				if ratio_ > 1.5:
-					overallData.warnings.wb.append("Water yield may be excessive")
-				elif ratio_ < 0.5:
-					overallData.warnings.wb.append("Water yield may be too low")
-
-			if eSurq != 0:
-				ratio_ = overallData.surq_gen / eSurq
-				if ratio_ > 1.5:
-					overallData.warnings.wb.append("Surface runoff may be excessive")
-				elif ratio_ < 0.5:
-					overallData.warnings.wb.append("Surface runoff may be too low")
+			self.set_common_data(overallData, True, totalFlow)			
 
 			# channel sediment
-			hru_total_area = sum([h.area for h in hruDataLookup])
+			hru_total_area = sum([h.area for h in hru_data_lookup])
 			overallData.sed_in = basin_sd_cha_aa.sed_in / hru_total_area
 			overallData.sed_out = basin_sd_cha_aa.sed_out / hru_total_area
 			overallData.sed_stor = basin_sd_cha_aa.sed_stor
@@ -320,6 +211,10 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			elif (cha_erosion > -2 and cha_erosion < 2) or (cha_deposition > -2 and cha_deposition < 2):
 				overallData.warnings.sed.append("Very little in-stream sediment modification (< +-2%); this is unusual")
 
+			# Get data by land use
+			landuse_data = self.get_landuse_data(hru_data_lookup)
+			overallData.maxUplandSedYield = losses.Hru_ls_aa.select(fn.Max(losses.Hru_ls_aa.sedyld)).scalar()
+
 			SetupProjectDatabase.close()
 			SetupOutputDatabase.close()
 			return json.dumps({
@@ -329,3 +224,268 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			SetupProjectDatabase.close()
 			SetupOutputDatabase.close()
 			return json.dumps({'error': 'Error loading SWAT+ Check. Exception: {ex} {tb}'.format(ex=str(ex), tb=traceback.format_exc())})
+		
+	def set_common_data(self, data, do_water_yield_warnings=False, totalFlow = 0):
+		if data.strsp > 60:
+			data.warnings.plants.append('More than 60 days of phosphorus stress')
+		if data.strsn > 60:
+			data.warnings.plants.append('More than 60 days of nitrogen stress')
+		if data.strsw > 80:
+			data.warnings.plants.append('More than 80 days of water stress')
+		if data.strsp < 1:
+			data.warnings.plants.append('Unusually low phosphorus stress')
+		if data.strsn < 1:
+			data.warnings.plants.append('Unusually low nitrogen stress')
+		if data.yield_val < 0.5:
+			data.warnings.plants.append('Yield may be low if there is harvested crop')
+		if data.bioms < 1:
+			data.warnings.plants.append('Biomass averages less than 1 metric ton per hectare"')
+
+		if data.denit == 0:
+			data.warnings.nb.append('Nitrogen~Denitrification is zero, consider decreasing SDNCO: (Denitrification threshold water content)')
+		elif data.fertn != 0:
+			calc = data.denit / data.fertn
+			if calc < 0.01:
+				data.warnings.nb.append('Nitrogen~Denitrification is less than 2% of the applied fertilizer amount')
+			elif calc > 0.4:
+				data.warnings.nb.append('Nitrogen~Denitrification is greater than 25% of the applied fertilizer amount')
+		
+		if data.fertn != 0:
+			calc = data.nplt / data.fertn
+			if calc < 0.5:
+				data.warnings.nb.append('Nitrogen~Crop is consuming less than half the amount of applied nitrogen')
+				
+		data.nLossesTotalLoss = data.sedorgn + data.surqno3 + data.lat3no3
+		data.nLossesOrgN = data.sedorgn
+		data.nLossesSurfaceRunoff = data.surqno3
+		data.nLossesLateralFlow = data.lat3no3
+		data.totalN = data.nLossesOrgN + data.nLossesSurfaceRunoff
+
+		if data.totalN != 0:
+			data.nLossesSolubilityRatio = data.nLossesSurfaceRunoff / data.totalN
+
+		data.pLossesTotalLoss = data.sedorgp + data.surqsolp
+		data.pLossesOrgP = data.sedorgp
+		data.pLossesSurfaceRunoff = data.surqsolp
+
+		if data.pLossesTotalLoss != 0:
+			data.pLossesSolubilityRatio = data.pLossesSurfaceRunoff / data.pLossesTotalLoss
+
+		if data.nLossesTotalLoss > 0.4 * data.fertn:
+			data.warnings.nb.append("Nitrogen~Total nitrogen losses are greater than 40% of applied N")
+		elif data.nLossesTotalLoss < 0.1 * data.fertn:
+			data.warnings.nb.append("Nitrogen~Total nitrogen losses are less than 8% of applied N, may be incorrect in agricultural areas. Likely fine in unmanaged areas or forest dominated watersheds.")
+
+		if data.nLossesSurfaceRunoff > 4.7:
+			data.warnings.nb.append("Nitrogen~Nitrate losses in surface runoff may be high")
+		elif data.nLossesSurfaceRunoff < 0.15:
+			data.warnings.nb.append("Nitrogen~Nitrate losses in surface runoff may be low")
+
+		if data.nLossesOrgN > 33:
+			data.warnings.nb.append("Nitrogen~Organic/Particulate nitrogen losses in surface runoff may be high")
+		elif data.nLossesOrgN < 0.3:
+			data.warnings.nb.append("Nitrogen~Organic/Particulate nitrogen losses in surface runoff may be low")
+
+		if data.pLossesSurfaceRunoff > 1.2:
+			data.warnings.nb.append("Phosphorus~Soluble phosphorus losses in surface runoff may be high")
+		elif data.pLossesSurfaceRunoff < 0.025:
+			data.warnings.nb.append("Phosphorus~Soluble phosphorus losses in surface runoff may be low")
+
+		if data.pLossesOrgP > 14:
+			data.warnings.nb.append("Phosphorus~Organic/Particulate phosphorus losses in surface runoff may be high")
+		elif data.pLossesOrgP < 0:
+			data.warnings.nb.append("Phosphorus~Organic/Particulate phosphorus losses in surface runoff may be low")
+
+		if data.nLossesSolubilityRatio > 0.85:
+			data.warnings.nb.append("Nitrogen~Solubility ratio for nitrogen in runoff is high")
+		elif data.nLossesSolubilityRatio < 0.1:
+			data.warnings.nb.append("Nitrogen~Solubility ratio for nitrogen in runoff is low")
+
+		if data.pLossesSolubilityRatio > 0.95:
+			data.warnings.nb.append("Phosphorus~Solubility ratio for phosphorus in runoff is high, may be ok in uncultivated areas")
+		elif data.pLossesSolubilityRatio < 0.13:
+			data.warnings.nb.append("Phosphorus~Solubility ratio for phosphorus in runoff is low, may indicate a problem")
+
+		if data.lat3no3 > 50:
+			data.warnings.nb.append("Nitrogen~Nitrate leaching is greater than 50 kg/ha, may indicate a problem.")
+
+		if data.fertn != 0:
+			ratio = data.lat3no3 / data.fertn
+			if ratio < 0.21:
+				data.warnings.nb.append("Nitrogen~Nitrate leaching is less than 21% of the applied fertilizer.")
+			elif ratio > 0.38:
+				data.warnings.nb.append("Nitrogen~Nitrate leaching is greater is more than 38% of the applied fertilizer, may indicate a problem.")
+
+		if data.precip < 65:
+			data.warnings.wb.append(f"Precipitation may be too low ({data.precip:.2f} < 65 mm)")
+		elif data.precip > 3400:
+			data.warnings.wb.append(f"Precipitation seems too high ({data.precip:.2f}) > 3400 mm")
+
+		if data.et > data.precip:
+			data.warnings.wb.append("ET Greater than precipitation; may indicate a problem unless irrigated")
+
+		eWaterYield = 0.26 * data.precip
+		eET = 0.74 * data.precip
+		ratio_ = 0.0129 * data.cn - 0.2857
+		eSurq = ratio_ * eWaterYield
+
+		if do_water_yield_warnings and eWaterYield != 0:
+			ratio_ = totalFlow / eWaterYield
+			if ratio_ > 1.5:
+				data.warnings.wb.append("Water yield may be excessive")
+			elif ratio_ < 0.5:
+				data.warnings.wb.append("Water yield may be too low")
+
+		if eSurq != 0:
+			ratio_ = data.surq_gen / eSurq
+			if ratio_ > 1.5:
+				data.warnings.wb.append("Surface runoff may be excessive")
+			elif ratio_ < 0.5:
+				data.warnings.wb.append("Surface runoff may be too low")
+		
+	def get_landuse_data(self, hru_data_lookup):
+		# init data by landuse
+		landuse_data = {}
+		weighted_landuse_data = {}
+		for landuse, hrus in groupby(hru_data_lookup, lambda x: x.landuse):
+			item = check_toolbox.CheckToolboxLanduseData()
+			item.hrus = list(hrus)
+			item.area = sum([h.area for h in item.hrus])
+			item.data = check_toolbox.CheckToolboxData()
+			landuse_data[landuse] = item
+			weighted_landuse_data[landuse] = check_toolbox.CheckToolboxData()
+
+		hru_lookup = {hru.name: hru for hru in hru_data_lookup}
+
+		for row in losses.Hru_ls_aa.select():
+			match = hru_lookup.get(row.name)
+			if match is not None:
+				landuse = match.landuse
+				data = weighted_landuse_data.get(landuse)
+				if data is not None:
+					weighted_landuse_data[landuse].lat3no3 += row.lat3no3 * match.area
+					weighted_landuse_data[landuse].sedorgp += row.sedorgp * match.area
+					weighted_landuse_data[landuse].sedorgn += row.sedorgn * match.area
+					weighted_landuse_data[landuse].surqno3 += row.surqno3 * match.area
+					weighted_landuse_data[landuse].surqsolp += row.surqsolp * match.area
+
+		for row in plantwx.Hru_pw_aa.select():
+			match = hru_lookup.get(row.name)
+			if match is not None:
+				landuse = match.landuse
+				data = weighted_landuse_data.get(landuse)
+				if data is not None:
+					weighted_landuse_data[landuse].lai += row.lai * match.area
+					weighted_landuse_data[landuse].bioms += row.bioms * match.area
+					weighted_landuse_data[landuse].yield_val += row.yld * match.area
+					weighted_landuse_data[landuse].residue += row.residue * match.area
+					weighted_landuse_data[landuse].strsw += row.strsw * match.area
+					weighted_landuse_data[landuse].strsa += row.strsa * match.area
+					weighted_landuse_data[landuse].strstmp += row.strstmp * match.area
+					weighted_landuse_data[landuse].strsn += row.strsn * match.area
+					weighted_landuse_data[landuse].strsp += row.strsp * match.area
+					weighted_landuse_data[landuse].nplt += row.nplt * match.area
+					weighted_landuse_data[landuse].percn += row.percn * match.area
+					weighted_landuse_data[landuse].pplnt += row.pplnt * match.area
+
+		for row in nutbal.Hru_nb_aa.select():
+			match = hru_lookup.get(row.name)
+			if match is not None:
+				landuse = match.landuse
+				data = weighted_landuse_data.get(landuse)
+				if data is not None:
+					weighted_landuse_data[landuse].grzn += row.grzn * match.area
+					weighted_landuse_data[landuse].grzp += row.grzp * match.area
+					weighted_landuse_data[landuse].lab_min_p += row.lab_min_p * match.area
+					weighted_landuse_data[landuse].act_sta_p += row.act_sta_p * match.area
+					weighted_landuse_data[landuse].fertn += row.fertn * match.area
+					weighted_landuse_data[landuse].fertp += row.fertp * match.area
+					weighted_landuse_data[landuse].fixn += row.fixn * match.area
+					weighted_landuse_data[landuse].denit += row.denit * match.area
+					weighted_landuse_data[landuse].act_nit_n += row.act_nit_n * match.area
+					weighted_landuse_data[landuse].act_sta_n += row.act_sta_n * match.area
+					weighted_landuse_data[landuse].org_lab_p += row.org_lab_p * match.area
+					weighted_landuse_data[landuse].rsd_nitorg_n += row.rsd_nitorg_n * match.area
+					weighted_landuse_data[landuse].rsd_laborg_p += row.rsd_laborg_p * match.area
+					weighted_landuse_data[landuse].no3atmo += row.no3atmo * match.area
+					weighted_landuse_data[landuse].nh4atmo += row.nh4atmo * match.area
+					weighted_landuse_data[landuse].nuptake += row.nuptake * match.area
+					weighted_landuse_data[landuse].puptake += row.puptake * match.area
+
+		for row in waterbal.Hru_wb_aa.select():
+			match = hru_lookup.get(row.name)
+			if match is not None:
+				landuse = match.landuse
+				data = weighted_landuse_data.get(landuse)
+				if data is not None:
+					weighted_landuse_data[landuse].precip += row.precip * match.area
+					weighted_landuse_data[landuse].surq_gen += row.surq_gen * match.area
+					weighted_landuse_data[landuse].latq += row.latq * match.area
+					weighted_landuse_data[landuse].wateryld += row.wateryld * match.area
+					weighted_landuse_data[landuse].perc += row.perc * match.area
+					weighted_landuse_data[landuse].et += row.et * match.area
+					weighted_landuse_data[landuse].eplant += row.eplant * match.area
+					weighted_landuse_data[landuse].esoil += row.esoil * match.area
+					weighted_landuse_data[landuse].cn += row.cn * match.area
+					weighted_landuse_data[landuse].sw_init += row.sw_init * match.area
+					weighted_landuse_data[landuse].sw_final += row.sw_final * match.area
+					weighted_landuse_data[landuse].pet += row.pet * match.area
+					weighted_landuse_data[landuse].qtile += row.qtile * match.area
+					weighted_landuse_data[landuse].irr += row.irr * match.area
+
+		for landuse, item in landuse_data.items():
+			item.data.lat3no3 = weighted_landuse_data[landuse].lat3no3 / item.area if item.area != 0 else 0
+			item.data.sedorgp = weighted_landuse_data[landuse].sedorgp / item.area if item.area != 0 else 0
+			item.data.sedorgn = weighted_landuse_data[landuse].sedorgn / item.area if item.area != 0 else 0
+			item.data.surqno3 = weighted_landuse_data[landuse].surqno3 / item.area if item.area != 0 else 0
+			item.data.surqsolp = weighted_landuse_data[landuse].surqsolp / item.area if item.area != 0 else 0
+
+			item.data.lai = weighted_landuse_data[landuse].lai / item.area if item.area != 0 else 0
+			item.data.bioms = weighted_landuse_data[landuse].bioms / item.area if item.area != 0 else 0
+			item.data.yield_val = weighted_landuse_data[landuse].yield_val / item.area if item.area != 0 else 0
+			item.data.residue = weighted_landuse_data[landuse].residue / item.area if item.area != 0 else 0
+			item.data.strsw = weighted_landuse_data[landuse].strsw / item.area if item.area != 0 else 0
+			item.data.strsa = weighted_landuse_data[landuse].strsa / item.area if item.area != 0 else 0
+			item.data.strstmp = weighted_landuse_data[landuse].strstmp / item.area if item.area != 0 else 0
+			item.data.strsn = weighted_landuse_data[landuse].strsn / item.area if item.area != 0 else 0
+			item.data.strsp = weighted_landuse_data[landuse].strsp / item.area if item.area != 0 else 0
+			item.data.nplt = weighted_landuse_data[landuse].nplt / item.area if item.area != 0 else 0
+			item.data.percn = weighted_landuse_data[landuse].percn / item.area if item.area != 0 else 0
+			item.data.pplnt = weighted_landuse_data[landuse].pplnt / item.area if item.area != 0 else 0
+
+			item.data.grzn = weighted_landuse_data[landuse].grzn / item.area if item.area != 0 else 0
+			item.data.grzp = weighted_landuse_data[landuse].grzp / item.area if item.area != 0 else 0
+			item.data.lab_min_p = weighted_landuse_data[landuse].lab_min_p / item.area if item.area != 0 else 0
+			item.data.act_sta_p = weighted_landuse_data[landuse].act_sta_p / item.area if item.area != 0 else 0
+			item.data.fertn = weighted_landuse_data[landuse].fertn / item.area if item.area != 0 else 0
+			item.data.fertp = weighted_landuse_data[landuse].fertp / item.area if item.area != 0 else 0
+			item.data.fixn = weighted_landuse_data[landuse].fixn / item.area if item.area != 0 else 0
+			item.data.denit = weighted_landuse_data[landuse].denit / item.area if item.area != 0 else 0
+			item.data.act_nit_n = weighted_landuse_data[landuse].act_nit_n / item.area if item.area != 0 else 0
+			item.data.act_sta_n = weighted_landuse_data[landuse].act_sta_n / item.area if item.area != 0 else 0
+			item.data.org_lab_p = weighted_landuse_data[landuse].org_lab_p / item.area if item.area != 0 else 0
+			item.data.rsd_nitorg_n = weighted_landuse_data[landuse].rsd_nitorg_n / item.area if item.area != 0 else 0
+			item.data.rsd_laborg_p = weighted_landuse_data[landuse].rsd_laborg_p / item.area if item.area != 0 else 0
+			item.data.no3atmo = weighted_landuse_data[landuse].no3atmo / item.area if item.area != 0 else 0
+			item.data.nh4atmo = weighted_landuse_data[landuse].nh4atmo / item.area if item.area != 0 else 0
+			item.data.nuptake = weighted_landuse_data[landuse].nuptake / item.area if item.area != 0 else 0
+			item.data.puptake = weighted_landuse_data[landuse].puptake / item.area if item.area != 0 else 0	
+
+			item.data.precip = weighted_landuse_data[landuse].precip / item.area if item.area != 0 else 0
+			item.data.surq_gen = weighted_landuse_data[landuse].surq_gen / item.area if item.area != 0 else 0
+			item.data.latq = weighted_landuse_data[landuse].latq / item.area if item.area != 0 else 0
+			item.data.wateryld = weighted_landuse_data[landuse].wateryld / item.area if item.area != 0 else 0
+			item.data.perc = weighted_landuse_data[landuse].perc / item.area if item.area != 0 else 0
+			item.data.et = weighted_landuse_data[landuse].et / item.area if item.area != 0 else 0
+			item.data.eplant = weighted_landuse_data[landuse].eplant / item.area if item.area != 0 else 0
+			item.data.esoil = weighted_landuse_data[landuse].esoil / item.area if item.area != 0 else 0
+			item.data.cn = weighted_landuse_data[landuse].cn / item.area if item.area != 0 else 0
+			item.data.sw_init = weighted_landuse_data[landuse].sw_init / item.area if item.area != 0 else 0
+			item.data.sw_final = weighted_landuse_data[landuse].sw_final / item.area if item.area != 0 else 0
+			item.data.pet = weighted_landuse_data[landuse].pet / item.area if item.area != 0 else 0
+			item.data.qtile = weighted_landuse_data[landuse].qtile / item.area if item.area != 0 else 0
+			item.data.irr = weighted_landuse_data[landuse].irr / item.area if item.area != 0 else 0
+
+			self.set_common_data(item.data)
+
+		return landuse_data

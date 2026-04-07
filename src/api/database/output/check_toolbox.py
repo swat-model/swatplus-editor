@@ -238,14 +238,8 @@ class CheckToolboxData:
 		self.percoToPrecip = None
 		self.seepToPrecip = None
 		
-		# area
-		self.area = None
-		
-		# id
-		self.code = None
-		
 		# warnings
-		self.warnings = {}
+		self.warnings = CheckToolboxDataWarnings()
 
 
 class CheckToolboxDataWarnings:
@@ -261,3 +255,10 @@ class CheckToolboxHru:
 		self.name = ''
 		self.landuse = ''
 		self.area = 0.0
+
+
+class CheckToolboxLanduseData:
+	def __init__(self):
+		self.area = 0.0
+		self.hrus = []
+		self.data = CheckToolboxData()
