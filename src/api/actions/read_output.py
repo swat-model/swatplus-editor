@@ -9,6 +9,7 @@ import sys
 import traceback
 from pathlib import Path
 from datetime import datetime
+from itertools import zip_longest
 
 def clean_column_name(name):
 	"""Clean column names to be valid SQL identifiers."""
@@ -167,6 +168,18 @@ class ReadOutput(ExecutableApi):
 					log_issue_count += 1
 				files_with_errors.append(file)
 			prog += prog_step
+
+		if 'mgt_out.txt' not in self.skip_files:
+			try:
+				warnings = self.read_mgt_out_file()
+				if warnings:
+					with open(log_file, 'a') as f:
+						f.write(warnings + '\n')
+						log_issue_count += 1
+			except Exception as e:
+				with open(log_file, 'a') as f:
+					f.write('Error processing mgt_out.txt:\n {}\n{}\n\n'.format(e, traceback.format_exc()))
+					log_issue_count += 1
 
 		if log_issue_count < 1:
 			with open(log_file, 'a') as f:
@@ -430,3 +443,113 @@ class ReadOutput(ExecutableApi):
 			self.cursor.execute("PRAGMA cache_size = -2000000")
 			self.cursor.execute("PRAGMA temp_store = MEMORY")
 			#self.cursor.execute("PRAGMA locking_mode = EXCLUSIVE")
+
+	def read_mgt_out_file(self):
+		file_path = os.path.join(self.output_files_dir, 'mgt_out.txt')
+		check_path = Path(file_path)
+		if check_path.is_file():
+			self.emit_progress(99, 'Importing mgt_out.txt...')
+			table_name = 'mgt_out'
+			column_headers = ['hru', 'year', 'mon', 'day', 'crop', 'operation', 'phubase', 'phuplant', 'soil_water', 'plant_bioms', 'surf_rsd', 'soil_no3', 'soil_solp', 'op_var', 'var1', 'var2', 'var3', 'var4', 'var5', 'var6', 'var7']
+			column_types = ['INTEGER', 'INTEGER', 'INTEGER', 'INTEGER', 'TEXT', 'TEXT', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL', 'REAL']
+			delimiter = 'whitespace'
+			data_start_line = 4
+
+			# Create table schema
+			columns_with_types = [f"{col_name} {col_type}" for col_name, col_type in zip(column_headers, column_types)]
+			if not columns_with_types:
+				return 'No data found in file: {}'.format(file_path)
+			
+			create_table_sql = f"""
+			CREATE TABLE IF NOT EXISTS {table_name} (
+				id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+				{', '.join(columns_with_types)}
+			)
+			"""	
+			try:		
+				self.cursor.execute(create_table_sql)
+			except Exception as e:
+				raise Exception('Error creating table {} SQL: {}'.format(table_name, create_table_sql))
+
+			# Process file in streaming fashion
+			inserted_count = 0
+			adjusted_count = 0
+			batch = []
+
+			placeholders = ','.join(['?' for _ in column_headers])
+			insert_sql = f"INSERT INTO {table_name} ({','.join(column_headers)}) VALUES ({placeholders})"
+			
+			with open(file_path, 'r', buffering=8192*1024) as f:  # 8MB buffer
+				if delimiter == 'whitespace':
+					# Custom generator for whitespace-delimited files
+					reader = (re.split(r'\s+', line.strip()) for line in f)
+				else:
+					# Standard csv.reader for comma or tab (single character delimiters)
+					reader = csv.reader(f, delimiter=delimiter)
+
+				# Skip header lines
+				i = 0
+				for row in reader:
+					i += 1
+					if i < data_start_line or not row or len(row) < 1:
+						continue
+
+					# Fix if column 5 is empty - column 6 will be "IRRIGATE" or "FERT"
+					if len(row) > 5 and row[4] and row[4].strip() in ('IRRIGATE', 'FERT'):
+						# Column 5 is missing, shift everything right
+						row = row[:4] + [''] + row[4:]
+
+					# Fix column 6 if it has spaces - column 7 should be a number
+					# Keep merging column 6 parts until column 7 is a valid number
+					if len(row) > 6:
+						# Check if position 6 (column 7) is a number
+						col_7_idx = 6
+						while col_7_idx < len(row):
+							try:
+								float(row[col_7_idx].strip()) if row[col_7_idx] else None
+								# Successfully converted - this is column 7
+								break
+							except (ValueError, AttributeError):
+								# Not a number yet, keep looking
+								col_7_idx += 1
+						
+						# If we moved past index 6, merge the split text in column 6
+						if col_7_idx > 6:
+							merged_text = ' '.join(row[5:col_7_idx])
+							row = row[:5] + [merged_text] + row[col_7_idx:]
+
+					# Convert values - minimal processing for speed
+					converted_row = []
+					for value, col_type in zip_longest(row, column_types, fillvalue=None):
+						value = None if value is None else value.strip()
+						if not value:
+							converted_row.append(None)
+						elif col_type == 'INTEGER':
+							try:
+								converted_row.append(int(value))
+							except ValueError:
+								converted_row.append(None)
+						elif col_type == 'REAL':
+							try:
+								converted_row.append(float(value))
+							except ValueError:
+								converted_row.append(None)
+						else:
+							converted_row.append(value)
+					
+					batch.append(converted_row)
+					
+					# Batch insert for efficiency
+					if len(batch) >= self.batch_size:
+						self.cursor.executemany(insert_sql, batch)
+						self.conn.commit()
+						inserted_count += len(batch)
+						batch = []
+				
+				# Insert remaining rows
+				if batch:
+					self.cursor.executemany(insert_sql, batch)
+					self.conn.commit()
+					inserted_count += len(batch)
+
+		return None

@@ -1,5 +1,3 @@
-from itertools import groupby
-
 from helpers.executable_api import ExecutableApi, Unbuffered
 from peewee import *
 
@@ -8,15 +6,20 @@ from database.output.setup import SetupOutputDatabase
 from database.output import check_toolbox, aquifer, channel, hyd, losses, misc, nutbal, plantwx, reservoir, waterbal, pest, base
 from database.project import connect, climate, gis, regions, simulation, hru_parm_db, config
 from database import lib
+from helpers import utils
 
 import traceback
 import json, sys, argparse
+from itertools import groupby
+from datetime import date
 
 
 class GetSwatplusCheckToolbox(ExecutableApi):
-	def __init__(self, project_db_file, output_db_file):
+	def __init__(self, project_db_file, output_db_file, save_to_file=None):
 		self.output_db_file = output_db_file.replace("\\","/")
 		self.project_db_file = project_db_file.replace("\\","/")
+		self.save_to_file = None if save_to_file is None else save_to_file.replace("\\","/")
+
 		SetupOutputDatabase.init(self.output_db_file)
 		SetupProjectDatabase.init(self.project_db_file)
 
@@ -37,7 +40,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		]
 		
 		opt_tables = [
-			'basin_aqu_aa'
+			'basin_aqu_aa', 'project_config', 'mgt_out',
 		]
 		
 		pc = config.Project_config.get()
@@ -59,173 +62,123 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		try:
 			total_area = connect.Rout_unit_con.select(fn.Sum(connect.Rout_unit_con.area)).scalar()
 
-			basin_wb_aa = waterbal.Basin_wb_aa.get_or_none()
-			basin_aqu_aa = None if 'basin_aqu_aa' in unavailable_tables else aquifer.Basin_aqu_aa.get_or_none()
-			basin_nb_aa = nutbal.Basin_nb_aa.get_or_none()
-			basin_pw_aa = plantwx.Basin_pw_aa.get_or_none()
-			basin_ls_aa = losses.Basin_ls_aa.get_or_none()
-			basin_sd_cha_aa = channel.Basin_sd_cha_aa.get_or_none()
-
 			#read HRUs
-			hru_cons = connect.Hru_con.select()
+			hru_cons = connect.Hru_con.select().order_by(connect.Hru_con.id)
 			hru_data_lookup = []
 			available_landuses = []
+			i = 1
 			for h in hru_cons:
 				hru = check_toolbox.CheckToolboxHru()
 				hru.name = h.name
 				hru.area = h.area
 				hru.landuse = 'No Land Use' if h.hru.lu_mgt is None else h.hru.lu_mgt.name.replace('_lum', '')
+				hru.index = i
+				i += 1
 				hru_data_lookup.append(hru)
 				if hru.landuse not in available_landuses:
 					available_landuses.append(hru.landuse)
 
-			overallData = check_toolbox.CheckToolboxData()
-
-			# surface
-			overallData.et = basin_wb_aa.et
-			overallData.pet = basin_wb_aa.pet
-			overallData.precip = basin_wb_aa.precip
-			overallData.snofall = basin_wb_aa.snofall
-			overallData.cn = basin_wb_aa.cn
-			overallData.surq_gen = basin_wb_aa.surq_gen
-			overallData.latq = basin_wb_aa.latq
-			overallData.irr = basin_wb_aa.irr
-			overallData.perc = basin_wb_aa.perc
-
-			# aquifer
-			if basin_aqu_aa is not None:
-				overallData.aqu_flo_cha = basin_aqu_aa.flo_cha
-				overallData.aqu_revap = basin_aqu_aa.revap
-				overallData.aqu_seep = basin_aqu_aa.seep
-				overallData.aqu_no3_lat = basin_aqu_aa.no3_lat
-				overallData.aqu_no3_seep = basin_aqu_aa.no3_seep
-				overallData.aqu_no3_rchg = basin_aqu_aa.no3_rchg
-
-			# derived metrics
-			totalFlow = overallData.aqu_flo_cha + overallData.latq + overallData.surq_gen
-			if totalFlow != 0:
-				aqu_flo_cha = 0 if overallData.aqu_flo_cha is None else overallData.aqu_flo_cha
-				overallData.baseflowToTotal = (aqu_flo_cha + overallData.latq) / totalFlow
-				overallData.surfaceToTotal = overallData.surq_gen / totalFlow
-
-			if overallData.precip != 0:
-				overallData.totalFlowToPrecip = totalFlow / overallData.precip
-				overallData.etToPrecip = overallData.et / overallData.precip
-				overallData.percoToPrecip = overallData.perc / overallData.precip
-				overallData.seepToPrecip = None if overallData.aqu_seep is None else overallData.aqu_seep / overallData.precip
-
-			# gather information about nutrients
-
-			# read nitrogen
-			overallData.grzn = basin_nb_aa.grzn
-			overallData.grzp = basin_nb_aa.grzp
-			overallData.lab_min_p = basin_nb_aa.lab_min_p
-			overallData.act_sta_p = basin_nb_aa.act_sta_p
-			overallData.fertn = basin_nb_aa.fertn
-			overallData.fertp = basin_nb_aa.fertp
-			overallData.fixn = basin_nb_aa.fixn
-			overallData.denit = basin_nb_aa.denit
-			overallData.act_nit_n = basin_nb_aa.act_nit_n
-			overallData.act_sta_n = basin_nb_aa.act_sta_n
-			overallData.org_lab_p = basin_nb_aa.org_lab_p
-			overallData.rsd_nitorg_n = basin_nb_aa.rsd_nitorg_n
-			overallData.rsd_laborg_p = basin_nb_aa.rsd_laborg_p
-			overallData.no3atmo = basin_nb_aa.no3atmo
-			overallData.nh4atmo = basin_nb_aa.nh4atmo
-			overallData.nuptake = basin_nb_aa.nuptake
-			overallData.puptake = basin_nb_aa.puptake
-
-			# read plant uptake of nitrogen
-			overallData.nplt = basin_pw_aa.nplt
-			overallData.pplnt = basin_pw_aa.pplnt
-			overallData.yield_val = basin_pw_aa.yield_val
-			overallData.bioms = basin_pw_aa.bioms
-			# read stress days
-			overallData.strsw = basin_pw_aa.strsw
-			overallData.strsa = basin_pw_aa.strsa
-			overallData.strstmp = basin_pw_aa.strstmp
-			overallData.strsn = basin_pw_aa.strsn
-			overallData.strsp = basin_pw_aa.strsp
-
-			# issue warnings
-			overallData.warnings = check_toolbox.CheckToolboxDataWarnings()			
-
-			# read sedorg nitrogen
-			# ls stuff
-			overallData.lat3no3 = basin_ls_aa.lat3no3
-			overallData.sedorgp = basin_ls_aa.sedorgp
-			overallData.sedorgn = basin_ls_aa.sedorgn
-			overallData.surqno3 = basin_ls_aa.surqno3
-			overallData.surqsolp = basin_ls_aa.surqsolp
-			overallData.sedyld = basin_ls_aa.sedyld
-
-			# issue overall warnings 			
-
-			if overallData.surfaceflowToTotal > 0.80:
-				overallData.warnings.wb.append(f"'Surface Runoff' to 'Total Flow' ratio may be too high ({overallData.surfaceflowToTotal:.2f} > 0.8)")
-			elif overallData.surfaceflowToTotal < 0.20:
-				overallData.warnings.wb.append(f"'Surface Runoff' to 'Total Flow' ratio appears too low ({overallData.surfaceflowToTotal:.2f} < 0.2)")
-
-			if totalFlow != 0:
-				gwqRatio = overallData.aqu_flo_cha / totalFlow
-				if gwqRatio > 0.69:
-					overallData.warnings.wb.append("Groundwater ratio may be high")
-				elif gwqRatio < 0.22:
-					overallData.warnings.wb.append("Groundwater ratio may be low")
-
-			if overallData.latq > overallData.aqu_flo_cha:
-				overallData.warnings.wb.append("Lateral flow is greater than groundwater flow; may indicate a problem")			
-
-			self.set_common_data(overallData, True, totalFlow)			
-
-			# channel sediment
-			hru_total_area = sum([h.area for h in hru_data_lookup])
-			overallData.sed_in = basin_sd_cha_aa.sed_in / hru_total_area
-			overallData.sed_out = basin_sd_cha_aa.sed_out / hru_total_area
-			overallData.sed_stor = basin_sd_cha_aa.sed_stor
-
-			sed_chg = overallData.sed_out - overallData.sed_in
-			overallData.uplandSedYield = overallData.sedyld * hru_total_area
-
-			denom = (overallData.uplandSedYield * hru_total_area) + sed_chg
-			if denom != 0:
-				overallData.chaErosion = (sed_chg / denom) * 100
-
-			if overallData.uplandSedYield != 0:
-				overallData.chaDeposition = ((sed_chg * -1) / overallData.uplandSedYield) * 100
-
-			cha_erosion = 0
-			cha_deposition = 0
-			if overallData.uplandSedYield > 0:
-				if sed_chg > 0:
-					cha_erosion = (sed_chg / (overallData.uplandSedYield + sed_chg)) * 100
-					if cha_erosion > 50:
-						overallData.warnings.sed.append("More than 50% of sediment is from instream processes")
-				else:
-					cha_deposition = ((sed_chg * -1) / overallData.uplandSedYield) * 100
-					if cha_deposition > 95:
-						overallData.warnings.sed.append("More than 95% of sediment is deposited instream")
-
-			if cha_erosion == 0 and cha_deposition == 0:
-				overallData.warnings.sed.append("No in-stream sediment modification; this is unusual")
-			elif (cha_erosion > -2 and cha_erosion < 2) or (cha_deposition > -2 and cha_deposition < 2):
-				overallData.warnings.sed.append("Very little in-stream sediment modification (< +-2%); this is unusual")
-
-			# Get data by land use
+			# read data from output database
+			overall_data = self.get_overall_data(unavailable_tables, hru_data_lookup)
 			landuse_data = self.get_landuse_data(hru_data_lookup)
-			overallData.maxUplandSedYield = losses.Hru_ls_aa.select(fn.Max(losses.Hru_ls_aa.sedyld)).scalar()
+			overall_data.maxUplandSedYield = losses.Hru_ls_aa.select(fn.Max(losses.Hru_ls_aa.sedyld)).scalar()
+
+			# set swat+ check sections
+			info = self.get_info('project_config' not in unavailable_tables, use_gwflow)
+
+			# read mgt_out data if available
+			has_mgt = 'mgt_out' not in unavailable_tables
+			hru_mgt = []
+			if has_mgt:
+				hru_lookup = {hru.index: hru for hru in hru_data_lookup}
+				plant_desc_lookup = {p.name: utils.readable_name(p.desc) for p in hru_parm_db.Plants_plt.select()}
+
+				mgt_out_data = base.Mgt_out.select().order_by(base.Mgt_out.hru, base.Mgt_out.year, base.Mgt_out.mon, base.Mgt_out.day)
+				for hru_index, ops in groupby(mgt_out_data, lambda x: x.hru):
+					hru = hru_lookup.get(hru_index)
+					if hru is not None:
+						mgts = []
+						for op in ops:
+							mgt = check_toolbox.CheckToolboxMgtItem()
+							mgt.date = date(op.year, op.mon, op.day).isoformat()
+							if op.operation == "PLANT":
+								mgt.description = "Plant " + plant_desc_lookup[op.crop]
+							elif op.operation == "HARV/KILL":
+								mgt.description = "Harvest and Kill\n" + plant_desc_lookup[op.crop]
+							elif op.operation == "HARV":
+								mgt.description = "Harvest " + plant_desc_lookup[op.crop]
+							elif op.operation == "HARVEST":
+								mgt.description = "Harvest " + plant_desc_lookup[op.crop]
+							elif op.operation == "KILL":
+								mgt.description = "Kill " + plant_desc_lookup[op.crop]
+							elif op.operation == "IRRIGATE":
+								mgt.description = "Irrigate"
+							elif op.operation == "FERT":
+								mgt.description = "Apply fertiliser"
+							elif op.operation == "TILLAGE":
+								mgt.description = f"Till ({plant_desc_lookup[op.crop]} option)"
+							elif op.operation == "RESET WEIR":  
+								mgt.description = f"Reset weir ({plant_desc_lookup[op.crop]}) to {round(op.soil_water, 2)}m"
+							elif op.operation == "STOP PADDY":  
+								mgt.description = "Stop paddy irrigation (set 0mm)"
+							elif op.operation == "PADDY":
+								mgt.description = f"Irrigate Paddy ({plant_desc_lookup[op.crop]})"
+							elif op.operation == "BEGIN/ADJUST":
+								mgt.description = f"Adjust paddy irrigation\nto {round(op.soil_water, 0)}mm"
+							elif op.operation == "PUDDLE":
+								mgt.description = "Puddle"
+							elif op.operation == "TRANSPLANT":
+								mgt.description = f"Transplant {plant_desc_lookup[op.crop]}"
+							else:
+								mgt.description = f"{op.operation} {op.crop}"
+							mgts.append(mgt)
+
+						hru_mgt_item = check_toolbox.CheckToolboxHruMgt()
+						hru_mgt_item.name = hru.name
+						hru_mgt_item.landuse = hru.landuse
+						hru_mgt_item.area = hru.area
+						hru_mgt_item.index = hru.index
+						hru_mgt_item.mgts = mgts
+						hru_mgt.append(hru_mgt_item)
 
 			SetupProjectDatabase.close()
 			SetupOutputDatabase.close()
+
+			if self.save_to_file is not None:
+				with open(self.save_to_file, 'w') as f:
+					json.dump({
+						'info': info.toJson(),
+						'basin': overall_data.toJson(),
+						'landuses': landuse_data.toJson(),
+						'mgt': [hru.toJson() for hru in hru_mgt],
+					}, f, indent=2)
+				return json.dumps({'success': self.save_to_file})
+
 			return json.dumps({
-				
+				'info': info.toJson(),
+				'basin': overall_data.toJson(),
+				'landuses': landuse_data.toJson(),
+				'mgt': [hru.toJson() for hru in hru_mgt],
 			})
 		except Exception as ex:
 			SetupProjectDatabase.close()
 			SetupOutputDatabase.close()
 			return json.dumps({'error': 'Error loading SWAT+ Check. Exception: {ex} {tb}'.format(ex=str(ex), tb=traceback.format_exc())})
 		
-	def set_common_data(self, data, do_water_yield_warnings=False, totalFlow = 0):
+	def set_common_data(self, data, is_overall=False):
+		# derived metrics
+		aqu_flo_cha = 0 if data.aqu_flo_cha is None else data.aqu_flo_cha
+		totalFlow = aqu_flo_cha + data.latq + data.surq_gen
+		if totalFlow != 0:			
+			data.baseflowToTotal = (aqu_flo_cha + data.latq) / totalFlow
+			data.surfaceflowToTotal = data.surq_gen / totalFlow
+
+		if data.precip != 0:
+			data.totalFlowToPrecip = totalFlow / data.precip
+			data.etToPrecip = data.et / data.precip
+			data.percoToPrecip = data.perc / data.precip
+			data.seepToPrecip = None if data.aqu_seep is None else data.aqu_seep / data.precip
+
 		if data.strsp > 60:
 			data.warnings.plants.append('More than 60 days of phosphorus stress')
 		if data.strsn > 60:
@@ -329,20 +282,147 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		ratio_ = 0.0129 * data.cn - 0.2857
 		eSurq = ratio_ * eWaterYield
 
-		if do_water_yield_warnings and eWaterYield != 0:
-			ratio_ = totalFlow / eWaterYield
-			if ratio_ > 1.5:
-				data.warnings.wb.append("Water yield may be excessive")
-			elif ratio_ < 0.5:
-				data.warnings.wb.append("Water yield may be too low")
+		if is_overall:
+			if eWaterYield != 0:
+				ratio_ = totalFlow / eWaterYield
+				if ratio_ > 1.5:
+					data.warnings.wb.append("Water yield may be excessive")
+				elif ratio_ < 0.5:
+					data.warnings.wb.append("Water yield may be too low")
 
-		if eSurq != 0:
-			ratio_ = data.surq_gen / eSurq
-			if ratio_ > 1.5:
-				data.warnings.wb.append("Surface runoff may be excessive")
-			elif ratio_ < 0.5:
-				data.warnings.wb.append("Surface runoff may be too low")
-		
+			if eSurq != 0:
+				ratio_ = data.surq_gen / eSurq
+				if ratio_ > 1.5:
+					data.warnings.wb.append("Surface runoff may be excessive")
+				elif ratio_ < 0.5:
+					data.warnings.wb.append("Surface runoff may be too low")
+			
+			if data.surfaceflowToTotal > 0.80:
+				data.warnings.wb.append(f"'Surface Runoff' to 'Total Flow' ratio may be too high ({data.surfaceflowToTotal:.2f} > 0.8)")
+			elif data.surfaceflowToTotal < 0.20:
+				data.warnings.wb.append(f"'Surface Runoff' to 'Total Flow' ratio appears too low ({data.surfaceflowToTotal:.2f} < 0.2)")
+
+			if data.aqu_flo_cha is not None and totalFlow != 0:
+				gwqRatio = data.aqu_flo_cha / totalFlow
+				if gwqRatio > 0.69:
+					data.warnings.wb.append("Groundwater ratio may be high")
+				elif gwqRatio < 0.22:
+					data.warnings.wb.append("Groundwater ratio may be low")
+
+			if data.aqu_flo_cha is not None and data.latq > data.aqu_flo_cha:
+				data.warnings.wb.append("Lateral flow is greater than groundwater flow; may indicate a problem")
+
+	def get_overall_data(self, unavailable_tables, hru_data_lookup):
+		overall_data = check_toolbox.CheckToolboxData()
+
+		basin_wb_aa = waterbal.Basin_wb_aa.get_or_none()
+		basin_aqu_aa = None if 'basin_aqu_aa' in unavailable_tables else aquifer.Basin_aqu_aa.get_or_none()
+		basin_nb_aa = nutbal.Basin_nb_aa.get_or_none()
+		basin_pw_aa = plantwx.Basin_pw_aa.get_or_none()
+		basin_ls_aa = losses.Basin_ls_aa.get_or_none()
+		basin_sd_cha_aa = channel.Basin_sd_cha_aa.get_or_none()
+
+		# surface
+		overall_data.et = basin_wb_aa.et
+		overall_data.pet = basin_wb_aa.pet
+		overall_data.precip = basin_wb_aa.precip
+		overall_data.snofall = basin_wb_aa.snofall
+		overall_data.cn = basin_wb_aa.cn
+		overall_data.surq_gen = basin_wb_aa.surq_gen
+		overall_data.latq = basin_wb_aa.latq
+		overall_data.irr = basin_wb_aa.irr
+		overall_data.perc = basin_wb_aa.perc
+
+		# aquifer
+		if basin_aqu_aa is not None:
+			overall_data.aqu_flo_cha = basin_aqu_aa.flo_cha
+			overall_data.aqu_revap = basin_aqu_aa.revap
+			overall_data.aqu_seep = basin_aqu_aa.seep
+			overall_data.aqu_no3_lat = basin_aqu_aa.no3_lat
+			overall_data.aqu_no3_seep = basin_aqu_aa.no3_seep
+			overall_data.aqu_no3_rchg = basin_aqu_aa.no3_rchg
+
+		# gather information about nutrients
+
+		# read nitrogen
+		overall_data.grzn = basin_nb_aa.grzn
+		overall_data.grzp = basin_nb_aa.grzp
+		overall_data.lab_min_p = basin_nb_aa.lab_min_p
+		overall_data.act_sta_p = basin_nb_aa.act_sta_p
+		overall_data.fertn = basin_nb_aa.fertn
+		overall_data.fertp = basin_nb_aa.fertp
+		overall_data.fixn = basin_nb_aa.fixn
+		overall_data.denit = basin_nb_aa.denit
+		overall_data.act_nit_n = basin_nb_aa.act_nit_n
+		overall_data.act_sta_n = basin_nb_aa.act_sta_n
+		overall_data.org_lab_p = basin_nb_aa.org_lab_p
+		overall_data.rsd_nitorg_n = basin_nb_aa.rsd_nitorg_n
+		overall_data.rsd_laborg_p = basin_nb_aa.rsd_laborg_p
+		overall_data.no3atmo = basin_nb_aa.no3atmo
+		overall_data.nh4atmo = basin_nb_aa.nh4atmo
+		overall_data.nuptake = basin_nb_aa.nuptake
+		overall_data.puptake = basin_nb_aa.puptake
+
+		# read plant uptake of nitrogen
+		overall_data.nplt = basin_pw_aa.nplt
+		overall_data.pplnt = basin_pw_aa.pplnt
+		overall_data.yield_val = basin_pw_aa.yield_val
+		overall_data.bioms = basin_pw_aa.bioms
+		# read stress days
+		overall_data.strsw = basin_pw_aa.strsw
+		overall_data.strsa = basin_pw_aa.strsa
+		overall_data.strstmp = basin_pw_aa.strstmp
+		overall_data.strsn = basin_pw_aa.strsn
+		overall_data.strsp = basin_pw_aa.strsp
+
+		# read sedorg nitrogen
+		# ls stuff
+		overall_data.lat3no3 = basin_ls_aa.lat3no3
+		overall_data.sedorgp = basin_ls_aa.sedorgp
+		overall_data.sedorgn = basin_ls_aa.sedorgn
+		overall_data.surqno3 = basin_ls_aa.surqno3
+		overall_data.surqsolp = basin_ls_aa.surqsolp
+		overall_data.sedyld = basin_ls_aa.sedyld
+
+		# issue warnings 
+		overall_data.warnings = check_toolbox.CheckToolboxDataWarnings()
+		self.set_common_data(overall_data, True)
+
+		# channel sediment
+		hru_total_area = sum([h.area for h in hru_data_lookup])
+		overall_data.sed_in = basin_sd_cha_aa.sed_in / hru_total_area
+		overall_data.sed_out = basin_sd_cha_aa.sed_out / hru_total_area
+		overall_data.sed_stor = basin_sd_cha_aa.sed_stor
+
+		sed_chg = overall_data.sed_out - overall_data.sed_in
+		overall_data.uplandSedYield = overall_data.sedyld * hru_total_area
+
+		denom = (overall_data.uplandSedYield * hru_total_area) + sed_chg
+		if denom != 0:
+			overall_data.chaErosion = (sed_chg / denom) * 100
+
+		if overall_data.uplandSedYield != 0:
+			overall_data.chaDeposition = ((sed_chg * -1) / overall_data.uplandSedYield) * 100
+
+		cha_erosion = 0
+		cha_deposition = 0
+		if overall_data.uplandSedYield > 0:
+			if sed_chg > 0:
+				cha_erosion = (sed_chg / (overall_data.uplandSedYield + sed_chg)) * 100
+				if cha_erosion > 50:
+					overall_data.warnings.sed.append("More than 50% of sediment is from instream processes")
+			else:
+				cha_deposition = ((sed_chg * -1) / overall_data.uplandSedYield) * 100
+				if cha_deposition > 95:
+					overall_data.warnings.sed.append("More than 95% of sediment is deposited instream")
+
+		if cha_erosion == 0 and cha_deposition == 0:
+			overall_data.warnings.sed.append("No in-stream sediment modification; this is unusual")
+		elif (cha_erosion > -2 and cha_erosion < 2) or (cha_deposition > -2 and cha_deposition < 2):
+			overall_data.warnings.sed.append("Very little in-stream sediment modification (< +-2%); this is unusual")
+			
+		return overall_data
+
 	def get_landuse_data(self, hru_data_lookup):
 		# init data by landuse
 		landuse_data = {}
@@ -489,3 +569,29 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			self.set_common_data(item.data)
 
 		return landuse_data
+	
+	def get_info(self, has_project_config, use_gwflow):
+		info = check_toolbox.CheckToolboxInfo()
+
+		time_sim = simulation.Time_sim.get_or_none()
+		if time_sim is not None:
+			info.simulationLength = time_sim.yrc_end - time_sim.yrc_start + 1
+
+		prt = simulation.Print_prt.get_or_none()
+		if prt is not None:
+			info.warmUp = prt.nyskip
+
+		info.hrus = connect.Hru_con.select().count()
+		info.subbasins = gis.Gis_subbasins.select().count()
+		info.lsus = regions.Ls_unit_def.select().count()
+		info.weatherMethod = 'Observed' if climate.Weather_sta_cli.observed_count() > 0 else 'Simulated'
+		info.watershedArea = connect.Rout_unit_con.select(fn.Sum(connect.Rout_unit_con.area)).scalar()
+		info.gwflow = use_gwflow
+
+		if has_project_config:
+			pc = base.Project_config.get_or_none()
+			if pc is not None:
+				info.swatVersion = pc.swat_version
+
+		return info
+	

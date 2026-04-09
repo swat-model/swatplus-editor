@@ -30,7 +30,7 @@ class Plants_plt(BaseFileModel):
 		if csv:
 			self.write_default_csv(table, True)
 		else:
-			self.write_default_table(table, True)
+			self.write_custom_query_table(table, table.select().order_by(table.name), True, format_description=True)
 
 
 class Fertilizer_frt(BaseFileModel):

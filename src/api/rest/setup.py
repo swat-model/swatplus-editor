@@ -6,6 +6,7 @@ from playhouse.migrate import *
 
 from actions import import_gis
 from actions.get_swatplus_check import GetSwatplusCheck
+from actions.get_swatplus_check_toolbox import GetSwatplusCheckToolbox
 from database.project import config, gis, climate, connect, simulation, regions, basin
 from database import lib
 from fileio import config as fileio_config
@@ -372,6 +373,18 @@ def putSwatplusCheck():
 	if 'output_db' not in args: abort(400, 'Output database file was omitted from the request.')
 
 	api = GetSwatplusCheck(project_db, args['output_db'])
+	return api.get(), 200
+
+@bp.route('/swatplus-check-toolbox', methods=['PUT'])
+def putSwatplusCheckToolbox():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	args = request.json
+	if 'output_db' not in args: abort(400, 'Output database file was omitted from the request.')
+
+	api = GetSwatplusCheckToolbox(project_db, args['output_db'])
 	return api.get(), 200
 
 """

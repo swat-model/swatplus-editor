@@ -12,6 +12,7 @@ from actions.reimport_gis import ReimportGis
 from actions.run_all import RunAll
 from actions.load_scenarios import LoadScenarios
 from actions.get_swatplus_check import GetSwatplusCheck
+from actions.get_swatplus_check_toolbox import GetSwatplusCheckToolbox
 from database import soils
 
 import sys
@@ -133,6 +134,9 @@ if __name__ == '__main__':
 		api.read()
 	elif args.action == "get_swatplus_check":
 		api = GetSwatplusCheck(args.project_db_file, args.output_db_file)
+		print(api.get())
+	elif args.action == "get_swatplus_check_toolbox":
+		api = GetSwatplusCheckToolbox(args.project_db_file, args.output_db_file, save_to_file=args.file1)
 		print(api.get())
 	elif args.action == "write_files":
 		api = WriteFiles(args.project_db_file, args.swat_version, args.ignore_files, args.ignore_cio_files, args.custom_cio_files)

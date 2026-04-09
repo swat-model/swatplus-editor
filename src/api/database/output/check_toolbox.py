@@ -16,109 +16,6 @@ class CheckToolboxInfo(CheckToolboxBase):
 		self.watershedArea = 0
 		self.swatVersion = 'development'
 		self.gwflow = False
-		
-
-class CheckToolboxHydrology(CheckToolboxBase):
-	def __init__(self):
-		self.warnings = []
-		self.et = 0
-		self.pet = 0
-		self.precipitation = 0
-		self.snowfall = 0
-		self.averageCn = 0
-		self.surfaceRunoff = 0
-		self.lateralFlow = 0
-		self.returnFlow = 0
-		self.irr = 0
-		self.percolation = 0
-		self.revap = 0
-		self.recharge = 0
-		
-		self.etPrecipitation = 0
-		self.deepRechargePrecipitation = 0
-		self.streamflowPrecipitation = 0
-		self.baseflowTotalFlow = 0
-		self.surfaceRunoffTotalFlow = 0
-		self.percolationPrecipitation = 0
-		self.monthlyBasinValues = []
-		
-
-class CheckToolboxNitrogen(CheckToolboxBase):
-	def __init__(self):
-		self.warnings = []
-		self.residueMineralization = 0
-		self.mineralization = 0
-		self.organicFertilizer = 0
-		self.uptake = 0
-		self.decay = 0
-		self.denitrification = 0
-		self.totalInorganic = 0
-		self.volatilization = 0
-		self.nitrification = 0
-		self.plantResidue = 0
-		
-		self.totalLoss = 0
-		self.surfaceRunoff = 0
-		self.lateralFlow = 0
-		self.solubilityRatio = 0
-		
-
-class CheckToolboxPhosphorus(CheckToolboxBase):
-	def __init__(self):
-		self.warnings = []
-		self.residueMineralization = 0
-		self.mineralization = 0
-		self.organicFertilizer = 0
-		self.uptake = 0
-		self.activeStable = 0
-		self.inorganicFertilizer = 0
-		
-		self.totalLoss = 0
-		self.surfaceRunoff = 0
-		self.solubilityRatio = 0
-		
-
-class CheckToolboxSediment(CheckToolboxBase):
-	def __init__(self):
-		self.warnings = []
-		self.surfaceRunoff = 0
-		self.instreamSedimentChange = 0
-		self.uplandSedimentYieldMax = 0
-		self.uplandSedimentYieldAvg = 0
-		self.instreamSedimentChangePerHa = 0
-		self.channelErosion = 0
-		self.channelDeposition = 0
-
-
-class CheckToolboxPlantGrowth(CheckToolboxBase):
-	def __init__(self):
-		self.warnings = []
-		self.tempStressDays = 0
-		self.waterStressDays = 0
-		self.nStressDays = 0
-		self.pStressDays = 0
-		self.soilAirStressDays = 0
-		self.avgBiomass = 0
-		self.avgYield = 0
-		self.nRemoved = 0
-		self.pRemoved = 0
-		self.totalFertilizerN = 0
-		self.totalFertilizerP = 0
-		self.plantUptakeN = 0
-		self.plantUptakeP = 0
-		self.hruMgts = []
-		
-
-class CheckToolboxHruMgt(CheckToolboxBase):
-	def __init__(self):
-		self.hru = 0
-		self.mgts = []
-		
-
-class CheckToolboxMgtItem(CheckToolboxBase):
-	def __init__(self):
-		self.date = ''
-		self.description = ''
 
 
 class CheckToolboxData:
@@ -255,6 +152,7 @@ class CheckToolboxHru:
 		self.name = ''
 		self.landuse = ''
 		self.area = 0.0
+		self.index = 0
 
 
 class CheckToolboxLanduseData:
@@ -262,3 +160,18 @@ class CheckToolboxLanduseData:
 		self.area = 0.0
 		self.hrus = []
 		self.data = CheckToolboxData()
+		
+
+class CheckToolboxHruMgt(CheckToolboxBase):
+	def __init__(self):
+		self.name = ''
+		self.landuse = ''
+		self.area = 0.0
+		self.index = 0
+		self.mgts = []
+		
+
+class CheckToolboxMgtItem(CheckToolboxBase):
+	def __init__(self):
+		self.date = ''
+		self.description = ''
