@@ -60,7 +60,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		conn.close()
 
 		try:
-			total_area = connect.Rout_unit_con.select(fn.Sum(connect.Rout_unit_con.area)).scalar()
+			no_land_use_name = 'No Land Use'
 
 			#read HRUs
 			hru_cons = connect.Hru_con.select().order_by(connect.Hru_con.id)
@@ -71,7 +71,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 				hru = check_toolbox.CheckToolboxHru()
 				hru.name = h.name
 				hru.area = h.area
-				hru.landuse = 'No Land Use' if h.hru.lu_mgt is None else h.hru.lu_mgt.name.replace('_lum', '')
+				hru.landuse = no_land_use_name if h.hru.lu_mgt is None else h.hru.lu_mgt.name.replace('_lum', '')
 				hru.index = i
 				i += 1
 				hru_data_lookup.append(hru)
@@ -86,12 +86,24 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			# set swat+ check sections
 			info = self.get_info('project_config' not in unavailable_tables, use_gwflow)
 
+			# get plant list
+			plant_desc_lookup = {p.name: utils.readable_name(p.description) for p in hru_parm_db.Plants_plt.select().order_by(hru_parm_db.Plants_plt.name)}
+			urban_desc_lookup = {p.name: utils.readable_name(p.description) for p in hru_parm_db.Urban_urb.select().order_by(hru_parm_db.Urban_urb.name)}
+
+			plant_options = []
+			for p in sorted(available_landuses):
+				d = ''
+				if p in plant_desc_lookup:
+					d = plant_desc_lookup[p]
+				elif p in urban_desc_lookup:
+					d = urban_desc_lookup[p]
+				plant_options.append({'value': p, 'title': f"({p}) {d}" if p != no_land_use_name else no_land_use_name})
+
 			# read mgt_out data if available
 			has_mgt = 'mgt_out' not in unavailable_tables
 			hru_mgt = []
 			if has_mgt:
-				hru_lookup = {hru.index: hru for hru in hru_data_lookup}
-				plant_desc_lookup = {p.name: utils.readable_name(p.desc) for p in hru_parm_db.Plants_plt.select()}
+				hru_lookup = {hru.index: hru for hru in hru_data_lookup}				
 
 				mgt_out_data = base.Mgt_out.select().order_by(base.Mgt_out.hru, base.Mgt_out.year, base.Mgt_out.mon, base.Mgt_out.day)
 				for hru_index, ops in groupby(mgt_out_data, lambda x: x.hru):
@@ -144,21 +156,30 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			SetupProjectDatabase.close()
 			SetupOutputDatabase.close()
 
+			landuse_list = []
+			for key in landuse_data:
+				landuse_list.append({
+					'landuse': key,
+					'data': landuse_data[key].toJson()
+				})
+
 			if self.save_to_file is not None:
 				with open(self.save_to_file, 'w') as f:
 					json.dump({
 						'info': info.toJson(),
 						'basin': overall_data.toJson(),
-						'landuses': landuse_data.toJson(),
+						'landuses': landuse_list,
 						'mgt': [hru.toJson() for hru in hru_mgt],
+						'landuseOptions': plant_options,
 					}, f, indent=2)
 				return json.dumps({'success': self.save_to_file})
 
 			return json.dumps({
 				'info': info.toJson(),
 				'basin': overall_data.toJson(),
-				'landuses': landuse_data.toJson(),
+				'landuses': landuse_list,
 				'mgt': [hru.toJson() for hru in hru_mgt],
+				'landuseOptions': plant_options,
 			})
 		except Exception as ex:
 			SetupProjectDatabase.close()
@@ -366,7 +387,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		# read plant uptake of nitrogen
 		overall_data.nplt = basin_pw_aa.nplt
 		overall_data.pplnt = basin_pw_aa.pplnt
-		overall_data.yield_val = basin_pw_aa.yield_val
+		overall_data.yield_val = basin_pw_aa.yld
 		overall_data.bioms = basin_pw_aa.bioms
 		# read stress days
 		overall_data.strsw = basin_pw_aa.strsw
@@ -427,7 +448,8 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		# init data by landuse
 		landuse_data = {}
 		weighted_landuse_data = {}
-		for landuse, hrus in groupby(hru_data_lookup, lambda x: x.landuse):
+		sorted_hru_data = sorted(hru_data_lookup, key=lambda x: x.landuse)
+		for landuse, hrus in groupby(sorted_hru_data, lambda x: x.landuse):
 			item = check_toolbox.CheckToolboxLanduseData()
 			item.hrus = list(hrus)
 			item.area = sum([h.area for h in item.hrus])

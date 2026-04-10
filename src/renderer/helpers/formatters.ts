@@ -43,10 +43,15 @@ export function useFormatters() {
 		return '$' + toNumberFormat(value, 2);
 	}
 
-	function toNumberFormat(value:any, decimals = 1, units = '', valueIfNull = '', noCommas = false) {
+	function toNumberDecimals(value:any, decimals:number) {
+		return toNumberFormat(value, decimals, '', '0', false, true);
+	}
+
+	function toNumberFormat(value:any, decimals = 1, units = '', valueIfNull = '', noCommas = false, forceDecimals = false) {
 		if (isNullOrEmpty(value)) return valueIfNull;
 		if (isNaN(Number(value))) return value;
 		if (noCommas) return toRoundNumber(Number(value), decimals) + units;
+		if (forceDecimals) return toNumberWithCommas(toRoundNumber(Number(value), decimals).toFixed(decimals)) + units;
 		return toNumberWithCommas(toRoundNumber(Number(value), decimals)) + units;
 	}
 
@@ -106,6 +111,7 @@ export function useFormatters() {
 		toLowerFirstLetter,
 		toMoneyFormat,
 		toNumberFormat,
+		toNumberDecimals,
 		toNumberWithCommas,
 		toReadable,
 		toRoundNumber,

@@ -18,7 +18,7 @@ class CheckToolboxInfo(CheckToolboxBase):
 		self.gwflow = False
 
 
-class CheckToolboxData:
+class CheckToolboxData(CheckToolboxBase):
 	def __init__(self):
 		# wb_basin
 		self.precip = 0.0
@@ -27,8 +27,8 @@ class CheckToolboxData:
 		self.latq = 0.0
 		self.wateryld = 0.0
 		self.perc = 0.0
-		self.sw_init = None
-		self.sw_final = None
+		self.sw_init = 0.0
+		self.sw_final = 0.0
 		self.et = 0.0
 		self.eplant = 0.0
 		self.esoil = 0.0
@@ -42,26 +42,26 @@ class CheckToolboxData:
 		self.latq_res = 0.0
 		
 		# aqu_basin
-		self.aqu_flo = None
-		self.aqu_dep_wt = None
-		self.aqu_stor = None
-		self.aqu_rchrg = None
-		self.aqu_seep = None
-		self.aqu_revap = None
-		self.aqu_flo_cha = None
-		self.aqu_flo_res = None
-		self.aqu_flo_ls = None
-		self.aqu_no3_lat = None
-		self.aqu_no3_seep = None
-		self.aqu_no3_rchg = None
+		self.aqu_flo = 0.0
+		self.aqu_dep_wt = 0.0
+		self.aqu_stor = 0.0
+		self.aqu_rchrg = 0.0
+		self.aqu_seep = 0.0
+		self.aqu_revap = 0.0
+		self.aqu_flo_cha = 0.0
+		self.aqu_flo_res = 0.0
+		self.aqu_flo_ls = 0.0
+		self.aqu_no3_lat = 0.0
+		self.aqu_no3_seep = 0.0
+		self.aqu_no3_rchg = 0.0
 		
 		# pw
-		self.lai = None
-		self.bioms = None
-		self.yield_val = None  # 'yield' is a Python keyword
-		self.residue = None
-		self.pplnt = None
-		self.nplt = None
+		self.lai = 0.0
+		self.bioms = 0.0
+		self.yield_val = 0.0  # 'yield' is a Python keyword
+		self.residue = 0.0
+		self.pplnt = 0.0
+		self.nplt = 0.0
 		
 		# stress days
 		self.strsw = 0.0
@@ -90,13 +90,13 @@ class CheckToolboxData:
 		self.nuptake = 0.0
 		self.puptake = 0.0
 		
-		self.initialNO3 = None
-		self.finalNO3 = None
-		self.initialOrgN = None
-		self.finalOrgN = None
-		self.volatilization = None
-		self.nitrification = None
-		self.mineralization = None
+		self.initialNO3 = 0.0
+		self.finalNO3 = 0.0
+		self.initialOrgN = 0.0
+		self.finalOrgN = 0.0
+		self.volatilization = 0.0
+		self.nitrification = 0.0
+		self.mineralization = 0.0
 		
 		# ls
 		self.sedorgn = 0.0
@@ -105,41 +105,41 @@ class CheckToolboxData:
 		self.lat3no3 = 0.0
 		self.surqno3 = 0.0
 		self.surqsolp = 0.0
-		self.uplandSedYield = None
-		self.maxUplandSedYield = None
-		self.chaErosion = None
-		self.chaDeposition = None
+		self.uplandSedYield = 0.0
+		self.maxUplandSedYield = 0.0
+		self.chaErosion = 0.0
+		self.chaDeposition = 0.0
 		
 		# derived
-		self.nLossesTotalLoss = None
-		self.nLossesOrgN = None
-		self.nLossesSurfaceRunoff = None
-		self.nLossesLateralFlow = None
-		self.totalN = None
-		self.nLossesSolubilityRatio = None
-		self.pLossesTotalLoss = None
-		self.pLossesOrgP = None
-		self.pLossesSurfaceRunoff = None
-		self.pLossesSolubilityRatio = None
+		self.nLossesTotalLoss = 0.0
+		self.nLossesOrgN = 0.0
+		self.nLossesSurfaceRunoff = 0.0
+		self.nLossesLateralFlow = 0.0
+		self.totalN = 0.0
+		self.nLossesSolubilityRatio = 0.0
+		self.pLossesTotalLoss = 0.0
+		self.pLossesOrgP = 0.0
+		self.pLossesSurfaceRunoff = 0.0
+		self.pLossesSolubilityRatio = 0.0
 		
 		# cha stuff
-		self.sed_in = None
-		self.sed_out = None
-		self.sed_stor = None
+		self.sed_in = 0.0
+		self.sed_out = 0.0
+		self.sed_stor = 0.0
 		
 		# ratios
-		self.baseflowToTotal = None
-		self.surfaceflowToTotal = None
-		self.totalFlowToPrecip = None
-		self.etToPrecip = None
-		self.percoToPrecip = None
-		self.seepToPrecip = None
+		self.baseflowToTotal = 0.0
+		self.surfaceflowToTotal = 0.0
+		self.totalFlowToPrecip = 0.0
+		self.etToPrecip = 0.0
+		self.percoToPrecip = 0.0
+		self.seepToPrecip = 0.0
 		
 		# warnings
 		self.warnings = CheckToolboxDataWarnings()
 
 
-class CheckToolboxDataWarnings:
+class CheckToolboxDataWarnings(CheckToolboxBase):
 	def __init__(self):
 		self.plants = []
 		self.nb = []
@@ -147,7 +147,7 @@ class CheckToolboxDataWarnings:
 		self.sed = []
 
 
-class CheckToolboxHru:
+class CheckToolboxHru(CheckToolboxBase):
 	def __init__(self):
 		self.name = ''
 		self.landuse = ''
@@ -155,7 +155,7 @@ class CheckToolboxHru:
 		self.index = 0
 
 
-class CheckToolboxLanduseData:
+class CheckToolboxLanduseData(CheckToolboxBase):
 	def __init__(self):
 		self.area = 0.0
 		self.hrus = []

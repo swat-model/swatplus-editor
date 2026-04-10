@@ -5,6 +5,7 @@ import Help from '../views/Help.vue';
 import Edit from '../views/edit/Edit.vue';
 import Run from '../views/Run.vue';
 import Check from '../views/Check.vue';
+import CheckToolbox from '../views/CheckToolbox.vue';
 import Update from '../views/Update.vue';
 import TableBrowser from '../views/TableBrowser.vue';
 
@@ -34,7 +35,7 @@ export default createRouter({
 			children: [
 				{ path: 'help', name: 'Help', component: Help },
 				{ path: 'run', name: 'Run', component: Run },
-				{ path: 'check', name: 'Check', component: Check },
+				{ path: 'check', name: 'Check', component: CheckToolbox },
 				{ 
 					path: 'edit', name: 'Edit', component: Edit,
 					children: editRoutes

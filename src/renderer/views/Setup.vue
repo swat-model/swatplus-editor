@@ -540,7 +540,7 @@
 	function setColorTheme(colorTheme:string|null):void {
 		if (colorTheme === null || colorTheme === 'system') colorTheme = 'light';
 		page.colorTheme = colorTheme;
-		theme.global.name.value = colorTheme;
+		theme.change(colorTheme);
 		utilities.setColorTheme(colorTheme);
 		localStorage.setItem('colorTheme', colorTheme);
 	}
