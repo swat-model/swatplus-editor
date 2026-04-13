@@ -216,18 +216,18 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			data.warnings.plants.append('Biomass averages less than 1 metric ton per hectare"')
 
 		if data.denit == 0:
-			data.warnings.nb.append('Nitrogen~Denitrification is zero, consider decreasing SDNCO: (Denitrification threshold water content)')
+			data.warnings.nb_nitrogen.append('Denitrification is zero, consider decreasing SDNCO: (Denitrification threshold water content)')
 		elif data.fertn != 0:
 			calc = data.denit / data.fertn
 			if calc < 0.01:
-				data.warnings.nb.append('Nitrogen~Denitrification is less than 2% of the applied fertilizer amount')
+				data.warnings.nb_nitrogen.append('Denitrification is less than 2% of the applied fertilizer amount')
 			elif calc > 0.4:
-				data.warnings.nb.append('Nitrogen~Denitrification is greater than 25% of the applied fertilizer amount')
+				data.warnings.nb_nitrogen.append('Denitrification is greater than 25% of the applied fertilizer amount')
 		
 		if data.fertn != 0:
 			calc = data.nplt / data.fertn
 			if calc < 0.5:
-				data.warnings.nb.append('Nitrogen~Crop is consuming less than half the amount of applied nitrogen')
+				data.warnings.nb_nitrogen.append('Crop is consuming less than half the amount of applied nitrogen')
 				
 		data.nLossesTotalLoss = data.sedorgn + data.surqno3 + data.lat3no3
 		data.nLossesOrgN = data.sedorgn
@@ -246,49 +246,49 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			data.pLossesSolubilityRatio = data.pLossesSurfaceRunoff / data.pLossesTotalLoss
 
 		if data.nLossesTotalLoss > 0.4 * data.fertn:
-			data.warnings.nb.append("Nitrogen~Total nitrogen losses are greater than 40% of applied N")
+			data.warnings.nb_nitrogen.append("Total nitrogen losses are greater than 40% of applied N")
 		elif data.nLossesTotalLoss < 0.1 * data.fertn:
-			data.warnings.nb.append("Nitrogen~Total nitrogen losses are less than 8% of applied N, may be incorrect in agricultural areas. Likely fine in unmanaged areas or forest dominated watersheds.")
+			data.warnings.nb_nitrogen.append("Total nitrogen losses are less than 8% of applied N, may be incorrect in agricultural areas. Likely fine in unmanaged areas or forest dominated watersheds.")
 
 		if data.nLossesSurfaceRunoff > 4.7:
-			data.warnings.nb.append("Nitrogen~Nitrate losses in surface runoff may be high")
+			data.warnings.nb_nitrogen.append("Nitrate losses in surface runoff may be high")
 		elif data.nLossesSurfaceRunoff < 0.15:
-			data.warnings.nb.append("Nitrogen~Nitrate losses in surface runoff may be low")
+			data.warnings.nb_nitrogen.append("Nitrate losses in surface runoff may be low")
 
 		if data.nLossesOrgN > 33:
-			data.warnings.nb.append("Nitrogen~Organic/Particulate nitrogen losses in surface runoff may be high")
+			data.warnings.nb_nitrogen.append("Organic/Particulate nitrogen losses in surface runoff may be high")
 		elif data.nLossesOrgN < 0.3:
-			data.warnings.nb.append("Nitrogen~Organic/Particulate nitrogen losses in surface runoff may be low")
+			data.warnings.nb_nitrogen.append("Organic/Particulate nitrogen losses in surface runoff may be low")
 
 		if data.pLossesSurfaceRunoff > 1.2:
-			data.warnings.nb.append("Phosphorus~Soluble phosphorus losses in surface runoff may be high")
+			data.warnings.nb_phosphorus.append("Soluble phosphorus losses in surface runoff may be high")
 		elif data.pLossesSurfaceRunoff < 0.025:
-			data.warnings.nb.append("Phosphorus~Soluble phosphorus losses in surface runoff may be low")
+			data.warnings.nb_phosphorus.append("Soluble phosphorus losses in surface runoff may be low")
 
 		if data.pLossesOrgP > 14:
-			data.warnings.nb.append("Phosphorus~Organic/Particulate phosphorus losses in surface runoff may be high")
+			data.warnings.nb_phosphorus.append("Organic/Particulate phosphorus losses in surface runoff may be high")
 		elif data.pLossesOrgP < 0:
-			data.warnings.nb.append("Phosphorus~Organic/Particulate phosphorus losses in surface runoff may be low")
+			data.warnings.nb_phosphorus.append("Organic/Particulate phosphorus losses in surface runoff may be low")
 
 		if data.nLossesSolubilityRatio > 0.85:
-			data.warnings.nb.append("Nitrogen~Solubility ratio for nitrogen in runoff is high")
+			data.warnings.nb_nitrogen.append("Solubility ratio for nitrogen in runoff is high")
 		elif data.nLossesSolubilityRatio < 0.1:
-			data.warnings.nb.append("Nitrogen~Solubility ratio for nitrogen in runoff is low")
+			data.warnings.nb_nitrogen.append("Solubility ratio for nitrogen in runoff is low")
 
 		if data.pLossesSolubilityRatio > 0.95:
-			data.warnings.nb.append("Phosphorus~Solubility ratio for phosphorus in runoff is high, may be ok in uncultivated areas")
+			data.warnings.nb_phosphorus.append("Solubility ratio for phosphorus in runoff is high, may be ok in uncultivated areas")
 		elif data.pLossesSolubilityRatio < 0.13:
-			data.warnings.nb.append("Phosphorus~Solubility ratio for phosphorus in runoff is low, may indicate a problem")
+			data.warnings.nb_phosphorus.append("Solubility ratio for phosphorus in runoff is low, may indicate a problem")
 
 		if data.lat3no3 > 50:
-			data.warnings.nb.append("Nitrogen~Nitrate leaching is greater than 50 kg/ha, may indicate a problem.")
+			data.warnings.nb_nitrogen.append("Nitrate leaching is greater than 50 kg/ha, may indicate a problem.")
 
 		if data.fertn != 0:
 			ratio = data.lat3no3 / data.fertn
 			if ratio < 0.21:
-				data.warnings.nb.append("Nitrogen~Nitrate leaching is less than 21% of the applied fertilizer.")
+				data.warnings.nb_nitrogen.append("Nitrate leaching is less than 21% of the applied fertilizer.")
 			elif ratio > 0.38:
-				data.warnings.nb.append("Nitrogen~Nitrate leaching is greater is more than 38% of the applied fertilizer, may indicate a problem.")
+				data.warnings.nb_nitrogen.append("Nitrate leaching is greater is more than 38% of the applied fertilizer, may indicate a problem.")
 
 		if data.precip < 65:
 			data.warnings.wb.append(f"Precipitation may be too low ({data.precip:.2f} < 65 mm)")
@@ -303,6 +303,13 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		ratio_ = 0.0129 * data.cn - 0.2857
 		eSurq = ratio_ * eWaterYield
 
+		if eSurq != 0:
+			ratio_ = data.surq_gen / eSurq
+			if ratio_ > 1.5:
+				data.warnings.wb.append("Surface runoff may be excessive")
+			elif ratio_ < 0.5:
+				data.warnings.wb.append("Surface runoff may be too low")			
+			
 		if is_overall:
 			if eWaterYield != 0:
 				ratio_ = totalFlow / eWaterYield
@@ -311,13 +318,6 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 				elif ratio_ < 0.5:
 					data.warnings.wb.append("Water yield may be too low")
 
-			if eSurq != 0:
-				ratio_ = data.surq_gen / eSurq
-				if ratio_ > 1.5:
-					data.warnings.wb.append("Surface runoff may be excessive")
-				elif ratio_ < 0.5:
-					data.warnings.wb.append("Surface runoff may be too low")
-			
 			if data.surfaceflowToTotal > 0.80:
 				data.warnings.wb.append(f"'Surface Runoff' to 'Total Flow' ratio may be too high ({data.surfaceflowToTotal:.2f} > 0.8)")
 			elif data.surfaceflowToTotal < 0.20:

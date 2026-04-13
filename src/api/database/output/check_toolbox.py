@@ -90,13 +90,13 @@ class CheckToolboxData(CheckToolboxBase):
 		self.nuptake = 0.0
 		self.puptake = 0.0
 		
-		self.initialNO3 = 0.0
-		self.finalNO3 = 0.0
-		self.initialOrgN = 0.0
-		self.finalOrgN = 0.0
-		self.volatilization = 0.0
-		self.nitrification = 0.0
-		self.mineralization = 0.0
+		self.initialNO3 = None
+		self.finalNO3 = None
+		self.initialOrgN = None
+		self.finalOrgN = None
+		self.volatilization = None
+		self.nitrification = None
+		self.mineralization = None
 		
 		# ls
 		self.sedorgn = 0.0
@@ -142,7 +142,8 @@ class CheckToolboxData(CheckToolboxBase):
 class CheckToolboxDataWarnings(CheckToolboxBase):
 	def __init__(self):
 		self.plants = []
-		self.nb = []
+		self.nb_nitrogen = []
+		self.nb_phosphorus = []
 		self.wb = []
 		self.sed = []
 

@@ -43,8 +43,8 @@ export function useFormatters() {
 		return '$' + toNumberFormat(value, 2);
 	}
 
-	function toNumberDecimals(value:any, decimals:number) {
-		return toNumberFormat(value, decimals, '', '0', false, true);
+	function toNumberDecimals(value:any, decimals:number, valueIfNull:string = 'NA') {
+		return toNumberFormat(value, decimals, '', valueIfNull, false, true);
 	}
 
 	function toNumberFormat(value:any, decimals = 1, units = '', valueIfNull = '', noCommas = false, forceDecimals = false) {
