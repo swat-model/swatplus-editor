@@ -29,6 +29,7 @@
 			selectedHruCount: 0,
 			isOverall: true,
 			nutrientsTab: 'nitrogen',
+			selectedHruIndex: <number|null>null,
 		},
 		config: {
 			input_files_dir: '',
@@ -41,6 +42,7 @@
 			basin: {},
 			landuses: {},
 			mgt: [],
+			mgtOptions: [],
 			landuseOptions: []
 		},
         simulationWarnings: <string[]>[]
@@ -124,6 +126,34 @@
 
 		return data.check.basin;
 	})
+
+	const selectedHru = computed(() => {
+		if (!formatters.isNullOrEmpty(data.page.selectedHruIndex)) {
+			let matches = data.check.mgt.filter((l:any) => l.index == data.page.selectedHruIndex);
+			if (matches.length > 0) {
+				return matches[0];
+			}
+		}
+
+		return null;
+	})
+
+	const filteredMgtOptions = computed(() => {
+		if (data.page.checkByLanduse && !formatters.isNullOrEmpty(data.page.selectedLanduse)) {
+			return data.check.mgtOptions.filter((m:any) => m.title.includes(data.page.selectedLanduse));
+		}
+		return data.check.mgtOptions;
+	})
+
+	function getMgtIconAndColor(op:string) {
+		op = formatters.toLower(op)||'';
+		if (op.includes('plant')) return { icon: 'fas fa-seedling', color: 'green' };
+		if (op.includes('harv') || op.includes('kill')) return { icon: 'fas fa-trowel', color: 'brown' };
+		if (op.includes('irr')) return { icon: 'fas fa-droplet', color: 'blue' };
+		if (op.includes('fert')) return { icon: 'fas fa-leaf', color: 'orange' };
+		if (op.includes('tillage')) return { icon: 'fas fa-tractor', color: 'grey' };
+		return { icon: 'fas fa-check', color: 'blue-grey' };
+	}
 
 	onMounted(async () => await get());
 	watch(() => route.path, async () => await get())
@@ -263,7 +293,7 @@
 						<v-card class="semi-transparent details-card" elevation="6">
 							<v-card-item>
 								<v-switch label="Check by land use" v-model="data.page.checkByLanduse" color="primary" hide-details></v-switch>
-								<v-autocomplete v-if="data.page.checkByLanduse" hide-details
+								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="compact"
 									v-model="data.page.selectedLanduse" :items="data.check.landuseOptions"
 									label="Land use" placeholder="Type to search..."
 								></v-autocomplete>
@@ -407,7 +437,7 @@
 						<v-card class="semi-transparent details-card" elevation="6">
 							<v-card-item>
 								<v-switch label="Check by land use" v-model="data.page.checkByLanduse" color="primary" hide-details></v-switch>
-								<v-autocomplete v-if="data.page.checkByLanduse" hide-details
+								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="compact"
 									v-model="data.page.selectedLanduse" :items="data.check.landuseOptions"
 									label="Land use" placeholder="Type to search..."
 								></v-autocomplete>
@@ -602,13 +632,192 @@
 					</template>
 				</image-overlays>
 
-				<div v-if="data.page.tabIndex == 3" :class="`spcheck_tab ${theme.global.name.value}`" id="spcheck_sediment">
+				<image-overlays v-if="data.page.tabIndex == 3" class="spcheck_tab" id="spcheck_sediment"
+					:image-path="`/swatplus-check/sediment_light.png`"
+					:dark-image-path="`/swatplus-check/sediment_dark.png`"
+					:image-ratio="2886/1023"
+					:overlays="[
+						{ x: 0.38, y: 0.55, slot: 'sed_runoff' },
+						{ x: 0.41, y: 0.71, slot: 'sed_change' },
+						{ x: 0.625, y: 0.57, slot: 'sed_yield' },
+					]">
+					<template #mainContent>
+						<v-card class="semi-transparent details-card" elevation="6">
+							<v-card-item>
+								<v-alert color="primary" variant="tonal" class="mt-2 mb-4" density="compact">
+									<small>Note: sediment is only available for the entire basin and cannot be checked by land use.</small>
+								</v-alert>
 
-				</div>
+								<h4 class="mt-4">Sediment Budget</h4>
+								<v-table small density="compact" class="transparent">
+									<tbody>
+										<tr>
+											<th>Upland Sediment Yield</th>
+											<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.sedyld, 3)}} t/ha</td>
+										</tr>
+										<tr>
+											<th>Instream Sediment Change</th>
+											<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.sed_out - data.check.basin.sed_in, 3)}} t/ha</td>
+										</tr>
+										<tr>
+											<th>Channel Erosion</th>
+											<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.chaErosion, 3)}} %</td>
+										</tr>
+										<tr>
+											<th>Channel Deposition</th>
+											<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.chaDeposition, 3)}} %</td>
+										</tr>
+									</tbody>
+								</v-table>
 
-				<div v-if="data.page.tabIndex == 4" :class="`spcheck_tab ${theme.global.name.value}`" id="spcheck_plants">
+								<h4 class="mt-4 mb-2">Messages and Warnings</h4>
+								<div class="warning-list mb-2">
+									<ul>
+										<li v-for="(w, index) in data.check.basin.warnings.sed" :key="index" class="text-body-2">
+											{{w}}
+										</li>
+										<li v-if="!data.check.basin.warnings.sed || data.check.basin.warnings.sed.length === 0" class="text-body-2">
+											<i>None</i>
+										</li>
+									</ul>
+								</div>
+							</v-card-item>
+						</v-card>
+					</template>
 
-				</div>
+					<template #sed_runoff>
+						<div class="label">Surface Runoff</div>
+						<div>{{ formatters.toNumberDecimals(data.check.basin.surq_gen, 3) }} mm/yr</div>
+					</template>
+
+					<template #sed_change>
+						<div class="label">Instream Sediment Change</div>
+						<div>{{ formatters.toNumberDecimals(data.check.info.hruTotalArea * (data.check.basin.sed_out - data.check.basin.sed_in), 3) }} tons</div>
+					</template>
+
+					<template #sed_yield>
+						<div class="label">Upland Sediment Yield</div>
+						<div>Maximum: {{ formatters.toNumberDecimals(data.check.basin.maxUplandSedYield, 3) }} t/ha</div>
+						<div>Average: {{ formatters.toNumberDecimals(data.check.basin.sedyld, 3) }} t/ha</div>
+					</template>
+				</image-overlays>
+
+				<image-overlays v-if="data.page.tabIndex == 4" class="spcheck_tab" id="spcheck_plants"
+					:image-path="`/swatplus-check/landuse_overall_light.png`"
+					:dark-image-path="`/swatplus-check/landuse_overall_dark.png`"
+					:image-ratio="2886/1023"
+					:overlays="[
+						{ x: 0.5, y: 0.6, slot: 'plant_nplt_pplnt' },
+						{ x: 0.55, y: 0.20, slot: 'plant_yield_bioms' },
+						{ x: 0.74, y: 0.74, slot: 'plant_nuptake_puptake' },
+						{ x: 0.7, y: 0.3, slot: 'plant_removed' },
+					]">
+					<template #mainContent>
+						<v-card class="semi-transparent details-card" elevation="6">
+							<v-card-item>
+								<v-switch label="Check by land use" v-model="data.page.checkByLanduse" color="primary" hide-details></v-switch>
+								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="compact"
+									v-model="data.page.selectedLanduse" :items="data.check.landuseOptions"
+									label="Land use" placeholder="Type to search..."
+								></v-autocomplete>
+								<div v-if="data.page.checkByLanduse && !formatters.isNullOrEmpty(data.page.selectedLanduse)" class="mt-2 text-subtitle-2">
+									{{ data.page.selectedLanduse }} /  
+									{{ formatters.toNumberFormat(data.page.selectedArea, 2) }} ha / 
+									{{ formatters.toNumberFormat(data.page.selectedHruCount, 0) }} HRUs
+								</div>
+
+								<h4 class="mt-4">Stress Days</h4>
+								<v-table small density="compact" class="transparent">
+									<tbody>
+										<tr>
+											<th>Temperature Stress Days</th>
+											<td class="text-right">{{formatters.toNumberDecimals(selectedData.strstmp, 3)}}</td>
+										</tr>
+										<tr>
+											<th>Water Stress Days</th>
+											<td class="text-right">{{formatters.toNumberDecimals(selectedData.strsw, 3)}}</td>
+										</tr>
+										<tr>
+											<th>Nitrogen Stress Days</th>
+											<td class="text-right">{{formatters.toNumberDecimals(selectedData.strsn, 3)}}</td>
+										</tr>
+										<tr>
+											<th>Phosphorus Stress Days</th>
+											<td class="text-right">{{formatters.toNumberDecimals(selectedData.strsp, 3)}}</td>
+										</tr>
+										<tr>
+											<th>Soil Air Stress Days</th>
+											<td class="text-right">{{formatters.toNumberDecimals(selectedData.strsa, 3)}}</td>
+										</tr>
+									</tbody>
+								</v-table>
+
+								<h4 class="mt-4 mb-2">Messages and Warnings</h4>
+								<div class="warning-list mb-2">
+									<ul>
+										<li v-for="(w, index) in selectedData.warnings.plants" :key="index" class="text-body-2">
+											{{w}}
+										</li>
+										<li v-if="!selectedData.warnings.plants || selectedData.warnings.plants.length === 0" class="text-body-2">
+											<i>None</i>
+										</li>
+									</ul>
+								</div>
+
+								<h4 class="mt-4 mb-2">Preview HRU Management</h4>
+								<v-autocomplete v-if="filteredMgtOptions && filteredMgtOptions.length > 0" hide-details class="mb-2" density="compact"
+									v-model="data.page.selectedHruIndex" :items="filteredMgtOptions"
+									label="Select an HRU" placeholder="Type to search..."
+								></v-autocomplete>
+							</v-card-item>
+						</v-card>
+
+						<v-card v-if="selectedHru != null" class="mgt-card" elevation="0" density="compact">
+							<v-card-item>
+								<h4 class="mt-4 mb-0">Management Events</h4>
+								<div class="text-subtitle-2">
+									{{ selectedHru.name }} /  {{ selectedHru.landuse }} / {{ selectedHru.soil }} /
+									{{ formatters.toNumberFormat(selectedHru.area, 2) }} ha 
+								</div>
+
+								<div v-if="selectedHru.mgts.length < 1">
+									<em>No management events for this HRU.</em>
+								</div>
+								<div v-else>
+									<v-timeline align="start" side="end" density="compact">
+										<v-timeline-item v-for="(mgt, index) in selectedHru.mgts" :key="index" :dot-color="getMgtIconAndColor(mgt.op).color" :icon="getMgtIconAndColor(mgt.op).icon" fill-dot size="small">
+											<div class="text-body-2"><b>{{ mgt.date }}</b></div>
+											<div class="text-body-2">{{ mgt.description }}</div>											
+										</v-timeline-item>
+									</v-timeline>
+								</div>
+							</v-card-item>
+						</v-card>
+					</template>
+
+					<template #plant_nplt_pplnt>
+						<div class="label">Total Fertilizer</div>
+						<div>Nitrogen: {{ formatters.toNumberDecimals(selectedData.nuptake, 3) }} kg/ha</div>
+						<div>Phosphorus: {{ formatters.toNumberDecimals(selectedData.puptake, 3) }} kg/ha</div>
+					</template>
+
+					<template #plant_yield_bioms>
+						<div>Average Yield: {{ formatters.toNumberDecimals(selectedData.yield_val, 3) }} kg/ha</div>
+						<div>Average Biomass: {{ formatters.toNumberDecimals(selectedData.bioms, 3) }} kg/ha</div>
+					</template>
+
+					<template #plant_nuptake_puptake>
+						<div class="label">Plant Uptake</div>
+						<div>Nitrogen: {{ formatters.toNumberDecimals(selectedData.nplt, 3) }} kg/ha</div>
+						<div>Phosphorus: {{ formatters.toNumberDecimals(selectedData.pplnt, 3) }} kg/ha</div>
+					</template>
+
+					<template #plant_removed>
+						<div class="label">Removed in Yield</div>
+						<div>Nitrogen: NA</div>
+						<div>Phosphorus: NA</div>
+					</template>
+				</image-overlays>
 
 				<action-bar full-width>
 					<v-btn variant="flat" @click="nextTab(-1)" class="border mr-2" :disabled="data.page.tabIndex == 0" title="Previous tab"><font-awesome-icon icon="chevron-left" /></v-btn>
@@ -647,6 +856,18 @@
 		top: 60px
 	}
 
+	.mgt-card {
+		width: 300px;
+		z-index: 355;
+		position: absolute;
+		top: 60px;
+		left: 400px;
+		background-color: rgba(var(--v-theme-secondary), 0.3) !important;
+		height: calc(100vh - 147px);
+		overflow-y: auto;
+		text-shadow: 0px 0px 8px rgba(var(--v-theme-surface), 1);
+	}
+
 	.warning-list {
 		max-height: 200px;
 		overflow-y: auto;
@@ -668,7 +889,7 @@
 		overflow-x: auto;
 	}
 
-	#spcheck_overview, #spcheck_sediment {
+	#spcheck_overview {
 		background-image: url('/swatplus-check/sediment_light.png');
 
 		&.dark {

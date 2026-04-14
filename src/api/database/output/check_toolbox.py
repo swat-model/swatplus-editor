@@ -14,6 +14,7 @@ class CheckToolboxInfo(CheckToolboxBase):
 		self.lsus = 0
 		self.weatherMethod = 'simulated'
 		self.watershedArea = 0
+		self.hruTotalArea = 0
 		self.swatVersion = 'development'
 		self.gwflow = False
 
@@ -152,6 +153,7 @@ class CheckToolboxHru(CheckToolboxBase):
 	def __init__(self):
 		self.name = ''
 		self.landuse = ''
+		self.soil = ''
 		self.area = 0.0
 		self.index = 0
 
@@ -167,6 +169,7 @@ class CheckToolboxHruMgt(CheckToolboxBase):
 	def __init__(self):
 		self.name = ''
 		self.landuse = ''
+		self.soil = ''
 		self.area = 0.0
 		self.index = 0
 		self.mgts = []
@@ -175,4 +178,5 @@ class CheckToolboxHruMgt(CheckToolboxBase):
 class CheckToolboxMgtItem(CheckToolboxBase):
 	def __init__(self):
 		self.date = ''
+		self.op = ''
 		self.description = ''

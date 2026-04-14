@@ -60,18 +60,23 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		conn.close()
 
 		try:
-			no_land_use_name = 'No Land Use'
+			no_land_use_name = 'no land use'
+			no_soil_name = 'no soil'
 
 			#read HRUs
 			hru_cons = connect.Hru_con.select().order_by(connect.Hru_con.id)
 			hru_data_lookup = []
 			available_landuses = []
+			totalArea = 0
 			i = 1
 			for h in hru_cons:
 				hru = check_toolbox.CheckToolboxHru()
 				hru.name = h.name
 				hru.area = h.area
+				totalArea += h.area
+
 				hru.landuse = no_land_use_name if h.hru.lu_mgt is None else h.hru.lu_mgt.name.replace('_lum', '')
+				hru.soil = no_soil_name if h.hru.soil is None else h.hru.soil.name
 				hru.index = i
 				i += 1
 				hru_data_lookup.append(hru)
@@ -84,7 +89,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			overall_data.maxUplandSedYield = losses.Hru_ls_aa.select(fn.Max(losses.Hru_ls_aa.sedyld)).scalar()
 
 			# set swat+ check sections
-			info = self.get_info('project_config' not in unavailable_tables, use_gwflow)
+			info = self.get_info('project_config' not in unavailable_tables, use_gwflow, totalArea)
 
 			# get plant list
 			plant_desc_lookup = {p.name: utils.readable_name(p.description) for p in hru_parm_db.Plants_plt.select().order_by(hru_parm_db.Plants_plt.name)}
@@ -102,21 +107,25 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			# read mgt_out data if available
 			has_mgt = 'mgt_out' not in unavailable_tables
 			hru_mgt = []
+			hru_mgt_options = []
 			if has_mgt:
-				hru_lookup = {hru.index: hru for hru in hru_data_lookup}				
+				hru_lookup = {hru.index: hru for hru in hru_data_lookup}
+				processed_hru_indices = set()  # Track which HRUs have been processed				
 
 				mgt_out_data = base.Mgt_out.select().order_by(base.Mgt_out.hru, base.Mgt_out.year, base.Mgt_out.mon, base.Mgt_out.day)
 				for hru_index, ops in groupby(mgt_out_data, lambda x: x.hru):
 					hru = hru_lookup.get(hru_index)
 					if hru is not None:
+						processed_hru_indices.add(hru_index)
 						mgts = []
 						for op in ops:
 							mgt = check_toolbox.CheckToolboxMgtItem()
 							mgt.date = date(op.year, op.mon, op.day).isoformat()
+							mgt.op = op.operation
 							if op.operation == "PLANT":
 								mgt.description = "Plant " + plant_desc_lookup[op.crop]
 							elif op.operation == "HARV/KILL":
-								mgt.description = "Harvest and Kill\n" + plant_desc_lookup[op.crop]
+								mgt.description = "Harvest and kill\n" + plant_desc_lookup[op.crop]
 							elif op.operation == "HARV":
 								mgt.description = "Harvest " + plant_desc_lookup[op.crop]
 							elif op.operation == "HARVEST":
@@ -126,7 +135,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 							elif op.operation == "IRRIGATE":
 								mgt.description = "Irrigate"
 							elif op.operation == "FERT":
-								mgt.description = "Apply fertiliser"
+								mgt.description = "Apply fertilizer"
 							elif op.operation == "TILLAGE":
 								mgt.description = f"Till ({plant_desc_lookup[op.crop]} option)"
 							elif op.operation == "RESET WEIR":  
@@ -148,10 +157,28 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 						hru_mgt_item = check_toolbox.CheckToolboxHruMgt()
 						hru_mgt_item.name = hru.name
 						hru_mgt_item.landuse = hru.landuse
+						hru_mgt_item.soil = hru.soil
 						hru_mgt_item.area = hru.area
 						hru_mgt_item.index = hru.index
 						hru_mgt_item.mgts = mgts
 						hru_mgt.append(hru_mgt_item)
+				
+				for hru_index, hru in hru_lookup.items():
+					if hru_index not in processed_hru_indices:
+						hru_mgt_item = check_toolbox.CheckToolboxHruMgt()
+						hru_mgt_item.name = hru.name
+						hru_mgt_item.landuse = hru.landuse
+						hru_mgt_item.soil = hru.soil
+						hru_mgt_item.area = hru.area
+						hru_mgt_item.index = hru.index
+						hru_mgt_item.mgts = []  # Empty management list
+						hru_mgt.append(hru_mgt_item)
+				
+				hru_mgt = sorted(hru_mgt, key=lambda x: x.index)
+				hru_mgt_options = [{
+						'value': hru.index, 
+						'title': f"{hru.name} / {hru.landuse} / {hru.soil} / {hru.area:.2f} ha" + (f" (no mgt)" if len(hru.mgts) == 0 else '')
+					} for hru in hru_mgt]
 
 			SetupProjectDatabase.close()
 			SetupOutputDatabase.close()
@@ -170,6 +197,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 						'basin': overall_data.toJson(),
 						'landuses': landuse_list,
 						'mgt': [hru.toJson() for hru in hru_mgt],
+						'mgtOptions': hru_mgt_options,
 						'landuseOptions': plant_options,
 					}, f, indent=2)
 				return json.dumps({'success': self.save_to_file})
@@ -179,6 +207,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 				'basin': overall_data.toJson(),
 				'landuses': landuse_list,
 				'mgt': [hru.toJson() for hru in hru_mgt],
+				'mgtOptions': hru_mgt_options,
 				'landuseOptions': plant_options,
 			})
 		except Exception as ex:
@@ -592,7 +621,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 
 		return landuse_data
 	
-	def get_info(self, has_project_config, use_gwflow):
+	def get_info(self, has_project_config, use_gwflow, hruArea):
 		info = check_toolbox.CheckToolboxInfo()
 
 		time_sim = simulation.Time_sim.get_or_none()
@@ -609,6 +638,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		info.weatherMethod = 'Observed' if climate.Weather_sta_cli.observed_count() > 0 else 'Simulated'
 		info.watershedArea = connect.Rout_unit_con.select(fn.Sum(connect.Rout_unit_con.area)).scalar()
 		info.gwflow = use_gwflow
+		info.hruTotalArea = hruArea
 
 		if has_project_config:
 			pc = base.Project_config.get_or_none()
