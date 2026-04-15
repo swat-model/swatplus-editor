@@ -1,5 +1,5 @@
 from helpers.executable_api import ExecutableApi, Unbuffered
-from database.output import data
+from database.output import data, check_toolbox
 
 import csv
 import os, os.path
@@ -89,7 +89,7 @@ def reset_database(db_file):
 	conn.close()
 
 class ReadOutput(ExecutableApi):
-	def __init__(self, output_files_dir, db_file, swat_version, editor_version, project_name, skip_files=[], batch_size=100000):
+	def __init__(self, output_files_dir, db_file, swat_version, editor_version, project_name, skip_files=[], only_read_swatcheck=False, batch_size=100000):
 		self.__abort = False
 		db_file_sanitized = db_file.replace("\\","/")
 		try:
@@ -102,6 +102,7 @@ class ReadOutput(ExecutableApi):
 		self.editor_version = editor_version
 		self.project_name = project_name
 		self.skip_files = skip_files
+		self.only_read_swatcheck = only_read_swatcheck
 		self.batch_size = batch_size
 		self.conn = sqlite3.connect(db_file_sanitized)
 		self.cursor = self.conn.cursor()
@@ -127,7 +128,8 @@ class ReadOutput(ExecutableApi):
 							raise ValueError('Unexpected number of columns in {}'.format(files_out_file))
 
 						file_name = val[len(val)-1].strip()
-						if file_name.endswith('.csv'):
+						file_name_no_ext = os.path.splitext(file_name)[0]
+						if file_name.endswith('.csv') and (not self.only_read_swatcheck or file_name_no_ext in check_toolbox.required_tables or file_name_no_ext in check_toolbox.opt_tables):
 							files.append(file_name)
 
 					i += 1

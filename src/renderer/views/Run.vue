@@ -8,6 +8,8 @@
 
 	const route = useRoute();
 	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = useHelpers();
+
+	const requiredForCheckMessage = 'Some annual average output files are used in SWAT+ Check. File size is small and processing time is minimal, so it is required to keep them selected.'
 	
 	let data:any = reactive({
 		page: {
@@ -89,6 +91,10 @@
 			ignore_cio_files: [],
 			custom_cio_files: []
 		},
+		check: {
+			required_tables: [],
+			opt_tables: []
+		},
 		options: {
 			timeSteps: [
 				{ value: 0, title: 'Daily' },
@@ -133,6 +139,7 @@
 			model: true,
 			output: true,
 			exeFile: '',
+			swatCheckOnly: false
 		},
 		printGroups: {
 			model: {
@@ -326,6 +333,7 @@
 			data.hasObservedWeather = response.data.has_observed_weather;
 			data.file_cio = response.data.file_cio;
 			data.inputs = response.data.inputs;
+			data.check = response.data.check;
 
 			data.exeOptions = await runProcess.getSwatExeOptions();
 			if (data.exeOptions === null || data.exeOptions.length === 0) {
@@ -491,7 +499,8 @@
 			'--output_db_file='+ runProcess.outputDbPath(data.config.input_files_dir),
 			'--swat_version='+ selectedExeDescription.value,
 			'--editor_version='+ constants.appSettings.version,
-			'--project_name='+ currentProject.name
+			'--project_name='+ currentProject.name,
+			'--only_read_swatcheck=' + (data.selection.swatCheckOnly ? 'y' : 'n')
 		];
 
 		if (!formatters.isNullOrEmpty(data.page.outputSkip.files)) {
@@ -735,9 +744,15 @@
 	function checkAllAvann() {
 		//data.options.printAll.avann = !data.options.printAll.avann;
 		for (let i = 0; i < data.print.objects.length; i++) {
+			if (requiredForCheck(data.print.objects[i].name)) continue;
 			data.print.objects[i].avann = data.options.printAll.avann;
 			pushChg(i);
 		}
+	}
+
+	function requiredForCheck(name:any) {
+		let nameFormat = `${name}_aa`;
+		return data.check.required_tables.includes(nameFormat) || data.check.opt_tables.includes(nameFormat);
 	}
 
 	function pushChg(i:number) {
@@ -855,6 +870,10 @@
 												label="Warm-up period" hint="Number of years to skip printing output" persistent-hint></v-text-field>
 										</div>
 
+										<div class="text-body-2 mb-1">
+											<em>{{ requiredForCheckMessage }}</em>
+										</div>
+
 										<v-table class="table-editor" density="compact">
 											<thead>
 												<tr class="bg-surface">
@@ -883,7 +902,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">
 														{{k}}
 														<div v-if="k === 'channel_sd'">channel_sdmorph</div>
@@ -897,7 +916,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">
 														{{k}}
 														<div v-if="k === 'basin_sd_cha'">basin_sd_chamorph</div>
@@ -911,7 +930,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -922,7 +941,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -933,7 +952,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -944,7 +963,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -955,7 +974,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -966,7 +985,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -977,7 +996,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 											</tbody>
@@ -1014,7 +1033,16 @@
 															
 														</div>
 														<div>
-															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.mgtout" label="Management output file"></v-checkbox>
+															<div class="d-flex align-center">
+																<v-checkbox density="comfortable" hide-details v-model="data.print.prt.mgtout" label="Management output file"></v-checkbox>
+																<v-tooltip location="bottom">
+																	<template v-slot:activator="{ props }">
+																		<font-awesome-icon v-bind="props" :icon="['fas', 'fa-info-circle']" class="ml-1 text-secondary"></font-awesome-icon>
+																	</template>
+																	It is recommended to keep this selected if you would like to preview your management operations in SWAT+ Check.
+																</v-tooltip>
+															</div>
+															
 															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.fdcout" label="Flow duration curve output file"></v-checkbox>
 														</div>
 													</div>
@@ -1148,6 +1176,23 @@
 										<br>In a recent update, we changed how output files are processed. 
 										If you keep this boxed checked, please make sure you also check the box to <b>re-run the model</b>.
 									</span>
+
+									<div>
+										<div class="d-flex align-start my-3">
+											<div class="mr-2">
+												<v-checkbox density="compact" hide-details v-model="data.selection.swatCheckOnly" id="swatcheck_only"></v-checkbox>
+											</div>											
+											<div class="pt-1">
+												<label for="swatcheck_only">
+													<b>Optional: only read files required by SWAT+ Check</b>
+												</label>
+												<div class="text-secondary">
+													Have a large model and printing daily or monthly output files but don't plan to utilize visualization?
+													<br>Check this box to save time and only read the output files required for SWAT+ Check.
+												</div>
+											</div>
+										</div>										
+									</div>
 								</div>
 							</div>
 						</v-card-item>

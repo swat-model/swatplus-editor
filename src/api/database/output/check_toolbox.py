@@ -1,5 +1,48 @@
 import json
 
+# Note: the interface Run page expects only _aa tables here. Update if that changes.
+required_tables = [
+	'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa', 'basin_sd_cha_aa',
+	'hru_pw_aa', 'hru_wb_aa', 'hru_ls_aa', 'hru_nb_aa',
+]
+
+opt_tables = [
+	'basin_aqu_aa', 'project_config', 'mgt_out',
+]
+
+landuse_category_options = [
+	'Agriculture',
+	'Barley',
+	'Beans',
+	'Grass',
+	'Canola',
+	'Clover',
+	'Corn',
+	'Corn Silage',
+	'Cotton',
+	'Cover Crop',
+	'Cropland',
+	'Forest',
+	'Peas',
+	'Grain Sorghum',
+	'Grapes',
+	'Oats',
+	'Pasture',
+	'Pearl Millet',
+	'Range Brush',
+	'Range Grasses',
+	'Rice',
+	'Rye',
+	'Soybean',
+	'Sparsely Vegetated',
+	'Sunflower',
+	'Tundra',
+	'Urban',
+	'Wetland',
+	'Wheat',
+	'Wildrye'
+]
+
 class CheckToolboxBase:
 	def toJson(self):
 		return json.loads(json.dumps(self, default=lambda o: o.__dict__))

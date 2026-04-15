@@ -24,12 +24,19 @@
 				"Plants",
 			],
 			checkByLanduse: false,
-			selectedLanduse: <string|null>null,
+			/*selectedLanduse: <string|null>null,
 			selectedArea: 0,
-			selectedHruCount: 0,
+			selectedHruCount: 0,*/
+			selectedLandusesInput: [] as string[],
+			selectedLanduses: [] as {
+				landuse: string;
+				area: number;
+				hruCount: number;
+			}[],
 			isOverall: true,
 			nutrientsTab: 'nitrogen',
 			selectedHruIndex: <number|null>null,
+			selectedCategory: 'Any',
 		},
 		config: {
 			input_files_dir: '',
@@ -39,11 +46,17 @@
 		},
 		check: <any>{
 			info: {},
-			basin: {},
-			landuses: {},
+			basin: <CheckToolboxData>{},
+			landuses: [] as {
+				landuse: string;
+				area: number;
+				hruCount: number;
+				data: CheckToolboxData;
+			}[],
 			mgt: [],
 			mgtOptions: [],
-			landuseOptions: []
+			landuseOptions: [],
+			landuseCategories: [],
 		},
         simulationWarnings: <string[]>[]
 	});
@@ -108,24 +121,304 @@
 		return !currentProject.isLte && formatters.isNullOrEmpty(data.page.error) && !formatters.isNullOrEmpty(data.config.output_last_imported);
 	})
 
+	function setLanduseInCategory() {
+		if (data.page.selectedCategory === 'Any') {
+			data.page.selectedLandusesInput = [];
+			return;
+		}
+
+		let matches = data.check.landuseCategories.filter((c:any) => c.name === data.page.selectedCategory);
+		if (matches.length > 0) {
+			data.page.selectedLandusesInput = matches[0].landuses;
+		}
+	}
+
 	const selectedData = computed(() => {
-		data.page.selectedArea = 0;
-		data.page.selectedHruCount = 0;
+		data.page.selectedLanduses = [];
 		data.page.isOverall = true;
 
-		if (data.page.checkByLanduse && !formatters.isNullOrEmpty(data.page.selectedLanduse)) {
-			let matches = data.check.landuses.filter((l:any) => l.landuse == data.page.selectedLanduse);
+		if (data.page.checkByLanduse && !formatters.isNullOrEmpty(data.page.selectedLandusesInput)) {
+			let matches = data.check.landuses.filter((l:any) => data.page.selectedLandusesInput.includes(l.landuse));
 			if (matches.length > 0) {
-				let item = matches[0];
-				data.page.selectedArea = item.data.area;
-				data.page.selectedHruCount = item.data.hrus ? item.data.hrus.length : 0;
+				for (let m of matches) {
+					data.page.selectedLanduses.push({
+						landuse: m.landuse,
+						area: m.area,
+						hruCount: m.hruCount
+					});
+				}
 				data.page.isOverall = false;
-				return item.data.data;
+				return computeWeightedData(matches);
 			}
 		}
 
 		return data.check.basin;
 	})
+
+	function computeWeightedData(matches:{
+		landuse: string;
+		area: number;
+		hruCount: number;
+		data: CheckToolboxData;
+	}[]) {
+		let weightedAverage:CheckToolboxData = {
+			// wb_basin
+			precip: 0,
+			snofall: 0,
+			surq_gen: 0,
+			latq: 0,
+			wateryld: 0,
+			perc: 0,
+			sw_init: 0,
+			sw_final: 0,
+			et: 0,
+			eplant: 0,
+			esoil: 0,
+			cn: 0,
+			pet: 0,
+			qtile: 0,
+			irr: 0,
+			surq_cha: 0,
+			surq_res: 0,
+			latq_cha: 0,
+			latq_res: 0,
+			
+			// aqu_basin
+			aqu_flo: 0,
+			aqu_dep_wt: 0,
+			aqu_stor: 0,
+			aqu_rchrg: 0,
+			aqu_seep: 0,
+			aqu_revap: 0,
+			aqu_flo_cha: 0,
+			aqu_flo_res: 0,
+			aqu_flo_ls: 0,
+			aqu_no3_lat: 0,
+			aqu_no3_seep: 0,
+			aqu_no3_rchg: 0,
+			
+			// pw
+			lai: 0,
+			bioms: 0,
+			yield_val: 0,
+			residue: 0,
+			pplnt: 0,
+			nplt: 0,
+			
+			// stress days
+			strsw: 0,
+			strsa: 0,
+			strstmp: 0,
+			strsn: 0,
+			strsp: 0,
+			
+			// nb
+			percn: 0,
+			grzn: 0,
+			grzp: 0,
+			lab_min_p: 0,
+			act_sta_p: 0,
+			fertn: 0,
+			fertp: 0,
+			fixn: 0,
+			denit: 0,
+			act_nit_n: 0,
+			act_sta_n: 0,
+			org_lab_p: 0,
+			rsd_nitorg_n: 0,
+			rsd_laborg_p: 0,
+			no3atmo: 0,
+			nh4atmo: 0,
+			nuptake: 0,
+			puptake: 0,
+			
+			initialNO3: null,
+			finalNO3: null,
+			initialOrgN: null,
+			finalOrgN: null,
+			volatilization: null,
+			nitrification: null,
+			mineralization: null,
+			
+			// ls
+			sedorgn: 0,
+			sedorgp: 0,
+			sedyld: 0,
+			lat3no3: 0,
+			surqno3: 0,
+			surqsolp: 0,
+			uplandSedYield: 0,
+			maxUplandSedYield: 0,
+			chaErosion: 0,
+			chaDeposition: 0,
+			
+			// derived
+			nLossesTotalLoss: 0,
+			nLossesOrgN: 0,
+			nLossesSurfaceRunoff: 0,
+			nLossesLateralFlow: 0,
+			totalN: 0,
+			nLossesSolubilityRatio: 0,
+			pLossesTotalLoss: 0,
+			pLossesOrgP: 0,
+			pLossesSurfaceRunoff: 0,
+			pLossesSolubilityRatio: 0,
+			
+			// cha stuff
+			sed_in: 0,
+			sed_out: 0,
+			sed_stor: 0,
+			
+			// ratios
+			baseflowToTotal: 0,
+			surfaceflowToTotal: 0,
+			totalFlowToPrecip: 0,
+			etToPrecip: 0,
+			percoToPrecip: 0,
+			seepToPrecip: 0,
+			
+			// warnings
+			warnings: {
+				plants: [],
+				nb_nitrogen: [],
+				nb_phosphorus: [],
+				wb: [],
+				sed: []
+			}
+		};
+
+		let totalArea = 0;
+		for (let m of matches) {
+			totalArea += m.area;
+		}
+
+		if (totalArea === 0) return weightedAverage;
+
+		for (let m of matches) {
+			let item = m.data;
+			let weight = m.area / totalArea;
+			// wb_basin
+			weightedAverage.precip += item.precip * weight;
+			weightedAverage.snofall += item.snofall * weight;
+			weightedAverage.surq_gen += item.surq_gen * weight;
+			weightedAverage.latq += item.latq * weight;
+			weightedAverage.wateryld += item.wateryld * weight;
+			weightedAverage.perc += item.perc * weight;
+			weightedAverage.sw_init += item.sw_init * weight;
+			weightedAverage.sw_final += item.sw_final * weight;
+			weightedAverage.et += item.et * weight;
+			weightedAverage.eplant += item.eplant * weight;
+			weightedAverage.esoil += item.esoil * weight;
+			weightedAverage.cn += item.cn * weight;
+			weightedAverage.pet += item.pet * weight;
+			weightedAverage.qtile += item.qtile * weight;
+			weightedAverage.irr += item.irr * weight;
+			weightedAverage.surq_cha += item.surq_cha * weight;
+			weightedAverage.surq_res += item.surq_res * weight;
+			weightedAverage.latq_cha += item.latq_cha * weight;
+			weightedAverage.latq_res += item.latq_res * weight;
+
+			// aqu_basin
+			weightedAverage.aqu_flo += item.aqu_flo * weight;
+			weightedAverage.aqu_dep_wt += item.aqu_dep_wt * weight;
+			weightedAverage.aqu_stor += item.aqu_stor * weight;
+			weightedAverage.aqu_rchrg += item.aqu_rchrg * weight;
+			weightedAverage.aqu_seep += item.aqu_seep * weight;
+			weightedAverage.aqu_revap += item.aqu_revap * weight;
+			weightedAverage.aqu_flo_cha += item.aqu_flo_cha * weight;
+			weightedAverage.aqu_flo_res += item.aqu_flo_res * weight;
+			weightedAverage.aqu_flo_ls += item.aqu_flo_ls * weight;
+			weightedAverage.aqu_no3_lat += item.aqu_no3_lat * weight;
+			weightedAverage.aqu_no3_seep += item.aqu_no3_seep * weight;
+			weightedAverage.aqu_no3_rchg += item.aqu_no3_rchg * weight;
+
+			// pw
+			weightedAverage.lai += item.lai * weight;
+			weightedAverage.bioms += item.bioms * weight;
+			weightedAverage.yield_val += item.yield_val * weight;
+			weightedAverage.residue += item.residue * weight;
+			weightedAverage.pplnt += item.pplnt * weight;
+			weightedAverage.nplt += item.nplt * weight;
+
+			// stress days
+			weightedAverage.strsw += item.strsw * weight;
+			weightedAverage.strsa += item.strsa * weight;
+			weightedAverage.strstmp += item.strstmp * weight;
+			weightedAverage.strsn += item.strsn * weight;
+			weightedAverage.strsp += item.strsp * weight;
+
+			// nb
+			weightedAverage.percn += item.percn * weight;
+			weightedAverage.grzn += item.grzn * weight;
+			weightedAverage.grzp += item.grzp * weight;
+			weightedAverage.lab_min_p += item.lab_min_p * weight;
+			weightedAverage.act_sta_p += item.act_sta_p * weight;
+			weightedAverage.fertn += item.fertn * weight;
+			weightedAverage.fertp += item.fertp * weight;
+			weightedAverage.fixn += item.fixn * weight;
+			weightedAverage.denit += item.denit * weight;
+			weightedAverage.act_nit_n += item.act_nit_n * weight;
+			weightedAverage.act_sta_n += item.act_sta_n * weight;
+			weightedAverage.org_lab_p += item.org_lab_p * weight;
+			weightedAverage.rsd_nitorg_n += item.rsd_nitorg_n * weight;
+			weightedAverage.rsd_laborg_p += item.rsd_laborg_p * weight;
+			weightedAverage.no3atmo += item.no3atmo * weight;
+			weightedAverage.nh4atmo += item.nh4atmo * weight;
+			weightedAverage.nuptake += item.nuptake * weight;
+			weightedAverage.puptake += item.puptake * weight;
+
+			// ls
+			weightedAverage.sedorgn += item.sedorgn * weight;
+			weightedAverage.sedorgp += item.sedorgp * weight;
+			weightedAverage.sedyld += item.sedyld * weight;
+			weightedAverage.lat3no3 += item.lat3no3 * weight;
+			weightedAverage.surqno3 += item.surqno3 * weight;
+			weightedAverage.surqsolp += item.surqsolp * weight;
+			weightedAverage.uplandSedYield += item.uplandSedYield * weight;
+			weightedAverage.maxUplandSedYield += item.maxUplandSedYield * weight;
+			weightedAverage.chaErosion += item.chaErosion * weight;
+			weightedAverage.chaDeposition += item.chaDeposition * weight;
+
+			// derived
+			weightedAverage.nLossesTotalLoss += item.nLossesTotalLoss * weight;
+			weightedAverage.nLossesOrgN += item.nLossesOrgN * weight;
+			weightedAverage.nLossesSurfaceRunoff += item.nLossesSurfaceRunoff * weight;
+			weightedAverage.nLossesLateralFlow += item.nLossesLateralFlow * weight;
+			weightedAverage.totalN += item.totalN * weight;
+			weightedAverage.nLossesSolubilityRatio += item.nLossesSolubilityRatio * weight;
+			weightedAverage.pLossesTotalLoss += item.pLossesTotalLoss * weight;
+			weightedAverage.pLossesOrgP += item.pLossesOrgP * weight;
+			weightedAverage.pLossesSurfaceRunoff += item.pLossesSurfaceRunoff * weight;
+			weightedAverage.pLossesSolubilityRatio += item.pLossesSolubilityRatio * weight;
+
+			// cha stuff
+			weightedAverage.sed_in += item.sed_in * weight;
+			weightedAverage.sed_out += item.sed_out * weight;
+			weightedAverage.sed_stor += item.sed_stor * weight;
+
+			for (let w of item.warnings.wb) {
+				weightedAverage.warnings.wb.push(`${m.landuse}: ${w}`);
+			}
+			for (let w of item.warnings.plants) {
+				weightedAverage.warnings.plants.push(`${m.landuse}: ${w}`);
+			}
+			for (let w of item.warnings.nb_nitrogen) {
+				weightedAverage.warnings.nb_nitrogen.push(`${m.landuse}: ${w}`);
+			}
+			for (let w of item.warnings.nb_phosphorus) {
+				weightedAverage.warnings.nb_phosphorus.push(`${m.landuse}: ${w}`);
+			}			
+		}
+
+		weightedAverage.percoToPrecip = weightedAverage.perc / weightedAverage.precip;
+		weightedAverage.seepToPrecip = weightedAverage.aqu_seep / weightedAverage.precip;
+		weightedAverage.totalFlowToPrecip = (weightedAverage.surq_gen + weightedAverage.latq + weightedAverage.aqu_flo_cha) / weightedAverage.precip;
+		weightedAverage.etToPrecip = weightedAverage.et / weightedAverage.precip;
+		weightedAverage.baseflowToTotal = weightedAverage.aqu_flo_cha / (weightedAverage.surq_gen + weightedAverage.latq + weightedAverage.aqu_flo_cha);
+		weightedAverage.surfaceflowToTotal = (weightedAverage.surq_gen) / (weightedAverage.surq_gen + weightedAverage.latq + weightedAverage.aqu_flo_cha);
+
+		return weightedAverage;
+	}
 
 	const selectedHru = computed(() => {
 		if (!formatters.isNullOrEmpty(data.page.selectedHruIndex)) {
@@ -139,8 +432,9 @@
 	})
 
 	const filteredMgtOptions = computed(() => {
-		if (data.page.checkByLanduse && !formatters.isNullOrEmpty(data.page.selectedLanduse)) {
-			return data.check.mgtOptions.filter((m:any) => m.title.includes(data.page.selectedLanduse));
+		if (data.page.checkByLanduse && data.page.selectedLandusesInput.length > 0) {
+			return data.check.mgtOptions.filter((m:any) => 
+				data.page.selectedLandusesInput.some((lu:any) => m.title.toLowerCase().includes(lu.toLowerCase())));
 		}
 		return data.check.mgtOptions;
 	})
@@ -157,6 +451,134 @@
 
 	onMounted(async () => await get());
 	watch(() => route.path, async () => await get())
+
+	interface CheckToolboxData {
+		// wb_basin
+		precip: number;
+		snofall: number;
+		surq_gen: number;
+		latq: number;
+		wateryld: number;
+		perc: number;
+		sw_init: number;
+		sw_final: number;
+		et: number;
+		eplant: number;
+		esoil: number;
+		cn: number;
+		pet: number;
+		qtile: number;
+		irr: number;
+		surq_cha: number;
+		surq_res: number;
+		latq_cha: number;
+		latq_res: number;
+		
+		// aqu_basin
+		aqu_flo: number;
+		aqu_dep_wt: number;
+		aqu_stor: number;
+		aqu_rchrg: number;
+		aqu_seep: number;
+		aqu_revap: number;
+		aqu_flo_cha: number;
+		aqu_flo_res: number;
+		aqu_flo_ls: number;
+		aqu_no3_lat: number;
+		aqu_no3_seep: number;
+		aqu_no3_rchg: number;
+		
+		// pw
+		lai: number;
+		bioms: number;
+		yield_val: number;
+		residue: number;
+		pplnt: number;
+		nplt: number;
+		
+		// stress days
+		strsw: number;
+		strsa: number;
+		strstmp: number;
+		strsn: number;
+		strsp: number;
+		
+		// nb
+		percn: number;
+		grzn: number;
+		grzp: number;
+		lab_min_p: number;
+		act_sta_p: number;
+		fertn: number;
+		fertp: number;
+		fixn: number;
+		denit: number;
+		act_nit_n: number;
+		act_sta_n: number;
+		org_lab_p: number;
+		rsd_nitorg_n: number;
+		rsd_laborg_p: number;
+		no3atmo: number;
+		nh4atmo: number;
+		nuptake: number;
+		puptake: number;
+		
+		initialNO3: number | null;
+		finalNO3: number | null;
+		initialOrgN: number | null;
+		finalOrgN: number | null;
+		volatilization: number | null;
+		nitrification: number | null;
+		mineralization: number | null;
+		
+		// ls
+		sedorgn: number;
+		sedorgp: number;
+		sedyld: number;
+		lat3no3: number;
+		surqno3: number;
+		surqsolp: number;
+		uplandSedYield: number;
+		maxUplandSedYield: number;
+		chaErosion: number;
+		chaDeposition: number;
+		
+		// derived
+		nLossesTotalLoss: number;
+		nLossesOrgN: number;
+		nLossesSurfaceRunoff: number;
+		nLossesLateralFlow: number;
+		totalN: number;
+		nLossesSolubilityRatio: number;
+		pLossesTotalLoss: number;
+		pLossesOrgP: number;
+		pLossesSurfaceRunoff: number;
+		pLossesSolubilityRatio: number;
+		
+		// cha stuff
+		sed_in: number;
+		sed_out: number;
+		sed_stor: number;
+		
+		// ratios
+		baseflowToTotal: number;
+		surfaceflowToTotal: number;
+		totalFlowToPrecip: number;
+		etToPrecip: number;
+		percoToPrecip: number;
+		seepToPrecip: number;
+		
+		// warnings
+		warnings: CheckToolboxDataWarnings;
+	}
+
+	interface CheckToolboxDataWarnings {
+		plants: string[];
+		nb_nitrogen: string[];
+		nb_phosphorus: string[];
+		wb: string[];
+		sed: string[];
+	}
 </script>
 
 <template>
@@ -293,14 +715,24 @@
 						<v-card class="semi-transparent details-card" elevation="6">
 							<v-card-item>
 								<v-switch label="Check by land use" v-model="data.page.checkByLanduse" color="primary" hide-details></v-switch>
-								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="compact"
-									v-model="data.page.selectedLanduse" :items="data.check.landuseOptions"
-									label="Land use" placeholder="Type to search..."
-								></v-autocomplete>
-								<div v-if="data.page.checkByLanduse && !formatters.isNullOrEmpty(data.page.selectedLanduse)" class="mt-2 text-subtitle-2">
-									{{ data.page.selectedLanduse }} /  
-									{{ formatters.toNumberFormat(data.page.selectedArea, 2) }} ha / 
-									{{ formatters.toNumberFormat(data.page.selectedHruCount, 0) }} HRUs
+								<v-select v-if="data.page.checkByLanduse && data.check.landuseCategories.length > 0" hide-details density="comfortable" 
+									:items="data.check.landuseCategories" item-title="name" item-value="name"
+									label="Filter by category" 
+									v-model="data.page.selectedCategory" @update:model-value="setLanduseInCategory">
+								</v-select>
+								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="comfortable" multiple chips closable-chips
+									v-model="data.page.selectedLandusesInput" :items="data.check.landuseOptions"
+									label="Land use" placeholder="Type to search...">
+									<template v-slot:chip="{ props, item }:any">
+										<v-chip v-bind="props" :text="item.raw.value"></v-chip>
+									</template>
+								</v-autocomplete>
+								<div v-if="data.page.checkByLanduse && data.page.selectedLandusesInput.length > 0" class="mt-2 text-subtitle-2">
+									<div v-for="(lu, index) in data.page.selectedLanduses" :key="index">
+										{{ lu.landuse }} /  
+										{{ formatters.toNumberFormat(lu.area, 2) }} ha / 
+										{{ formatters.toNumberFormat(lu.hruCount, 0) }} HRUs
+									</div>
 								</div>
 
 								<h4 class="mt-4">Water Balance Ratios</h4>
@@ -437,14 +869,19 @@
 						<v-card class="semi-transparent details-card" elevation="6">
 							<v-card-item>
 								<v-switch label="Check by land use" v-model="data.page.checkByLanduse" color="primary" hide-details></v-switch>
-								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="compact"
-									v-model="data.page.selectedLanduse" :items="data.check.landuseOptions"
-									label="Land use" placeholder="Type to search..."
-								></v-autocomplete>
-								<div v-if="data.page.checkByLanduse && !formatters.isNullOrEmpty(data.page.selectedLanduse)" class="mt-2 text-subtitle-2">
-									{{ data.page.selectedLanduse }} /  
-									{{ formatters.toNumberFormat(data.page.selectedArea, 2) }} ha / 
-									{{ formatters.toNumberFormat(data.page.selectedHruCount, 0) }} HRUs
+								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="comfortable" multiple chips closable-chips
+									v-model="data.page.selectedLandusesInput" :items="data.check.landuseOptions"
+									label="Land use" placeholder="Type to search...">
+									<template v-slot:chip="{ props, item }:any">
+										<v-chip v-bind="props" :text="item.raw.value"></v-chip>
+									</template>
+								</v-autocomplete>
+								<div v-if="data.page.checkByLanduse && data.page.selectedLandusesInput.length > 0" class="mt-2 text-subtitle-2">
+									<div v-for="(lu, index) in data.page.selectedLanduses" :key="index">
+										{{ lu.landuse }} /  
+										{{ formatters.toNumberFormat(lu.area, 2) }} ha / 
+										{{ formatters.toNumberFormat(lu.hruCount, 0) }} HRUs
+									</div>
 								</div>
 
 								<v-tabs v-model="data.page.nutrientsTab" align-tabs="center" :class="data.page.isOverall ? 'mt-0' : 'mt-4'"
@@ -716,14 +1153,19 @@
 						<v-card class="semi-transparent details-card" elevation="6">
 							<v-card-item>
 								<v-switch label="Check by land use" v-model="data.page.checkByLanduse" color="primary" hide-details></v-switch>
-								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="compact"
-									v-model="data.page.selectedLanduse" :items="data.check.landuseOptions"
-									label="Land use" placeholder="Type to search..."
-								></v-autocomplete>
-								<div v-if="data.page.checkByLanduse && !formatters.isNullOrEmpty(data.page.selectedLanduse)" class="mt-2 text-subtitle-2">
-									{{ data.page.selectedLanduse }} /  
-									{{ formatters.toNumberFormat(data.page.selectedArea, 2) }} ha / 
-									{{ formatters.toNumberFormat(data.page.selectedHruCount, 0) }} HRUs
+								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="comfortable" multiple chips closable-chips
+									v-model="data.page.selectedLandusesInput" :items="data.check.landuseOptions"
+									label="Land use" placeholder="Type to search...">
+									<template v-slot:chip="{ props, item }:any">
+										<v-chip v-bind="props" :text="item.raw.value"></v-chip>
+									</template>
+								</v-autocomplete>
+								<div v-if="data.page.checkByLanduse && data.page.selectedLandusesInput.length > 0" class="mt-2 text-subtitle-2">
+									<div v-for="(lu, index) in data.page.selectedLanduses" :key="index">
+										{{ lu.landuse }} /  
+										{{ formatters.toNumberFormat(lu.area, 2) }} ha / 
+										{{ formatters.toNumberFormat(lu.hruCount, 0) }} HRUs
+									</div>
 								</div>
 
 								<h4 class="mt-4">Stress Days</h4>
@@ -842,7 +1284,7 @@
 
 <style scoped>
 	.semi-transparent {
-		background-color: rgba(var(--v-theme-surface), 0.7) !important;
+		background-color: rgba(var(--v-theme-surface), 0.75) !important;
 	}
 
 	.transparent {
@@ -853,7 +1295,9 @@
 		width: 350px;
 		z-index: 355;
 		position: absolute;
-		top: 60px
+		top: 60px;
+		max-height: calc(100vh - 147px);
+		overflow-y: auto;
 	}
 
 	.mgt-card {
@@ -866,11 +1310,6 @@
 		height: calc(100vh - 147px);
 		overflow-y: auto;
 		text-shadow: 0px 0px 8px rgba(var(--v-theme-surface), 1);
-	}
-
-	.warning-list {
-		max-height: 200px;
-		overflow-y: auto;
 	}
 
 	#spcheck_tabs {

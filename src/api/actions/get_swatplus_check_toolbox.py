@@ -34,27 +34,18 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		return exists
 	
 	def get(self):
-		required_tables = [
-			'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa', 'basin_sd_cha_aa',
-			'hru_pw_aa', 'hru_wb_aa', 'hru_ls_aa', 'hru_nb_aa',
-		]
-		
-		opt_tables = [
-			'basin_aqu_aa', 'project_config', 'mgt_out',
-		]
-		
 		pc = config.Project_config.get()
 		use_gwflow = pc.use_gwflow == 1
 
 		conn = lib.open_db(self.output_db_file)
 		sys.stdout.write(self.output_db_file)
-		for table in required_tables:
+		for table in check_toolbox.required_tables:
 			if not lib.exists_table(conn, table):
 				conn.close()
 				return json.dumps({'error': 'Output file "{}" does not exist in your output database. Re-run your model and check all yearly and average annual files under the print options, and keep the analyze output box checked.'.format(table)})
 		
 		unavailable_tables = []
-		for table in opt_tables:
+		for table in check_toolbox.opt_tables:
 			if not lib.exists_table(conn, table):
 				unavailable_tables.append(table)
 		conn.close()
@@ -96,13 +87,34 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			urban_desc_lookup = {p.name: utils.readable_name(p.description) for p in hru_parm_db.Urban_urb.select().order_by(hru_parm_db.Urban_urb.name)}
 
 			plant_options = []
+			category_dict = {}
 			for p in sorted(available_landuses):
+				found_items = []
 				d = ''
 				if p in plant_desc_lookup:
 					d = plant_desc_lookup[p]
+					found_items = [item for item in check_toolbox.landuse_category_options if item.lower() in d.lower()]
 				elif p in urban_desc_lookup:
 					d = urban_desc_lookup[p]
+					found_items = ['Urban']
 				plant_options.append({'value': p, 'title': f"({p}) {d}" if p != no_land_use_name else no_land_use_name})
+				if len(found_items) > 0:
+					for cat in found_items:
+						if cat not in category_dict:
+							category_dict[cat] = []
+						category_dict[cat].append(p)
+
+			categories = []
+			for cat in category_dict:
+				if (len(category_dict[cat]) > 1):
+					categories.append({
+						'name': cat,
+						'landuses': category_dict[cat]
+					})
+			
+			if len(categories) > 0:
+				categories = sorted(categories, key=lambda x: x['name'])
+				categories.insert(0, { 'name': 'Any', 'landuses': [] })
 
 			# read mgt_out data if available
 			has_mgt = 'mgt_out' not in unavailable_tables
@@ -163,7 +175,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 						hru_mgt_item.mgts = mgts
 						hru_mgt.append(hru_mgt_item)
 				
-				for hru_index, hru in hru_lookup.items():
+				"""for hru_index, hru in hru_lookup.items():
 					if hru_index not in processed_hru_indices:
 						hru_mgt_item = check_toolbox.CheckToolboxHruMgt()
 						hru_mgt_item.name = hru.name
@@ -172,7 +184,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 						hru_mgt_item.area = hru.area
 						hru_mgt_item.index = hru.index
 						hru_mgt_item.mgts = []  # Empty management list
-						hru_mgt.append(hru_mgt_item)
+						hru_mgt.append(hru_mgt_item)"""
 				
 				hru_mgt = sorted(hru_mgt, key=lambda x: x.index)
 				hru_mgt_options = [{
@@ -187,7 +199,9 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			for key in landuse_data:
 				landuse_list.append({
 					'landuse': key,
-					'data': landuse_data[key].toJson()
+					'data': landuse_data[key].data.toJson(),
+					'area': landuse_data[key].area,
+					'hruCount': len(landuse_data[key].hrus),
 				})
 
 			if self.save_to_file is not None:
@@ -199,6 +213,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 						'mgt': [hru.toJson() for hru in hru_mgt],
 						'mgtOptions': hru_mgt_options,
 						'landuseOptions': plant_options,
+						'landuseCategories': categories,
 					}, f, indent=2)
 				return json.dumps({'success': self.save_to_file})
 
@@ -209,6 +224,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 				'mgt': [hru.toJson() for hru in hru_mgt],
 				'mgtOptions': hru_mgt_options,
 				'landuseOptions': plant_options,
+				'landuseCategories': categories,
 			})
 		except Exception as ex:
 			SetupProjectDatabase.close()

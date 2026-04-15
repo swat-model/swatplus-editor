@@ -731,19 +731,19 @@
 												</template>
 												Set up weather stations and weather generators
 											</v-list-item>
-											<v-list-item to="/run">
+											<v-list-item to="/run" value="inputs-run">
 												<template #prepend>
 													<v-icon :color="info.status.wrote_inputs ? 'success' : 'plain'">{{ info.status.wrote_inputs ? 'fas fa-check' : 'fas fa-minus' }}</v-icon>
 												</template>
 												Wrote SWAT+ input files
 											</v-list-item>
-											<v-list-item to="/run">
+											<v-list-item to="/run" value="model-run">
 												<template #prepend>
 													<v-icon :color="info.status.ran_swat ? 'success' : 'plain'">{{ info.status.ran_swat ? 'fas fa-check' : 'fas fa-minus' }}</v-icon>
 												</template>
 												Ran SWAT+
 											</v-list-item>
-											<v-list-item to="/run">
+											<v-list-item to="/run" value="output-run">
 												<template #prepend>
 													<v-icon :color="info.status.imported_output ? 'success' : 'plain'">{{ info.status.imported_output ? 'fas fa-check' : 'fas fa-minus' }}</v-icon>
 												</template>
