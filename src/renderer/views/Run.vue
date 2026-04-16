@@ -9,7 +9,7 @@
 	const route = useRoute();
 	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = useHelpers();
 
-	const requiredForCheckMessage = 'Some annual average output files are used in SWAT+ Check. File size is small and processing time is minimal, so it is required to keep them selected.'
+	const requiredForCheckMessage = 'Some smaller output files are used in SWAT+ Check and unselecting them is disabled.'
 	
 	let data:any = reactive({
 		page: {
@@ -736,6 +736,7 @@
 	function checkAllYearly() {
 		//data.options.printAll.yearly = !data.options.printAll.yearly;
 		for (let i = 0; i < data.print.objects.length; i++) {
+			if (requiredForCheck(`${data.print.objects[i].name}_yr`)) continue;
 			data.print.objects[i].yearly = data.options.printAll.yearly;
 			pushChg(i);
 		}
@@ -744,14 +745,13 @@
 	function checkAllAvann() {
 		//data.options.printAll.avann = !data.options.printAll.avann;
 		for (let i = 0; i < data.print.objects.length; i++) {
-			if (requiredForCheck(data.print.objects[i].name)) continue;
+			if (requiredForCheck(`${data.print.objects[i].name}_aa`)) continue;
 			data.print.objects[i].avann = data.options.printAll.avann;
 			pushChg(i);
 		}
 	}
 
-	function requiredForCheck(name:any) {
-		let nameFormat = `${name}_aa`;
+	function requiredForCheck(nameFormat:any) {
 		return data.check.required_tables.includes(nameFormat) || data.check.opt_tables.includes(nameFormat);
 	}
 
@@ -901,8 +901,8 @@
 													<td>{{v}}</td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_yr`)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">
 														{{k}}
 														<div v-if="k === 'channel_sd'">channel_sdmorph</div>
@@ -916,7 +916,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">
 														{{k}}
 														<div v-if="k === 'basin_sd_cha'">basin_sd_chamorph</div>
@@ -930,7 +930,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -941,7 +941,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -952,7 +952,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -963,7 +963,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -974,7 +974,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -985,7 +985,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 												<tr class="bg-secondary-tonal">
@@ -996,7 +996,7 @@
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
-													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(data.print.objects[printIndex(k)].name)" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
 											</tbody>

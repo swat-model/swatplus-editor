@@ -75,7 +75,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 					available_landuses.append(hru.landuse)
 
 			# read data from output database
-			overall_data = self.get_overall_data(unavailable_tables, hru_data_lookup)
+			overall_data = self.get_overall_data(unavailable_tables, hru_data_lookup, totalArea)
 			landuse_data = self.get_landuse_data(hru_data_lookup)
 			overall_data.maxUplandSedYield = losses.Hru_ls_aa.select(fn.Max(losses.Hru_ls_aa.sedyld)).scalar()
 
@@ -378,7 +378,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			if data.aqu_flo_cha is not None and data.latq > data.aqu_flo_cha:
 				data.warnings.wb.append("Lateral flow is greater than groundwater flow; may indicate a problem")
 
-	def get_overall_data(self, unavailable_tables, hru_data_lookup):
+	def get_overall_data(self, unavailable_tables, hru_data_lookup, totalArea):
 		overall_data = check_toolbox.CheckToolboxData()
 
 		basin_wb_aa = waterbal.Basin_wb_aa.get_or_none()
@@ -387,6 +387,9 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		basin_pw_aa = plantwx.Basin_pw_aa.get_or_none()
 		basin_ls_aa = losses.Basin_ls_aa.get_or_none()
 		basin_sd_cha_aa = channel.Basin_sd_cha_aa.get_or_none()
+		has_recall = 'recall_aa' not in unavailable_tables
+		basin_res_aa = None if 'basin_res_aa' in unavailable_tables else reservoir.Basin_res_aa.get_or_none()
+		has_yr_res = 'reservoir_yr' not in unavailable_tables
 
 		# surface
 		overall_data.et = basin_wb_aa.et
@@ -455,39 +458,201 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		self.set_common_data(overall_data, True)
 
 		# channel sediment
-		hru_total_area = sum([h.area for h in hru_data_lookup])
-		overall_data.sed_in = basin_sd_cha_aa.sed_in / hru_total_area
-		overall_data.sed_out = basin_sd_cha_aa.sed_out / hru_total_area
+		overall_data.sed_in = basin_sd_cha_aa.sed_in / totalArea
+		overall_data.sed_out = basin_sd_cha_aa.sed_out / totalArea
 		overall_data.sed_stor = basin_sd_cha_aa.sed_stor
 
-		sed_chg = overall_data.sed_out - overall_data.sed_in
-		overall_data.uplandSedYield = overall_data.sedyld * hru_total_area
+		sed_chg = basin_sd_cha_aa.sed_out - basin_sd_cha_aa.sed_in
+		overall_data.uplandSedYield = overall_data.sedyld * totalArea
 
-		denom = (overall_data.uplandSedYield * hru_total_area) + sed_chg
-		if denom != 0:
+		denom = overall_data.uplandSedYield + sed_chg
+		if denom != 0 and sed_chg > 0:
 			overall_data.chaErosion = (sed_chg / denom) * 100
+			if overall_data.chaErosion > 50:
+				overall_data.warnings.sed.append("More than 50% of sediment is from instream processes")
 
-		if overall_data.uplandSedYield != 0:
-			overall_data.chaDeposition = ((sed_chg * -1) / overall_data.uplandSedYield) * 100
+		if overall_data.uplandSedYield != 0 and sed_chg <= 0:
+			overall_data.chaDeposition = sed_chg * -1 / overall_data.uplandSedYield * 100
+			if overall_data.chaDeposition > 95:
+				overall_data.warnings.sed.append("More than 95% of sediment is deposited instream")
 
-		cha_erosion = 0
-		cha_deposition = 0
-		if overall_data.uplandSedYield > 0:
-			if sed_chg > 0:
-				cha_erosion = (sed_chg / (overall_data.uplandSedYield + sed_chg)) * 100
-				if cha_erosion > 50:
-					overall_data.warnings.sed.append("More than 50% of sediment is from instream processes")
-			else:
-				cha_deposition = ((sed_chg * -1) / overall_data.uplandSedYield) * 100
-				if cha_deposition > 95:
-					overall_data.warnings.sed.append("More than 95% of sediment is deposited instream")
-
-		if cha_erosion == 0 and cha_deposition == 0:
+		if overall_data.chaErosion == 0 and overall_data.chaDeposition == 0:
 			overall_data.warnings.sed.append("No in-stream sediment modification; this is unusual")
-		elif (cha_erosion > -2 and cha_erosion < 2) or (cha_deposition > -2 and cha_deposition < 2):
+		elif (overall_data.chaErosion > -2 and overall_data.chaErosion < 2) or (overall_data.chaDeposition > -2 and overall_data.chaDeposition < 2):
 			overall_data.warnings.sed.append("Very little in-stream sediment modification (< +-2%); this is unusual")
+
+		# point sources
+		subLoad = check_toolbox.CheckToolboxPointSourcesLoad()
+		psLoad = check_toolbox.CheckToolboxPointSourcesLoad()
+		fromLoad = check_toolbox.CheckToolboxPointSourcesLoad()
+
+		if channel.Channel_sd_aa.select().count() > 0:
+			cha = channel.Channel_sd_aa.select().order_by(channel.Channel_sd_aa.flo_out.desc())[0]
+			subLoad.flow = cha.flo_out / 365
+			subLoad.sediment = cha.sed_out
+			subLoad.nitrogen = cha.orgn_out + cha.no3_out + cha.nh3_out + cha.no2_out
+			subLoad.phosphorus = cha.sedp_out + cha.solp_out
+
+		if has_recall:
+			ptable = hyd.Recall_aa
+			if ptable.select().count() > 0:
+				pts = ptable.select(fn.SUM(ptable.flo).alias('flow_total'), fn.SUM(ptable.sed).alias('sed_total'), fn.SUM(ptable.orgn).alias('orgn_total'), fn.SUM(ptable.sedp).alias('sedp_total'), fn.SUM(ptable.no3).alias('no3_total'), fn.SUM(ptable.nh3).alias('nh3_total'), fn.SUM(ptable.no2).alias('no2_total'), fn.SUM(ptable.solp).alias('solp_total')).get()
+				psLoad.flow = pts.flow_total / 365
+				psLoad.sediment = pts.sed_total
+				psLoad.nitrogen = pts.orgn_total + pts.no3_total + pts.nh3_total + pts.no2_total
+				psLoad.phosphorus = pts.sedp_total + pts.solp_total
+
+		fromLoad.flow = 0 if subLoad.flow == 0 else psLoad.flow / (psLoad.flow + subLoad.flow) * 100
+		fromLoad.sediment = 0 if subLoad.sediment == 0 else psLoad.sediment / (psLoad.sediment + subLoad.sediment) * 100
+		fromLoad.nitrogen = 0 if subLoad.nitrogen == 0 else psLoad.nitrogen / (psLoad.nitrogen + subLoad.nitrogen) * 100
+		fromLoad.phosphorus = 0 if subLoad.phosphorus == 0 else psLoad.phosphorus / (psLoad.phosphorus + subLoad.phosphorus) * 100
+
+		ptsrc_warnings = []
+		if fromLoad.flow > 30:
+			ptsrc_warnings.append('Inlets/point sources contribute more than 30% of the total streamflow')
+		if fromLoad.phosphorus > 55:
+			ptsrc_warnings.append('Inlets/point sources contribute more than 55% of the total phosphorus')
+		if fromLoad.nitrogen > 20:
+			ptsrc_warnings.append('Inlets/point sources contribute more than 20% of the total nitrogen')
+		if fromLoad.sediment > 30:
+			ptsrc_warnings.append('Inlets/point sources contribute more than 30% of the total sediment')
+
+		if psLoad.flow == 0 and psLoad.sediment > 0:
+			ptsrc_warnings.append('Inlets/point sources contribute sediment but not flow, error likely')
+		if psLoad.flow == 0 and psLoad.phosphorus > 0:
+			ptsrc_warnings.append('Inlets/point sources contribute phosphorus but not flow, error likely')
+		if psLoad.flow == 0 and psLoad.nitrogen > 0:
+			ptsrc_warnings.append('Inlets/point sources contribute nitrogen but not flow, error likely')
+
+		if psLoad.flow > 0 and psLoad.sediment == 0:
+			ptsrc_warnings.append('Inlets/point sources contribute flow, but not sediment')
+		if psLoad.flow > 0 and psLoad.phosphorus == 0:
+			ptsrc_warnings.append('Inlets/point sources contribute flow, but not phosphorus')
+		if psLoad.flow > 0 and psLoad.nitrogen == 0:
+			ptsrc_warnings.append('Inlets/point sources contribute flow, but not nitrogen')
+
+		if psLoad.flow == 0 and psLoad.nitrogen == 0 and psLoad.phosphorus == 0 and psLoad.sediment == 0:
+			ptsrc_warnings.append('Inlets/point source not present')
+
+		if psLoad.phosphorus > 0:
+			if psLoad.nitrogen / psLoad.phosphorus > 8.8:
+				ptsrc_warnings.append('Inlets/point sources N:P ratio greater than 8.8')
+			elif psLoad.nitrogen / psLoad.phosphorus < 2.8:
+				ptsrc_warnings.append('Inlets/point sources N:P ratio less than 2.8')
+
+		overall_data.subbasinLoad = subLoad
+		overall_data.pointSourceInletLoad = psLoad
+		overall_data.fromInletAndPointSource = fromLoad
+		overall_data.warnings.ptsrc = ptsrc_warnings
+
+		# reservoirs
+		if basin_res_aa is None:
+			overall_data.warnings.res.append('No reservoir data available.')
+		else:
+			basin_n_in = basin_res_aa.orgn_in + basin_res_aa.no3_in + basin_res_aa.no2_in + basin_res_aa.nh3_in
+			basin_n_out = basin_res_aa.orgn_out + basin_res_aa.no3_out + basin_res_aa.no2_out + basin_res_aa.nh3_out
+			basin_p_in = basin_res_aa.sedp_in + basin_res_aa.solp_in
+			basin_p_out = basin_res_aa.sedp_out + basin_res_aa.solp_out
+
+			overall_data.avgTrappingEfficiencies.sediment = self.get_in_out_percent(basin_res_aa.sed_in, basin_res_aa.sed_out)
+			overall_data.avgTrappingEfficiencies.nitrogen = self.get_in_out_percent(basin_n_in, basin_n_out)
+			overall_data.avgTrappingEfficiencies.phosphorus = self.get_in_out_percent(basin_p_in, basin_p_out)
+
+			overall_data.avgWaterLosses.totalRemoved = self.get_in_out_percent(basin_res_aa.flo_in, basin_res_aa.flo_out)
+			overall_data.avgWaterLosses.seepage = 0 if basin_res_aa.flo_stor == 0 else basin_res_aa.seep / basin_res_aa.flo_stor * 100
+			overall_data.avgWaterLosses.evaporation = 0 if basin_res_aa.flo_stor == 0 else basin_res_aa.evap / basin_res_aa.flo_stor * 100
+
+			num_yrs = 0
+			init_yr = 0
+			final_yr = 0
+			if has_yr_res:
+				res_yrs = reservoir.Reservoir_yr.select().where(reservoir.Reservoir_yr.unit == 1).order_by(reservoir.Reservoir_yr.yr)
+				num_yrs = res_yrs.count()
+				if (num_yrs > 0):
+					init_yr = res_yrs[0].yr
+					final_yr = res_yrs[num_yrs - 1].yr
+
+
+			res_list = reservoir.Reservoir_aa.select()
+			overall_data.avgReservoirTrends.numberReservoirs = res_list.count()
+
+			per_res_warns = [None] * 9
+			ratios = []
+			empty_vols = []
+			for r in res_list:
+				n_in = r.orgn_in + r.no3_in + r.no2_in + r.nh3_in
+				n_out = r.orgn_out + r.no3_out + r.no2_out + r.nh3_out
+				p_in = r.sedp_in + r.solp_in
+				p_out = r.sedp_out + r.solp_out
+
+				row = check_toolbox.CheckReservoirRow()
+				row.id = r.name
+				row.sediment = self.get_in_out_percent(r.sed_in, r.sed_out)
+				row.phosphorus = self.get_in_out_percent(p_in, p_out)
+				row.nitrogen = self.get_in_out_percent(n_in, n_out)
+				row.seepage = 0 if r.flo_stor == 0 else r.seep / r.flo_stor * 100
+				row.evapLoss = 0 if r.flo_stor == 0 else r.evap / r.flo_stor * 100
+
+				row.volumeRatio = 'NA'
+				row.fractionEmpty = 'NA'
+				if has_yr_res:
+					init_vol = reservoir.Reservoir_yr.select().where((reservoir.Reservoir_yr.unit == r.unit) & (reservoir.Reservoir_yr.yr == init_yr)).get().flo_stor
+					final_vol = reservoir.Reservoir_yr.select().where((reservoir.Reservoir_yr.unit == r.unit) & (reservoir.Reservoir_yr.yr == final_yr)).get().flo_stor
+					empty_vol_count = reservoir.Reservoir_yr.select().where((reservoir.Reservoir_yr.unit == r.unit) & (reservoir.Reservoir_yr.flo_stor < 1)).count()
+
+					ratio = 0 if init_vol == 0 else final_vol / init_vol
+					empty_frac = 0 if num_yrs == 0 else empty_vol_count / num_yrs
+
+					row.volumeRatio = ratio
+					row.fractionEmpty = empty_frac
+					ratios.append(ratio)
+					empty_vols.append(empty_frac)
+
+				overall_data.reservoirRows.append(row)
+
+				if row.sediment < 40:
+					per_res_warns[0] = 'Sediment trapping efficiency less than 40% at one or more reservoirs'
+				if row.sediment > 98:
+					per_res_warns[1] = 'Sediment trapping efficiency greater than 98% at one or more reservoirs'
+
+				if row.nitrogen< 7:
+					per_res_warns[2] = 'Nitrogen trapping efficiency less than 7% at one or more reservoirs'
+				if row.nitrogen > 72:
+					per_res_warns[3] = 'Nitrogen trapping efficiency greater than 72% at one or more reservoirs'
+
+				if row.phosphorus < 18:
+					per_res_warns[4] = 'Phosphorus trapping efficiency less than 18% at one or more reservoirs'
+				if row.phosphorus > 82:
+					per_res_warns[5] = 'Phosphorus trapping efficiency greater than 82% at one or more reservoirs'
+
+				if row.evapLoss < 5:
+					per_res_warns[6] = 'Evaporation losses are less than 2% at one or more reservoirs'
+				if row.evapLoss > 50:
+					per_res_warns[7] = 'Evaporation losses are more than 30% at one or more reservoirs'
+
+				if row.seepage > 25:
+					per_res_warns[8] = 'Seepage losses are more than 10% at one or more reservoirs'
+
+			for w in per_res_warns:
+				if w is not None:
+					overall_data.warnings.res.append(w)
+			
+			if has_yr_res:
+				overall_data.avgReservoirTrends.fractionEmpty = max(empty_vols)
+				overall_data.avgReservoirTrends.maxVolume = max(ratios)
+				overall_data.avgReservoirTrends.minVolume = min(ratios)
+
+				if overall_data.avgReservoirTrends.fractionEmpty > 0:
+					overall_data.warnings.res.append('At least one of your reservoirs has become complexly dry during the simulation')
+				if overall_data.avgReservoirTrends.maxVolume > 5:
+					overall_data.warnings.res.append('At least one of your reservoirs ends the simulation with at least 500% more volume that it begins with. Check your release parameters.')
+				if overall_data.avgReservoirTrends.minVolume > 0.2:
+					overall_data.warnings.res.append('At least one of your reservoirs ends the simulation with less than 20% volume that it begins with. Check your release parameters.')
 			
 		return overall_data
+	
+	def get_in_out_percent(self, value_in, value_out):
+		return 0 if value_in == 0 else (value_in - value_out) / value_in * 100
 
 	def get_landuse_data(self, hru_data_lookup):
 		# init data by landuse

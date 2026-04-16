@@ -22,6 +22,8 @@
                 "Nutrients",
 				"Sediment",
 				"Plants",
+				"Point Sources",
+				"Reservoirs"
 			],
 			checkByLanduse: false,
 			/*selectedLanduse: <string|null>null,
@@ -37,6 +39,9 @@
 			nutrientsTab: 'nitrogen',
 			selectedHruIndex: <number|null>null,
 			selectedCategory: 'Any',
+		},
+		modals: {
+			reservoirs: false,
 		},
 		config: {
 			input_files_dir: '',
@@ -276,14 +281,27 @@
 			etToPrecip: 0,
 			percoToPrecip: 0,
 			seepToPrecip: 0,
-			
+
+			//point sources
+			subbasinLoad: {} as CheckToolboxPointSourcesLoad,
+			pointSourceInletLoad: {} as CheckToolboxPointSourcesLoad,
+			fromInletAndPointSource: {} as CheckToolboxPointSourcesLoad,
+
+			// reservoirs
+			reservoirRows: [] as CheckReservoirRow[],
+			avgTrappingEfficiencies: {} as CheckAvgTrappingEfficiency,
+			avgWaterLosses: {} as CheckAvgWaterLoss,
+			avgReservoirTrends: {} as CheckAvgReservoirTrend,
+
 			// warnings
 			warnings: {
 				plants: [],
 				nb_nitrogen: [],
 				nb_phosphorus: [],
 				wb: [],
-				sed: []
+				sed: [],
+				ptsrc: [],
+				res: [],
 			}
 		};
 
@@ -567,6 +585,17 @@
 		etToPrecip: number;
 		percoToPrecip: number;
 		seepToPrecip: number;
+
+		//point sources
+		subbasinLoad: CheckToolboxPointSourcesLoad
+		pointSourceInletLoad: CheckToolboxPointSourcesLoad
+		fromInletAndPointSource: CheckToolboxPointSourcesLoad
+
+		// reservoirs
+		reservoirRows: CheckReservoirRow[]
+		avgTrappingEfficiencies: CheckAvgTrappingEfficiency
+		avgWaterLosses: CheckAvgWaterLoss
+		avgReservoirTrends: CheckAvgReservoirTrend
 		
 		// warnings
 		warnings: CheckToolboxDataWarnings;
@@ -578,6 +607,45 @@
 		nb_phosphorus: string[];
 		wb: string[];
 		sed: string[];
+		ptsrc: string[];
+		res: string[];
+	}
+
+	interface CheckReservoirRow {
+		id: string;
+		sediment: number;
+		phosphorus: number;
+		nitrogen: number;
+		volumeRatio: number;
+		fractionEmpty: number;
+		seepage: number;
+		evapLoss: number;
+	}
+
+	interface CheckAvgTrappingEfficiency {
+		sediment: number;
+		phosphorus: number;
+		nitrogen: number;
+	}
+
+	interface CheckAvgWaterLoss {
+		totalRemoved: number;
+		evaporation: number;
+		seepage: number;
+	}
+
+	interface CheckAvgReservoirTrend {
+		numberReservoirs: number;
+		maxVolume: number;
+		minVolume: number;
+		fractionEmpty: number;
+	}
+
+	interface CheckToolboxPointSourcesLoad {
+		flow: number;
+		sediment: number;
+		nitrogen: number;
+		phosphorus: number;
 	}
 </script>
 
@@ -646,7 +714,7 @@
 
 							<v-row class="mb-2">
 								<v-col cols="12" md="6">
-									<v-table small density="compact">
+									<v-table small density="compact" class="transparent">
 										<tbody>
 											<tr>
 												<th>Model Version</th>
@@ -668,7 +736,7 @@
 									</v-table>
 								</v-col>
 								<v-col cols="12" md="6">
-									<v-table small density="compact">
+									<v-table small density="compact" class="transparent">
 										<tbody>
 											<tr>
 												<th>Watershed Area</th>
@@ -1260,6 +1328,277 @@
 						<div>Phosphorus: NA</div>
 					</template>
 				</image-overlays>
+
+				<image-overlays v-if="data.page.tabIndex == 5" class="spcheck_tab" id="spcheck_ptsrc"
+					:image-path="`/swatplus-check/pointsource_light.png`"
+					:dark-image-path="`/swatplus-check/pointsource_dark.png`"
+					:image-ratio="2886/1023"
+					:overlays="[]">
+					<template #mainContent>
+						<v-row class="mt-7">
+							<v-col cols="12" lg="3">
+								<v-card class="semi-transparent" elevation="6">
+									<v-card-item>
+										<h4 class="mt-4">Point Sources</h4>
+										<p class="text-body-2">
+											Point sources constantly discharge pollutants to streams. These are an optional feature in SWAT+. These summaries are presented so that the relative contribution of these sources can be verified. Point sources contributions are so varied that there is no reasonable range which can be applied to all basins.
+										</p>
+
+										<h4 class="mt-4 mb-2">Messages and Warnings</h4>
+										<div class="warning-list mb-2">
+											<ul>
+												<li v-for="(w, index) in data.check.basin.warnings.ptsrc" :key="index" class="text-body-2">
+													{{w}}
+												</li>
+												<li v-if="!data.check.basin.warnings.ptsrc || data.check.basin.warnings.ptsrc.length === 0" class="text-body-2">
+													<i>None</i>
+												</li>
+											</ul>
+										</div>
+									</v-card-item>
+								</v-card>
+							</v-col>
+
+							<v-col cols="12" lg="3">
+								<v-card class="semi-transparent" elevation="6">
+									<v-card-item>
+										<h4 class="mt-4">Total Subbasin Load</h4>
+										<v-table small density="compact" class="my-2 transparent">
+											<tbody>
+												<tr>
+													<th>Flow</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.subbasinLoad.flow, 3)}}</td>
+													<td>cms</td>
+												</tr>
+												<tr>
+													<th>Sediment</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.subbasinLoad.sediment, 3)}}</td>
+													<td>Mg/yr</td>
+												</tr>
+												<tr>
+													<th>Nitrogen</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.subbasinLoad.nitrogen, 3)}}</td>
+													<td>kg/yr</td>
+												</tr>
+												<tr>
+													<th>Phosphorus</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.subbasinLoad.phosphorus, 3)}}</td>
+													<td>kg/yr</td>
+												</tr>
+											</tbody>
+										</v-table>
+									</v-card-item>
+								</v-card>
+							</v-col>
+
+							<v-col cols="12" lg="3">
+								<v-card class="semi-transparent" elevation="6">
+									<v-card-item>
+										<h4 class="mt-4">Total Point Source + Inlet Load</h4>
+										<v-table small density="compact" class="my-2 transparent">
+											<tbody>
+												<tr>
+													<th>Flow</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.pointSourceInletLoad.flow, 3)}}</td>
+													<td>cms</td>
+												</tr>
+												<tr>
+													<th>Sediment</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.pointSourceInletLoad.sediment, 3)}}</td>
+													<td>Mg/yr</td>
+												</tr>
+												<tr>
+													<th>Nitrogen</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.pointSourceInletLoad.nitrogen, 3)}}</td>
+													<td>kg/yr</td>
+												</tr>
+												<tr>
+													<th>Phosphorus</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.pointSourceInletLoad.phosphorus, 3)}}</td>
+													<td>kg/yr</td>
+												</tr>
+											</tbody>
+										</v-table>
+									</v-card-item>
+								</v-card>
+							</v-col>
+
+							<v-col cols="12" lg="3">
+								<v-card class="semi-transparent" elevation="6">
+									<v-card-item>
+										<h4 class="mt-4">Load from Inlet + PS (%)</h4>
+										<v-table small density="compact" class="my-2 transparent">
+											<tbody>
+												<tr>
+													<th>Flow</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.fromInletAndPointSource.flow, 3)}}</td>
+													<td>%</td>
+												</tr>
+												<tr>
+													<th>Sediment</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.fromInletAndPointSource.sediment, 3)}}</td>
+													<td>%</td>
+												</tr>
+												<tr>
+													<th>Nitrogen</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.fromInletAndPointSource.nitrogen, 3)}}</td>
+													<td>%</td>
+												</tr>
+												<tr>
+													<th>Phosphorus</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.fromInletAndPointSource.phosphorus, 3)}}</td>
+													<td>%</td>
+												</tr>
+											</tbody>
+										</v-table>
+									</v-card-item>
+								</v-card>
+							</v-col>
+						</v-row>
+						
+					</template>
+				</image-overlays>
+
+				<image-overlays v-if="data.page.tabIndex == 6" class="spcheck_tab" id="spcheck_res"
+					:image-path="`/swatplus-check/reservoirs_light.png`"
+					:dark-image-path="`/swatplus-check/reservoirs_dark.png`"
+					:image-ratio="2886/1023"
+					:overlays="[]">
+					<template #mainContent>
+						<v-row class="mt-7">
+							<v-col cols="12" lg="3">
+								<v-card class="semi-transparent" elevation="6">
+									<v-card-item>
+										<h4 class="mt-4">Reservoirs</h4>
+										<p class="text-body-2">
+											Reservoirs are an optional feature in SWAT+.   The hydrology of basins with large reservoirs may be completely dominated by reservoir processes and release rates.
+											The data presented below is an average of all reservoirs; <a href="#" @click.prevent="data.modals.reservoirs = true">see data for individual reservoirs</a>.
+											The statistics presented here are designed to identify common reservoir issues.   The use of user specified release rate may cause a reservoir to
+											grow continuously or run completely dry.  These common issues can be detected via the final/initial volume ratio and fraction of period empty statistics below.
+										</p>
+
+										<h4 class="mt-4 mb-2">Messages and Warnings</h4>
+										<div class="warning-list mb-2">
+											<ul>
+												<li v-for="(w, index) in data.check.basin.warnings.res" :key="index" class="text-body-2">
+													{{w}}
+												</li>
+												<li v-if="!data.check.basin.warnings.res || data.check.basin.warnings.res.length === 0" class="text-body-2">
+													<i>None</i>
+												</li>
+											</ul>
+										</div>
+									</v-card-item>
+								</v-card>
+							</v-col>
+							<v-col cols="12" lg="3">
+								<v-card class="semi-transparent" elevation="6" style="min-height:240px">
+									<v-card-item>
+										<h4 class="mt-4">Average Trapping Efficiency (%)</h4>
+										<v-table small density="compact" class="my-2 transparent">
+											<tbody>
+												<tr>
+													<th>Sediment</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgTrappingEfficiencies.sediment, 3)}}</td>
+												</tr>
+												<tr>
+													<th>Nitrogen</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgTrappingEfficiencies.nitrogen, 3)}}</td>
+												</tr>
+												<tr>
+													<th>Phosphorus</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgTrappingEfficiencies.phosphorus, 3)}}</td>
+												</tr>
+											</tbody>
+										</v-table>
+										
+										<h4 class="mt-4">Average Water Loss (%)</h4>
+										<v-table small density="compact" class="my-2 transparent">
+											<tbody>
+												<tr>
+													<th>Total Removed + Losses</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgWaterLosses.totalRemoved, 3)}}</td>
+												</tr>
+												<tr>
+													<th>Evaporation</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgWaterLosses.evaporation, 3)}}</td>
+												</tr>
+												<tr>
+													<th>Seepage</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgWaterLosses.seepage, 3)}}</td>
+												</tr>
+											</tbody>
+										</v-table>
+										
+										<h4 class="mt-4">Average Reservoir Trends</h4>
+										<v-table small density="compact" class="my-2 transparent">
+											<tbody>
+												<tr>
+													<th>Number of Reservoirs</th>
+													<td class="text-right">{{formatters.toNumberFormat(data.check.basin.avgReservoirTrends.numberReservoirs, 0)}}</td>
+												</tr>
+												<tr>
+													<th>Final/Initial Volume (Max)</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgReservoirTrends.maxVolume, 3)}}</td>
+												</tr>
+												<tr>
+													<th>Final/Initial Volume (Min)</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgReservoirTrends.minVolume, 3)}}</td>
+												</tr>
+												<tr>
+													<th>Fraction of Period Empty (Max)</th>
+													<td class="text-right">{{formatters.toNumberDecimals(data.check.basin.avgReservoirTrends.fractionEmpty, 3)}}</td>
+												</tr>
+											</tbody>
+										</v-table>
+									</v-card-item>
+								</v-card>
+							</v-col>
+						</v-row>
+					</template>
+				</image-overlays>
+
+				<v-dialog v-model="data.modals.reservoirs" :max-width="constants.dialogSizes.lg" scrollable>
+					<v-card title="Detailed Reservoir Performance Output">
+						<v-card-item>
+							<div v-if="data.check.basin.reservoirRows && data.check.basin.reservoirRows.length < 1" class="mb-5">
+								<em>No reservoirs in model.</em>
+							</div>
+							<div v-else class="table-responsive mb-5">
+								<v-table small density="compact">
+									<thead>
+										<tr>
+											<th>RES#</th>
+											<th>Sediment</th>
+											<th>Phosphorus</th>
+											<th>Nitrogen</th>
+											<th>Vol. Ratio</th>
+											<th>Fraction Empty</th>
+											<th>Seepage</th>
+											<th>Evap. Loss</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr v-for="(m, i) in data.check.basin.reservoirRows" :key="i">
+											<td>{{m.id}}</td>
+											<td>{{formatters.toNumberDecimals(m.sediment, 3)}}</td>
+											<td>{{formatters.toNumberDecimals(m.phosphorus, 3)}}</td>
+											<td>{{formatters.toNumberDecimals(m.nitrogen, 3)}}</td>
+											<td>{{formatters.toNumberDecimals(m.volumeRatio, 3)}}</td>
+											<td>{{formatters.toNumberDecimals(m.fractionEmpty, 3)}}</td>
+											<td>{{formatters.toNumberDecimals(m.seepage, 3)}}</td>
+											<td>{{formatters.toNumberDecimals(m.evapLoss, 3)}}</td>
+										</tr>
+									</tbody>
+								</v-table>
+							</div>
+						</v-card-item>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<v-btn @click="data.modals.reservoirs = false">Close</v-btn>
+						</v-card-actions>
+					</v-card>
+				</v-dialog>
 
 				<action-bar full-width>
 					<v-btn variant="flat" @click="nextTab(-1)" class="border mr-2" :disabled="data.page.tabIndex == 0" title="Previous tab"><font-awesome-icon icon="chevron-left" /></v-btn>

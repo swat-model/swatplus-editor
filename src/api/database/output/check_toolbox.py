@@ -4,10 +4,13 @@ import json
 required_tables = [
 	'basin_wb_aa', 'basin_nb_aa', 'basin_pw_aa', 'basin_ls_aa', 'basin_sd_cha_aa',
 	'hru_pw_aa', 'hru_wb_aa', 'hru_ls_aa', 'hru_nb_aa',
+	'channel_sd_aa'
 ]
 
 opt_tables = [
 	'basin_aqu_aa', 'project_config', 'mgt_out',
+	'recall_aa',
+	'basin_res_aa', 'reservoir_aa', 'reservoir_yr', 
 ]
 
 landuse_category_options = [
@@ -178,9 +181,62 @@ class CheckToolboxData(CheckToolboxBase):
 		self.etToPrecip = 0.0
 		self.percoToPrecip = 0.0
 		self.seepToPrecip = 0.0
+
+		# point sources
+		self.subbasinLoad = CheckToolboxPointSourcesLoad()
+		self.pointSourceInletLoad = CheckToolboxPointSourcesLoad()
+		self.fromInletAndPointSource = CheckToolboxPointSourcesLoad()
+
+		# reservoirs
+		self.reservoirRows = []
+		self.avgTrappingEfficiencies = CheckAvgTrappingEfficiency()
+		self.avgWaterLosses = CheckAvgWaterLoss()
+		self.avgReservoirTrends = CheckAvgReservoirTrend()
 		
 		# warnings
 		self.warnings = CheckToolboxDataWarnings()
+
+
+class CheckReservoirRow(CheckToolboxBase):
+	def __init__(self):
+		self.id = ''
+		self.sediment = 0
+		self.phosphorus = 0
+		self.nitrogen = 0
+		self.volumeRatio = 0
+		self.fractionEmpty = 0
+		self.seepage = 0
+		self.evapLoss = 0
+
+
+class CheckAvgTrappingEfficiency(CheckToolboxBase):
+	def __init__(self):
+		self.sediment = 0
+		self.phosphorus = 0
+		self.nitrogen = 0
+
+
+class CheckAvgWaterLoss(CheckToolboxBase):
+	def __init__(self):
+		self.totalRemoved = 0
+		self.evaporation = 0
+		self.seepage = 0
+
+
+class CheckAvgReservoirTrend(CheckToolboxBase):
+	def __init__(self):
+		self.numberReservoirs = 0
+		self.maxVolume = 0
+		self.minVolume = 0
+		self.fractionEmpty = 0
+
+
+class CheckToolboxPointSourcesLoad(CheckToolboxBase):
+	def __init__(self):
+		self.flow = 0
+		self.sediment = 0
+		self.nitrogen = 0
+		self.phosphorus = 0
 
 
 class CheckToolboxDataWarnings(CheckToolboxBase):
@@ -190,6 +246,8 @@ class CheckToolboxDataWarnings(CheckToolboxBase):
 		self.nb_phosphorus = []
 		self.wb = []
 		self.sed = []
+		self.ptsrc = []
+		self.res = []
 
 
 class CheckToolboxHru(CheckToolboxBase):
