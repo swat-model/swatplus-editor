@@ -1157,7 +1157,7 @@
 						<v-card-item>
 							<div class="d-flex align-start my-3">
 								<div class="mr-4">
-									<v-checkbox density="compact" hide-details v-model="data.selection.output" id="select_output"></v-checkbox>
+									<v-checkbox density="compact" hide-details v-model="data.selection.output" id="select_output" @update:model-value="data.selection.swatCheckOnly = false"></v-checkbox>
 								</div>
 								<div class="pt-1">
 									<label for="select_output">
@@ -1180,7 +1180,7 @@
 									<div>
 										<div class="d-flex align-start my-3">
 											<div class="mr-2">
-												<v-checkbox density="compact" hide-details v-model="data.selection.swatCheckOnly" id="swatcheck_only"></v-checkbox>
+												<v-checkbox density="compact" hide-details v-model="data.selection.swatCheckOnly" id="swatcheck_only" :disabled="!data.selection.output"></v-checkbox>
 											</div>											
 											<div class="pt-1">
 												<label for="swatcheck_only">

@@ -42,6 +42,8 @@
 		},
 		modals: {
 			reservoirs: false,
+			reachReport: false,
+			reachReportFilter: '',
 		},
 		config: {
 			input_files_dir: '',
@@ -292,6 +294,8 @@
 			avgTrappingEfficiencies: {} as CheckAvgTrappingEfficiency,
 			avgWaterLosses: {} as CheckAvgWaterLoss,
 			avgReservoirTrends: {} as CheckAvgReservoirTrend,
+
+			reachReport: [],
 
 			// warnings
 			warnings: {
@@ -587,15 +591,17 @@
 		seepToPrecip: number;
 
 		//point sources
-		subbasinLoad: CheckToolboxPointSourcesLoad
-		pointSourceInletLoad: CheckToolboxPointSourcesLoad
-		fromInletAndPointSource: CheckToolboxPointSourcesLoad
+		subbasinLoad: CheckToolboxPointSourcesLoad;
+		pointSourceInletLoad: CheckToolboxPointSourcesLoad;
+		fromInletAndPointSource: CheckToolboxPointSourcesLoad;
 
 		// reservoirs
-		reservoirRows: CheckReservoirRow[]
-		avgTrappingEfficiencies: CheckAvgTrappingEfficiency
-		avgWaterLosses: CheckAvgWaterLoss
-		avgReservoirTrends: CheckAvgReservoirTrend
+		reservoirRows: CheckReservoirRow[];
+		avgTrappingEfficiencies: CheckAvgTrappingEfficiency;
+		avgWaterLosses: CheckAvgWaterLoss;
+		avgReservoirTrends: CheckAvgReservoirTrend;
+
+		reachReport: any[];
 		
 		// warnings
 		warnings: CheckToolboxDataWarnings;
@@ -650,7 +656,7 @@
 </script>
 
 <template>
-    <project-container :loading="data.page.loading" add-error-frame>
+    <project-container :loading="data.page.loading" add-error-frame loading-message="Reading outputs for SWAT+ Check. This may take a few moments on larger models.">
         <v-main>
 			<div class="py-3 px-6" v-if="!canLoad">
                 <div v-if="currentProject.isLte">			
@@ -695,7 +701,7 @@
 								resulting in an avoidable waste of time. This program is designed to compare a variety of SWAT+ outputs to 
 								nominal ranges based on the judgment of model developers. A warning does not necessarily indicate a problem; 
 								the purpose is to bring attention to unusual predictions. This software also provides a visual representation 
-								of various model outputs to aid novice users.
+								of various model outputs to aid novice users. 
 							</p>
 
 							<v-alert v-if="data.check.info.gwflow" type="warning" icon="$warning" variant="tonal" border="start" class="my-4">
@@ -740,7 +746,11 @@
 										<tbody>
 											<tr>
 												<th>Watershed Area</th>
-												<td>{{formatters.toNumberFormat(data.check.info.watershedArea, 2)}} ha</td>
+												<td>{{formatters.toNumberFormat(data.check.info.watershedArea, 3)}} ha</td>
+											</tr>
+											<tr>
+												<th>HRU Land Area</th>
+												<td>{{formatters.toNumberFormat(data.check.info.hruTotalArea, 3)}} ha</td>
 											</tr>
 											<tr>
 												<th>HRUs</th>
@@ -1010,6 +1020,10 @@
 									</v-table>
 								</div>
 
+								<div class="mt-2">
+									<v-btn @click="data.modals.reachReport = true" variant="tonal" size="small" append-icon="fas fa-arrow-up-right-from-square">View delivery ratio by channel</v-btn>
+								</div>
+
 								<h4 class="mt-4 mb-2">Messages and Warnings</h4>
 								<div class="warning-list mb-2">
 									<ul v-if="data.page.nutrientsTab === 'nitrogen'">
@@ -1174,6 +1188,10 @@
 										</tr>
 									</tbody>
 								</v-table>
+
+								<div class="mt-2">
+									<v-btn @click="data.modals.reachReport = true" variant="tonal" size="small" append-icon="fas fa-arrow-up-right-from-square">View delivery ratio by channel</v-btn>
+								</div>
 
 								<h4 class="mt-4 mb-2">Messages and Warnings</h4>
 								<div class="warning-list mb-2">
@@ -1341,7 +1359,9 @@
 									<v-card-item>
 										<h4 class="mt-4">Point Sources</h4>
 										<p class="text-body-2">
-											Point sources constantly discharge pollutants to streams. These are an optional feature in SWAT+. These summaries are presented so that the relative contribution of these sources can be verified. Point sources contributions are so varied that there is no reasonable range which can be applied to all basins.
+											Point sources constantly discharge pollutants to streams. These are an optional feature in SWAT+. 
+											These summaries are presented so that the relative contribution of these sources can be verified. 
+											Point sources contributions are so varied that there is no reasonable range which can be applied to all basins.
 										</p>
 
 										<h4 class="mt-4 mb-2">Messages and Warnings</h4>
@@ -1472,7 +1492,7 @@
 										<h4 class="mt-4">Reservoirs</h4>
 										<p class="text-body-2">
 											Reservoirs are an optional feature in SWAT+.   The hydrology of basins with large reservoirs may be completely dominated by reservoir processes and release rates.
-											The data presented below is an average of all reservoirs; <a href="#" @click.prevent="data.modals.reservoirs = true">see data for individual reservoirs</a>.
+											The data presented here is an average of all reservoirs; <a href="#" @click.prevent="data.modals.reservoirs = true">see data for individual reservoirs</a>.
 											The statistics presented here are designed to identify common reservoir issues.   The use of user specified release rate may cause a reservoir to
 											grow continuously or run completely dry.  These common issues can be detected via the final/initial volume ratio and fraction of period empty statistics below.
 										</p>
@@ -1596,6 +1616,56 @@
 						<v-divider></v-divider>
 						<v-card-actions>
 							<v-btn @click="data.modals.reservoirs = false">Close</v-btn>
+						</v-card-actions>
+					</v-card>
+				</v-dialog>
+
+				<v-dialog v-model="data.modals.reachReport" :max-width="constants.dialogSizes.lg" scrollable>
+					<v-card>
+						<v-card-title>
+							<div class="d-flex align-center px-3 pt-2">
+								<div>
+									Channel Delivery Ratio
+								</div>
+								<v-spacer></v-spacer>
+								<v-text-field
+									v-model="data.modals.reachReportFilter"
+									density="compact"
+									label="Filter by channel"
+									prepend-inner-icon="fas fa-magnifying-glass"
+									variant="solo-filled"
+									flat hide-details single-line
+								></v-text-field>
+							</div>							
+						</v-card-title>
+						<v-card-item>
+							<v-data-table small density="compact" fixed-header height="500px"
+								:items="data.check.basin.reachReport" :items-per-page="100"
+								:headers="[{ key: 'id', title: 'Channel' }, { key: 'sediment', title: 'Sediment' }, { key: 'phosphorus', title: 'Phosphorus' }, { key: 'nitrogen', title: 'Nitrogen' }]"
+								v-model:search="data.modals.reachReportFilter" :filter-keys="['id']">
+								<template v-slot:header.sediment>
+									<div class="text-end">Sediment</div>
+								</template>
+								<template v-slot:item.sediment="{ value }">
+									<div class="text-end">{{formatters.toNumberDecimals(value, 3)}} %</div>
+								</template>
+								<template v-slot:header.phosphorus>
+									<div class="text-end">Phosphorus</div>
+								</template>
+								<template v-slot:item.phosphorus="{ value }">
+									<div class="text-end">{{formatters.toNumberDecimals(value, 3)}} %</div>
+								</template>
+								<template v-slot:header.nitrogen>
+									<div class="text-end">Nitrogen</div>
+								</template>
+								<template v-slot:item.nitrogen="{ value }">
+									<div class="text-end">{{formatters.toNumberDecimals(value, 3)}} %</div>
+								</template>
+							</v-data-table>
+						</v-card-item>
+						<v-divider></v-divider>
+						<v-card-actions>
+							<v-btn @click="data.modals.reachReport = false">Close</v-btn>
 						</v-card-actions>
 					</v-card>
 				</v-dialog>

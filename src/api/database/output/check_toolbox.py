@@ -192,6 +192,8 @@ class CheckToolboxData(CheckToolboxBase):
 		self.avgTrappingEfficiencies = CheckAvgTrappingEfficiency()
 		self.avgWaterLosses = CheckAvgWaterLoss()
 		self.avgReservoirTrends = CheckAvgReservoirTrend()
+
+		self.reachReport = []
 		
 		# warnings
 		self.warnings = CheckToolboxDataWarnings()
@@ -281,3 +283,11 @@ class CheckToolboxMgtItem(CheckToolboxBase):
 		self.date = ''
 		self.op = ''
 		self.description = ''
+
+
+class CheckReach(CheckToolboxBase):
+	def __init__(self):
+		self.id = ''
+		self.sediment = 0
+		self.phosphorus = 0
+		self.nitrogen = 0

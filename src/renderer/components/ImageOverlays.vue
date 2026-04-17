@@ -99,7 +99,7 @@
 </script>
 
 <template>
-    <div ref="containerRef" :class="`image-overlay-container ${props.class}`" :id="props.id" :style="{ backgroundImage: `url(${utilities.publicPath}${currentImage})` }">
+    <div ref="containerRef" :class="`image-overlay-container ${props.class}`" :id="props.id" :style="{ backgroundImage: `url(${constants.globals.dev_mode ? '' : '../renderer'}${currentImage})` }">
         <slot name="mainContent"></slot>
         <div v-for="(overlay, index) in props.overlays" 
             :key="`${isDark ? 'dark' : 'light'}-${index}`" 

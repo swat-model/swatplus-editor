@@ -5,13 +5,15 @@
 	interface Props {
 		loading?: boolean,
 		loadError?: string | null,
-		addErrorFrame?: boolean
+		addErrorFrame?: boolean,
+		loadingMessage?: string,
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
 		loading: false,
 		loadError: null,
-		addErrorFrame: false
+		addErrorFrame: false,
+		loadingMessage: '',
 	});
 
 	let errorMessage = 'No project open. Please go to project setup to continue.';
@@ -19,7 +21,7 @@
 
 <template>
 	<div>
-		<page-loading :loading="props.loading"></page-loading>
+		<page-loading :loading="props.loading" :message="props.loadingMessage"></page-loading>
 		<div v-if="!props.loading">
 			<div v-if="currentProject.hasCurrentProject && currentProject.isSupported && formatters.isNullOrEmpty(props.loadError)">
 				<slot></slot>

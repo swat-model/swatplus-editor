@@ -458,6 +458,19 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		self.set_common_data(overall_data, True)
 
 		# channel sediment
+		self.set_sediment(overall_data, basin_sd_cha_aa, totalArea)
+
+		# point sources
+		self.set_ptsrc(overall_data, has_recall)
+
+		# reservoirs
+		self.set_reservoirs(overall_data, basin_res_aa, has_yr_res)
+
+		overall_data.reachReport = self.get_reach_report()
+		
+		return overall_data
+	
+	def set_sediment(self, overall_data, basin_sd_cha_aa, totalArea):
 		overall_data.sed_in = basin_sd_cha_aa.sed_in / totalArea
 		overall_data.sed_out = basin_sd_cha_aa.sed_out / totalArea
 		overall_data.sed_stor = basin_sd_cha_aa.sed_stor
@@ -481,7 +494,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		elif (overall_data.chaErosion > -2 and overall_data.chaErosion < 2) or (overall_data.chaDeposition > -2 and overall_data.chaDeposition < 2):
 			overall_data.warnings.sed.append("Very little in-stream sediment modification (< +-2%); this is unusual")
 
-		# point sources
+	def set_ptsrc(self, overall_data, has_recall):
 		subLoad = check_toolbox.CheckToolboxPointSourcesLoad()
 		psLoad = check_toolbox.CheckToolboxPointSourcesLoad()
 		fromLoad = check_toolbox.CheckToolboxPointSourcesLoad()
@@ -544,8 +557,8 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 		overall_data.pointSourceInletLoad = psLoad
 		overall_data.fromInletAndPointSource = fromLoad
 		overall_data.warnings.ptsrc = ptsrc_warnings
-
-		# reservoirs
+	
+	def set_reservoirs(self, overall_data, basin_res_aa, has_yr_res):
 		if basin_res_aa is None:
 			overall_data.warnings.res.append('No reservoir data available.')
 		else:
@@ -648,8 +661,22 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 					overall_data.warnings.res.append('At least one of your reservoirs ends the simulation with at least 500% more volume that it begins with. Check your release parameters.')
 				if overall_data.avgReservoirTrends.minVolume > 0.2:
 					overall_data.warnings.res.append('At least one of your reservoirs ends the simulation with less than 20% volume that it begins with. Check your release parameters.')
-			
-		return overall_data
+	
+	def get_reach_report(self):
+		rch = []
+		for c in channel.Channel_sd_aa.select():
+			c_n_in = c.no3_in + c.nh3_in + c.no2_in + c.orgn_in
+			c_n_out = c.no3_out + c.nh3_out + c.no2_out + c.orgn_out
+			c_p_in = c.solp_in + c.sedp_in
+			c_p_out = c.solp_out + c.sedp_out
+
+			r = check_toolbox.CheckReach()
+			r.id = c.name
+			r.sediment = 0 if c.sed_in == 0 else c.sed_out / c.sed_in * 100
+			r.nitrogen = 0 if c_n_in == 0 else c_n_out / c_n_in * 100
+			r.phosphorus = 0 if c_p_in == 0 else c_p_out / c_p_in * 100
+			rch.append(r)
+		return rch
 	
 	def get_in_out_percent(self, value_in, value_out):
 		return 0 if value_in == 0 else (value_in - value_out) / value_in * 100
