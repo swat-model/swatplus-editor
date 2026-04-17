@@ -22,9 +22,18 @@ NON_ZERO_MIN = 0.00001
 def debug_stdout(is_debug, value):
 	sys.stdout.write(value + "\n") if is_debug else None
 
+
 def get_valid_filename(s):
 	s = s.strip().replace(' ', '_')
 	return re.sub(r'(?u)[^-\w.]', '', s)
+
+
+def get_valid_descname(s):
+	return re.sub(r'_+', '_', re.sub(r'[-\s]+', '_', s.strip()).lower())
+
+
+def readable_name(s):
+	return s.replace('_', ' ') if s is not None else s
 
 
 def remove_space(s, c='_'):

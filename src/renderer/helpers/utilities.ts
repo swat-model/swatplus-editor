@@ -17,6 +17,8 @@ export function useUtilities() {
 
 	const publicPath = constants.globals.dev_mode ? '' : electron.getAppPath().replace('static', 'renderer');
 
+	const publicPathAbsolute = publicPath === '' ? '' : `/${publicPath}`;
+
 	function appendRoute(pathToAppend:string) {
 		return route.path + (route.path.endsWith('/') ? '' : '/') + pathToAppend
 	}
@@ -242,7 +244,7 @@ export function useUtilities() {
 	}
 
 	return {
-		appPath, appPathUrl, publicPath, appendRoute, pathExists, joinPaths,
+		appPath, appPathUrl, publicPath, publicPathAbsolute, appendRoute, pathExists, joinPaths,
 		getAutoComplete, getAutoCompleteId,
 		getVersionSupport,
 		getMostRecentProject, getRecentProjects, pushRecentProject, deleteRecentProject,

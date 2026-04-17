@@ -12,6 +12,7 @@ from actions.reimport_gis import ReimportGis
 from actions.run_all import RunAll
 from actions.load_scenarios import LoadScenarios
 from actions.get_swatplus_check import GetSwatplusCheck
+from actions.get_swatplus_check_toolbox import GetSwatplusCheckToolbox
 from database import soils
 
 import sys
@@ -39,6 +40,7 @@ if __name__ == '__main__':
 	parser.add_argument("--output_files_dir", type=str, help="full path of output files directory", nargs="?")
 	parser.add_argument("--output_db_file", type=str, help="full path of output SQLite database file", nargs="?")
 	parser.add_argument("--skip_files", type=str, help="comma-separated list of output files to skip", nargs="?")
+	parser.add_argument("--only_read_swatcheck", type=str, help="y/n only read files required by SWAT+ Check", nargs="?")
 
 	# create databases
 	parser.add_argument("--db_type", type=str, help="which database: datasets, output, project", nargs="?")
@@ -129,10 +131,14 @@ if __name__ == '__main__':
 			api.import_data()
 	elif args.action == "read_output":
 		skip_files = [item.strip() for item in args.skip_files.split(',')] if args.skip_files else []
-		api = ReadOutput(args.output_files_dir, args.output_db_file, args.swat_version, args.editor_version, args.project_name, skip_files=skip_files)
+		only_read_swatcheck = True if args.only_read_swatcheck == "y" else False
+		api = ReadOutput(args.output_files_dir, args.output_db_file, args.swat_version, args.editor_version, args.project_name, skip_files=skip_files, only_read_swatcheck=only_read_swatcheck)
 		api.read()
-	elif args.action == "get_swatplus_check":
+	elif args.action == "get_swatplus_check_legacy":
 		api = GetSwatplusCheck(args.project_db_file, args.output_db_file)
+		print(api.get())
+	elif args.action == "get_swatplus_check":
+		api = GetSwatplusCheckToolbox(args.project_db_file, args.output_db_file, save_to_file=args.file1)
 		print(api.get())
 	elif args.action == "write_files":
 		api = WriteFiles(args.project_db_file, args.swat_version, args.ignore_files, args.ignore_cio_files, args.custom_cio_files)

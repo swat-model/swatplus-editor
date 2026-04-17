@@ -6,7 +6,9 @@ from playhouse.migrate import *
 
 from actions import import_gis
 from actions.get_swatplus_check import GetSwatplusCheck
+from actions.get_swatplus_check_toolbox import GetSwatplusCheckToolbox
 from database.project import config, gis, climate, connect, simulation, regions, basin
+from database.output import check_toolbox
 from database import lib
 from fileio import config as fileio_config
 
@@ -228,9 +230,16 @@ def getRunSettings():
 		time =  model_to_dict(t)
 
 		m = simulation.Print_prt.get()
+		if c.swat_last_run is None:
+			m.mgtout = True # for SWAT+ Check if haven't unselected it previously
+		m.csvout = True
 		prt = model_to_dict(m, recurse=False)
 
 		o = simulation.Print_prt_object.select()
+		for i in o:
+			name_format = f"{i.name}_aa"
+			if name_format in check_toolbox.required_tables or name_format in check_toolbox.opt_tables:
+				i.avann = True
 		objects = [model_to_dict(v, recurse=False) for v in o]
 
 		prt = {'prt': prt, 'objects': objects}
@@ -248,6 +257,10 @@ def getRunSettings():
 				'ignore_files': cioSettings['ignore_files'],
 				'ignore_cio_files': cioSettings['ignore_cio_files'],
 				'custom_cio_files': cioSettings['custom_cio_files']
+			},
+			'check': {
+				'required_tables': check_toolbox.required_tables,
+				'opt_tables': check_toolbox.opt_tables,
 			}
 		}
 
@@ -372,6 +385,18 @@ def putSwatplusCheck():
 	if 'output_db' not in args: abort(400, 'Output database file was omitted from the request.')
 
 	api = GetSwatplusCheck(project_db, args['output_db'])
+	return api.get(), 200
+
+@bp.route('/swatplus-check-toolbox', methods=['PUT'])
+def putSwatplusCheckToolbox():
+	project_db = request.headers.get(rh.PROJECT_DB)
+	has_db,error = rh.init(project_db)
+	if not has_db: abort(400, error)
+
+	args = request.json
+	if 'output_db' not in args: abort(400, 'Output database file was omitted from the request.')
+
+	api = GetSwatplusCheckToolbox(project_db, args['output_db'])
 	return api.get(), 200
 
 """

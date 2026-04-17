@@ -298,7 +298,7 @@ class BaseFileModel:
 				else:
 					utils.write_string(file, name, direction=file_col.direction)
 
-	def write_row(self, file, cols):
+	def write_row(self, file, cols, format_description=False):
 		for file_col in cols:
 			string_null = file_col.text_if_null if file_col.text_if_null is not None else utils.NULL_STR
 			num_null = file_col.text_if_null if file_col.text_if_null is not None else utils.NULL_NUM
@@ -306,6 +306,8 @@ class BaseFileModel:
 			decimals = file_col.precision_override if file_col.precision_override is not None else utils.DEFAULT_DECIMALS
 
 			if file_col.is_desc:
+				if format_description:
+					val = utils.get_valid_descname(val)
 				utils.write_desc_string(file, val)
 			elif file_col.padding_override is not None:
 				if file_col.force_bool_type:
@@ -330,10 +332,10 @@ class BaseFileModel:
 	def write_table(self, table, cols, write_cnt_line=False):
 		self.write_query(table.select().order_by(table.id), cols, write_cnt_line)
 
-	def write_default_table(self, table, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines='', precision_overrides={}, non_zero_min_vals=[]):
-		self.write_custom_query_table(table, table.select().order_by(table.id), ignore_id_col=ignore_id_col, ignored_cols=ignored_cols, non_zero_min_cols=non_zero_min_cols, write_cnt_line=write_cnt_line, value_overrides=value_overrides, extra_lines=extra_lines, precision_overrides=precision_overrides, non_zero_min_vals=non_zero_min_vals)
+	def write_default_table(self, table, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines='', precision_overrides={}, non_zero_min_vals=[], format_description=False):
+		self.write_custom_query_table(table, table.select().order_by(table.id), ignore_id_col=ignore_id_col, ignored_cols=ignored_cols, non_zero_min_cols=non_zero_min_cols, write_cnt_line=write_cnt_line, value_overrides=value_overrides, extra_lines=extra_lines, precision_overrides=precision_overrides, non_zero_min_vals=non_zero_min_vals, format_description=format_description)
 
-	def write_custom_query_table(self, table, query, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines='', precision_overrides={}, non_zero_min_vals=[]):
+	def write_custom_query_table(self, table, query, ignore_id_col=False, ignored_cols=[], non_zero_min_cols=[], write_cnt_line=False, value_overrides={}, extra_lines='', precision_overrides={}, non_zero_min_vals=[], format_description=False):
 		if table.select().count() > 0:
 			cols = []
 			for field in table._meta.sorted_fields:
@@ -354,12 +356,12 @@ class BaseFileModel:
 					if field.name not in ignored_cols:
 						cols.append(col)
 
-			self.write_query(query, cols, write_cnt_line, extra_lines=extra_lines)
+			self.write_query(query, cols, write_cnt_line, extra_lines=extra_lines, format_description=format_description)
 
 	def write_default_csv(self, table, ignore_id_col=False, ignored_cols=[]):
 		write_csv(self.file_name, table, ignore_id_col, ignored_cols)
 
-	def write_query(self, query, cols, write_cnt_line=False, extra_lines=''):
+	def write_query(self, query, cols, write_cnt_line=False, extra_lines='', format_description=False):
 		if query.count() > 0:
 			with open(self.file_name, 'w') as file:
 				self.write_meta_line(file)
@@ -388,7 +390,7 @@ class BaseFileModel:
 							col_value = i if col_name == "id" else row[col_name]
 						row_cols.append(FileColumn(col_value, direction=col.direction, padding_override=col.padding_override, text_if_null=col.text_if_null, is_desc=col.is_desc, use_non_zero_min=col.use_non_zero_min, precision_override=col.precision_override, force_bool_type=isinstance(col.value, bool), non_zero_min=col.non_zero_min))
 
-					self.write_row(file, row_cols)
+					self.write_row(file, row_cols, format_description=format_description)
 					file.write("\n")
 					i += 1
 

@@ -1,3 +1,8 @@
+### SWAT+ Editor 3.2.2 ###
+
+* Update SWAT+ Check to match SWAT+ Toolbox
+* Add option to only read output files required by SWAT+ Check
+
 ### SWAT+ Editor 3.2.1 ###
 
 * Bug fix writing hru-data.hru and wetland.wet sequential IDs starting at 1 in first column
