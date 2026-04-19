@@ -3,158 +3,161 @@ from . import base, gis
 from .reservoir import Wetland_wet
 
 
-class Gwflow_base(base.BaseModel):
-	cell_size = IntegerField(null=True)
-	row_count = IntegerField(null=True)
-	col_count = IntegerField(null=True)
-	boundary_conditions = IntegerField(null=True)
-	recharge = IntegerField(null=True)
-	soil_transfer = IntegerField(null=True)
-	saturation_excess = IntegerField(null=True)
-	external_pumping = IntegerField(null=True)
-	tile_drainage = IntegerField(null=True)
-	reservoir_exchange = IntegerField(null=True)
-	wetland_exchange = IntegerField(null=True)
-	floodplain_exchange = IntegerField(null=True)
-	canal_seepage = IntegerField(null=True)
-	solute_transport = IntegerField(null=True)
-	transport_steps = DoubleField(null=True)
-	disp_coef = DoubleField(null=True)
-	recharge_delay = IntegerField(null=True)
-	et_extinction_depth = DoubleField(null=True)
-	water_table_depth = DoubleField(null=True)
-	river_depth = DoubleField(null=True)
-	tile_depth = DoubleField(null=True)
-	tile_area = DoubleField(null=True)
-	tile_k = DoubleField(null=True)
-	tile_groups = IntegerField(null=True)
-	resbed_thickness = DoubleField(null=True)
-	resbed_k = DoubleField(null=True)
-	wet_thickness = DoubleField(null=True)
-	daily_output = IntegerField(null=True)
-	annual_output = IntegerField(null=True)
-	aa_output = IntegerField(null=True)
-	daily_output_row = IntegerField(null=True)
-	daily_output_col = IntegerField(null=True)
-	timestep_balance = DoubleField(null=True)
-	
-	class Meta:
-		primary_key = False
+class Gwflow_config(base.BaseModel):
+	grid_type = CharField(default='structured')
+	cell_size = DoubleField(default=200)
+	num_rows = IntegerField(default=0)
+	num_cols = IntegerField(default=0)
+	num_cells = IntegerField(default=0)
+	boundary_condition = IntegerField(default=2)
+	recharge_type = IntegerField(default=2)
+	gw_soil_transfer = IntegerField(default=1)
+	saturation_excess = IntegerField(default=1)
+	external_pumping = IntegerField(default=0)
+	tile_drainage = IntegerField(default=0)
+	reservoir_exchange = IntegerField(default=1)
+	wetland_exchange = IntegerField(default=1)
+	floodplain_exchange = IntegerField(default=1)
+	canal_seepage = IntegerField(default=0)
+	solute_transport = IntegerField(default=0)
+	timestep_days = DoubleField(default=1.0)
+	daily_output = IntegerField(default=1)
+	monthly_output = IntegerField(default=0)
+	annual_output = IntegerField(default=1)
+	aa_output = IntegerField(default=1)
+	river_depth = DoubleField(default=5.0)
+	tile_depth = DoubleField(default=1.22)
+	tile_area = DoubleField(default=50)
+	tile_k = DoubleField(default=5.0)
+	resbed_thickness = DoubleField(default=2.0)
+	resbed_k = DoubleField(default=9.99e-6)
+	wet_thickness = DoubleField(default=0.25)
+	transport_steps = IntegerField(default=1)
+	disp_coef = DoubleField(default=5.0)
+	detail_row = IntegerField(default=0)
+	detail_col = IntegerField(default=0)
 
 
 class Gwflow_zone(base.BaseModel):
 	zone_id = IntegerField(primary_key=True)
 	aquifer_k = DoubleField(null=True)
-	specific_yield = DoubleField(null=True)
-	streambed_k = DoubleField(null=True)
-	streambed_thickness = DoubleField(null=True)
+	specific_yield = DoubleField(default=0.2)
+	streambed_k = DoubleField(default=0.005)
+	streambed_thickness = DoubleField(default=0.5)
 
 
-class Gwflow_grid(base.BaseModel):
+class Gwflow_cell(base.BaseModel):
 	cell_id = IntegerField(primary_key=True)
-	status = IntegerField(null=True)
-	zone = ForeignKeyField(Gwflow_zone, on_delete='CASCADE', column_name = 'zone', lazy_load=False)
-	elevation = DoubleField(null=True)
-	aquifer_thickness = DoubleField(null=True)
-	extinction_depth = DoubleField(null=True)
+	status = IntegerField(default=1)
+	row = IntegerField(null=True)
+	col = IntegerField(null=True)
+	x_centroid = DoubleField()
+	y_centroid = DoubleField()
+	area = DoubleField()
+	elevation = DoubleField(default=0)
+	aquifer_thickness = DoubleField(default=50)
+	zone_id = ForeignKeyField(Gwflow_zone, on_delete='CASCADE', column_name='zone_id', lazy_load=False)
+	extinction_depth = DoubleField(default=1.0)
 	initial_head = DoubleField(null=True)
-	tile = IntegerField(null=True)
+	recharge_delay = DoubleField(default=0)
+	tile = IntegerField(default=0)
 
 
-class Gwflow_out_days(base.BaseModel):
-	year = IntegerField(null=True)
-	jday = IntegerField(null=True)
-	
+class Gwflow_cell_connection(base.BaseModel):
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
+	connected_cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='connected_cell_id', lazy_load=False)
+
 	class Meta:
-		primary_key = False
-
-
-# do not make this a foreign key since may accidentally reference inactive cell
-class Gwflow_obs_locs(base.BaseModel):
-	cell_id = IntegerField(null=True)
-	
-	class Meta:
-		primary_key = False
-
-
-class Gwflow_solutes(base.BaseModel):
-	solute_name = CharField(null=True)
-	sorption = DoubleField(null=True)
-	rate_const = DoubleField(null=True)
-	canal_irr = DoubleField(null=True)
-	init_data = CharField(null=True)
-	init_conc = DoubleField(null=True)
-	
-	class Meta:
-		primary_key = False
-
-
-class Gwflow_init_conc(base.BaseModel):
-	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
-	init_no3 = DoubleField(default=0)
-	init_p   = DoubleField(default=0)
-	init_so4 = DoubleField(default=0)
-	init_ca  = DoubleField(default=0)
-	init_mg  = DoubleField(default=0)
-	init_na  = DoubleField(default=0)
-	init_k   = DoubleField(default=0)
-	init_cl  = DoubleField(default=0)
-	init_co3 = DoubleField(default=0)
-	init_hco3 = DoubleField(default=0)
-	
-	class Meta:
-		primary_key = False
+		primary_key = CompositeKey('cell_id', 'connected_cell_id')
 
 
 class Gwflow_hrucell(base.BaseModel):
-	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
-	hru = ForeignKeyField(gis.Gis_hrus, on_delete='CASCADE', column_name='hru', lazy_load=False)
-	area_m2 = DoubleField(null=True)
-	
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
+	hru_id = IntegerField()
+	area_m2 = DoubleField()
+
 	class Meta:
-		primary_key = False
-
-
-class Gwflow_fpcell(base.BaseModel):
-	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
-	channel = ForeignKeyField(gis.Gis_channels, on_delete='CASCADE', column_name='channel', lazy_load=False)
-	area_m2 = DoubleField(null=True)
-	conductivity = DoubleField(null=True)
-	
-	class Meta:
-		primary_key = False
-
-
-class Gwflow_rivcell(base.BaseModel):
-	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
-	channel = ForeignKeyField(gis.Gis_channels, on_delete='CASCADE', column_name='channel', lazy_load=False)
-	length_m = DoubleField(null=True)
-	
-	class Meta:
-		primary_key = False
+		primary_key = CompositeKey('cell_id', 'hru_id')
 
 
 class Gwflow_lsucell(base.BaseModel):
-	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
-	lsu = ForeignKeyField(gis.Gis_lsus, on_delete='CASCADE', column_name='lsu', lazy_load=False)
-	area_m2 = DoubleField(null=True)
-	
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
+	lsu_id = IntegerField()
+	area_m2 = DoubleField()
+
 	class Meta:
-		primary_key = False
+		primary_key = CompositeKey('cell_id', 'lsu_id')
+
+
+class Gwflow_chancell(base.BaseModel):
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
+	channel_id = IntegerField()
+	bed_elevation = DoubleField()
+	length_m = DoubleField()
+	zone_id = ForeignKeyField(Gwflow_zone, on_delete='CASCADE', column_name='zone_id', lazy_load=False, default=1)
+
+
+class Gwflow_fpcell(base.BaseModel):
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
+	channel_id = IntegerField()
+	area_m2 = DoubleField()
+	conductivity = DoubleField(default=0)
+
+	class Meta:
+		primary_key = CompositeKey('cell_id', 'channel_id')
 
 
 class Gwflow_rescell(base.BaseModel):
-	cell_id = ForeignKeyField(Gwflow_grid, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
-	res = ForeignKeyField(gis.Gis_water, on_delete='CASCADE', column_name='res', lazy_load=False)
-	res_stage = DoubleField(null=True)
-	
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
+	reservoir_id = IntegerField()
+	stage = DoubleField(default=0)
+
 	class Meta:
-		primary_key = False
+		primary_key = CompositeKey('cell_id', 'reservoir_id')
+
+
+class Gwflow_pump(base.BaseModel):
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
+	start_year = IntegerField()
+	start_day = IntegerField()
+	end_year = IntegerField()
+	end_day = IntegerField()
+	rate_m3day = DoubleField()
+
+
+class Gwflow_obs(base.BaseModel):
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False, primary_key=True)
+	name = CharField(null=True)
+
+
+class Gwflow_out_times(base.BaseModel):
+	year = IntegerField()
+	jday = IntegerField()
+
+	class Meta:
+		primary_key = CompositeKey('year', 'jday')
+
+
+class Gwflow_solute(base.BaseModel):
+	name = CharField()
+	sorption_coef = DoubleField(default=1)
+	rate_const = DoubleField(default=0)
+	canal_irr = DoubleField(default=0)
+	init_conc = DoubleField(default=0)
+
+
+class Gwflow_cell_solute(base.BaseModel):
+	cell_id = ForeignKeyField(Gwflow_cell, on_delete='CASCADE', column_name='cell_id', lazy_load=False)
+	solute_id = ForeignKeyField(Gwflow_solute, on_delete='CASCADE', column_name='solute_id', lazy_load=False)
+	init_conc = DoubleField()
+
+	class Meta:
+		primary_key = CompositeKey('cell_id', 'solute_id')
 
 
 class Gwflow_wetland(base.BaseModel):
 	wet_id = ForeignKeyField(Wetland_wet, on_delete='CASCADE', column_name='wet_id', lazy_load=False)
 	thickness = DoubleField(null=True)
-	
+
 	class Meta:
 		primary_key = False
