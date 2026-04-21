@@ -2,6 +2,13 @@
 
 ## Version 3 ##
 
+### Revision 3.2.3 ###
+
+* Add fix for reading misnamed channel_sdmorph_mon.csv output file
+* Add check in model run for exiting prematurely without error code despite error present
+* Add background image switching for some landuses in SWAT+ Check plants tab (light mode only)
+* Bug fix: add landuse category dropdown to nutrients and plants tabs in SWAT+ Check (only when categories detected)
+
 ### Revision 3.2.2 ###
 
 * Update SWAT+ Check to match SWAT+ Toolbox

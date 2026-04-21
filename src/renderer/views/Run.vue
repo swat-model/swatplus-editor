@@ -126,7 +126,8 @@
 			modelMessages: [],
 			modelYear: -1,
 			currentPids: [],
-			killMode: true
+			killMode: true,
+			hasCorrectOutput: false,
 		},
 		status: {
 			inputs: false,
@@ -394,6 +395,7 @@
 		data.page.showError = false;
 		data.page.submitted = true;
 		data.task.killMode = false;
+		data.task.hasCorrectOutput = false;
 
 		if (noneSelected.value) {
 			data.page.saveError = 'Please select at least one task to run';
@@ -572,6 +574,7 @@
 			let arr = str.split(' ').filter(function(el:any) { return el !== '' });
 			let yrIdx = arr.indexOf('Yr');
 			if (yrIdx > -1) {
+				data.task.hasCorrectOutput = true;
 				let thisYr = arr[yrIdx + 1];
 				if (thisYr !== data.task.modelYear) {
 					let modelStr = '';
@@ -649,16 +652,25 @@
 
 		listeners.closeSwat = runProcess.processClose('run-swat', async (code:any) => {
 			if (formatters.isNullOrEmpty(data.task.error)) {
-				errors.log('Done model');
-				await api.put(`setup/save-model-run`, {}, currentProject.getApiHeader());
-				if (data.selection.output) {
-					runOutput();
-				} else {
-					data.task.running = false;
-					closeTaskModals();
+				if (!data.task.hasCorrectOutput) {
+					data.task.error = 'There was an error running SWAT+';
+					if (data.task.modelMessages.length > 500) data.task.modelMessages = [];
+					data.task.modelMessages.push(`There was a problem reading the console window from your model.\n 
+We believe your simulation did not complete execution, however it did not exit with an error code.\n 
+Please check your TxtInOut/diagnostics.out file for any information, and contact the SWAT+ model user group.`);
 					await get();
-					data.page.completed.show = true;
-					data.task.currentPids = [];
+					data.task.running = false;
+				} else {
+					await api.put(`setup/save-model-run`, {}, currentProject.getApiHeader());
+					if (data.selection.output) {
+						runOutput();
+					} else {
+						data.task.running = false;
+						closeTaskModals();
+						await get();
+						data.page.completed.show = true;
+						data.task.currentPids = [];
+					}
 				}
 			}
 		});
