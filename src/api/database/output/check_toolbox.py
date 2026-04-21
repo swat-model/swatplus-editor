@@ -26,6 +26,7 @@ landuse_category_options = [
 	'Cover Crop',
 	'Cropland',
 	'Forest',
+	'Grass',
 	'Peas',
 	'Grain Sorghum',
 	'Grapes',
@@ -44,6 +45,15 @@ landuse_category_options = [
 	'Wetland',
 	'Wheat',
 	'Wildrye'
+]
+
+landuse_background_options = [
+	'banana',
+	'corn',
+	'forest',
+	'grass',
+	'pasture',
+	'tomato'
 ]
 
 class CheckToolboxBase:

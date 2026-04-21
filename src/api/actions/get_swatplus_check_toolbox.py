@@ -88,16 +88,23 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 
 			plant_options = []
 			category_dict = {}
+			custom_bg_landuses = []
 			for p in sorted(available_landuses):
 				found_items = []
 				d = ''
+				bg_matches = []
 				if p in plant_desc_lookup:
 					d = plant_desc_lookup[p]
-					found_items = [item for item in check_toolbox.landuse_category_options if item.lower() in d.lower()]
+					found_items = [item for item in check_toolbox.landuse_category_options if item.lower() in d.lower() and f"non{item.lower()}" not in d.lower().replace('-', '')]
+					bg_matches = [item for item in check_toolbox.landuse_background_options if item.lower() in d.lower() and f"non{item.lower()}" not in d.lower().replace('-', '')]
 				elif p in urban_desc_lookup:
 					d = urban_desc_lookup[p]
 					found_items = ['Urban']
 				plant_options.append({'value': p, 'title': f"({p}) {d}" if p != no_land_use_name else no_land_use_name})
+
+				if len(bg_matches) > 0:
+					custom_bg_landuses.append({ 'name': p, 'background': bg_matches[0] })
+
 				if len(found_items) > 0:
 					for cat in found_items:
 						if cat not in category_dict:
@@ -214,6 +221,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 						'mgtOptions': hru_mgt_options,
 						'landuseOptions': plant_options,
 						'landuseCategories': categories,
+						'landuseBackgrounds': custom_bg_landuses
 					}, f, indent=2)
 				return json.dumps({'success': self.save_to_file})
 
@@ -225,6 +233,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 				'mgtOptions': hru_mgt_options,
 				'landuseOptions': plant_options,
 				'landuseCategories': categories,
+				'landuseBackgrounds': custom_bg_landuses
 			})
 		except Exception as ex:
 			SetupProjectDatabase.close()

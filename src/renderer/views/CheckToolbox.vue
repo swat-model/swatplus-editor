@@ -64,6 +64,7 @@
 			mgtOptions: [],
 			landuseOptions: [],
 			landuseCategories: [],
+			landuseBackgrounds: [],
 		},
         simulationWarnings: <string[]>[]
 	});
@@ -459,6 +460,18 @@
 				data.page.selectedLandusesInput.some((lu:any) => m.title.toLowerCase().includes(lu.toLowerCase())));
 		}
 		return data.check.mgtOptions;
+	})
+
+	const landuseBackground = computed(() => {
+		if (theme.global.name.value === 'light' && data.page.checkByLanduse && data.page.selectedLandusesInput.length > 0) {
+			let matches = data.check.landuseBackgrounds.filter((l:any) =>  
+				data.page.selectedLandusesInput.some((lu:any) => l.name === lu));
+			if (matches.length > 0) {
+				return matches[0].background;
+			}
+		}
+
+		return 'overall';
 	})
 
 	function getMgtIconAndColor(op:string) {
@@ -947,6 +960,11 @@
 						<v-card class="semi-transparent details-card" elevation="6">
 							<v-card-item>
 								<v-switch label="Check by land use" v-model="data.page.checkByLanduse" color="primary" hide-details></v-switch>
+								<v-select v-if="data.page.checkByLanduse && data.check.landuseCategories.length > 0" hide-details density="comfortable" 
+									:items="data.check.landuseCategories" item-title="name" item-value="name"
+									label="Filter by category" 
+									v-model="data.page.selectedCategory" @update:model-value="setLanduseInCategory">
+								</v-select>
 								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="comfortable" multiple chips closable-chips
 									v-model="data.page.selectedLandusesInput" :items="data.check.landuseOptions"
 									label="Land use" placeholder="Type to search...">
@@ -962,7 +980,7 @@
 									</div>
 								</div>
 
-								<v-tabs v-model="data.page.nutrientsTab" align-tabs="center" :class="data.page.isOverall ? 'mt-0' : 'mt-4'"
+								<v-tabs v-model="data.page.nutrientsTab" align-tabs="center" :class="data.page.checkByLanduse ? 'mt-4' : 'mt-0'"
 									color="primary" :bg-color="theme.global.name.value == 'dark' ? 'blue-grey-darken-2' : 'blue-grey-lighten-5'">
 									<v-tab value="nitrogen">Nitrogen</v-tab>
 									<v-tab value="phosphorus">Phosphorus</v-tab>
@@ -1226,7 +1244,7 @@
 				</image-overlays>
 
 				<image-overlays v-if="data.page.tabIndex == 4" class="spcheck_tab" id="spcheck_plants"
-					:image-path="`/swatplus-check/landuse_overall_light.png`"
+					:image-path="`/swatplus-check/landuse_${landuseBackground}_light.png`"
 					:dark-image-path="`/swatplus-check/landuse_overall_dark.png`"
 					:image-ratio="2886/1023"
 					:overlays="[
@@ -1239,6 +1257,11 @@
 						<v-card class="semi-transparent details-card" elevation="6">
 							<v-card-item>
 								<v-switch label="Check by land use" v-model="data.page.checkByLanduse" color="primary" hide-details></v-switch>
+								<v-select v-if="data.page.checkByLanduse && data.check.landuseCategories.length > 0" hide-details density="comfortable" 
+									:items="data.check.landuseCategories" item-title="name" item-value="name"
+									label="Filter by category" 
+									v-model="data.page.selectedCategory" @update:model-value="setLanduseInCategory">
+								</v-select>
 								<v-autocomplete v-if="data.page.checkByLanduse" hide-details density="comfortable" multiple chips closable-chips
 									v-model="data.page.selectedLandusesInput" :items="data.check.landuseOptions"
 									label="Land use" placeholder="Type to search...">
@@ -1297,6 +1320,9 @@
 									v-model="data.page.selectedHruIndex" :items="filteredMgtOptions"
 									label="Select an HRU" placeholder="Type to search..."
 								></v-autocomplete>
+								<div v-else class="text-body-2">
+									<em>No HRUs with management events{{ data.page.checkByLanduse ? ' for the selected land uses' : '' }}.</em>
+								</div>
 							</v-card-item>
 						</v-card>
 

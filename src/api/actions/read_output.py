@@ -222,7 +222,15 @@ class ReadOutput(ExecutableApi):
 		file_path = os.path.join(self.output_files_dir, file)
 		check_path = Path(file_path)
 		if not check_path.is_file():
-			return 'File not found: {}'.format(file_path)
+			# Special check for bug in SWAT+ versions where "channel_sdmorph_mon.csv" was written as "channel_mon_sdmorph.csv"
+			if file == 'channel_sdmorph_mon.csv':
+				file = 'channel_mon_sdmorph.csv'
+				file_path = os.path.join(self.output_files_dir, file)
+				check_path = Path(file_path)
+				if not check_path.is_file():
+					return 'File not found: {}'.format(file_path)
+			else:
+				return 'File not found: {}'.format(file_path)
 
 		# Read column headers, units (if applicable), and first data line for type inference
 		with open(file_path, 'r') as f:
