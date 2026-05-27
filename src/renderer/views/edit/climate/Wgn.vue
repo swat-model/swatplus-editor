@@ -36,7 +36,8 @@
 				db: <string|null>null,
 				table: <string|null>null,
 				useObserved: false,
-				deleteExisting: true
+				deleteExisting: true,
+				deleteExistingStations: false
 			},
 			options: {
 				methods: [
@@ -47,7 +48,8 @@
 			},
 			show: false,
 			error: <string|null>null,
-			saving: false
+			saving: false,
+			hasObservedOnLoad: false
 		},
 		delete: {
 			show: false,
@@ -110,6 +112,8 @@
 
 			page.import.form.db = formatters.toValue(response.data.wgn_db, defaultDb);
 			page.import.form.table = formatters.toValue(response.data.wgn_table_name, defaultTable);
+			page.import.form.useObserved = response.data.has_observed_weather;
+			page.import.hasObservedOnLoad = response.data.has_observed_weather;
 
 			await validateStations();
 		} catch (error) {
@@ -177,6 +181,7 @@
 			if (formatters.isNullOrEmpty(page.import.error)) {
 				let deleteExisting = page.import.form.deleteExisting ? 'y' : 'n';
 				let createStations = page.import.form.useObserved ? 'n' : 'y';
+				let deleteExistingStations = page.import.form.deleteExistingStations && page.import.hasObservedOnLoad ? 'y' : 'n';
 
 				let args = ['import_weather', 
 					'--project_db_file='+ currentProject.projectDb,
@@ -185,7 +190,8 @@
 					'--create_stations='+ createStations,
 					'--import_method='+ page.import.form.method,
 					'--file1='+ page.import.form.csvFile1,
-					'--file2='+ page.import.form.csvFile2];
+					'--file2='+ page.import.form.csvFile2,
+					'--delete_existing_stations='+ deleteExistingStations];
 				errors.log(args);
 
 				v$.value.$reset();
@@ -417,6 +423,12 @@
 							<v-checkbox v-model="page.import.form.useObserved" hide-details>
 								<template #label>
 									Check if you are using observed weather data
+								</template>
+							</v-checkbox>
+
+							<v-checkbox v-if="page.import.hasObservedOnLoad" v-model="page.import.form.deleteExistingStations" hide-details>
+								<template #label>
+									Delete existing weather stations? CAUTION:This will remove any imported observed weather data.
 								</template>
 							</v-checkbox>
 						</div>

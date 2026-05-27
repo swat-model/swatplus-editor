@@ -838,7 +838,7 @@ class Swat2012WeatherImport(ExecutableApi):
 
 
 class WgnImport(ExecutableApi):
-	def __init__(self, project_db_file, delete_existing, create_stations, import_method='database', file1=None, file2=None):
+	def __init__(self, project_db_file, delete_existing, create_stations, import_method='database', file1=None, file2=None, delete_stations=False):
 		self.__abort = False
 		SetupProjectDatabase.init(project_db_file)
 		self.project_db_file = project_db_file
@@ -865,6 +865,8 @@ class WgnImport(ExecutableApi):
 
 		if delete_existing:
 			self.delete_existing()
+		if delete_stations or (delete_existing and Weather_sta_cli.observed_count() < 1):
+			self.delete_existing_stations()
 
 	def import_data(self):
 		if self.create_stations:
@@ -879,6 +881,13 @@ class WgnImport(ExecutableApi):
 	def delete_existing(self):
 		Weather_wgn_cli_mon.delete().execute()
 		Weather_wgn_cli.delete().execute()
+
+	def delete_existing_stations(self):
+		Weather_file.delete().execute()
+		Weather_sta_cli.delete().execute()
+		m = Project_config.get()
+		m.weather_data_dir = None
+		m.save()
 
 	def add_wgn_stations(self, start_prog, total_prog):
 		if self.import_method == 'database':

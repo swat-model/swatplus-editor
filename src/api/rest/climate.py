@@ -69,6 +69,9 @@ def stations():
 		project_base.db.execute_sql("PRAGMA foreign_keys = ON")
 		Weather_file.delete().execute()
 		Weather_sta_cli.delete().execute()
+		m = Project_config.get()
+		m.weather_data_dir = None
+		m.save()
 		rh.close()
 		return '', 200
 
@@ -246,7 +249,8 @@ def wgnDb():
 		rh.close()
 		return {
 			'wgn_db': wgn_db,
-			'wgn_table_name': config.wgn_table_name
+			'wgn_table_name': config.wgn_table_name,
+			'has_observed_weather': Weather_sta_cli.observed_count() > 0
 		}
 	elif request.method == 'PUT':
 		args = request.json

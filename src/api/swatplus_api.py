@@ -35,6 +35,7 @@ if __name__ == '__main__':
 	parser.add_argument("--file2", type=str, help="full path of file", nargs="?")
 	parser.add_argument("--nc_stations_list", type=str, help="full path of CSV file with NetCDF station coordinates and variable availability", nargs="?")
 	parser.add_argument("--nc_file", type=str, help="full path of NetCDF data file (.nc4) to copy to TxtInOut", nargs="?")
+	parser.add_argument("--delete_existing_stations", type=str, help="y/n delete existing stations first", nargs="?")
 
 	# read output
 	parser.add_argument("--output_files_dir", type=str, help="full path of output files directory", nargs="?")
@@ -90,6 +91,7 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	del_ex = True if args.delete_existing == "y" else False
+	del_sta = True if args.delete_existing_stations == "y" else False
 	cre_sta = True if args.create_stations == "y" else False
 	constant_ps = True if args.constant_ps == "y" else False
 	is_lte = True if args.is_lte == "y" else False
@@ -124,7 +126,7 @@ if __name__ == '__main__':
 			api = NetCDFWeatherImport(args.project_db_file, del_ex, cre_sta, stations_csv, args.nc_file)
 			api.import_data()
 		elif args.import_type == "wgn":
-			api = WgnImport(args.project_db_file, del_ex, cre_sta, args.import_method, args.file1, args.file2)
+			api = WgnImport(args.project_db_file, del_ex, cre_sta, args.import_method, args.file1, args.file2, del_sta)
 			api.import_data()
 		elif args.import_type == "atmo":
 			api = AtmoImport(args.project_db_file, del_ex, args.import_method, args.file1, args.file2)

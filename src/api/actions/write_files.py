@@ -40,7 +40,7 @@ class WriteFiles(ExecutableApi):
 					sys.exit('The input files directory {dir} does not exist. Please select a valid path and try again.'.format(dir=input_files_dir))
 			
 			weather_data_dir = None
-			if config.weather_data_dir is not None:
+			if config.weather_data_dir is not None and self.has_weather_files():
 				weather_data_dir = utils.full_path(project_db_file, config.weather_data_dir).replace("\\","/")
 				if not os.path.exists(weather_data_dir):
 					sys.exit('Weather data directory {dir} does not exist.'.format(dir=weather_data_dir))
@@ -182,6 +182,12 @@ class WriteFiles(ExecutableApi):
 					section=section))
 
 		return file_names
+	
+	def has_weather_files(self):
+		if self.__weather_data_format == 'netcdf':
+			return False
+		else:
+			return Weather_file.select().count() > 0
 
 	def copy_weather_files(self, start_prog, allocated_prog):
 		# Skip copying weather files if using netcdf format
