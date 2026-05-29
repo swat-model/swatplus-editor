@@ -8,6 +8,7 @@ from database.datasets.setup import SetupDatasetsDatabase
 from database.datasets.definitions import Version
 from database.project.hru_parm_db import Plants_plt as project_plants
 from database.datasets.hru_parm_db import Plants_plt as dataset_plants
+from database.project import simulation, basin
 from .import_gis import GisImport
 from . import update_project, update_datasets
 
@@ -21,9 +22,78 @@ from playhouse.migrate import *
 
 OVERWRITE_PLANTS = False
 
+def automatic_updates(project_db):
+	#Remove duplicate print objects
+	try:
+		subq = (simulation.Print_prt_object.select(fn.MIN(simulation.Print_prt_object.id).alias('min_id')).group_by(simulation.Print_prt_object.name))
+		(simulation.Print_prt_object.delete().where(simulation.Print_prt_object.id.not_in(subq)).execute())
+	except:
+		pass
+
+	conn = lib.open_db(project_db)
+
+	if lib.exists_table(conn, 'project_config'):
+		config_cols = lib.get_column_names(conn, 'project_config')
+		col_names = [v['name'] for v in config_cols]
+		if 'netcdf_data_file' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'netcdf_data_file', CharField(null=True)),
+			)
+		if 'swat_exe_filename' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'swat_exe_filename', CharField(null=True)),
+			)
+		if 'use_gwflow' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'use_gwflow', BooleanField(default=False)),
+			)
+		if 'output_last_imported' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('project_config', 'output_last_imported', DateTimeField(null=True)),
+				migrator.add_column('project_config', 'imported_gis', BooleanField(default=False)),
+				migrator.add_column('project_config', 'is_lte', BooleanField(default=False)),
+			)
+
+			if lib.exists_table(conn, 'plants_plt'):
+				lib.delete_table(project_db, 'plants_plt')
+	
+	if lib.exists_table(conn, 'codes_bsn'):
+		m = Project_config.get_or_none()
+		if m is not None and (m.editor_version == '3.0.0' or m.editor_version == '3.0.1'):
+			cb = basin.Codes_bsn.get_or_none()
+			if cb is not None and cb.i_fpwet == 2:
+				basin.Codes_bsn.update({basin.Codes_bsn.i_fpwet: 1}).execute()
+				Project_config.update({Project_config.editor_version: '3.0.2'}).execute()
+
+	if lib.exists_table(conn, 'file_cio'):
+		config_cols = lib.get_column_names(conn, 'file_cio')
+		col_names = [v['name'] for v in config_cols]
+		if 'customization' not in col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.add_column('file_cio', 'customization', IntegerField(default=0)),
+			)
+
+	if lib.exists_table(conn, 'plants_plt'):
+		plt_cols = lib.get_column_names(conn, 'plants_plt')
+		plt_col_names = [v['name'] for v in plt_cols]
+		if 'rsd_pctcov' not in plt_col_names:
+			migrator = SqliteMigrator(SqliteDatabase(project_db))
+			migrate(
+				migrator.rename_column('plants_plt', 'wnd_dead', 'rsd_pctcov'),
+				migrator.rename_column('plants_plt', 'wnd_flat', 'rsd_covfac'),
+			)
+	conn.close()
+
 class SetupProject(ExecutableApi):
 	def __init__(self, project_db, editor_version, project_name=None, datasets_db=None, constant_ps=True, is_lte=False, project_description=None, copy_datasets_db=False):
 		self.__abort = False
+
+		automatic_updates(project_db)
 
 		base_path = os.path.dirname(project_db)
 		rel_project_db = os.path.relpath(project_db, base_path)
