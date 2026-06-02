@@ -1,12 +1,12 @@
 from .base import BaseFileModel, FileColumn as col
-from database.project import gis, gwflow, connect, reservoir, basin, base
+from database.project import gis, gwflow, connect, reservoir, basin, base, simulation
 from database.project.config import Project_config
 from database import lib
 from helpers import utils
 from .connect import IndexHelper
 import os.path
 import sys
-
+import datetime
 
 class Gwflow_files(BaseFileModel):
 	def __init__(self, file_name, version=None, swat_version=None, project_db_file=None):
@@ -40,8 +40,8 @@ class Gwflow_files(BaseFileModel):
 		self._zones = list(gwflow.Gwflow_zone.select().order_by(gwflow.Gwflow_zone.zone_id))
 		self._zone_idx = {z.zone_id: i + 1 for i, z in enumerate(self._zones)}
 		self._chan_idx = IndexHelper(connect.Chandeg_con).get()
+		self._ncell = gwflow.Gwflow_cell.select().count()
 
-		self.write_input()
 		self.write_codes()
 		self.write_zones_new()
 		self.write_cells()
@@ -52,191 +52,46 @@ class Gwflow_files(BaseFileModel):
 		if self.config.recharge_type in (1, 3):
 			self.write_hrucell()
 		else:
-			self._remove_if_exists('gwflow.hrucell')
+			self._remove_if_exists('hrucell.gw')
 		if self.config.recharge_type in (2, 3):
 			self.write_lsucell()
 		else:
-			self._remove_if_exists('gwflow.lsucell')
+			self._remove_if_exists('lsucell.gw')
 		if self.config.reservoir_exchange:
 			self.write_rescells()
 		else:
-			self._remove_if_exists('gwflow.rescells')
+			self._remove_if_exists('rescell.gw')
 		if self.config.floodplain_exchange:
 			self.write_floodplain()
 		else:
-			self._remove_if_exists('gwflow.floodplain')
+			self._remove_if_exists('floodplain.gw')
 		if self.config.wetland_exchange:
 			self.write_wetland()
 		else:
-			self._remove_if_exists('gwflow.wetland')
+			self._remove_if_exists('wetland.gw')
 		if self.config.tile_drainage:
 			self.write_tiles()
 		else:
-			self._remove_if_exists('gwflow.tiles')
+			self._remove_if_exists('tile.gw')
+		if self.config.external_pumping:
+			self.write_pumpex()
+		else:
+			self._remove_if_exists('pumpex.gw')
+		self.write_hru_pump_observe()
+		self.write_tvheads()
+		self.write_sw_group()
+		self.write_ponds()
+		self.write_pond_cell()
+		self.write_pond_div()
+		self.write_phreato()
+		self.write_phreato_cell()
+		self.write_chan_depth()
 		if self.config.solute_transport:
 			self.write_solutes()
-
-	# ------------------------------------------------------------------
-	# gwflow.input
-	# ------------------------------------------------------------------
-
-	def write_input(self):
-		cfg = self.config
-		with open(os.path.join(self.file_name, 'gwflow.input'), 'w') as f:
-			f.write(' INPUT FOR GWFLOW MODULE ')
-			self.write_meta_line(f, 'gwflow.input')
-			f.write(' Basic information\n')
-
-			is_struct = cfg.grid_type != 'unstructured'
-			f.write(' {}\n'.format('structured' if is_struct else 'unstructured'))
-
-			if is_struct:
-				self._write_param(f, cfg.cell_size, 1, 'cell size (m)')
-				f.write(' {} number of rows, number of columns\n'.format(
-					utils.string_pad('{} {}'.format(cfg.num_rows, cfg.num_cols),
-					direction='left', default_pad=utils.DEFAULT_NUM_PAD, no_space_removal=True)))
-			else:
-				self._write_param(f, cfg.num_cells, 0, 'number of gwflow cells')
-
-			self._write_param(f, cfg.boundary_condition, 0, 'boundary condition type (1=constant head; 2=no-flow)')
-			self._write_param(f, cfg.recharge_type, 0, 'recharge connection type (1=HRU-cell; 2=LSU-cell)')
-			self._write_param(f, cfg.gw_soil_transfer, 0, 'groundwater-->soil transfer (0=off; 1=on)')
-			self._write_param(f, cfg.saturation_excess, 0, 'groundwater saturation excess flow (0=off; 1=on)')
-			self._write_param(f, cfg.external_pumping, 0, 'external groundwater pumping (0=off; 1=on)')
-			self._write_param(f, cfg.tile_drainage, 0, 'groundwater tile drainage (0=off; 1=on)')
-			self._write_param(f, cfg.reservoir_exchange, 0, 'groundwater-reservoir exchange (0=off; 1=on)')
-			self._write_param(f, cfg.wetland_exchange, 0, 'groundwater-wetland exchange (0=off; 1=on)')
-			self._write_param(f, cfg.floodplain_exchange, 0, 'groundwater-floodplain exchange (0=off; 1=on)')
-			self._write_param(f, cfg.canal_seepage, 0, 'canal seepage to groundwater (0=off; 1=on)')
-			self._write_param(f, cfg.solute_transport, 0, 'groundwater solute transport (0=off; 1=on)')
-			self._write_param(f, cfg.timestep_days, 2, 'time step (days)')
-			f.write(' {} write flags (daily, monthly, annual, avg. annual)\n'.format(
-				utils.string_pad('{} {} {} {}'.format(
-					cfg.daily_output, cfg.monthly_output, cfg.annual_output, cfg.aa_output),
-				direction='left', default_pad=utils.DEFAULT_NUM_PAD, no_space_removal=True)))
-			self._write_param(f, 1, 0, 'number of columns in output files')
-
-			self._write_zones(f)
-
-			f.write(' Grid Cell Information\n')
-			if is_struct:
-				self._write_structured_grid(f, cfg)
-			else:
-				self._write_unstructured_grid(f)
-
-			self._write_output_times(f)
-			self._write_obs_wells(f)
-
-			f.write(' Cell for detailed daily sources/sink output\n')
-			cell_det = 0
-			if cfg.detail_row > 0 and cfg.detail_col > 0 and is_struct:
-				cell_det = (cfg.detail_row - 1) * cfg.num_cols + cfg.detail_col
-			f.write(' {}\n'.format(cell_det))
-
-			f.write(' River Cell Information\n')
-			f.write(' {}\n'.format(utils.get_num_format(cfg.river_depth, 2)))
-
-	def _write_param(self, f, value, decimals, label):
-		f.write(' {} {}\n'.format(utils.num_pad(value, decimals=decimals, direction='left'), label))
-
-	def _write_zones(self, f):
-		f.write(' Aquifer and Streambed Parameter Zones\n')
-		n = len(self._zones)
-		for label, attr in [('Aquifer Hydraulic Conductivity (m/day)', 'aquifer_k'),
-							('Aquifer Specific Yield', 'specific_yield'),
-							('Streambed Hydraulic Conductivity (m/day)', 'streambed_k'),
-							('Streambed Thickness (m)', 'streambed_thickness')]:
-			f.write(' {} Zones\n'.format(label))
-			f.write(' {}\n'.format(n))
-			for i, z in enumerate(self._zones, 1):
-				f.write('{}\t{}\n'.format(i, utils.get_num_format(getattr(z, attr))))
-
-	def _write_structured_grid(self, f, cfg):
-		cells = {c.cell_id: c for c in gwflow.Gwflow_cell.select()}
-		ncols = cfg.num_cols
-		total = cfg.num_rows * ncols
-
-		grid_attrs = [
-			('Cell Status (0=inactive; 1=active; 2=boundary)', 'status', True),
-			('Ground Surface Elevation (m)', 'elevation', False),
-			('Aquifer Thickness(m)', 'aquifer_thickness', False),
-			('Hydraulic conductivity zone', '_zone', True),
-			('Specific yield zone', '_zone', True),
-			('Recharge delay(Days)', 'recharge_delay', False),
-			('Groundwater ET Extinction Depth (m)', 'extinction_depth', False),
-			('Initial Groundwater Head (m)', 'initial_head', False),
-		]
-
-		for header, attr, is_int in grid_attrs:
-			f.write(header + '\n')
-			for row in range(cfg.num_rows):
-				vals = []
-				for col in range(ncols):
-					idx = row * ncols + col + 1
-					cell = cells.get(idx)
-					if cell is None:
-						vals.append('0')
-					elif attr == '_zone':
-						vals.append(str(self._zone_idx.get(cell.zone_id, 0)))
-					elif is_int:
-						vals.append(str(getattr(cell, attr, 0)))
-					else:
-						v = getattr(cell, attr, 0)
-						if v is None:
-							v = cell.elevation - 5 if attr == 'initial_head' else 0
-						vals.append(utils.get_num_format(v, 2))
-				f.write('\t'.join(vals) + '\n')
-
-	def _write_unstructured_grid(self, f):
-		"""Write per-cell rows. Fortran reader skips 13 lines before cell data."""
-		cells = list(gwflow.Gwflow_cell.select().order_by(gwflow.Gwflow_cell.cell_id))
-		conn_map = {}
-		for cc in gwflow.Gwflow_cell_connection.select():
-			conn_map.setdefault(cc.cell_id, []).append(cc.connected_cell_id)
-
-		# Fortran skips 13 lines (do i=1,13; read header) before cell data.
-		# Line 1 is "Grid Cell Information" written by caller.
-		f.write('cell_id  status  elev  thck  K_zone  Sy_zone  delay  exdp  init  x  y  area  ncon  connections\n')
-		for i in range(11):
-			f.write('.\n')
-		for c in cells:
-			conns = conn_map.get(c.cell_id, [])
-			zi = self._zone_idx.get(c.zone_id, 1)
-			init = c.initial_head if c.initial_head else c.elevation - 5
-			parts = [
-				str(c.cell_id), str(c.status),
-				'{:.2f}'.format(c.elevation),
-				'{:.2f}'.format(c.aquifer_thickness),
-				str(zi), str(zi),
-				'{:.2f}'.format(c.recharge_delay),
-				'{:.2f}'.format(c.extinction_depth),
-				'{:.2f}'.format(init),
-				'{:.2f}'.format(c.x_centroid),
-				'{:.2f}'.format(c.y_centroid),
-				'{:.2f}'.format(c.area),
-				str(len(conns)),
-			]
-			parts.extend(str(x) for x in conns)
-			f.write('\t'.join(parts) + '\n')
-
-	def _write_output_times(self, f):
-		f.write(' Times for Groundwater Head Output\n')
-		times = list(gwflow.Gwflow_out_times.select().order_by(
-			gwflow.Gwflow_out_times.year, gwflow.Gwflow_out_times.jday))
-		f.write('\t\t{}\n'.format(len(times)))
-		for t in times:
-			f.write('{} {}\n'.format(utils.int_pad(t.year), utils.int_pad(t.jday)))
-
-	def _write_obs_wells(self, f):
-		f.write(' Groundwater Observation Locations\n')
-		obs = list(gwflow.Gwflow_obs.select())
-		f.write('\t\t{}\n'.format(len(obs)))
-		for o in obs:
-			f.write('{}\n'.format(o.cell_id))
-
-	# ------------------------------------------------------------------
-	# new split files: codes, zones, cells, cellcons, outputs
-	# ------------------------------------------------------------------
+			self.write_cell_solute()
+		else:
+			self._remove_if_exists('solute.gw')
+			self._remove_if_exists('cell_sol.gw')
 
 	def _open_with_meta(self, name):
 		f = open(os.path.join(self.file_name, name), 'w')
@@ -246,71 +101,83 @@ class Gwflow_files(BaseFileModel):
 	def write_codes(self):
 		cfg = self.config
 		is_struct = cfg.grid_type != 'unstructured'
-		rows = [
-			('grid_type', 'unstructured' if not is_struct else 'structured', 'grid topology'),
-			('ncell', cfg.num_cells if not is_struct else cfg.num_rows * cfg.num_cols, 'number of cells'),
-			('cell_size', '{:.2f}'.format(cfg.cell_size) if is_struct else '0', 'cell size m (0=unstructured)'),
-			('n_rows', cfg.num_rows if is_struct else 0, 'grid rows (0=unstructured)'),
-			('n_cols', cfg.num_cols if is_struct else 0, 'grid cols (0=unstructured)'),
-			('bc_type', cfg.boundary_condition, 'boundary condition (1=const head, 2=no flow)'),
-			('conn_type', cfg.recharge_type, 'recharge connection (1=HRU, 2=LSU, 3=both)'),
-			('gw_soil', cfg.gw_soil_transfer, 'groundwater to soil transfer (0=off, 1=on)'),
-			('satx', cfg.saturation_excess, 'saturation excess flow (0=off, 1=on)'),
-			('pumpex', cfg.external_pumping, 'external pumping (0=off, 1=on)'),
-			('tile', cfg.tile_drainage, 'tile drainage (0=off, 1=on)'),
-			('res', cfg.reservoir_exchange, 'reservoir exchange (0=off, 1=on)'),
-			('wet', cfg.wetland_exchange, 'wetland exchange (0=off, 1=on)'),
-			('fp', cfg.floodplain_exchange, 'floodplain exchange (0=off, 1=on)'),
-			('canal', cfg.canal_seepage, 'canal seepage (0=off, 1=on)'),
-			('solute', cfg.solute_transport, 'solute transport (0=off, 1=on)'),
-			('time_step', '{:.2f}'.format(cfg.timestep_days), 'time step (days)'),
-			('write_day', cfg.daily_output, 'daily output (0=off, 1=on)'),
-			('write_mon', cfg.monthly_output, 'monthly output (0=off, 1=on)'),
-			('write_yr', cfg.annual_output, 'annual output (0=off, 1=on)'),
-			('write_aa', cfg.aa_output, 'avg annual output (0=off, 1=on)'),
-			('river_thresh', '{:.2f}'.format(cfg.river_depth), 'river-bed elevation threshold (m)'),
+		cols = [
+			('grid_type', 'unstructured' if not is_struct else 'structured'),
+			('ncell', self._ncell),
+			('cell_size', '{:.2f}'.format(cfg.cell_size) if is_struct else '0'),
+			('n_rows', cfg.num_rows if is_struct else 0),
+			('n_cols', cfg.num_cols if is_struct else 0),
+			('bc_type', cfg.boundary_condition),
+			('conn_type', cfg.recharge_type),
+			('gw_soil', cfg.gw_soil_transfer),
+			('satx', cfg.saturation_excess),
+			('pumpex', cfg.external_pumping),
+			('tile', cfg.tile_drainage),
+			('res', cfg.reservoir_exchange),
+			('wet', cfg.wetland_exchange),
+			('fp', cfg.floodplain_exchange),
+			('canal', cfg.canal_seepage),
+			('solute', cfg.solute_transport),
+			('heat', cfg.heat_transport),
+			('time_step', '{:.2f}'.format(cfg.timestep_days)),
+			('write_day', cfg.daily_output),
+			('write_mon', cfg.monthly_output),
+			('write_yr', cfg.annual_output),
+			('write_aa', cfg.aa_output),
+			('river_thresh', '{:.2f}'.format(cfg.river_depth)),
 		]
-		with self._open_with_meta('gwflow.codes') as f:
-			f.write('{:<16}{:<16}{}\n'.format('key', 'value', 'description'))
-			for k, v, d in rows:
-				f.write('{:<16}{:<16}{}\n'.format(str(k), str(v), d))
+		with self._open_with_meta('codes.gw') as f:
+			f.write(''.join('{:>14}'.format(k) for k, v in cols) + '\n')
+			f.write(''.join('{:>14}'.format(str(v)) for k, v in cols) + '\n')
 
 	def write_zones_new(self):
-		with self._open_with_meta('gwflow.zones') as f:
-			f.write('{:>10}{:>14}{:>14}{:>14}{:>16}\n'.format(
-				'zone_id', 'aquifer_K', 'aquifer_Sy', 'streambed_K', 'streambed_thick'))
+		with self._open_with_meta('zones.gw') as f:
+			f.write('{:>10}{:>14}{:>14}{:>14}{:>16}{:>14}\n'.format(
+				'zone_id', 'aquifer_K', 'aquifer_Sy', 'streambed_K', 'streambed_thick', 'thermal_K'))
 			for z in self._zones:
-				f.write('{:>10}{:>14.5f}{:>14.5f}{:>14.5f}{:>16.5f}\n'.format(
+				f.write('{:>10}{:>14.5f}{:>14.5f}{:>14.5f}{:>16.5f}{:>14.5f}\n'.format(
 					self._zone_idx[z.zone_id],
 					z.aquifer_k if z.aquifer_k is not None else 0.0,
-					z.specific_yield, z.streambed_k, z.streambed_thickness))
+					z.specific_yield, z.streambed_k, z.streambed_thickness,
+					z.thermal_k))
 
 	def write_cells(self):
 		cells = list(gwflow.Gwflow_cell.select().order_by(gwflow.Gwflow_cell.cell_id))
-		with self._open_with_meta('gwflow.cells') as f:
-			f.write('{:>8}{:>8}{:>10}{:>10}{:>8}{:>8}{:>8}{:>8}{:>10}{:>16}{:>16}{:>14}{:>10}{:>10}{:>10}{:>12}{:>12}{:>12}\n'.format(
-				'cell_id', 'status', 'elev', 'thck', 'K_zone', 'Sy_zone', 'delay', 'exdp', 'init',
+		pad = len(str(self._ncell))
+		with self._open_with_meta('cells.gw') as f:
+			f.write(utils.int_pad('id') + utils.string_pad('name', direction='left') + utils.int_pad('gis_id'))
+			f.write('{:>8}{:>10}{:>10}{:>8}{:>8}{:>8}{:>8}{:>10}{:>16}{:>16}{:>14}{:>10}{:>10}{:>10}{:>12}{:>12}{:>12}{:>8}{:>8}{:>12}\n'.format(
+				'status', 'elev', 'thck', 'K_zone', 'Sy_zone', 'delay', 'exdp', 'init',
 				'x', 'y', 'area',
-				'strK', 'strthick', 'bc_type', 'tile_depth', 'tile_area', 'tile_K'))
+				'strK', 'strthick', 'bc_type', 'tile_depth', 'tile_area', 'tile_K', 'row', 'col', 'init_temp'))
 			for c in cells:
 				zi = self._zone_idx.get(c.zone_id, 1)
 				init = c.initial_head if c.initial_head is not None else c.elevation - 5
-				f.write('{:>8}{:>8}{:>10.2f}{:>10.2f}{:>8}{:>8}{:>8.2f}{:>8.2f}{:>10.2f}{:>16.2f}{:>16.2f}{:>14.2f}{:>10}{:>10}{:>10}{:>12}{:>12}{:>12}\n'.format(
-					c.cell_id, c.status,
+				def fmt_override(v):
+					return 'null' if v is None else '{:.5f}'.format(v)
+				def fmt_int_override(v):
+					return 'null' if v is None else str(v)
+				f.write(utils.int_pad(c.cell_id) + utils.string_pad('cell' + str(c.cell_id).zfill(pad), direction='left') + utils.int_pad(c.gis_id if c.gis_id is not None else c.cell_id))
+				f.write('{:>8}{:>10.2f}{:>10.2f}{:>8}{:>8}{:>8.2f}{:>8.2f}{:>10.2f}{:>16.2f}{:>16.2f}{:>14.2f}{:>10}{:>10}{:>10}{:>12}{:>12}{:>12}{:>8}{:>8}{:>12}\n'.format(
+					c.status,
 					c.elevation, c.aquifer_thickness, zi, zi,
-					c.recharge_delay, c.extinction_depth, init,
+					0.0, c.extinction_depth, init,
 					c.x_centroid, c.y_centroid, c.area,
-					'null', 'null', 'null', 'null', 'null', 'null'))
+					fmt_override(c.streambed_k), fmt_override(c.streambed_thickness),
+					fmt_int_override(c.bc_type),
+					fmt_override(c.tile_depth), fmt_override(c.tile_area), fmt_override(c.tile_k),
+					c.row if c.row is not None else 0, c.col if c.col is not None else 0,
+					fmt_override(c.init_temp)))
 
 	def write_cellcons(self):
 		conn_map = {}
 		for cc in gwflow.Gwflow_cell_connection.select():
 			conn_map.setdefault(cc.cell_id_id, []).append(cc.connected_cell_id_id)
-		cell_ids = sorted(conn_map.keys())
-		with self._open_with_meta('gwflow.cellcons') as f:
+		ncell = self._ncell
+		with self._open_with_meta('cellcon.gw') as f:
 			f.write('{:>8}{:>14}  {}\n'.format('cell_id', 'neighbor_tot', 'neighbor_ids'))
-			for cid in cell_ids:
-				ids = conn_map[cid]
+			for cid in range(1, ncell + 1):
+				ids = conn_map.get(cid, [])
 				f.write('{:>8}{:>14}'.format(cid, len(ids)))
 				for nid in ids:
 					f.write('{:>8}'.format(nid))
@@ -324,7 +191,7 @@ class Gwflow_files(BaseFileModel):
 		debug_cell = 0
 		if cfg.detail_row > 0 and cfg.detail_col > 0 and cfg.grid_type != 'unstructured':
 			debug_cell = (cfg.detail_row - 1) * cfg.num_cols + cfg.detail_col
-		with self._open_with_meta('gwflow.outputs') as f:
+		with self._open_with_meta('outputs.gw') as f:
 			f.write('{:<22}{:>10}  {}\n'.format('category', 'value', 'note'))
 			for t in times:
 				combined = t.year * 1000 + t.jday
@@ -333,21 +200,19 @@ class Gwflow_files(BaseFileModel):
 				f.write('{:<22}{:>10}  {}\n'.format('observation_cell', o.cell_id_id, 'cell_id'))
 			f.write('{:<22}{:>10}  {}\n'.format('detail_debug_cell', debug_cell, '0=none'))
 
-	# ------------------------------------------------------------------
-	# gwflow.chancells
-	# ------------------------------------------------------------------
-
 	def write_chancells(self):
 		rows = list(gwflow.Gwflow_chancell.select().order_by(gwflow.Gwflow_chancell.cell_id))
 		if not rows:
 			return
-		with self._open_with_meta('gwflow.chancells') as f:
+		with self._open_with_meta('chancell.gw') as f:
 			header_cols = [
 				col('cell_id', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
 				col('elev_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
 				col('channel', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
 				col('riv_length_m', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
-				col('zone', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right')]
+				col('zone', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('dep_zone', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
+				col('obs', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right')]
 			self.write_headers(f, header_cols)
 			f.write('\n')
 			for r in rows:
@@ -356,11 +221,9 @@ class Gwflow_files(BaseFileModel):
 				utils.write_int(f, self._chan_idx.get(r.channel_id, r.channel_id))
 				utils.write_num(f, r.length_m, decimals=2)
 				utils.write_int(f, self._zone_idx.get(r.zone_id, 1) if r.zone_id else 1)
+				utils.write_int(f, r.dep_zone if r.dep_zone is not None else 0)
+				utils.write_int(f, r.obs)
 				f.write('\n')
-
-	# ------------------------------------------------------------------
-	# gwflow.con
-	# ------------------------------------------------------------------
 
 	def write_con(self):
 		rows = list(gwflow.Gwflow_chancell.select().order_by(gwflow.Gwflow_chancell.cell_id))
@@ -377,10 +240,6 @@ class Gwflow_files(BaseFileModel):
 				f.write('{:>5}{:>5}{:>6}{:>5}{:>4}{:>5}{:>5}{:>9}{:>4}{:>6}{:>5}{:>5}{:>8}         sdc{:>12}        tot  1.00\n'.format(
 					k, k, k, 0, 0, 0, 0, r.cell_id, 1, 0, 0, 0, 1, chan_con))
 
-	# ------------------------------------------------------------------
-	# gwflow.hrucell
-	# ------------------------------------------------------------------
-
 	def write_hrucell(self):
 		hru_idx = IndexHelper(connect.Hru_con).get()
 		rows = list(gwflow.Gwflow_hrucell.select().order_by(
@@ -390,7 +249,7 @@ class Gwflow_files(BaseFileModel):
 
 		hru_areas = {h.id: h.arslp * 10000 for h in gis.Gis_hrus.select()}
 
-		with self._open_with_meta('gwflow.hrucell') as f:
+		with self._open_with_meta('hrucell.gw') as f:
 			header_cols = [
 				col('hru', not_in_db=True, padding_override=utils.DEFAULT_INT_PAD, direction='right'),
 				col('area_m2', not_in_db=True, padding_override=utils.DEFAULT_NUM_PAD, direction='right'),
@@ -405,29 +264,21 @@ class Gwflow_files(BaseFileModel):
 				utils.write_num(f, r.area_m2, decimals=2)
 				f.write('\n')
 
-	# ------------------------------------------------------------------
-	# gwflow.lsucell
-	# ------------------------------------------------------------------
-
 	def write_lsucell(self):
 		lsu_idx = IndexHelper(connect.Rout_unit_con).get()
 		rows = list(gwflow.Gwflow_lsucell.select().order_by(
 			gwflow.Gwflow_lsucell.lsu_id, gwflow.Gwflow_lsucell.cell_id))
 		if not rows:
 			return
-		with open(os.path.join(self.file_name, 'gwflow.lsucell'), 'w') as f:
+		with open(os.path.join(self.file_name, 'lsucell.gw'), 'w') as f:
 			f.write(' LSU-Cell Connection Information ')
-			self.write_meta_line(f, 'gwflow.lsucell')
+			self.write_meta_line(f, 'lsucell.gw')
 			f.write('\n')
 			for r in rows:
 				utils.write_int(f, r.cell_id)
 				utils.write_int(f, lsu_idx.get(r.lsu_id, r.lsu_id))
 				utils.write_num(f, r.area_m2, decimals=2)
 				f.write('\n')
-
-	# ------------------------------------------------------------------
-	# gwflow.rescells
-	# ------------------------------------------------------------------
 
 	def write_rescells(self):
 		rows = list(gwflow.Gwflow_rescell.select().order_by(
@@ -436,9 +287,9 @@ class Gwflow_files(BaseFileModel):
 			return
 		res_idx = IndexHelper(connect.Reservoir_con).get()
 		cfg = self.config
-		with open(os.path.join(self.file_name, 'gwflow.rescells'), 'w') as f:
+		with open(os.path.join(self.file_name, 'rescell.gw'), 'w') as f:
 			f.write(' Reservoir-cell connection information ')
-			self.write_meta_line(f, 'gwflow.rescells')
+			self.write_meta_line(f, 'rescell.gw')
 			f.write('.\n')
 			f.write('{}\n'.format(utils.get_num_format(cfg.resbed_thickness, 2)))
 			f.write('{}\n'.format(utils.get_num_format(cfg.resbed_k, 6)))
@@ -450,10 +301,6 @@ class Gwflow_files(BaseFileModel):
 				utils.write_num(f, r.stage, decimals=2)
 				f.write('\n')
 
-	# ------------------------------------------------------------------
-	# gwflow.floodplain
-	# ------------------------------------------------------------------
-
 	def write_floodplain(self):
 		rows = list(gwflow.Gwflow_fpcell.select().order_by(
 			gwflow.Gwflow_fpcell.channel_id, gwflow.Gwflow_fpcell.cell_id))
@@ -461,9 +308,9 @@ class Gwflow_files(BaseFileModel):
 		rows = [r for r in rows if r.channel_id in self._chan_idx]
 		if not rows:
 			return
-		with open(os.path.join(self.file_name, 'gwflow.floodplain'), 'w') as f:
+		with open(os.path.join(self.file_name, 'floodplain.gw'), 'w') as f:
 			f.write(' Floodplain-cell connection information ')
-			self.write_meta_line(f, 'gwflow.floodplain')
+			self.write_meta_line(f, 'floodplain.gw')
 			f.write('{}\n'.format(len(rows)))
 			f.write('cell_id  channel_id  K  area_m2\n')
 			for r in rows:
@@ -473,22 +320,14 @@ class Gwflow_files(BaseFileModel):
 				utils.write_num(f, r.area_m2, decimals=2)
 				f.write('\n')
 
-	# ------------------------------------------------------------------
-	# gwflow.wetland
-	# ------------------------------------------------------------------
-
 	def write_wetland(self):
-		with self._open_with_meta('gwflow.wetland') as f:
+		with self._open_with_meta('wetland.gw') as f:
 			f.write('{:<20}{:>14}\n'.format('name', 'bed_thick'))
 			wet_thick = {v.wet_id: v.thickness for v in gwflow.Gwflow_wetland.select()}
 			for wet in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id):
 				f.write('{:<20}{:>14.2f}\n'.format(
 					wet.name,
 					wet_thick.get(wet.id, self.config.wet_thickness)))
-
-	# ------------------------------------------------------------------
-	# gwflow.tiles
-	# ------------------------------------------------------------------
 
 	def write_tiles(self):
 		tile_cells = list(gwflow.Gwflow_cell.select()
@@ -497,9 +336,9 @@ class Gwflow_files(BaseFileModel):
 		if not tile_cells:
 			return
 		cfg = self.config
-		with open(os.path.join(self.file_name, 'gwflow.tiles'), 'w') as f:
+		with open(os.path.join(self.file_name, 'tile.gw'), 'w') as f:
 			f.write(' Tile drain cell information ')
-			self.write_meta_line(f, 'gwflow.tiles')
+			self.write_meta_line(f, 'tile.gw')
 			f.write('\n')
 			f.write('{}\t{}\t{}\n'.format(
 				utils.get_num_format(cfg.tile_depth, 2),
@@ -510,18 +349,181 @@ class Gwflow_files(BaseFileModel):
 			for c in tile_cells:
 				f.write('{}\n'.format(c.cell_id))
 
-	# ------------------------------------------------------------------
-	# gwflow.solutes
-	# ------------------------------------------------------------------
+	def write_pumpex(self):
+		rows = list(gwflow.Gwflow_pump.select().order_by(
+			gwflow.Gwflow_pump.cell_id, gwflow.Gwflow_pump.start_year, gwflow.Gwflow_pump.start_day))
+		if not rows:
+			return
+		pad = len(str(self._ncell))
+		with self._open_with_meta('pumpex.gw') as f:
+			f.write('{:>12}{:>10}{:>12}{:>10}{:>10}{:>10}{:>10}\n'.format(
+				'name', 'cell_id', 'rate', 'yr_start', 'dy_start', 'yr_end', 'dy_end'))
+			for r in rows:
+				f.write('{:>12}{:>10}{:>12.2f}{:>10}{:>10}{:>10}{:>10}\n'.format(
+					'cell' + str(r.cell_id_id).zfill(pad), r.cell_id_id, r.rate_m3day,
+					r.start_year, r.start_day, r.end_year, r.end_day))
+
+	def write_hru_pump_observe(self):
+		rows = list(gwflow.Gwflow_hru_pump_obs.select().order_by(gwflow.Gwflow_hru_pump_obs.hru_id))
+		if not rows:
+			self._remove_if_exists('hru_pump.gw')
+			return
+		hru_idx = IndexHelper(connect.Hru_con).get()
+		with self._open_with_meta('hru_pump.gw') as f:
+			f.write('{}\n'.format(len(rows)))
+			for r in rows:
+				f.write('{:>10}\n'.format(hru_idx.get(r.hru_id, r.hru_id)))
+
+	def write_tvheads(self):
+		rows = list(gwflow.Gwflow_tvhead.select().order_by(
+			gwflow.Gwflow_tvhead.cell_id, gwflow.Gwflow_tvhead.year))
+		if not rows:
+			self._remove_if_exists('tvheads.gw')
+			return
+		sim = simulation.Time_sim.get_or_none()
+		yr0 = sim.yrc_start
+		nbyr = sim.yrc_end - sim.yrc_start + 1
+		by_cell = {}
+		for r in rows:
+			by_cell.setdefault(r.cell_id, {})[r.year] = r.head
+		with self._open_with_meta('tvheads.gw') as f:
+			f.write('{:>10}'.format('cell_id') + ''.join('{:>14}'.format('head_yr' + str(j + 1)) for j in range(nbyr)) + '\n')
+			for cid in sorted(by_cell):
+				heads = by_cell[cid]
+				f.write('{:>10}'.format(cid))
+				for j in range(nbyr):
+					f.write('{:>14.5f}'.format(heads.get(yr0 + j, 0.0)))
+				f.write('\n')
+
+	def write_sw_group(self):
+		rows = list(gwflow.Gwflow_sw_group.select().order_by(
+			gwflow.Gwflow_sw_group.group_id, gwflow.Gwflow_sw_group.cell_id))
+		if not rows:
+			self._remove_if_exists('sw_group.gw')
+			return
+		by_g = {}
+		for r in rows:
+			by_g.setdefault(r.group_id, []).append(r.cell_id)
+		with self._open_with_meta('sw_group.gw') as f:
+			f.write('{:>10}{:>10}  {}\n'.format('group_id', 'ncell', 'cell_ids'))
+			for g in sorted(by_g):
+				cids = by_g[g]
+				f.write('{:>10}{:>10}'.format(g, len(cids)))
+				for c in cids:
+					f.write('{:>10}'.format(c))
+				f.write('\n')
+
+	def write_ponds(self):
+		ponds = list(gwflow.Gwflow_pond.select().order_by(gwflow.Gwflow_pond.id))
+		if not ponds:
+			self._remove_if_exists('ponds.gw')
+			return
+		nsol = gwflow.Gwflow_solute.select().count()
+		conc = {}
+		for ps in gwflow.Gwflow_pond_solute.select():
+			conc[(ps.pond_id, ps.solute_idx)] = ps.unl_conc
+		with self._open_with_meta('ponds.gw') as f:
+			hdr = '{:>8}{:>14}{:>8}{:>8}{:>8}{:>14}{:>8}{:>12}{:>10}{:>10}{:>11}'.format(
+				'pond_id', 'area', 'chan', 'canal', 'unl', 'bed_k', 'wsta', 'evap_co', 'start_yr', 'start_mo', 'start_day')
+			hdr += ''.join('{:>14}'.format('unl_conc_' + str(i + 1)) for i in range(nsol))
+			f.write(hdr + '\n')
+			for p in ponds:
+				f.write('{:>8}{:>14.5f}{:>8}{:>8}{:>8}{:>14.6f}{:>8}{:>12.5f}{:>10}{:>10}{:>11}'.format(
+					p.id, p.area or 0.0, p.chan or 0, p.canal or 0, p.unl or 0,
+					p.bed_k or 0.0, p.wsta or 0, p.evap_co or 0.0,
+					p.start_yr or 0, p.start_mo or 0, p.start_day or 0))
+				for i in range(nsol):
+					v = conc.get((p.id, i + 1), 0.0)
+					f.write('{:>14.5f}'.format(v if v is not None else 0.0))
+				f.write('\n')
+
+	def write_pond_cell(self):
+		rows = list(gwflow.Gwflow_pond_cell.select().order_by(
+			gwflow.Gwflow_pond_cell.pond_id, gwflow.Gwflow_pond_cell.cell_id))
+		if not rows:
+			self._remove_if_exists('pond_cell.gw')
+			return
+		with self._open_with_meta('pond_cell.gw') as f:
+			f.write('{:>10}{:>10}{:>14}\n'.format('pond_id', 'cell_id', 'conn_area'))
+			for r in rows:
+				f.write('{:>10}{:>10}{:>14.5f}\n'.format(r.pond_id, r.cell_id, r.conn_area if r.conn_area is not None else 0.0))
+
+	def write_pond_div(self):
+		rows = list(gwflow.Gwflow_pond_div.select())
+		if not rows:
+			self._remove_if_exists('pond_div.gw')
+			return
+		pond_ids = [p.id for p in gwflow.Gwflow_pond.select().order_by(gwflow.Gwflow_pond.id)]
+		div = {}
+		for r in rows:
+			div[(r.year, r.month, r.day, r.pond_id)] = r.div
+		sim = simulation.Time_sim.get_or_none()
+		start = datetime.date(sim.yrc_start, 1, 1)
+		if sim.day_start and sim.day_start > 1:
+			start = datetime.date(sim.yrc_start, 1, 1) + datetime.timedelta(days=sim.day_start - 1)
+		end = datetime.date(sim.yrc_end, 12, 31)
+		if sim.day_end and sim.day_end > 0:
+			end = datetime.date(sim.yrc_end, 1, 1) + datetime.timedelta(days=sim.day_end - 1)
+		with self._open_with_meta('pond_div.gw') as f:
+			f.write('{:>8}{:>8}{:>8}'.format('year', 'month', 'day') + ''.join('{:>14}'.format('div_pond' + str(i + 1)) for i in range(len(pond_ids))) + '\n')
+			d = start
+			step = datetime.timedelta(days=1)
+			while d <= end:
+				f.write('{:>8}{:>8}{:>8}'.format(d.year, d.month, d.day))
+				for pid in pond_ids:
+					v = div.get((d.year, d.month, d.day, pid), 0.0)
+					f.write('{:>14.5f}'.format(v if v is not None else 0.0))
+				f.write('\n')
+				d += step
+
+	def write_phreato(self):
+		rows = list(gwflow.Gwflow_phreato.select().order_by(gwflow.Gwflow_phreato.id))
+		if not rows:
+			self._remove_if_exists('phreato.gw')
+			return
+		with self._open_with_meta('phreato.gw') as f:
+			f.write('{:>14}{:>14}\n'.format('depth', 'et_rate'))
+			for r in rows:
+				f.write('{:>14.5f}{:>14.5f}\n'.format(r.depth, r.et_rate))
+
+	def write_phreato_cell(self):
+		rows = list(gwflow.Gwflow_phreato_cell.select().order_by(gwflow.Gwflow_phreato_cell.cell_id))
+		if not rows:
+			self._remove_if_exists('phreato_cell.gw')
+			return
+		with self._open_with_meta('phreato_cell.gw') as f:
+			f.write('{:>10}{:>14}\n'.format('cell_id', 'area'))
+			for r in rows:
+				f.write('{:>10}{:>14.5f}\n'.format(r.cell_id, r.area if r.area is not None else 0.0))
+
+	def write_chan_depth(self):
+		rows = list(gwflow.Gwflow_chan_depth.select().order_by(
+			gwflow.Gwflow_chan_depth.year, gwflow.Gwflow_chan_depth.jday, gwflow.Gwflow_chan_depth.zone_idx))
+		if not rows:
+			self._remove_if_exists('chan_depth.gw')
+			return
+		dep_zones = [c.dep_zone for c in gwflow.Gwflow_chancell.select() if c.dep_zone]
+		ndpzn = max(dep_zones + [r.zone_idx for r in rows] + [0])
+		by_day = {}
+		for r in rows:
+			by_day.setdefault((r.year, r.jday), {})[r.zone_idx] = r.depth
+		with self._open_with_meta('chan_depth.gw') as f:
+			f.write('{:>8}{:>8}'.format('jday', 'yr') + ''.join('{:>14}'.format('depth_z' + str(j + 1)) for j in range(ndpzn)) + '\n')
+			for (yr, jd) in sorted(by_day):
+				d = by_day[(yr, jd)]
+				f.write('{:>8}{:>8}'.format(jd, yr))
+				for j in range(ndpzn):
+					f.write('{:>14.5f}'.format(d.get(j + 1, 0.0)))
+				f.write('\n')
 
 	def write_solutes(self):
 		solutes = list(gwflow.Gwflow_solute.select().order_by(gwflow.Gwflow_solute.id))
 		if not solutes:
 			return
 		cfg = self.config
-		with open(os.path.join(self.file_name, 'gwflow.solutes'), 'w') as f:
+		with open(os.path.join(self.file_name, 'solute.gw'), 'w') as f:
 			f.write(' Solute transport information ')
-			self.write_meta_line(f, 'gwflow.solutes')
+			self.write_meta_line(f, 'solute.gw')
 			f.write('\n')
 			f.write('{}\n'.format(cfg.transport_steps))
 			f.write('{}\n'.format(utils.get_num_format(cfg.disp_coef, 2)))
@@ -533,3 +535,22 @@ class Gwflow_files(BaseFileModel):
 					utils.get_num_format(s.rate_const, 6),
 					utils.get_num_format(s.canal_irr, 2),
 					utils.get_num_format(s.init_conc, 2)))
+
+	def write_cell_solute(self):
+		solutes = list(gwflow.Gwflow_solute.select().order_by(gwflow.Gwflow_solute.id))
+		if not solutes:
+			self._remove_if_exists('cell_sol.gw')
+			return
+		sol_ids = [s.id for s in solutes]
+		conc = {}
+		for cs in gwflow.Gwflow_cell_solute.select():
+			conc[(cs.cell_id_id, cs.solute_id_id)] = cs.init_conc
+		cells = list(gwflow.Gwflow_cell.select().order_by(gwflow.Gwflow_cell.cell_id))
+		with self._open_with_meta('cell_sol.gw') as f:
+			f.write('{:>8}'.format('cell_id') + ''.join('{:>14}'.format('conc_' + str(i + 1)) for i in range(len(solutes))) + '\n')
+			for c in cells:
+				f.write('{:>8}'.format(c.cell_id))
+				for sid in sol_ids:
+					v = conc.get((c.cell_id, sid))
+					f.write('{:>14.5f}'.format(v if v is not None else 0.0))
+				f.write('\n')

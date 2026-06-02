@@ -163,7 +163,7 @@ types = {
 	"bmpuser_str": structural.Bmpuser_str,
 
 	"gwflow_zone": gwflow.Gwflow_zone,
-	"gwflow_cell": gwflow.Gwflow_cell,
+	"gwflow_grid": gwflow.Gwflow_cell,
 	"gwflow_solute": gwflow.Gwflow_solute,
 	"gwflow_hrucell": gwflow.Gwflow_hrucell,
 	"gwflow_fpcell": gwflow.Gwflow_fpcell,
