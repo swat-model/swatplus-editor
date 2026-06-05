@@ -141,7 +141,7 @@ def getInfo():
 			'last_modified': utils.json_encode_datetime(datetime.fromtimestamp(os.path.getmtime(project_db))),
 			'is_lte': m.is_lte,
 			'status': {
-				'imported_weather': climate.Weather_sta_cli.select().count() > 0 and climate.Weather_wgn_cli.select().count() > 0,
+				'imported_weather': (m.weather_data_format == 'netcdf' and m.netcdf_data_file is not None) or (climate.Weather_sta_cli.select().count() > 0 and climate.Weather_wgn_cli.select().count() > 0),
 				'wrote_inputs': m.input_files_last_written is not None,
 				'ran_swat': m.swat_last_run is not None,
 				'imported_output': m.output_last_imported is not None,
@@ -250,7 +250,7 @@ def getRunSettings():
 			'config': conf,
 			'time': time,
 			'print': prt,
-			'imported_weather': climate.Weather_sta_cli.select().count() > 0 and climate.Weather_wgn_cli.select().count() > 0,
+			'imported_weather': (c.weather_data_format == 'netcdf' and c.netcdf_data_file is not None) or (climate.Weather_sta_cli.select().count() > 0 and climate.Weather_wgn_cli.select().count() > 0),
 			'has_observed_weather': climate.Weather_sta_cli.observed_count() > 0,
 			'file_cio': cioSettings['data'],
 			'inputs': {
