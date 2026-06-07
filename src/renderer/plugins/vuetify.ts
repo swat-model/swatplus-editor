@@ -5,16 +5,15 @@
  */
 
 // Styles
-import 'vuetify/styles'
-import '../styles/app.scss'
+import 'vuetify/styles';
+import '@/styles/app.scss'
 
 // Composables
 import { createVuetify } from 'vuetify'
 import { aliases, fa } from 'vuetify/iconsets/fa-svg'
 
-// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
-export default createVuetify({
-    icons: {
+const vuetify = createVuetify({
+       icons: {
         defaultSet: 'fa',
         aliases,
         sets: {
@@ -40,3 +39,7 @@ export default createVuetify({
         }
     }
 })
+
+
+// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
+export default vuetify

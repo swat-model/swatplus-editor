@@ -13,16 +13,17 @@ from . import update_project, update_datasets
 
 import sys
 import argparse
-import os, os.path
+import os
+import os.path
 import json
 from shutil import copyfile
 import time
-from playhouse.migrate import *
+from playhouse.migrate import SqliteMigrator, migrate, SqliteDatabase
 
 OVERWRITE_PLANTS = False
 
 class SetupProject(ExecutableApi):
-	def __init__(self, project_db, editor_version, project_name=None, datasets_db=None, constant_ps=True, is_lte=False, project_description=None, copy_datasets_db=False):
+	def __init__(self, project_db, editor_version, project_name=None, datasets_db=None, constant_ps=True, is_lte=False, project_description=None, copy_datasets_db=False, backup_db_file=None):
 		self.__abort = False
 
 		base_path = os.path.dirname(project_db)
@@ -50,7 +51,7 @@ class SetupProject(ExecutableApi):
 					project_name = config.project_name
 			except Project_config.DoesNotExist:
 				sys.exit('Could not retrieve project configuration data.')
-
+		assert datasets_db is not None
 		rel_datasets_db = os.path.relpath(datasets_db, base_path)
 
 		ver_check = SetupDatasetsDatabase.check_version(datasets_db, editor_version)
@@ -71,7 +72,7 @@ class SetupProject(ExecutableApi):
 				backup_db_file = os.path.join(bak_dir, bak_filename)
 				copyfile(project_db, backup_db_file)
 			except IOError as err:
-				sys.exit(err)
+				sys.exit(str(err))
 
 		try:
 			SetupProjectDatabase.init(project_db, datasets_db)

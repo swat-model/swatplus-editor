@@ -15,11 +15,18 @@ from .reimport_gis import ReimportGis
 
 import sys
 import argparse
-import os, os.path
+import os
+import os.path
 from shutil import copyfile
 import time
-from peewee import *
-from playhouse.migrate import *
+from peewee import (
+	CharField,
+	ForeignKeyField,
+	BooleanField,
+	IntegerField,
+	DoubleField
+	)
+from playhouse.migrate import SqliteDatabase, SqliteMigrator, migrate
 import datetime
 
 # Map version prefixes/values to required upgrades
@@ -93,7 +100,7 @@ class UpdateProject(ExecutableApi):
 				backup_db_file = os.path.join(bak_dir, bak_filename)
 				copyfile(project_db, os.path.join(bak_dir, bak_filename))
 			except IOError as err:
-				sys.exit(err)
+				sys.exit(str(err))
 
 			# Apply all upgrades in chain
 			self.emit_progress(15, 'Updating database with new defaults...')
@@ -135,7 +142,8 @@ class UpdateProject(ExecutableApi):
 				migrate(
 					migrator.add_column('project_config', 'swat_exe_filename', CharField(null=True)),
 				)
-		if not self.name_exists(File_cio_classification, 'out_path'): File_cio_classification.insert(name='out_path').execute()
+		if not self.name_exists(File_cio_classification, 'out_path'): 
+			File_cio_classification.insert(name='out_path').execute()
 		base.db.create_tables([climate.Weather_sta_cli_scale])
 	
 	def updates_for_3_1_0(self, project_db):
@@ -169,10 +177,10 @@ class UpdateProject(ExecutableApi):
 			migrator.rename_column('hyd_sed_lte_cha', 'bed_load', 'bankfull_flo'),
 			migrator.rename_column('weather_sta_cli', 'wnd_dir', 'pet'),
 
-			migrator.add_column('initial_aqu', 'salt_cs_id', ForeignKeyField(salts.Salt_aqu_ini, salts.Salt_aqu_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_cha', 'salt_cs_id', ForeignKeyField(salts.Salt_channel_ini, salts.Salt_channel_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_res', 'salt_cs_id', ForeignKeyField(salts.Salt_res_ini, salts.Salt_res_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('soil_plant_ini', 'salt_cs_id', ForeignKeyField(salts.Salt_hru_ini_cs, salts.Salt_hru_ini_cs.id, on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_aqu', 'salt_cs_id', ForeignKeyField(salts.Salt_aqu_ini, getattr(salts.Salt_aqu_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_cha', 'salt_cs_id', ForeignKeyField(salts.Salt_channel_ini, getattr(salts.Salt_channel_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_res', 'salt_cs_id', ForeignKeyField(salts.Salt_res_ini, getattr(salts.Salt_res_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('soil_plant_ini', 'salt_cs_id', ForeignKeyField(salts.Salt_hru_ini_cs, getattr(salts.Salt_hru_ini_cs, 'id'), on_delete='SET NULL', null=True)),
 		)
 
 		File_cio.update({File_cio.file_name: 'pet.cli'}).where(File_cio.file_name == 'wind-dir.cli').execute()
@@ -276,12 +284,18 @@ class UpdateProject(ExecutableApi):
 		table.delete().where(table.name == 'organicp').execute()
 		table.delete().where(table.name == 'disolvp').execute()
 		
-		if not self.name_exists(table, 'bank_exp'): table.insert(name='bank_exp', obj_typ='rte', abs_min=1.5, abs_max=6, units=None).execute()
-		if not self.name_exists(table, 'mumax'): table.insert(name='mumax', obj_typ='swq', abs_min=1, abs_max=3, units='1/day').execute()
-		if not self.name_exists(table, 'res_d50'): table.insert(name='res_d50', obj_typ='res', abs_min=0.1, abs_max=1000, units='um').execute()
-		if not self.name_exists(table, 'rsd_covco'): table.insert(name='rsd_covco', obj_typ='bsn', abs_min=0.001, abs_max=1.25, units=None).execute()
-		if not self.name_exists(table, 'usle_c'): table.insert(name='usle_c', obj_typ='plt', abs_min=0.001, abs_max=1.95, units=None).execute()
-		if not self.name_exists(table, 'vcr_coef'): table.insert(name='vcr_coef', obj_typ='rte', abs_min=0.5, abs_max=2, units=None).execute()
+		if not self.name_exists(table, 'bank_exp'): 
+			table.insert(name='bank_exp', obj_typ='rte', abs_min=1.5, abs_max=6, units=None).execute()
+		if not self.name_exists(table, 'mumax'): 
+			table.insert(name='mumax', obj_typ='swq', abs_min=1, abs_max=3, units='1/day').execute()
+		if not self.name_exists(table, 'res_d50'): 
+			table.insert(name='res_d50', obj_typ='res', abs_min=0.1, abs_max=1000, units='um').execute()
+		if not self.name_exists(table, 'rsd_covco'): 
+			table.insert(name='rsd_covco', obj_typ='bsn', abs_min=0.001, abs_max=1.25, units=None).execute()
+		if not self.name_exists(table, 'usle_c'): 
+			table.insert(name='usle_c', obj_typ='plt', abs_min=0.001, abs_max=1.95, units=None).execute()
+		if not self.name_exists(table, 'vcr_coef'): 
+			table.insert(name='vcr_coef', obj_typ='rte', abs_min=0.5, abs_max=2, units=None).execute()
 		
 		table.update({ table.abs_min: 0.0001 }).where(table.name == 'cherod').execute()
 		table.update({ table.abs_min: 0.00001 }).where(table.name == 'chk').execute()
@@ -298,7 +312,8 @@ class UpdateProject(ExecutableApi):
 		table.update({ table.obj_typ: 'hru' }).where(table.name == 'phu_mat').execute()
 	
 	def cal_parms_value_updates_for_3_0_0(self, table):
-		if not self.name_exists(table, 'nperco_lchtile'): table.insert(name='nperco_lchtile', obj_typ='bsn', abs_min=0, abs_max=1, units=None).execute()
+		if not self.name_exists(table, 'nperco_lchtile'): 
+			table.insert(name='nperco_lchtile', obj_typ='bsn', abs_min=0, abs_max=1, units=None).execute()
 		table.delete().where(table.name == 'spcon').execute()
 		table.delete().where(table.name == 'spexp').execute()
 		table.update({
@@ -322,33 +337,59 @@ class UpdateProject(ExecutableApi):
 		table.update({ table.abs_max: 0.5 }).where(table.name == 'rs2').execute()
 		table.update({ table.abs_max: 2 }).where(table.name == 'rs3').execute()
 		table.update({ table.name: 'withdraw_rate' }).where(table.name == 'withdrawal_rate').execute()
-		if not self.name_exists(table, 'arc_len_fr'): table.insert(name='arc_len_fr', obj_typ='rte', abs_min=0.5, abs_max=2, units='frac').execute()
-		if not self.name_exists(table, 'ch_n_conc'): table.insert(name='ch_n_conc', obj_typ='rte', abs_min=0, abs_max=500, units='mg/kg').execute()
-		if not self.name_exists(table, 'ch_p_bio'): table.insert(name='ch_p_bio', obj_typ='rte', abs_min=0, abs_max=1, units='frac').execute()
-		if not self.name_exists(table, 'ch_p_conc'): table.insert(name='ch_p_conc', obj_typ='rte', abs_min=0, abs_max=50.9, units='mg/kg').execute()
-		if not self.name_exists(table, 'fp_inun_days'): table.insert(name='fp_inun_days', obj_typ='rte', abs_min=0.05, abs_max=30, units='days').execute()
-		if not self.name_exists(table, 'hum_c_n'): table.insert(name='hum_c_n', obj_typ='sol', abs_min=0, abs_max=20, units='mg/kg').execute()
-		if not self.name_exists(table, 'hum_c_p'): table.insert(name='hum_c_p', obj_typ='sol', abs_min=0, abs_max=160, units='mg/kg').execute()
-		if not self.name_exists(table, 'lab_p'): table.insert(name='lab_p', obj_typ='sol', abs_min=0, abs_max=30, units='mg/kg').execute()
-		if not self.name_exists(table, 'n_dep_enr'): table.insert(name='n_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
-		if not self.name_exists(table, 'n_setl'): table.insert(name='n_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
-		if not self.name_exists(table, 'n_sol_part'): table.insert(name='n_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
-		if not self.name_exists(table, 'p_dep_enr'): table.insert(name='p_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
-		if not self.name_exists(table, 'p_setl'): table.insert(name='p_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
-		if not self.name_exists(table, 'p_sol_part'): table.insert(name='p_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
-		if not self.name_exists(table, 'part_size'): table.insert(name='part_size', obj_typ='rte', abs_min=0.001, abs_max=0.01, units='mm').execute()
-		if not self.name_exists(table, 'pk_rto'): table.insert(name='pk_rto', obj_typ='rte', abs_min=1, abs_max=3, units=None).execute()
-		if not self.name_exists(table, 'sed_stlr'): table.insert(name='sed_stlr', obj_typ='res', abs_min=0.1, abs_max=2, units=None).execute()
-		if not self.name_exists(table, 'velsetlr'): table.insert(name='velsetlr', obj_typ='res', abs_min=0.1, abs_max=15, units='m/day').execute()
-		if not self.name_exists(table, 'wash_bed_fr'): table.insert(name='wash_bed_fr', obj_typ='rte', abs_min=0, abs_max=0.8, units='frac').execute()
+		if not self.name_exists(table, 'arc_len_fr'): 
+			table.insert(name='arc_len_fr', obj_typ='rte', abs_min=0.5, abs_max=2, units='frac').execute()
+		if not self.name_exists(table, 'ch_n_conc'): 
+			table.insert(name='ch_n_conc', obj_typ='rte', abs_min=0, abs_max=500, units='mg/kg').execute()
+		if not self.name_exists(table, 'ch_p_bio'): 
+			table.insert(name='ch_p_bio', obj_typ='rte', abs_min=0, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'ch_p_conc'):
+			table.insert(name='ch_p_conc', obj_typ='rte', abs_min=0, abs_max=50.9, units='mg/kg').execute()
+		if not self.name_exists(table, 'fp_inun_days'):
+			table.insert(name='fp_inun_days', obj_typ='rte', abs_min=0.05, abs_max=30, units='days').execute()
+		if not self.name_exists(table, 'hum_c_n'): 
+			table.insert(name='hum_c_n', obj_typ='sol', abs_min=0, abs_max=20, units='mg/kg').execute()
+		if not self.name_exists(table, 'hum_c_p'): 
+			table.insert(name='hum_c_p', obj_typ='sol', abs_min=0, abs_max=160, units='mg/kg').execute()
+		if not self.name_exists(table, 'lab_p'): 
+			table.insert(name='lab_p', obj_typ='sol', abs_min=0, abs_max=30, units='mg/kg').execute()
+		if not self.name_exists(table, 'n_dep_enr'): 
+			table.insert(name='n_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'n_setl'): 
+			table.insert(name='n_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
+		if not self.name_exists(table, 'n_sol_part'): 
+			table.insert(name='n_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
+		if not self.name_exists(table, 'p_dep_enr'):
+			table.insert(name='p_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'p_setl'): 
+			table.insert(name='p_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
+		if not self.name_exists(table, 'p_sol_part'): 
+			table.insert(name='p_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
+		if not self.name_exists(table, 'part_size'): 
+			table.insert(name='part_size', obj_typ='rte', abs_min=0.001, abs_max=0.01, units='mm').execute()
+		if not self.name_exists(table, 'pk_rto'):
+			table.insert(name='pk_rto', obj_typ='rte', abs_min=1, abs_max=3, units=None).execute()
+		if not self.name_exists(table, 'sed_stlr'):
+			table.insert(name='sed_stlr', obj_typ='res', abs_min=0.1, abs_max=2, units=None).execute()
+		if not self.name_exists(table, 'velsetlr'): 
+			table.insert(name='velsetlr', obj_typ='res', abs_min=0.1, abs_max=15, units='m/day').execute()
+		if not self.name_exists(table, 'wash_bed_fr'): 
+			table.insert(name='wash_bed_fr', obj_typ='rte', abs_min=0, abs_max=0.8, units='frac').execute()
 		
-		if not self.name_exists(table, 'aquifer_K'): table.insert(name='aquifer_K', obj_typ='gwf', abs_min=0.0001, abs_max=40, units='m/day').execute()
-		if not self.name_exists(table, 'aquifer_Sy'): table.insert(name='aquifer_Sy', obj_typ='gwf', abs_min=0.001, abs_max=0.6, units='m3/m3').execute()
-		if not self.name_exists(table, 'aquifer_delay'): table.insert(name='aquifer_delay', obj_typ='hru', abs_min=0, abs_max=1000, units='days').execute()
-		if not self.name_exists(table, 'aquifer_exdp'): table.insert(name='aquifer_exdp', obj_typ='gwf', abs_min=0, abs_max=4, units='m').execute()
-		if not self.name_exists(table, 'stream_K'): table.insert(name='stream_K', obj_typ='gwf_riv', abs_min=0.0000001, abs_max=0.01, units='m/day').execute()
-		if not self.name_exists(table, 'stream_thk'): table.insert(name='stream_thk', obj_typ='gwf_riv', abs_min=0.01, abs_max=2, units='m').execute()
-		if not self.name_exists(table, 'stream_bed'): table.insert(name='stream_bed', obj_typ='gwf_sgl', abs_min=0, abs_max=20, units='m').execute()
+		if not self.name_exists(table, 'aquifer_K'): 
+			table.insert(name='aquifer_K', obj_typ='gwf', abs_min=0.0001, abs_max=40, units='m/day').execute()
+		if not self.name_exists(table, 'aquifer_Sy'): 
+			table.insert(name='aquifer_Sy', obj_typ='gwf', abs_min=0.001, abs_max=0.6, units='m3/m3').execute()
+		if not self.name_exists(table, 'aquifer_delay'):
+			table.insert(name='aquifer_delay', obj_typ='hru', abs_min=0, abs_max=1000, units='days').execute()
+		if not self.name_exists(table, 'aquifer_exdp'): 
+			table.insert(name='aquifer_exdp', obj_typ='gwf', abs_min=0, abs_max=4, units='m').execute()
+		if not self.name_exists(table, 'stream_K'): 
+			table.insert(name='stream_K', obj_typ='gwf_riv', abs_min=0.0000001, abs_max=0.01, units='m/day').execute()
+		if not self.name_exists(table, 'stream_thk'): 
+			table.insert(name='stream_thk', obj_typ='gwf_riv', abs_min=0.01, abs_max=2, units='m').execute()
+		if not self.name_exists(table, 'stream_bed'): 
+			table.insert(name='stream_bed', obj_typ='gwf_sgl', abs_min=0, abs_max=20, units='m').execute()
 	
 	def updates_for_2_3_0(self, project_db):
 		self.emit_progress(5, 'Running migrations...')
@@ -666,9 +707,9 @@ class UpdateProject(ExecutableApi):
 			migrator.drop_column('wetland_wet', 'rel'),
 			migrator.add_column('wetland_wet', 'rel_id', ForeignKeyField(decision_table.D_table_dtl, decision_table.D_table_dtl.id, on_delete='SET NULL', null=True)),
 			migrator.drop_column('wetland_wet', 'hyd_id'),
-			migrator.add_column('wetland_wet', 'hyd_id', ForeignKeyField(reservoir.Hydrology_wet, reservoir.Hydrology_wet.id, on_delete='SET NULL', null=True)),
+			migrator.add_column('wetland_wet', 'hyd_id', ForeignKeyField(reservoir.Hydrology_wet, getattr(reservoir.Hydrology_wet, 'id'), on_delete='SET NULL', null=True)),
 			migrator.drop_column('hru_data_hru', 'surf_stor'),
-			migrator.add_column('hru_data_hru', 'surf_stor_id', ForeignKeyField(reservoir.Wetland_wet, reservoir.Wetland_wet.id, on_delete='SET NULL', null=True))
+			migrator.add_column('hru_data_hru', 'surf_stor_id', ForeignKeyField(reservoir.Wetland_wet, getattr(reservoir.Wetland_wet, 'id'), on_delete='SET NULL', null=True))
 		)
 
 		hru_parm_db.Plants_plt.update({hru_parm_db.Plants_plt.lai_pot: 0.5}).where(hru_parm_db.Plants_plt.name == 'watr').execute()
@@ -692,15 +733,15 @@ class UpdateProject(ExecutableApi):
 
 			bm_50k_plants = ['aspn', 'cedr', 'frsd', 'frsd_SuHF', 'frsd_SuMs', 'frsd_SuSt', 'frsd_TeCF', 'frsd_TeMs', 'frsd_TeOF', 'frsd_TeST', 'frse', 'frse_SuDrF', 'frse_SuDs', 'frse_SuHF', 'frse_SuMs', 'frse_SuSt', 'frse_TeCF', 'frse_TeDs', 'frse_TeMs', 'frse_TeOF', 'frse_TeST', 'frst', 'frst_SuHF', 'frst_SuMs', 'frst_SuSt', 'frst_TeCF', 'frst_TeMs', 'frst_TeOF', 'frst_TeST', 'juni', 'ldgp', 'mapl', 'mesq', 'oak', 'oilp', 'pine', 'popl', 'rngb', 'rngb_SuDrF', 'rngb_SuDs', 'rngb_SuHF', 'rngb_SuMs', 'rngb_SuSt', 'rngb_TeCF', 'rngb_TeDs', 'rngb_TeMs', 'rngb_TeOF', 'rngb_TeST', 'rubr', 'swrn', 'wetf', 'wetl', 'wetn', 'will', 'wspr']
 			bm_20k_plants = ['almd', 'appl', 'barr', 'cash', 'coco', 'coct', 'coff', 'grap', 'oliv', 'oran', 'orcd', 'papa', 'past', 'plan', 'rnge', 'rnge_SuDrF', 'rnge_SuDs', 'rnge_SuHF', 'rnge_SuMs', 'rnge_SuSt', 'rnge_TeCF', 'rnge_TeDs', 'rnge_TeMs', 'rnge_TeOF', 'rnge_TeST', 'waln']
-			bm_50k_ids = hru_parm_db.Plants_plt.select(hru_parm_db.Plants_plt.id).where(hru_parm_db.Plants_plt.name << bm_50k_plants)
-			bm_20k_ids = hru_parm_db.Plants_plt.select(hru_parm_db.Plants_plt.id).where(hru_parm_db.Plants_plt.name << bm_20k_plants)
+			bm_50k_ids = hru_parm_db.Plants_plt.select(getattr(hru_parm_db.Plants_plt, 'id')).where(hru_parm_db.Plants_plt.name << bm_50k_plants)
+			bm_20k_ids = hru_parm_db.Plants_plt.select(getattr(hru_parm_db.Plants_plt, 'id')).where(hru_parm_db.Plants_plt.name << bm_20k_plants)
 
 			init.Plant_ini_item.update({
 				init.Plant_ini_item.bm_init: 50000
-			}).where(init.Plant_ini_item.plnt_name_id << bm_50k_ids).execute()
+			}).where(init.Plant_ini_item.plnt_name_id << bm_50k_ids).execute() #type: ignore
 			init.Plant_ini_item.update({
 				init.Plant_ini_item.bm_init: 20000
-			}).where(init.Plant_ini_item.plnt_name_id << bm_20k_ids).execute()
+			}).where(init.Plant_ini_item.plnt_name_id << bm_20k_ids).execute() #type: ignore
 			init.Plant_ini_item.update({
 				init.Plant_ini_item.lc_status: 1,
 				init.Plant_ini_item.yrs_init: 1
@@ -711,7 +752,7 @@ class UpdateProject(ExecutableApi):
 
 			basin.Codes_bsn.update({
 				basin.Codes_bsn.pet: 1,
-				basin.Codes_bsn.rtu_wq: 1,
+				getattr(basin.Codes_bsn, 'rtu_wq'): 1,
 				basin.Codes_bsn.wq_cha: 1
 			}).execute()
 
@@ -768,11 +809,11 @@ class UpdateProject(ExecutableApi):
 			migrator.drop_column('initial_cha', 'srb_pest'),
 			migrator.drop_column('initial_cha', 'lp_bact'),
 			migrator.drop_column('initial_cha', 'p_bact'),
-			migrator.add_column('initial_cha', 'org_min_id', ForeignKeyField(init.Om_water_ini, init.Om_water_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_cha', 'pest_id', ForeignKeyField(init.Pest_water_ini, init.Pest_water_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_cha', 'path_id', ForeignKeyField(init.Path_water_ini, init.Path_water_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_cha', 'hmet_id', ForeignKeyField(init.Hmet_water_ini, init.Hmet_water_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_cha', 'salt_id', ForeignKeyField(init.Salt_water_ini, init.Salt_water_ini.id, on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_cha', 'org_min_id', ForeignKeyField(init.Om_water_ini, getattr(init.Om_water_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_cha', 'pest_id', ForeignKeyField(init.Pest_water_ini, getattr(init.Pest_water_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_cha', 'path_id', ForeignKeyField(init.Path_water_ini, getattr(init.Path_water_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_cha', 'hmet_id', ForeignKeyField(init.Hmet_water_ini, getattr(init.Hmet_water_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_cha', 'salt_id', ForeignKeyField(init.Salt_water_ini, getattr(init.Salt_water_ini, 'id'), on_delete='SET NULL', null=True)),
 
 			migrator.add_column('d_table_dtl', 'file_name', CharField(null=True)),
 			migrator.add_column('d_table_dtl_act', 'const2', DoubleField(default=0)),
@@ -821,7 +862,7 @@ class UpdateProject(ExecutableApi):
 			migrator.add_column('fertilizer_frt', 'pathogens', CharField(null=True)),
 
 			migrator.drop_column('hru_data_hru', 'soil_nut_id'),
-			migrator.add_column('hru_data_hru', 'soil_plant_init_id', ForeignKeyField(init.Soil_plant_ini, init.Soil_plant_ini.id, null=True, on_delete='SET NULL')),
+			migrator.add_column('hru_data_hru', 'soil_plant_init_id', ForeignKeyField(init.Soil_plant_ini, getattr(init.Soil_plant_ini, 'id'), null=True, on_delete='SET NULL')),
 
 			migrator.drop_column('hydrology_hyd', 'dp_imp'),
 
@@ -864,11 +905,11 @@ class UpdateProject(ExecutableApi):
 			migrator.drop_column('initial_res', 'srb_pest'),
 			migrator.drop_column('initial_res', 'lp_bact'),
 			migrator.drop_column('initial_res', 'p_bact'),
-			migrator.add_column('initial_res', 'org_min_id', ForeignKeyField(init.Om_water_ini, init.Om_water_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_res', 'pest_id', ForeignKeyField(init.Pest_water_ini, init.Pest_water_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_res', 'path_id', ForeignKeyField(init.Path_water_ini, init.Path_water_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_res', 'hmet_id', ForeignKeyField(init.Hmet_water_ini, init.Hmet_water_ini.id, on_delete='SET NULL', null=True)),
-			migrator.add_column('initial_res', 'salt_id', ForeignKeyField(init.Salt_water_ini, init.Salt_water_ini.id, on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_res', 'org_min_id', ForeignKeyField(init.Om_water_ini, getattr(init.Om_water_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_res', 'pest_id', ForeignKeyField(init.Pest_water_ini, getattr(init.Pest_water_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_res', 'path_id', ForeignKeyField(init.Path_water_ini, getattr(init.Path_water_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_res', 'hmet_id', ForeignKeyField(init.Hmet_water_ini, getattr(init.Hmet_water_ini, 'id'), on_delete='SET NULL', null=True)),
+			migrator.add_column('initial_res', 'salt_id', ForeignKeyField(init.Salt_water_ini, getattr(init.Salt_water_ini, 'id'), on_delete='SET NULL', null=True)),
 			migrator.add_column('sediment_res', 'carbon', DoubleField(default=0)),
 			migrator.add_column('sediment_res', 'bd', DoubleField(default=0)),
 
@@ -1070,7 +1111,7 @@ class UpdateProject(ExecutableApi):
 				if d_tbl_name is not None:
 					r.rel_id = decision_table.D_table_dtl.get(decision_table.D_table_dtl.name == d_tbl_name).id
 					r.save()
-			except decision_table.D_table_dtl.DoesNotExist:
+			except getattr(decision_table.D_table_dtl, 'DoesNotExist'):
 				pass
 
 		self.emit_progress(70, 'Update management schedules...')

@@ -18,7 +18,8 @@ from database.project.connect import Rout_unit_con
 from datetime import datetime
 import sys
 import argparse
-import os, os.path
+import os
+import os.path
 import csv
 import re
 import sqlite3
@@ -148,7 +149,7 @@ class ReadOutputLegacy(ExecutableApi):
 		self.__abort = False
 		try:
 			os.remove(db_file)
-		except:
+		except Exception:
 			pass  # try to remove file, but don't report an error if it fails.
 
 		SetupOutputDatabase.init(db_file.replace("\\","/"))
@@ -187,7 +188,7 @@ class ReadOutputLegacy(ExecutableApi):
 		except FileNotFoundError:
 			pass #sys.exit('Could not find file, {}'.format(files_out_file))
 		except ValueError as ve:
-			sys.exit(ve)
+			sys.exit(str(ve))
 
 		prog_step = 0 if len(files) < 1 else round(100 / len(files))
 		prog = 0
@@ -218,7 +219,7 @@ class ReadOutputLegacy(ExecutableApi):
 				prog += prog_step
 			except sqlite3.IntegrityError:
 				pass
-			except KeyError as e:
+			except KeyError:
 				pass
 				#sys.exit('Table {table} does not exist: {e}'.format(table=table_name, e=e))
 			except ValueError as e:

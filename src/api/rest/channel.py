@@ -2,7 +2,9 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project.connect import Channel_con, Chandeg_con, Chandeg_con_out
@@ -17,7 +19,8 @@ bp = Blueprint('channels', __name__, url_prefix='/channels')
 def getType():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	cha_type = 'lte'
 	if Channel_con.select().count() > 0:
@@ -95,22 +98,23 @@ def init():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		try:
 			m = Initial_cha()
 			m.name = args['name']
 			m.description = args['description']
-			m.org_min_id = RestHelpers.get_id_from_name(Om_water_ini, args['org_min_name'])
+			m.org_min_id = RestHelpers.get_id_from_name(Om_water_ini, args['org_min_name']) #type: ignore
 			if 'pest_name' in args:
-				m.pest_id = RestHelpers.get_id_from_name(Pest_water_ini, args['pest_name'])
+				m.pest_id = RestHelpers.get_id_from_name(Pest_water_ini, args['pest_name']) #type: ignore
 			if 'path_name' in args:
-				m.path_id = RestHelpers.get_id_from_name(Path_water_ini, args['path_name'])
+				m.path_id = RestHelpers.get_id_from_name(Path_water_ini, args['path_name']) #type: ignore
 			if 'hmet_name' in args:
-				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
+				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name']) #type: ignore
 			if 'salt_name' in args:
-				m.salt_cs_id = RestHelpers.get_id_from_name(Salt_channel_ini, args['salt_name'])
+				m.salt_cs_id = RestHelpers.get_id_from_name(Salt_channel_ini, args['salt_name']) #type: ignore
 			result = m.save()
 
 			rh.close()
@@ -118,22 +122,22 @@ def init():
 				return model_to_dict(m), 201
 
 			abort(400, 'Unable to update initial channel properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Initial channel properties name must be unique.')
-		except Om_water_ini.DoesNotExist:
+		except getattr(Om_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['org_min_name']))
-		except Pest_water_ini.DoesNotExist:
+		except getattr(Pest_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except Path_water_ini.DoesNotExist:
+		except getattr(Path_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except Hmet_water_ini.DoesNotExist:
+		except getattr(Hmet_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_channel_ini.DoesNotExist:
+		except getattr(Salt_channel_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -150,7 +154,8 @@ def initId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -173,25 +178,25 @@ def initId(id):
 				return '', 200
 
 			abort(400, 'Unable to update initial channel properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Initial channel properties name must be unique.')
-		except Initial_cha.DoesNotExist:
+		except getattr(Initial_cha, 'DoesNotExist'):
 			rh.close()
 			abort(404, 'Initial channel properties {id} does not exist'.format(id=id))
-		except Om_water_ini.DoesNotExist:
+		except getattr(Om_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['org_min_name']))
-		except Pest_water_ini.DoesNotExist:
+		except getattr(Pest_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except Path_water_ini.DoesNotExist:
+		except getattr(Path_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except Hmet_water_ini.DoesNotExist:
+		except getattr(Hmet_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_channel_ini.DoesNotExist:
+		except getattr(Salt_channel_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -207,7 +212,8 @@ def initMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -232,19 +238,19 @@ def initMany():
 				return '', 200
 
 			abort(400, 'Unable to update channel initial properties.')
-		except Om_water_ini.DoesNotExist:
+		except getattr(Om_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['org_min_name']))
-		except Pest_water_ini.DoesNotExist:
+		except getattr(Pest_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except Path_water_ini.DoesNotExist:
+		except getattr(Path_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except Hmet_water_ini.DoesNotExist:
+		except getattr(Hmet_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_channel_ini.DoesNotExist:
+		except getattr(Salt_channel_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -328,16 +334,17 @@ def properties():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
 			m = Channel_lte_cha()
 			m.name = args['name']
-			m.description = None if 'description' not in args else args['description']
-			m.init_id = RestHelpers.get_id_from_name(Initial_cha, args['init_name'])
-			m.hyd_id = RestHelpers.get_id_from_name(Hyd_sed_lte_cha, args['hyd_name'])
-			m.nut_id = RestHelpers.get_id_from_name(Nutrients_cha, args['nut_name'])
+			m.description = None if 'description' not in args else args['description'] #type: ignore
+			m.init_id = RestHelpers.get_id_from_name(Initial_cha, args['init_name']) #type: ignore
+			m.hyd_id = RestHelpers.get_id_from_name(Hyd_sed_lte_cha, args['hyd_name']) #type: ignore
+			m.nut_id = RestHelpers.get_id_from_name(Nutrients_cha, args['nut_name']) #type: ignore
 
 			result = m.save()
 
@@ -346,16 +353,16 @@ def properties():
 				return {'id': m.id }, 200
 
 			abort(400, 'Unable to update channel properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Channel properties name must be unique.')
-		except Initial_cha.DoesNotExist:
+		except getattr(Initial_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except Hyd_sed_lte_cha.DoesNotExist:
+		except getattr(Hyd_sed_lte_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Nutrients_cha.DoesNotExist:
+		except getattr(Nutrients_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
 		except Exception as ex:
@@ -373,7 +380,8 @@ def propertiesId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -391,19 +399,19 @@ def propertiesId(id):
 				return '', 200
 
 			abort(400, 'Unable to update channel properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Channel properties name must be unique.')
-		except Channel_lte_cha.DoesNotExist:
+		except getattr(Channel_lte_cha, 'DoesNotExist'):
 			rh.close()
 			abort(404, 'Channel properties {id} does not exist'.format(id=id))
-		except Initial_cha.DoesNotExist:
+		except getattr(Initial_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except Hyd_sed_lte_cha.DoesNotExist:
+		except getattr(Hyd_sed_lte_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Nutrients_cha.DoesNotExist:
+		except getattr(Nutrients_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
 		except Exception as ex:
@@ -419,7 +427,8 @@ def propertiesMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -433,7 +442,7 @@ def propertiesMany():
 				param_dict['nut_id'] = RestHelpers.get_id_from_name(Nutrients_cha, args['nut_name'])
 
 			con_table = Chandeg_con
-			con_prop_field = Chandeg_con.lcha_id
+			con_prop_field = getattr(Chandeg_con, 'lcha_id')
 			prop_table = Channel_lte_cha
 
 			result = DefaultRestMethods.put_many_con(args, param_dict, con_table, con_prop_field, prop_table)
@@ -442,16 +451,16 @@ def propertiesMany():
 				return '', 200
 
 			abort(400, 'Unable to update channel properties.')
-		except Initial_cha.DoesNotExist:
+		except getattr(Initial_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except Hyd_sed_lte_cha.DoesNotExist:
+		except getattr(Hyd_sed_lte_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Nutrients_cha.DoesNotExist:
+		except getattr(Nutrients_cha, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
-		except Weather_sta_cli.DoesNotExist:
+		except getattr(Weather_sta_cli, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wst_name']))
 		except Exception as ex:

@@ -11,7 +11,8 @@ from . import update_project, update_datasets
 
 import sys
 import argparse
-import os, os.path
+import os
+import os.path
 import json
 from shutil import copyfile
 import time
@@ -36,7 +37,7 @@ class ReimportGis(ExecutableApi):
 				project_name = config.project_name
 			except Project_config.DoesNotExist:
 				sys.exit('Could not retrieve project configuration data.')
-
+		assert datasets_db is not None
 		rel_datasets_db = os.path.relpath(datasets_db, base_path)
 
 		# Run updates if needed
@@ -61,7 +62,7 @@ class ReimportGis(ExecutableApi):
 			backup_db_file = os.path.join(bak_dir, bak_filename)
 			copyfile(project_db, backup_db_file)
 		except IOError as err:
-			sys.exit(err)
+			sys.exit(str(err))
 
 		self.emit_progress(5, 'Updating project settings...')
 		config = Project_config.get() # Get again due to modification when updating

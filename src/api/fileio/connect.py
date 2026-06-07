@@ -75,8 +75,11 @@ def write_con_table(file_name, meta_line, con_table, con_out_table, elem_name, e
 			con_out_types = con_out_table.select(con_out_table.obj_typ).distinct()
 			con_out_id_dict = {}
 			for out_typ in con_out_types:
-				obj_table = table_mapper.obj_typs.get(out_typ.obj_typ, None)
-				con_out_id_dict[out_typ.obj_typ] = [o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)]
+				obj_table = table_mapper.obj_typs.get(out_typ.obj_typ)
+				if obj_table is not None:
+					con_out_id_dict[out_typ.obj_typ] = [
+						o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)
+					]
 
 			elem_ids = [o.id for o in elem_table.select(elem_table.id).order_by(elem_table.id)]
 
@@ -260,8 +263,11 @@ class Recall_con(BaseFileModel):
 				con_out_types = con_out_table.select(con_out_table.obj_typ).distinct()
 				con_out_id_dict = {}
 				for out_typ in con_out_types:
-					obj_table = table_mapper.obj_typs.get(out_typ.obj_typ, None)
-					con_out_id_dict[out_typ.obj_typ] = [o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)]
+					obj_table = table_mapper.obj_typs.get(out_typ.obj_typ)
+					if obj_table is not None:
+						con_out_id_dict[out_typ.obj_typ] = [
+          					o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)
+               			]
 
 				elem_ids = [o.id for o in elem_data]
 
@@ -290,7 +296,7 @@ class Exco_con(BaseFileModel):
 		data_table = recall.Recall_dat
 		#data = con_table.select(con_table, elem_table, data_table).join(elem_table).join(data_table).where((elem_table.rec_typ == 4) & (data_table.flo != 0))
 
-		valid_recs = data_table.select(data_table.recall_rec_id).join(elem_table).where((elem_table.rec_typ == 4) & (data_table.flo != 0))
+		valid_recs = data_table.select(data_table.recall_rec).join(elem_table).where((elem_table.rec_typ == 4) & (data_table.flo != 0))
 		valid_ids = [r.recall_rec_id for r in valid_recs]
 		data = con_table.select(con_table, elem_table).join(elem_table).where(elem_table.id.in_(valid_ids))
 		elem_data = elem_table.select(elem_table.id).where(elem_table.id.in_(valid_ids)).order_by(elem_table.id)
@@ -303,8 +309,11 @@ class Exco_con(BaseFileModel):
 				con_out_types = con_out_table.select(con_out_table.obj_typ).distinct()
 				con_out_id_dict = {}
 				for out_typ in con_out_types:
-					obj_table = table_mapper.obj_typs.get(out_typ.obj_typ, None)
-					con_out_id_dict[out_typ.obj_typ] = [o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)]
+					obj_table = table_mapper.obj_typs.get(out_typ.obj_typ)
+					if obj_table is not None:
+						con_out_id_dict[out_typ.obj_typ] = [
+          					o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)
+               			]
 
 				elem_ids = [o.id for o in elem_data]
 

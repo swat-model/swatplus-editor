@@ -2,9 +2,15 @@
 	import { reactive, ref, onMounted, onUnmounted } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	import { storeToRefs } from 'pinia';
+	import {useTaskStore} from '@/store/task';
+
+
 	const route = useRoute();
 	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = useHelpers();
 	const electron = window.electronApi;
+	const taskStore = useTaskStore();
+	const { task } = storeToRefs(taskStore);
 
 	const recallGrid = ref();
 
@@ -48,103 +54,105 @@
 		showInfo: false
 	});
 
-	let task:any = reactive({
-		progress: {
-			percent: 0,
-			message: null
-		},
-		process: null,
-		error: null,
-		running: false,
-		currentPid: null
-	});
+	// let task:any = reactive({
+	// 	progress: {
+	// 		percent: 0,
+	// 		message: null
+	// 	},
+	// 	process: null,
+	// 	error: null,
+	// 	running: false,
+	// 	currentPid: null
+	// });
 
 	function importData() {
 		page.import.error = null;
 		page.import.saving = true;
 
-		if (page.import.type === 'export_csv') {
-			if (formatters.isNullOrEmpty(page.import.exportDir)) {
-				page.import.error = 'Please select a directory to save your data.';
-			} else {
-				let args = ['export_recall', 
-						'--db_file='+ currentProject.projectDb,
-						'--delete_existing=n',
-						'--input_files_dir=' + page.import.exportDir];
-				console.log(args);
-				runTask(args);
-			}
+		// Logika pemilihan argumen
+		const isExport = page.import.type === 'export_csv';
+		const path = isExport ? page.import.exportDir : page.import.inputDir;
+
+		if (formatters.isNullOrEmpty(path)) {
+			page.import.error = isExport ? 'Please select a directory to save your data.' : 'Please select a directory containing your data.';
+			page.import.saving = false;
+			return;
 		}
-		else {
-			if (formatters.isNullOrEmpty(page.import.inputDir)) {
-				page.import.error = 'Please select a directory containing your data.';
+
+		const args = isExport 
+			? ['export_recall', '--db_file=' + currentProject.projectDb, '--delete_existing=n', '--input_files_dir=' + path]
+			: ['import_recall', '--db_file=' + currentProject.projectDb, '--delete_existing=y', '--input_files_dir=' + path];
+
+		// Panggil store dengan callback
+		taskStore.runTask(args, {
+			proc_name: 'recall',
+			script_name: 'swatplus_api',
+			type: page.import.type,
+			routePath: '' // sesuaikan jika perlu
+		}, async () => {
+			page.import.saving = false;
+			closeTaskModals();
+			
+			if (isExport) {
+				page.exported.show = true;
 			} else {
-				let args = ['import_recall', 
-						'--db_file='+ currentProject.projectDb,
-						'--delete_existing=y',
-						'--input_files_dir=' + page.import.inputDir];
-				console.log(args);
-
-				runTask(args);
-			}
-		}
-	}
-
-	function runTask(args:string[]) {
-		task.error = null;
-		task.running = true;
-		task.progress = {
-			percent: 0,
-			message: null
-		};
-
-		task.currentPid = runProcess.runApiProc('recall', 'swatplus_api', args);
-	}
-
-	let listeners:any = {
-		stdout: undefined,
-		stderr: undefined,
-		close: undefined
-	}
-
-	function initRunProcessHandlers() {
-		listeners.stdout = runProcess.processStdout('recall', (data:any) => {
-			task.progress = runProcess.getApiOutput(data);
-		});
-		
-		listeners.stderr = runProcess.processStderr('recall', (data:any) => {
-			console.log(`stderr: ${data}`);
-			task.error = data;
-			task.running = false;
-		});
-		
-		listeners.close = runProcess.processClose('recall', async (code:any) => {
-			console.log('recall close')
-			if (formatters.isNullOrEmpty(task.error)) {
-				if (page.import.type === 'export_csv') {
-					task.running = false;
-					closeTaskModals();
-					page.exported.show = true;
-				} else {
-					await recallGrid?.value?.get(false);
-					task.running = false;
-					closeTaskModals();
-				}
+				await recallGrid?.value?.get(false);
 			}
 		});
 	}
 
-	function removeRunProcessHandlers() {
-		if (listeners.stdout) listeners.stdout();
-		if (listeners.stderr) listeners.stderr();
-		if (listeners.close) listeners.close();
-	}
+	// function runTask(args:string[]) {
+	// 	task.error = null;
+	// 	task.running = true;
+	// 	task.progress = {
+	// 		percent: 0,
+	// 		message: null
+	// 	};
+
+	// 	task.currentPid = runProcess.runApiProc('recall', 'swatplus_api', args);
+	// }
+
+	// let listeners:any = {
+	// 	stdout: undefined,
+	// 	stderr: undefined,
+	// 	close: undefined
+	// }
+
+	// function initRunProcessHandlers() {
+	// 	listeners.stdout = runProcess.processStdout('recall', (data:any) => {
+	// 		task.progress = runProcess.getApiOutput(data);
+	// 	});
+		
+	// 	listeners.stderr = runProcess.processStderr('recall', (data:any) => {
+	// 		console.log(`stderr: ${data}`);
+	// 		task.error = data;
+	// 		task.running = false;
+	// 	});
+		
+	// 	listeners.close = runProcess.processClose('recall', async (code:any) => {
+	// 		console.log('recall close')
+	// 		if (formatters.isNullOrEmpty(task.error)) {
+	// 			if (page.import.type === 'export_csv') {
+	// 				task.running = false;
+	// 				closeTaskModals();
+	// 				page.exported.show = true;
+	// 			} else {
+	// 				await recallGrid?.value?.get(false);
+	// 				task.running = false;
+	// 				closeTaskModals();
+	// 			}
+	// 		}
+	// 	});
+	// }
+
+	// function removeRunProcessHandlers() {
+	// 	if (listeners.stdout) listeners.stdout();
+	// 	if (listeners.stderr) listeners.stderr();
+	// 	if (listeners.close) listeners.close();
+	// }
 
 	function cancelTask() {
-		task.error = null;
-		runProcess.killProcess(task.currentPid);
-		
-		task.running = false;
+		taskStore.cancelTask();
 		closeTaskModals();
 	}
 
@@ -152,8 +160,8 @@
 		page.import.show = false;
 	}
 
-	onMounted(() => initRunProcessHandlers());
-	onUnmounted(() => removeRunProcessHandlers());
+	// onMounted(() => initRunProcessHandlers());
+	// onUnmounted(() => removeRunProcessHandlers());
 </script>
 
 <template>
@@ -199,7 +207,7 @@
 				<v-card title="Import/Export Data">
 					<v-card-text>
 						<error-alert :text="page.import.error"></error-alert>
-						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing or exporting your data." :stack-trace="task.error.toString()" />
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing or exporting your data." :stack-trace="task.error ? task.error.toString() : ''"  />
 						
 						<div v-if="task.running">
 							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped></v-progress-linear>

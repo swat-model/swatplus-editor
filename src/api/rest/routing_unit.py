@@ -2,7 +2,9 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project.climate import Weather_sta_cli
@@ -81,39 +83,40 @@ def properties():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
 			m = Rout_unit_rtu()
 			m.name = args['name']
-			m.description = None if 'description' not in args else args['description']
+			m.description = None if 'description' not in args else args['description'] #type: ignore
 			if 'dlr_name' in args:
-				m.dlr_id = RestHelpers.get_id_from_name(Delratio_del, args['dlr_name'])
+				m.dlr_id = RestHelpers.get_id_from_name(Delratio_del, args['dlr_name']) #type: ignore
 
-			m.topo_id = RestHelpers.get_id_from_name(Topography_hyd, args['topo_name'])
-			m.field_id = RestHelpers.get_id_from_name(Field_fld, args['field_name'])
+			m.topo_id = RestHelpers.get_id_from_name(Topography_hyd, args['topo_name']) #type: ignore
+			m.field_id = RestHelpers.get_id_from_name(Field_fld, args['field_name']) #type: ignore
 
 			result = m.save()
 
 			rh.close()
 			if result > 0:
-				return {'id': m.id }, 200
+				return {'id': getattr(m, 'id') }, 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Delratio_del.DoesNotExist:
+		except getattr(Delratio_del, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['dlr_name']))
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Field_fld.DoesNotExist:
+		except getattr(Field_fld, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['field_name']))
 		except Exception as ex:
@@ -131,11 +134,12 @@ def propertiesId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
-			m = Rout_unit_rtu.get(Rout_unit_rtu.id == id)
+			m = Rout_unit_rtu.get(getattr(Rout_unit_rtu, 'id') == id)
 			m.name = args['name']
 			m.description = None if 'description' not in args else args['description']
 			if 'dlr_name' in args:
@@ -152,19 +156,19 @@ def propertiesId(id):
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Delratio_del.DoesNotExist:
+		except getattr(Delratio_del, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['dlr_name']))
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Field_fld.DoesNotExist:
+		except getattr(Field_fld, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['field_name']))
 		except Exception as ex:
@@ -180,7 +184,8 @@ def propertiesMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -194,7 +199,7 @@ def propertiesMany():
 				param_dict['field_id'] = RestHelpers.get_id_from_name(Field_fld, args['field_name'])
 
 			con_table = Rout_unit_con
-			con_prop_field = Rout_unit_con.rtu_id
+			con_prop_field = getattr(Rout_unit_con, 'rtu_id')
 			prop_table = Rout_unit_rtu
 
 			result = DefaultRestMethods.put_many_con(args, param_dict, con_table, con_prop_field, prop_table)
@@ -203,19 +208,19 @@ def propertiesMany():
 				return '', 200
 
 			abort(400, 'Unable to update hru properties.')
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Delratio_del.DoesNotExist:
+		except getattr(Delratio_del, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['dlr_name']))
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Field_fld.DoesNotExist:
+		except getattr(Field_fld, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['field_name']))
-		except Weather_sta_cli.DoesNotExist:
+		except getattr(Weather_sta_cli, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wst_name']))
 		except Exception as ex:

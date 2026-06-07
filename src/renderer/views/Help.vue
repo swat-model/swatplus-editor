@@ -34,7 +34,7 @@
 </script>
 
 <template>
-	<v-main>
+	<v-main class="layout-fix">
 		<div class="py-3 px-6">
 			<v-row>
 				<v-col cols="12" md="6">
@@ -42,7 +42,7 @@
 						<v-card-title>Help Using SWAT+ Editor</v-card-title>
 						<v-card-text>
 							<p class="text-medium-emphasis">
-							SWAT+ Editor is an interface to SWAT+ that allows users to import a project from GIS, modify SWAT+ input, write the text files, and run the model.
+							SWAT+ Editor adalah antarmuka ke SWAT+ yang memungkinkan pengguna untuk mengimpor proyek dari GIS, memodifikasi input SWAT+, menulis file teks, dan menjalankan model.
 							</p>
 						</v-card-text>
 					</v-card>
@@ -51,9 +51,9 @@
 						<v-card-title>Troubleshooting</v-card-title>
 						<v-card-text>
 							<p class="text-medium-emphasis mb-0">
-								Please send the information below to the 
+								Silakan kirim informasi di bawah ini ke 
 								<open-in-browser url="https://groups.google.com/d/forum/swatplus-editor" text="user group" class="text-primary"></open-in-browser>
-								along with your error message.
+								beserta pesan kesalahan Anda.
 							</p>
 						</v-card-text>
 						<v-table density="compact">
@@ -74,7 +74,7 @@
 						<v-card-title>Tools Compatibility with SWAT+ Editor {{ constants.appSettings.version }}</v-card-title>
 						<v-card-text>
 							<p class="text-medium-emphasis mb-0">
-								We realize we have many tools with many different versions. Please ensure that when you update one tool, it is still compatible with your other tools.
+								Kami menyadari bahwa kami memiliki banyak alat dengan berbagai versi. Mohon pastikan bahwa saat Anda memperbarui satu alat, alat tersebut tetap kompatibel dengan alat Anda yang lain.
 							</p>
 						</v-card-text>
 						<v-table density="compact">
@@ -86,22 +86,22 @@
 						</v-table>
 						<v-card-text>
 							<p class="text-medium-emphasis mb-0">
-								*Note: While you may change your version of SWAT+ used in the editor, we recommend only doing so with caution and knowledge of model changes between the versions. 
-								If there are input and output file changes, you may run into errors or inaccurate results. To change your model version, go to the <router-link to="/run">Run</router-link> tab 
-								and select one of the built-in versions from the drop down menu, or click the gear icon to get advanced instructions.
+								*Note: Meskipun Anda dapat mengubah versi SWAT+ yang digunakan di editor, kami menyarankan untuk melakukannya dengan hati-hati dan dengan pengetahuan tentang perubahan model antar versi.
+								Jika ada perubahan file input dan output, Anda mungkin mengalami kesalahan atau hasil yang tidak akurat. Untuk mengubah versi model Anda, buka tab <router-link to="/run">Run</router-link> 
+								lalu pilih salah satu versi bawaan dari menu tarik-turun, atau klik ikon roda gigi untuk mendapatkan petunjuk lanjutan.
 							</p>
 						</v-card-text>
 					</v-card>
 
 					<v-card class="mb-6">
-						<v-card-title>About SWAT+</v-card-title>
+						<v-card-title>Seputar SWAT+</v-card-title>
 						<v-card-text>
 							<p class="text-medium-emphasis mb-0">
-								The Soil and Water Assessment Tool Plus (SWAT+) is a public domain model jointly developed by the 
-								USDA Agricultural Research Service (USDA-ARS) and Texas A&M AgriLife Research, part of The Texas A&M University System. 
-								SWAT+ is a small watershed to river basin-scale model to simulate the quality and quantity of surface and ground water and predict 
-								the environmental impact of land use, land management practices, and climate change. SWAT is widely used in assessing soil erosion 
-								prevention and control, non-point source pollution control and regional management in watersheds.
+								Soil and Water Assessment Tool Plus (SWAT+) adalah model domain publik yang dikembangkan bersama oleh
+								USDA Agricultural Research Service (USDA-ARS) dan Texas A&M AgriLife Research, bagian dari Sistem Universitas Texas A&M.
+								SWAT+ adalah model skala DAS kecil hingga DAS sungai untuk mensimulasikan kualitas dan kuantitas air permukaan dan air tanah serta memprediksi
+								dampak lingkungan dari penggunaan lahan, praktik pengelolaan lahan, dan perubahan iklim. SWAT banyak digunakan dalam menilai pencegahan dan pengendalian erosi tanah,
+								pengendalian pencemaran sumber non-titik, dan pengelolaan regional di DAS.
 							</p>
 						</v-card-text>
 					</v-card>
@@ -110,16 +110,16 @@
 						<v-card-title>Disclaimer</v-card-title>
 						<v-card-text>
 							<p class="text-medium-emphasis mb-0">
-								The information contained within this software is offered as a public service. It is the responsibility of the user to verify the accuracy, 
-								completeness, timeliness, quality, or suitability for a particular use of the information/ software provided. Neither Grassland, 
-								Soil & Water Research Laboratory (GSWRL), Blackland Research Center (BRC), nor Texas A&M AgriLife Research (TALR) make any claims, 
-								guarantees, or warranties about the accuracy, completeness, timeliness, quality, or suitability for a particular use of this software. 
-								GSWRL, BRC, and TALR disclaim any and all liability for any claims or damages that may result from providing the website or the information/ 
-								software contained within. The user of this software assumes all liability and waives any and all claims or causes of action against 
-								GSWRL, BRC, and TALR for all uses of and reliance on the information/ software. GSWRL, BRC, and TALR do not endorse any commercial entities, 
-								products, consultants, or documentation that may be referenced in this software. The information contained within this software is provided 
-								for general information purposes, and is not intended to be a solicitation or an offer to sell in connection with any product or service. 
-								Any reference to commercial entities, products, or consultants is for information purposes only.
+								Informasi yang terdapat dalam perangkat lunak ini ditawarkan sebagai layanan publik. Merupakan tanggung jawab pengguna untuk memverifikasi keakuratan,
+								kelengkapan, ketepatan waktu, kualitas, atau kesesuaian untuk penggunaan tertentu dari informasi/perangkat lunak yang disediakan. Baik Grassland,
+								Soil & Water Research Laboratory (GSWRL), Blackland Research Center (BRC), maupun Texas A&M AgriLife Research (TALR) tidak membuat klaim,
+								jaminan, atau garansi apa pun tentang keakuratan, kelengkapan, ketepatan waktu, kualitas, atau kesesuaian untuk penggunaan tertentu dari perangkat lunak ini.
+								GSWRL, BRC, dan TALR menolak semua tanggung jawab atas klaim atau kerusakan apa pun yang mungkin timbul dari penyediaan situs web atau informasi/
+								perangkat lunak yang terdapat di dalamnya. Pengguna perangkat lunak ini menanggung semua tanggung jawab dan melepaskan semua klaim atau tuntutan hukum terhadap
+								GSWRL, BRC, dan TALR atas semua penggunaan dan ketergantungan pada informasi/perangkat lunak tersebut. GSWRL, BRC, dan TALR tidak mendukung entitas komersial,
+								produk, konsultan, atau dokumentasi apa pun yang mungkin dirujuk dalam perangkat lunak ini. Informasi yang terdapat dalam perangkat lunak ini disediakan
+								untuk tujuan informasi umum, dan tidak dimaksudkan sebagai ajakan atau penawaran untuk menjual sehubungan dengan produk atau layanan apa pun.
+								Segala referensi kepada entitas komersial, produk, atau konsultan hanya untuk tujuan informasi.
 							</p>
 						</v-card-text>
 					</v-card>
@@ -202,3 +202,4 @@
 		</div>
 	</v-main>
 </template>
+

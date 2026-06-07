@@ -1,5 +1,7 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	prefetch
+)
 from helpers import utils
 import database.project.soils as db
 import database.datasets.soils as db_ds
@@ -30,7 +32,7 @@ class Soils_sol(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		soils = db.Soils_sol.select().order_by(db.Soils_sol.id)
+		soils = db.Soils_sol.select().order_by(getattr(db.Soils_sol, 'id'))
 		layers = db.Soils_sol_layer.select().order_by(db.Soils_sol_layer.layer_num)
 		query = prefetch(soils, layers)
 

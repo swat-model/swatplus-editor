@@ -41,7 +41,7 @@ class Topography_hyd(BaseFileModel):
 				self.write_rows(file, db.Topography_hyd.select().where(db.Topography_hyd.type == "sub"))
 
 	def write_rows(self, file, items):
-		for row in items.order_by(db.Topography_hyd.id):
+		for row in items.order_by(getattr(db.Topography_hyd, 'id')):
 			file.write(utils.string_pad(row.name, direction="left"))
 			file.write(utils.num_pad(row.slp))
 			file.write(utils.num_pad(row.slp_len))
@@ -81,7 +81,7 @@ class Hydrology_hyd(BaseFileModel):
 				file.write(utils.num_pad("latq_co"))
 				file.write("\n")
 
-				for row in db.Hydrology_hyd.select().order_by(db.Hydrology_hyd.id):
+				for row in db.Hydrology_hyd.select().order_by(getattr(db.Hydrology_hyd,'id')):
 					file.write(utils.string_pad(row.name, direction="left"))
 					file.write(utils.num_pad(row.lat_ttime))
 					file.write(utils.num_pad(row.lat_sed))

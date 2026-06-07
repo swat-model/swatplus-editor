@@ -1,5 +1,7 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	JOIN
+)
 from helpers import utils
 from database.project import init
 import database.project.reservoir as db
@@ -17,7 +19,7 @@ class Reservoir_res(BaseFileModel):
 
 	def write(self):
 		table = db.Reservoir_res
-		order_by = db.Reservoir_res.id
+		order_by = getattr(db.Reservoir_res, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:
@@ -103,7 +105,7 @@ class Initial_res(BaseFileModel):
 					  .join(init.Path_water_ini, JOIN.LEFT_OUTER)
 					  .switch(table)
 					  .join(init.Hmet_water_ini, JOIN.LEFT_OUTER)
-					  .order_by(table.id))
+					  .order_by(getattr(table, 'id')))
 
 		cols = [col(table.name, direction="left"),
 				col(table.org_min, query_alias="org_min"),
@@ -165,7 +167,7 @@ class Wetland_wet(BaseFileModel):
 
 	def write(self):
 		table = db.Wetland_wet
-		order_by = db.Wetland_wet.id
+		order_by = getattr(db.Wetland_wet, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:

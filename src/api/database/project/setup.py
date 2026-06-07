@@ -1,16 +1,16 @@
-from peewee import *
 from . import base, config, simulation, climate, link, channel, reservoir, dr, exco, recall, hydrology, routing_unit, aquifer, \
 	basin, hru_parm_db, structural, ops, decision_table, init, lum, soils, \
 	change, regions, hru, connect, gis, water_rights, salts
 from database import lib
 from database.datasets import base as datasets_base, definitions as dataset_defs, decision_table as dataset_dts
-import os, os.path
+from typing import Optional
+import os
 from shutil import copyfile, copy
 import time
 
 class SetupProjectDatabase():
 	@staticmethod
-	def init(project_db:str, datasets_db:str = None):
+	def init(project_db:str, datasets_db: Optional[str] = None):
 		base.db.init(project_db, pragmas={'journal_mode': 'off'})
 		if datasets_db:
 			datasets_base.db.init(datasets_db, pragmas={'journal_mode': 'off'})
@@ -18,12 +18,19 @@ class SetupProjectDatabase():
 	@staticmethod
 	def close():
 		try:
-			base.db.close()
-		except:
+			from database.project import base
+			if getattr(base.db, 'obj', None) is not None:
+				if not base.db.is_closed():
+					base.db.close()
+		except Exception:
 			pass
 		try:
-			datasets_base.db.close()
-		except:
+			from database.datasets import base as datasets_base
+			if getattr(datasets_base.db, 'obj', None) is not None:
+				if not datasets_base.db.is_closed():
+					datasets_base.db.close()
+		except Exception as e :
+			print(f"Gagal Menutup database dari folder project: {e}")
 			pass
 
 	@staticmethod
@@ -288,12 +295,30 @@ class SetupProjectDatabase():
 		print_prt_id = simulation.Print_prt.select().first().id
 		print_obj_query = dataset_defs.Print_prt_object.select().order_by(dataset_defs.Print_prt_object.id)
 
+		# if print_obj_query.count() > 0:
+		# 	print_objs = []
+		# 	for p in print_obj_query:
+		# 		existing = simulation.Print_prt_object.get(simulation.Print_prt_object.name == p.name
+        #         )
+		# 		if existing is None:
+		# 			print_obj = {
+		# 				'print_prt': print_prt_id,
+		# 				'name': p.name,
+		# 				'daily': p.daily,
+		# 				'monthly': p.monthly,
+		# 				'yearly': p.yearly,
+		# 				'avann': p.avann
+		# 			}
+		# 			print_objs.append(print_obj)
+		# 	if print_objs:
+		# 		lib.bulk_insert(base.db, simulation.Print_prt_object, print_objs)
+  
 		if print_obj_query.count() > 0:
 			print_objs = []
 			for p in print_obj_query:
 				try:
 					existing = simulation.Print_prt_object.get(simulation.Print_prt_object.name == p.name)
-				except simulation.Print_prt_object.DoesNotExist:
+				except getattr(simulation.Print_prt_object, 'DoesNotExist'):
 					print_obj = {
 						'print_prt': print_prt_id,
 						'name': p.name,

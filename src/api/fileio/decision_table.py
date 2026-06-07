@@ -77,16 +77,16 @@ class D_table_dtl(BaseFileModel):
 				table.description = table_description
 				table.save()
 		else:
-			table = self.d_table_dtl.get_or_none(self.d_table_dtl.id == edit_id)
+			table = self.d_table_dtl.get_or_none(self.d_table_dtl == edit_id)
 
 		if do_del_existing:
-			cond_ids = self.d_table_dtl_cond.select(self.d_table_dtl_cond.id).where(self.d_table_dtl_cond.d_table_id == table.id)
-			act_ids = self.d_table_dtl_act.select(self.d_table_dtl_act.id).where(self.d_table_dtl_act.d_table_id == table.id)
-			self.d_table_dtl_cond_alt.delete().where(self.d_table_dtl_cond_alt.cond_id.in_(cond_ids)).execute()
-			self.d_table_dtl_act_out.delete().where(self.d_table_dtl_act_out.act_id.in_(act_ids)).execute()
+			cond_ids = self.d_table_dtl_cond.select(self.d_table_dtl_cond).where(self.d_table_dtl_cond.d_table == table.id)
+			act_ids = self.d_table_dtl_act.select(self.d_table_dtl_act).where(self.d_table_dtl_act.d_table == table.id)
+			self.d_table_dtl_cond_alt.delete().where(self.d_table_dtl_cond_alt.cond.in_(cond_ids)).execute()
+			self.d_table_dtl_act_out.delete().where(self.d_table_dtl_act_out.act.in_(act_ids)).execute()
 
-			self.d_table_dtl_cond.delete().where(self.d_table_dtl_cond.d_table_id == table.id).execute()
-			self.d_table_dtl_act.delete().where(self.d_table_dtl_act.d_table_id == table.id).execute()
+			self.d_table_dtl_cond.delete().where(self.d_table_dtl_cond.d_table == table.id).execute()
+			self.d_table_dtl_act.delete().where(self.d_table_dtl_act.d_table == table.id).execute()
 
 		i += 2  # Skip header
 		cond_cols = 6
@@ -104,16 +104,16 @@ class D_table_dtl(BaseFileModel):
 			cond.d_table = table
 			cond.var = cond_vals[0]
 			cond.obj = cond_vals[1]
-			cond.obj_num = int(cond_vals[2])
+			setattr(cond, 'obj_num', int(cond_vals[2]))
 			cond.lim_var = cond_vals[3]
 			cond.lim_op = cond_vals[4]
-			cond.lim_const = float(cond_vals[5])
-			cond.description = cond_description
+			setattr(cond, 'lim_const', float(cond_vals[5]))
+			cond.description = cond_description #type: ignore
 			cond.save()
 
 			for j in range(0, num_alts):
 				alt = self.d_table_dtl_cond_alt()
-				alt.cond = cond
+				alt.cond = cond #type: ignore
 				alt.alt = cond_vals[j + cond_cols]
 				alt.save()
 
@@ -130,7 +130,7 @@ class D_table_dtl(BaseFileModel):
 			act.d_table = table
 			act.act_typ = act_vals[0]
 			act.obj = act_vals[1]
-			act.obj_num = int(act_vals[2])
+			setattr(act, 'obj_num', int(act_vals[2]))
 			act.name = act_vals[3]
 			act.option = act_vals[4]
 			act.const = act_vals[5]
@@ -140,7 +140,7 @@ class D_table_dtl(BaseFileModel):
 
 			for k in range(act_cols, len(act_vals)):
 				outcome = self.d_table_dtl_act_out()
-				outcome.act = act
+				outcome.act = act #type: ignore
 				outcome.outcome = act_vals[k].strip() == 'y'
 				outcome.save()
 

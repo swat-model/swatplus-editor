@@ -1,4 +1,11 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    DoubleField,
+    ForeignKeyField,
+    AutoField
+)
 from .base import BaseModel
 from . import climate
 from . import hru as hru_db
@@ -14,6 +21,7 @@ from . import recall
 
 class Con(BaseModel):
 	"""Inheritable base class for all connect files."""
+	id = AutoField()
 	name = CharField(unique=True)
 	gis_id = IntegerField(null=True)
 	area = DoubleField()

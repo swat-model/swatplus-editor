@@ -1,5 +1,7 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	prefetch
+)
 from helpers import utils
 import database.project.water_rights as db
 from database.project import connect
@@ -21,10 +23,10 @@ class Water_allocation_wro(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		tables = db.Water_allocation_wro.select().order_by(db.Water_allocation_wro.id)
-		sources = db.Water_allocation_src_ob.select().order_by(db.Water_allocation_src_ob.id)
-		demands = db.Water_allocation_dmd_ob.select().order_by(db.Water_allocation_dmd_ob.id)
-		demand_sources = db.Water_allocation_dmd_ob_src.select().order_by(db.Water_allocation_dmd_ob_src.id)
+		tables = db.Water_allocation_wro.select().order_by(getattr(db.Water_allocation_wro, 'id'))
+		sources = db.Water_allocation_src_ob.select().order_by(getattr(db.Water_allocation_src_ob, 'id'))
+		demands = db.Water_allocation_dmd_ob.select().order_by(getattr(db.Water_allocation_dmd_ob, 'id'))
+		demand_sources = db.Water_allocation_dmd_ob_src.select().order_by(getattr(db.Water_allocation_dmd_ob_src, 'id'))
 		query = prefetch(tables, sources, demands, demand_sources)
 
 		if tables.count() > 0:

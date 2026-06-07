@@ -2,7 +2,9 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project.climate import Weather_sta_cli
@@ -95,62 +97,63 @@ def properties():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
 			m = Hru_data_hru()
 			m.name = args['name']
-			m.description = None if 'description' not in args else args['description']
+			m.description = None if 'description' not in args else args['description'] #type: ignore
 			if 'topo_name' in args:
-				m.topo_id = RestHelpers.get_id_from_name(Topography_hyd, args['topo_name'])
+				m.topo_id = RestHelpers.get_id_from_name(Topography_hyd, args['topo_name']) #type: ignore
 			if 'hyd_name' in args:
-				m.hydro_id = RestHelpers.get_id_from_name(Hydrology_hyd, args['hyd_name'])
+				m.hydro_id = RestHelpers.get_id_from_name(Hydrology_hyd, args['hyd_name']) #type: ignore
 			if 'soil_name' in args:
-				m.soil_id = RestHelpers.get_id_from_name(Soils_sol, args['soil_name'])
+				m.soil_id = RestHelpers.get_id_from_name(Soils_sol, args['soil_name']) #type: ignore
 			if 'lu_mgt_name' in args:
-				m.lu_mgt_id = RestHelpers.get_id_from_name(Landuse_lum, args['lu_mgt_name'])
+				m.lu_mgt_id = RestHelpers.get_id_from_name(Landuse_lum, args['lu_mgt_name']) #type: ignore
 			if 'soil_plant_init_name' in args:
-				m.soil_plant_init_id = RestHelpers.get_id_from_name(Soil_plant_ini, args['soil_plant_init_name'])
+				m.soil_plant_init_id = RestHelpers.get_id_from_name(Soil_plant_ini, args['soil_plant_init_name']) #type: ignore
 			if 'surf_stor' in args:
-				m.surf_stor_id = RestHelpers.get_id_from_name(Wetland_wet, args['surf_stor'])
+				m.surf_stor_id = RestHelpers.get_id_from_name(Wetland_wet, args['surf_stor']) #type: ignore
 			if 'snow_name' in args:
-				m.snow_id = RestHelpers.get_id_from_name(Snow_sno, args['snow_name'])
+				m.snow_id = RestHelpers.get_id_from_name(Snow_sno, args['snow_name']) #type: ignore
 			if 'field_name' in args:
-				m.field_id = RestHelpers.get_id_from_name(Field_fld, args['field_name'])
+				m.field_id = RestHelpers.get_id_from_name(Field_fld, args['field_name']) #type: ignore
 
 			result = m.save()
 
 			rh.close()
 			if result > 0:
-				return {'id': m.id }, 200
+				return {'id': getattr(m, 'id') }, 200
 
 			abort(400, 'Unable to update hru properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Hru properties name must be unique.')
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Hydrology_hyd.DoesNotExist:
+		except getattr(Hydrology_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Soils_sol.DoesNotExist:
+		except getattr(Soils_sol, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['soil_name']))
-		except Landuse_lum.DoesNotExist:
+		except getattr(Landuse_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['lu_mgt_name']))
-		except Soil_plant_ini.DoesNotExist:
+		except getattr(Soil_plant_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['soil_plant_init_name']))
-		except Wetland_wet.DoesNotExist:
+		except getattr(Wetland_wet, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['surf_stor']))
-		except Snow_sno.DoesNotExist:
+		except getattr(Snow_sno, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['snow_name']))
-		except Field_fld.DoesNotExist:
+		except getattr(Field_fld, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['field_name']))
 		except Exception as ex:
@@ -168,11 +171,12 @@ def propertiesId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
-			m = Hru_data_hru.get(Hru_data_hru.id == id)
+			m = Hru_data_hru.get(getattr(Hru_data_hru, 'id') == id)
 			m.name = args['name']
 			m.description = None if 'description' not in args else args['description']
 			if 'topo_name' in args:
@@ -199,31 +203,31 @@ def propertiesId(id):
 				return '', 200
 
 			abort(400, 'Unable to update hru properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Hru properties name must be unique.')
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Hydrology_hyd.DoesNotExist:
+		except getattr(Hydrology_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Soils_sol.DoesNotExist:
+		except getattr(Soils_sol, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['soil_name']))
-		except Landuse_lum.DoesNotExist:
+		except getattr(Landuse_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['lu_mgt_name']))
-		except Soil_plant_ini.DoesNotExist:
+		except getattr(Soil_plant_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['soil_plant_init_name']))
-		except Wetland_wet.DoesNotExist:
+		except getattr(Wetland_wet, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['surf_stor']))
-		except Snow_sno.DoesNotExist:
+		except getattr(Snow_sno, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['snow_name']))
-		except Field_fld.DoesNotExist:
+		except getattr(Field_fld, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['field_name']))
 		except Exception as ex:
@@ -239,7 +243,8 @@ def propertiesMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -263,7 +268,7 @@ def propertiesMany():
 				param_dict['field_id'] = RestHelpers.get_id_from_name(Field_fld, args['field_name'])
 
 			con_table = Hru_con
-			con_prop_field = Hru_con.hru_id
+			con_prop_field = getattr(Hru_con, 'hru_id')
 			prop_table = Hru_data_hru
 
 			result = DefaultRestMethods.put_many_con(args, param_dict, con_table, con_prop_field, prop_table)
@@ -272,31 +277,31 @@ def propertiesMany():
 				return '', 200
 
 			abort(400, 'Unable to update hru properties.')
-		except Topography_hyd.DoesNotExist:
+		except getattr(Topography_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['topo_name']))
-		except Hydrology_hyd.DoesNotExist:
+		except getattr(Hydrology_hyd, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Soils_sol.DoesNotExist:
+		except getattr(Soils_sol, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['soil_name']))
-		except Landuse_lum.DoesNotExist:
+		except getattr(Landuse_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['lu_mgt_name']))
-		except Soil_plant_ini.DoesNotExist:
+		except getattr(Soil_plant_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['soil_plant_init_name']))
-		except Wetland_wet.DoesNotExist:
+		except getattr(Wetland_wet, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['surf_stor']))
-		except Snow_sno.DoesNotExist:
+		except getattr(Snow_sno, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['snow_name']))
-		except Field_fld.DoesNotExist:
+		except getattr(Field_fld, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['field_name']))
-		except Weather_sta_cli.DoesNotExist:
+		except getattr(Weather_sta_cli, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wst_name']))
 		except Exception as ex:

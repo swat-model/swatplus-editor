@@ -6,7 +6,7 @@ import { useConstants } from './constants';
 
 export function useUtilities() {
 	const electron = window.electronApi;
-	const route = useRoute();
+	// const route = useRoute();
 	const api = useApi();
 	const currentProject = useCurrentProject();
 	const formatters = useFormatters();
@@ -19,9 +19,14 @@ export function useUtilities() {
 
 	const publicPathAbsolute = publicPath === '' ? '' : `/${publicPath}`;
 
-	function appendRoute(pathToAppend:string) {
-		return route.path + (route.path.endsWith('/') ? '' : '/') + pathToAppend
-	}
+	// function appendRoute(pathToAppend:string) {
+	// 	return route.path + (route.path.endsWith('/') ? '' : '/') + pathToAppend
+	// }
+	
+	function appendRoute(pathToAppend: string, path?: string) {
+		const currentPath = path || useRoute().path;
+        return currentPath + (currentPath.endsWith('/') ? '' : '/') + pathToAppend;
+    }
 
 	function pathExists(path:string) {
 		return electron.pathExists(path);

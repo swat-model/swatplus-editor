@@ -16,10 +16,10 @@ class Exco_om_exc(BaseFileModel):
 	def write(self):
 		#self.write_default_table(db.Exco_om_exc, True)
 		table = db.Exco_om_exc
-		order_by = db.Exco_om_exc.id
+		order_by = getattr(db.Exco_om_exc, 'id')
 		#recall_recs = Recall_rec.select(Recall_rec, Recall_dat).join(Recall_dat).where((Recall_rec.rec_typ == 4) & (Recall_dat.flo != 0))
-		valid_recs = Recall_dat.select(Recall_dat.recall_rec_id).join(Recall_rec).where((Recall_rec.rec_typ == 4) & (Recall_dat.flo != 0))
-		valid_ids = [r.recall_rec_id for r in valid_recs]
+		valid_recs = Recall_dat.select(Recall_dat.recall_rec).join(Recall_rec).where((Recall_rec.rec_typ == 4) & (Recall_dat.flo != 0))
+		valid_ids = [r.recall_rec.id for r in valid_recs]
 		recall_recs = Recall_rec.select().where(Recall_rec.id.in_(valid_ids))
 
 		if recall_recs.count() > 0:
@@ -70,7 +70,7 @@ class Exco_om_exc(BaseFileModel):
 					file.write("\n")"""
 
 				for rec in recall_recs:
-					row = Recall_dat.get_or_none((Recall_dat.recall_rec_id == rec.id) & (Recall_dat.flo != 0))
+					row = Recall_dat.get_or_none((Recall_dat.recall_rec == rec.id) & (Recall_dat.flo != 0))
 					if row is not None:
 						file.write(utils.string_pad(rec.name, direction="left"))
 						file.write(utils.num_pad(row.flo))
@@ -157,10 +157,10 @@ class Exco_exc(BaseFileModel):
 
 	def write(self):
 		table = db.Exco_exc
-		order_by = db.Exco_exc.id
+		order_by = getattr(db.Exco_exc, 'id')
 
-		valid_recs = Recall_dat.select(Recall_dat.recall_rec_id).join(Recall_rec).where((Recall_rec.rec_typ == 4) & (Recall_dat.flo != 0))
-		valid_ids = [r.recall_rec_id for r in valid_recs]
+		valid_recs = Recall_dat.select(Recall_dat.recall_rec).join(Recall_rec).where((Recall_rec.rec_typ == 4) & (Recall_dat.flo != 0))
+		valid_ids = [r.recall_rec.id for r in valid_recs]
 		recall_recs = Recall_rec.select().where(Recall_rec.id.in_(valid_ids))
 		#recall_recs = Recall_rec.select(Recall_rec, Recall_dat).join(Recall_dat).where((Recall_rec.rec_typ == 4) & (Recall_dat.flo != 0))
 

@@ -16,7 +16,7 @@
 		loadingMessage: '',
 	});
 
-	let errorMessage = 'No project open. Please go to project setup to continue.';
+	let errorMessage = 'Tidak ada proyek yang terbuka. Silakan Klik Project Setup and Information untuk melanjutkan.';
 </script>
 
 <template>

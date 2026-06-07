@@ -4,10 +4,21 @@
 	import { required, requiredIf, helpers } from '@vuelidate/validators';
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	import { storeToRefs } from 'pinia';
+	import {useTaskStore} from '@/store/task';
+
+	
 	const route = useRoute();
 	const { api, constants, currentProject, errors, formatters, runProcess, utilities } = useHelpers();
+	const taskStore = useTaskStore();
+	const { task } = storeToRefs(taskStore);
 
-	const grid = ref();
+
+
+	interface GridComponent {
+		get: () => Promise<void>;
+	}
+	const grid = ref<GridComponent | null>(null);
 
 	let table:any = {
 		apiUrl: 'climate/stations',
@@ -41,7 +52,8 @@
 			options: {
 				formats: [
 					{ value: 'SWAT2012', title: 'SWAT2012 / Global Data Websites' },
-					{ value: 'SWAT+', title: 'SWAT+' }
+					{ value: 'SWAT+', title: 'SWAT+' },
+					{ value: 'CSV', title: 'CSV Files (Advanced, requires specific formatting)' }
 				]
 			},
 			show: false,
@@ -55,21 +67,11 @@
 		}
 	});
 
-	let task:any = reactive({
-		progress: {
-			percent: 0,
-			message: <string|null>null
-		},
-		error: <string|null>null,
-		running: false,
-		currentPid: null
-	});
-
 	const formRules = computed(() => ({
 		format: { required },
 		weatherDataDir: { required },
 		saveDir: {
-			required: helpers.withMessage('Value is required', requiredIf(() => { return page.import.form.format === 'SWAT2012' }))
+			required: helpers.withMessage('Value is required', requiredIf(() => { return page.import.form.format === 'SWAT2012' || page.import.form.format === 'CSV' }))
 		},
 		matchExisting: {},
 		deleteExisting: {}
@@ -124,6 +126,16 @@
 		page.delete.saving = false;
 	}
 
+	function openImportDialog() {
+		taskStore.task.error = null;
+		taskStore.task.running = false;
+		taskStore.task.progress = { percent: 0, message: '' };
+		
+		page.import.error = null;
+		page.import.saving = false;
+		page.import.show = true; // Buka modal di sini
+	}
+
 	async function importData() {
 		page.import.error = null;
 		page.import.saving = true;
@@ -137,7 +149,9 @@
 				let data = {
 					weather_data_dir: page.import.form.format === 'SWAT+' ? page.import.form.weatherDataDir : page.import.form.saveDir
 				};
+				
 				const response = await api.put(`climate/directory`, data, currentProject.getApiHeader());
+
 				errors.log(response);
 			} catch (error) {
 				page.import.error = errors.logError(error, 'Error saving weather directory to database.');
@@ -146,7 +160,11 @@
 			if (formatters.isNullOrEmpty(page.import.error)) {
 				let deleteExisting = page.import.form.deleteExisting ? 'y' : 'n';
 				let createStations = page.import.form.matchExisting ? 'n' : 'y';
-				let importType = page.import.form.format === 'SWAT2012' ? 'observed2012' : 'observed';
+				// let importType = page.import.form.format === 'SWAT2012' ? 'observed2012' : 'observed';
+
+				let importType = 'observed';
+				if (page.import.form.format === 'SWAT2012') importType = 'observed2012';
+				else if (page.import.form.format === 'CSV') importType = 'csv';
 
 				let args = ['import_weather', 
 					'--project_db_file='+ currentProject.projectDb,
@@ -154,72 +172,51 @@
 					'--import_type=' + importType,
 					'--create_stations='+ createStations];
 
-				if (page.import.form.format != 'SWAT+') {
+				// if (page.import.form.format != 'SWAT+') {
+				// 	args.push('--source_dir='+ page.import.form.weatherDataDir);
+				// }
+
+				if (page.import.form.format === 'CSV') {
+					if (!page.import.form.saveDir) {
+						page.import.form.saveDir = currentProject.txtInOutPath; // Ambil path default proyek
+					}
+				// Sesuai dengan parser baru di swatplus_api.py
+					args.push('--csv_dir=' + page.import.form.weatherDataDir);
+					args.push('--weather_output_dir=' + page.import.form.saveDir);
+				} else if (page.import.form.format !== 'SWAT+') {
 					args.push('--source_dir='+ page.import.form.weatherDataDir);
 				}
 
 				errors.log(args);
-
 				v$.value.$reset();
+				taskStore.runTask(args, {
+					proc_name: 'weather_stations', // Sesuaikan dengan nama proses di listener Anda
+					script_name: 'swatplus_api',
+					// type: 'import',
+					isGridTask : true,
+					type: 'import',
+					routePath: route.path
+					}, 
+					async () => {
+					// --- LOGIKA SETELAH IMPORT SELESAI ---
+					taskStore.task.running = false;
+					page.import.saving = false;
+                	closeTaskModals();
+					// await grid?.value?.get();
+					if (grid.value) {
+        				await grid.value.get();
+    				}
+                // Opsional: panggil get() untuk refresh data
+            });
+			} else {
 				page.import.saving = false;
-				runTask(args);
 			}
-		}
-
-		page.import.saving = false;
+    	}
 	}
 
-	function runTask(args:string[]) {
-		task.error = null;
-		task.running = true;
-		task.progress = {
-			percent: 0,
-			message: null
-		};
-
-		task.isGridTask = true;
-		task.currentPid = runProcess.runApiProc('weather_stations', 'swatplus_api', args);
-	}
-
-	let listeners:any = {
-		stdout: undefined,
-		stderr: undefined,
-		close: undefined
-	}
-
-	function initRunProcessHandlers() {
-		listeners.stdout = runProcess.processStdout('weather_stations', (data:any) => {
-			console.log(`stdout: ${data}`);
-			task.progress = runProcess.getApiOutput(data);
-		});
-		
-		listeners.stderr = runProcess.processStderr('weather_stations', (data:any) => {
-			console.log(`stderr: ${data}`);
-			task.error = data;
-			task.running = false;
-		});
-		
-		listeners.close = runProcess.processClose('weather_stations', async (code:any) => {
-			console.log(`close: ${code}`);
-			if (formatters.isNullOrEmpty(task.error)) {
-				await grid?.value?.get();
-				task.running = false;
-				closeTaskModals();
-			}
-		});
-	}
-
-	function removeRunProcessHandlers() {
-		if (listeners.stdout) listeners.stdout();
-		if (listeners.stderr) listeners.stderr();
-		if (listeners.close) listeners.close();
-	}
 
 	function cancelTask() {
-		task.error = null;
-		runProcess.killProcess(task.currentPid);
-		
-		task.running = false;
+		taskStore.cancelTask();
 		closeTaskModals();
 	}
 
@@ -229,12 +226,15 @@
 
 	onMounted(async () => {
 		page.loading = true;
-		initRunProcessHandlers();
+		// initRunProcessHandlers();
 		await get();
 		page.loading = false;
 	});
-	
-	onUnmounted(() => removeRunProcessHandlers());
+
+	onUnmounted(() => {
+		taskStore.cleanupListeners();// removeRunProcessHandlers();
+	});
+
 
 	watch(() => route.path, async () => await get())
 </script>
@@ -248,7 +248,7 @@
 
 			<grid-view ref="grid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal" hide-create>
 				<template #actions>
-					<v-btn variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import Data</v-btn>
+					<v-btn variant="flat" color="info" class="mr-2" @click="openImportDialog">Import Data</v-btn>
 					<v-btn v-if="table.total > 0" variant="flat" color="error" class="mr-2" @click="page.delete.show = true">Delete All</v-btn>
 				</template>
 			</grid-view>
@@ -259,8 +259,8 @@
 						<error-alert :text="page.delete.error"></error-alert>
 
 						<p>
-							Are you sure you want to delete <strong>ALL</strong> weather stations?
-							This action is permanent and cannot be undone. 
+							Yakin akan menghapus data <strong>ALL</strong> weather stations?
+							Tindakan ini bersifat permanen dan tidak dapat dibatalkan. 
 						</p>
 					</v-card-text>
 					<v-divider></v-divider>
@@ -275,7 +275,7 @@
 				<v-card title="Import Weather Stations">
 					<v-card-text>
 						<error-alert :text="page.import.error"></error-alert>
-						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing your data." :stack-trace="task.error.toString()" />
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing your data." :stack-trace="task.error ? task.error.toString() : ''" />
 						
 						<div v-if="task.running">
 							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped indeterminate></v-progress-linear>
@@ -287,7 +287,7 @@
 							<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 								Need weather data? 
 								<open-in-browser url="https://swat.tamu.edu/data/" text="See options on the SWAT website."></open-in-browser>
-								<br>Have <b>hourly</b> data? This is only supported in SWAT+ format, not SWAT2012.
+								<br>Have <b>hourly</b> data? Ini hanya didukung dalam format SWAT+, bukan SWAT2012.
 							</v-alert>
 							
 							<div class="form-group mb-0">
@@ -299,27 +299,42 @@
 
 							<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 								<span v-if="page.import.form.format === 'SWAT2012'">
-									Each measurement provided must have a file named as: <code>pcp.txt</code>, <code>rh.txt</code>, <code>solar.txt</code>, 
+									Setiap pengukuran yang diberikan harus memiliki file bernama sebagai: <code>pcp.txt</code>, <code>rh.txt</code>, <code>solar.txt</code>, 
 									<code>tmp.txt</code>, <code>wind.txt</code>, and <code>pet.txt</code>. 
 									<open-in-browser url="https://plus.swat.tamu.edu/downloads/sample_files/weather-stations/swat2012-weather-stations.zip" text="Download a sample format"></open-in-browser>
 									and 
 									<open-in-browser url="https://swatplus.gitbook.io/docs/user/editor/inputs/climate#swat2012-global-weather-websites-format" text="read the instructions"></open-in-browser>.
 								</span>
+								<!-- CSV Format Instructions -->
+								<span v-else-if="page.import.form.format === 'CSV'">
+									Pastikan file CSV Anda memiliki header yang sesuai dengan format database... 
+									(tulis instruksi singkat CSV Anda di sini)
+								</span>
 								<span v-else>
-									Each measurement provided must have a file named as: <code>pcp.cli</code>, <code>hmd.cli</code>, <code>slr.cli</code>, 
+									Setiap pengukuran yang diberikan harus memiliki file bernama sebagai: <code>pcp.cli</code>, <code>hmd.cli</code>, <code>slr.cli</code>, 
 									<code>tmp.cli</code>, <code>wnd.cli</code>, and <code>pet.cli</code>.
 									<open-in-browser url="https://plus.swat.tamu.edu/downloads/sample_files/weather-stations/swatplus-weather-stations.zip" text="Download a sample format"></open-in-browser>
 									and 
 									<open-in-browser url="https://swatplus.gitbook.io/docs/user/editor/inputs/climate#swat+-format" text="read the instructions"></open-in-browser>.
 								</span>
 
-								Please ensure the files you're importing are saved with UTF-8 encoding. Replace any accent or non-unicode characters in the station names or comment lines of all files.
+								Pastikan file yang Anda impor disimpan dengan pengkodean UTF-8. Ganti semua karakter beraksen atau karakter non-Unicode dalam nama stasiun atau baris komentar di semua file.
 							</v-alert>
 
-							<div class="form-group mb-0">
+							<!-- <div class="form-group mb-0">
 								<select-folder-input v-model="page.import.form.weatherDataDir" :value="page.import.form.weatherDataDir"
 									:label="page.import.form.format + ' weather files directory'" required
 									invalidFeedback="Required"></select-folder-input>
+							</div> -->
+							<!-- CSV Format Instructions -->
+							<div class="form-group mb-0">
+								<select-folder-input 
+									v-model="page.import.form.weatherDataDir" 
+									:value="page.import.form.weatherDataDir"
+									:label="page.import.form.format === 'CSV' ? 'CSV weather files directory' : page.import.form.format + ' weather files directory'" 
+									required
+									invalidFeedback="Required">
+								</select-folder-input>
 							</div>
 
 							<div class="form-group mb-0" v-if="page.import.form.format !== 'SWAT+'">
@@ -331,13 +346,13 @@
 							<div v-if="table.total > 0">
 								<v-checkbox v-model="page.import.form.deleteExisting" hide-details>
 									<template #label>
-										Delete existing stations? Leave unchecked to keep. 
+										Hapus stasiun yang sudah ada? Biarkan tidak dicentang untuk mempertahankannya. 
 									</template>
 								</v-checkbox>
 
 								<v-checkbox v-model="page.import.form.matchExisting" hide-details>
 									<template #label>
-										Match files to existing stations? Leave unchecked to create new weather stations.
+										Cocokkan berkas dengan stasiun yang sudah ada? Biarkan tidak dicentang untuk membuat stasiun cuaca baru.
 									</template>
 								</v-checkbox>
 							</div>							

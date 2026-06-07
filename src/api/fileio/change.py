@@ -201,8 +201,8 @@ class Plant_parms_sft(BaseFileModel):
 				file.write("\n")
 
 				for row in table.select().order_by(table.id):
-					dis_plants = item_table.select(item_table.name).where(item_table.plant_parms_sft_id == row.id).distinct()
-					dis_parms = item_table.select(item_table.var).where(item_table.plant_parms_sft_id == row.id).distinct()
+					dis_plants = item_table.select(item_table.name).where(item_table.plant_parms_sft == row.id).distinct()
+					dis_parms = item_table.select(item_table.var).where(item_table.plant_parms_sft == row.id).distinct()
 
 					row_cols = [col(row.name, direction="left"),
 								col(len(dis_plants)),

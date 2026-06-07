@@ -1,4 +1,11 @@
-from peewee import *
+from peewee import (
+    SqliteDatabase,
+    Model,
+    IntegerField,
+    DoubleField,
+    CharField,
+    ForeignKeyField
+)
 import sqlite3
 #import pyodbc
 import database.lib

@@ -1,4 +1,10 @@
-from peewee import *
+from peewee import (
+    CharField,
+    DoubleField,
+    ForeignKeyField,
+    IntegerField,
+    TextField
+)
 from .base import BaseModel
 
 class Soils_sol(BaseModel):

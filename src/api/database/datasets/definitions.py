@@ -1,4 +1,13 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    DoubleField,
+    ForeignKeyField,
+    BooleanField,
+    DateTimeField,
+    AutoField
+)
 from .base import BaseModel
 import datetime
 
@@ -70,6 +79,7 @@ class Print_prt(BaseModel):
 
 
 class Print_prt_object(BaseModel):
+	id = AutoField()
 	name = CharField()
 	daily = BooleanField()
 	monthly = BooleanField()

@@ -1,5 +1,15 @@
-from peewee import *
+from peewee import (
+    SqliteDatabase,
+    Model,
+    CharField,
+    DoubleField,
+    BooleanField,
+    IntegerField,
+    ForeignKeyField
+)
 import os
+
+from typing import Optional
 
 db = SqliteDatabase(None)
 
@@ -39,12 +49,13 @@ class Var_range_option(BaseModel):
 
 class SetupVardefsDatabase():
 	@staticmethod
-	def init(datasets_db: str = None):
+	def init(datasets_db: Optional[str] = None):
 		db.init(datasets_db, pragmas={'journal_mode': 'off'})
 
 	@staticmethod
 	def close():
 		try:
 			db.close()
-		except:
+		except Exception as e:
+			print(f"Gagal Menutup Databse: {e}")
 			pass

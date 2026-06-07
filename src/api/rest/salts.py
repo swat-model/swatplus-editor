@@ -2,7 +2,10 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError,
+	SQL
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project import salts as db
@@ -11,6 +14,8 @@ from database.project.simulation import Time_sim
 from database.project.climate import Atmo_cli_sta
 from database.project.hru_parm_db import Fertilizer_frt, Urban_urb, Plants_plt
 from database import lib as db_lib
+
+from typing import Any
 
 import datetime
 
@@ -101,10 +106,11 @@ def salt_hru_ini_csId(id):
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/enable-plants', methods=['GET','PUT'])
-def enablePlants():
+def enablePlants() -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	module, created = db.Salt_module.get_or_create(id=1)
 	flags, created2 = db.Salt_plants_flags.get_or_create(id=1)
@@ -131,13 +137,14 @@ def enablePlants():
 		abort(400, 'Unable to update salts module.')
 
 @bp.route('/plants/<int:id>', methods=['GET','PUT'])
-def plants(id):
+def plants(id) -> Any:
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
-		item = Plants_plt.get_or_none(Plants_plt.id == id)
+		item = Plants_plt.get_or_none(getattr(Plants_plt, 'id') == id)
 		
 		if item is None:
 			rh.close()
@@ -170,10 +177,11 @@ def plants(id):
 		return DefaultRestMethods.put(id, db.Salt_plants, 'Value')
 	
 @bp.route('/enable-irrigation', methods=['GET','PUT'])
-def enableIrrigation():
+def enableIrrigation() -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	module, created = db.Salt_module.get_or_create(id=1)
 	
@@ -195,13 +203,14 @@ def enableIrrigation():
 		abort(400, 'Unable to update salts module.')
 
 @bp.route('/irrigation/<int:id>', methods=['GET','PUT'])
-def irrigation(id):
+def irrigation(id) -> Any:
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
-		item = db.Salt_hru_ini_cs.get_or_none(db.Salt_hru_ini_cs.id == id)
+		item = db.Salt_hru_ini_cs.get_or_none(getattr(db.Salt_hru_ini_cs, 'id') == id)
 		
 		if item is None:
 			rh.close()
@@ -228,10 +237,11 @@ def irrigation(id):
 		return DefaultRestMethods.put(id, db.Salt_irrigation, 'Value')
 
 @bp.route('/enable-urban', methods=['GET','PUT'])
-def enableUrban():
+def enableUrban() -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	module, created = db.Salt_module.get_or_create(id=1)
 	
@@ -252,11 +262,12 @@ def enableUrban():
 		abort(400, 'Unable to update salts module.')
 
 @bp.route('/urban/<int:id>', methods=['GET','PUT'])
-def urban(id):
+def urban(id) -> Any:
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		item = Urban_urb.get_or_none(Urban_urb.id == id)
 		
@@ -285,10 +296,11 @@ def urban(id):
 		return DefaultRestMethods.put(id, db.Salt_urban, 'Value')
 
 @bp.route('/enable-fert', methods=['GET','PUT'])
-def enableFert():
+def enableFert() -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	module, created = db.Salt_module.get_or_create(id=1)
 	
@@ -309,13 +321,14 @@ def enableFert():
 		abort(400, 'Unable to update salts module.')
 
 @bp.route('/fert/<int:id>', methods=['GET','PUT'])
-def fert(id):
+def fert(id) -> Any:
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
-		item = Fertilizer_frt.get_or_none(Fertilizer_frt.id == id)
+		item = Fertilizer_frt.get_or_none(getattr(Fertilizer_frt, 'id') == id)
 		
 		if item is None:
 			rh.close()
@@ -345,7 +358,8 @@ def fert(id):
 def enableRoad():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	module, created = db.Salt_module.get_or_create(id=1)
 	if module.road_timestep is None or module.road_timestep == '':
@@ -438,11 +452,12 @@ def enableRoad():
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/road/<int:id>', methods=['GET','POST'])
-def roadValues(id):
+def roadValues(id) -> Any:
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		sta = Atmo_cli_sta.get_or_none(Atmo_cli_sta.id == id)
 		
@@ -481,7 +496,8 @@ def roadValuesId(id):
 def enableAtmo():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	module, created = db.Salt_module.get_or_create(id=1)
 	if module.atmo_timestep is None or module.atmo_timestep == '':
@@ -598,11 +614,12 @@ def enableAtmo():
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/atmo/<int:id>', methods=['GET','POST'])
-def atmoValues(id):
+def atmoValues(id) -> Any:
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		sta = Atmo_cli_sta.get_or_none(Atmo_cli_sta.id == id)
 		if sta is None:
@@ -640,7 +657,8 @@ def atmoValuesId(id):
 def enableRecall():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	module, created = db.Salt_module.get_or_create(id=1)
 	
@@ -695,7 +713,8 @@ def recallTable():
 	elif request.method == 'DELETE':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 		project_base.db.execute_sql("PRAGMA foreign_keys = ON")
 		db.Salt_recall_dat.delete().execute()
 		db.Salt_recall_rec.delete().execute()
@@ -713,14 +732,15 @@ def recallId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		table = db.Salt_recall_rec
 		item_description = 'Salt recall'
 		args = request.json
 		try:
 			sim = Time_sim.get_or_create_default()
-			m = table.get(table.id==id)
+			m = table.get(getattr(table, 'id')==id)
 			update_recall_rec(m, id, sim, args['rec_typ'])
 
 			result = RestHelpers.save_args(table, args, id=id)
@@ -730,10 +750,10 @@ def recallId(id):
 				return '', 200
 
 			abort(400, 'Unable to update salt recall {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except table.DoesNotExist:
+		except getattr(table, 'DoesNotExist'):
 			rh.close()
 			abort(404, '{item} {id} does not exist'.format(item=item_description, id=id))
 		except Exception as ex:
@@ -746,7 +766,8 @@ def recallId(id):
 def dataList(id):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	table = db.Salt_recall_dat
 	args = request.args
@@ -755,11 +776,11 @@ def dataList(id):
 	page = RestHelpers.get_arg(args, 'page', 1)
 	per_page = RestHelpers.get_arg(args, 'per_page', 50)
 	
-	s = table.select().where(table.recall_rec_id == id)
+	s = table.select().where(getattr(table, 'recall_rec_id') == id)
 	total = s.count()
 
 	if sort == 'name':
-		sort_val = table.name if reverse != 'y' else table.name.desc()
+		sort_val = s.name if reverse != 'y' else s.name.desc()
 	else:
 		sort_val = SQL('[{}]'.format(sort))
 		if reverse == 'y':
@@ -791,8 +812,8 @@ def dataItem(id):
 
 def update_recall_rec(m, id, sim, new_rec_typ, no_compare = False):
 	if (m.rec_typ != new_rec_typ) or no_compare:
-		db.Salt_recall_dat.delete().where(db.Salt_recall_dat.recall_rec_id==id).execute()
-		rec = db.Salt_recall_rec.get_or_none(db.Salt_recall_rec.id == id)
+		db.Salt_recall_dat.delete().where(getattr(db.Salt_recall_dat, 'recall_rec_id')==id).execute()
+		rec = db.Salt_recall_rec.get_or_none(getattr(db.Salt_recall_rec, 'id') == id)
 		name = '' if rec is None else rec.name
 
 		ob_typs = {

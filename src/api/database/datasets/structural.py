@@ -1,4 +1,10 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    DoubleField,
+    TextField
+)
 from . import base
 
 

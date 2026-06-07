@@ -1,4 +1,10 @@
-from peewee import *
+from peewee import (
+    BooleanField,
+    IntegerField,
+    CharField,
+    ForeignKeyField,
+    DoubleField
+)
 from .base import BaseModel
 from .climate import Atmo_cli_sta
 from .hru_parm_db import Fertilizer_frt, Urban_urb, Plants_plt

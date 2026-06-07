@@ -4,18 +4,21 @@
 	font-weight: 300;
 	src: url('/fonts/Roboto-Light.ttf');
 }
+
 @font-face {
 	font-family: "Roboto";
 	font-style: normal;
 	font-weight: 400;
 	src: url('/fonts/Roboto-Regular.ttf');
 }
+
 @font-face {
 	font-family: "Roboto";
 	font-style: normal;
 	font-weight: 500;
 	src: url('/fonts/Roboto-Medium.ttf');
 }
+
 @font-face {
 	font-family: "Roboto";
 	font-style: normal;
@@ -30,15 +33,19 @@ $swat-gray: #F4F5F7;
 
 $border-color: rgba(var(--v-border-color), var(--v-border-opacity));
 
-code, .code {
+code,
+.code {
 	font-family: $font-family-monospace;
 }
 
-p, ol, ul {
+p,
+ol,
+ul {
 	margin-bottom: 12px;
 }
 
-ol, ul {
+ol,
+ul {
 	padding-left: 40px;
 }
 
@@ -46,7 +53,8 @@ ol, ul {
 	cursor: pointer;
 }
 
-td.min, th.min {
+td.min,
+th.min {
 	width: 1%;
 	white-space: nowrap;
 }
@@ -59,8 +67,8 @@ td.min, th.min {
 	color: rgba(var(--v-theme-surface-variant), var(--v-disabled-opacity));
 }
 
-.v-tooltip > .v-overlay__content {
-	background-color: rgba(0,0,0, 0.9) !important;
+.v-tooltip>.v-overlay__content {
+	background-color: rgba(0, 0, 0, 0.9) !important;
 	color: white !important;
 }
 
@@ -68,17 +76,17 @@ ul.plain-border {
 	list-style: none;
 	margin-left: 0;
 	padding-left: 0;
-	border-top: 1px solid rgba(255,255,255,0.1);
-  
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+
 	li {
 		padding: 0.5rem;
-		border-bottom: 1px solid rgba(255,255,255,0.1);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
 		a {
 			text-decoration: none;
 
 			&.icon {
-				color: rgba(255,255,255,0.4);
+				color: rgba(255, 255, 255, 0.4);
 			}
 		}
 	}
@@ -93,14 +101,14 @@ ul.plain-border {
 }
 
 .file-header {
-	border-bottom: 1px solid rgba(255,255,255,0.2);
-	
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+
 	span.heading {
 		padding-bottom: 0.2rem;
 	}
 
 	span.info {
-		background-color: rgba(255,255,255,0.2);
+		background-color: rgba(255, 255, 255, 0.2);
 		font-size: 0.9rem;
 		padding: 0.3rem 0.5rem;
 	}
@@ -112,7 +120,7 @@ ul.plain-border {
 }
 
 mark {
-	background-color: rgba(100,255,218, 0.8);
+	background-color: rgba(100, 255, 218, 0.8);
 	padding: 2px;
 	font-weight: bold;
 }
@@ -130,9 +138,12 @@ mark {
 	border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 	position: fixed;
 	bottom: 0;
-	left: 312px;
-	width: calc(100% - 312px);
+	// left: 312px;
+	// width: calc(100% - 312px);
+	left: var(--v-layout-left);
+	width: calc(100% - var(--v-layout-left));
 	z-index: 450;
+	transition: left 0.3s ease, width 0.3s ease;
 
 	&.full {
 		left: 56px;
@@ -230,6 +241,7 @@ ul.list-group {
 	&#mainContainer {
 		background-color: #fafafa;
 	}
+
 	#secondary-nav {
 		background-color: $swat-gray;
 	}
@@ -237,6 +249,7 @@ ul.list-group {
 	#action-bar {
 		background-color: $swat-gray;
 	}
+
 	.page-action-bar {
 		background-color: $swat-gray;
 	}
@@ -246,14 +259,14 @@ ul.list-group {
 	}
 
 	ul.plain-border {
-		border-top-color: rgba(0,0,0,0.1);
-	  
+		border-top-color: rgba(0, 0, 0, 0.1);
+
 		li {
-			border-bottom-color: rgba(0,0,0,0.1);
-	
+			border-bottom-color: rgba(0, 0, 0, 0.1);
+
 			a {
 				&.icon {
-					color: rgba(0,0,0,0.4);
+					color: rgba(0, 0, 0, 0.4);
 				}
 			}
 		}
@@ -261,10 +274,10 @@ ul.list-group {
 
 	.file-header {
 		border-bottom-color: #ECEFF1;
-		
+
 		span.info {
 			background-color: #ECEFF1;
-			color: rgba(0,0,0,0.6);
+			color: rgba(0, 0, 0, 0.6);
 		}
 	}
 }
@@ -272,16 +285,20 @@ ul.list-group {
 @import 'highcharts/css/highcharts.css';
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        --highcharts-background-color: #092d54;
-    }
+	:root {
+		--highcharts-background-color: #092d54;
+	}
 }
 
 .highcharts-dark {
-    --highcharts-background-color: #092d54;
+	--highcharts-background-color: #7fa009;
 }
 
 .highcharts-container {
-    font-family: 'Roboto', sans-serif;
-    font-size: 1rem;
+	font-family: 'Roboto', sans-serif;
+	font-size: 1rem;
+}
+
+.layout-fix {
+	padding-left: 0 !important;
 }

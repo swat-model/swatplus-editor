@@ -56,7 +56,7 @@
 </script>
 
 <template>
-	<v-main>
+	<v-main class="layout-fix">
 		<div class="py-3 px-6">
 			<page-loading :loading="page.loading"></page-loading>
 			<div v-if="!page.loading">
@@ -71,3 +71,4 @@
 		</div>
 	</v-main>
 </template>
+

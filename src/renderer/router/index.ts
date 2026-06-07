@@ -8,6 +8,7 @@ import Check from '../views/Check.vue';
 import CheckToolbox from '../views/CheckToolbox.vue';
 import Update from '../views/Update.vue';
 import TableBrowser from '../views/TableBrowser.vue';
+import Mapview from '../views/MapView.vue';
 
 import connect from './connect';
 import basin from './basin';
@@ -36,6 +37,7 @@ export default createRouter({
 				{ path: 'help', name: 'Help', component: Help },
 				{ path: 'run', name: 'Run', component: Run },
 				{ path: 'check', name: 'Check', component: CheckToolbox },
+				{ path: 'map', name: 'Map', component: Mapview },
 				{ 
 					path: 'edit', name: 'Edit', component: Edit,
 					children: editRoutes

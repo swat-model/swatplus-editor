@@ -1,8 +1,9 @@
-from peewee import *
+from peewee import Database, Model
+from typing import Type
 import sqlite3
 
 
-def bulk_insert(db, table, data):
+def bulk_insert(db:Database, model_class: Type[Model], data: list[dict]):
 	if len(data) > 0:
 		max_vars = 999  # SQLite limit to the number of parameters in a query
 		total_params = len(data[0]) * len(data)
@@ -10,19 +11,19 @@ def bulk_insert(db, table, data):
 
 		with db.atomic():
 			for idx in range(0, len(data), num_insert):
-				table.insert_many(data[idx:idx + num_insert]).execute()
+				model_class.insert_many(data[idx:idx + num_insert]).execute()
 
-def bulk_update_ids(db, table, param_dict, id_list):
-	if len(id_list) > 0:
-		max_vars = 999  # SQLite limit to the number of parameters in a query
-		total_params = len(param_dict) + len(id_list)
-		num_update = max_vars if max_vars > total_params else int(max_vars - len(param_dict))
+def bulk_update_ids(db, model, param_dict, id_list):
+	if not id_list:
+		return 0
+	batch_size = 500 
 
-		with db.atomic():
-			for idx in range(0, len(id_list), num_update):
-				table.update(param_dict).where(table.id.in_(id_list[idx:idx + num_update])).execute()
+	with db.atomic():
+		for i in range(0, len(id_list), batch_size):
+			chunk = id_list[i : i + batch_size]
+			model.update(param_dict).where(model.id.in_(chunk)).execute()
 
-	return 1
+	return len(id_list)
 
 
 def open_db(name):

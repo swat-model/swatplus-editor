@@ -1,4 +1,8 @@
-from peewee import *
+from peewee import (
+    CharField,
+    ForeignKeyField,
+    DoubleField
+)
 from . import base
 
 

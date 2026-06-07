@@ -5,15 +5,18 @@ import sys
 import argparse
 import platform
 import os
-import werkzeug
 import traceback
+from werkzeug import exceptions
+
 
 from rest import setup, aquifer, auto_complete, basin, change, channel, climate, decision_table, definitions, gwflow, hru, hru_lte, hru_parm_db, hydrology, init, lum, ops, recall, regions, reservoir, routing_unit, salts, soils, structural, water_rights
 
+
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
 app.debug = False
-app.json.sort_keys = False
+app.json.sort_keys = False #type: ignore
 exiting = False
 
 app.register_blueprint(setup.bp)
@@ -60,7 +63,7 @@ def teardown(exception):
 	if exiting:
 		os._exit(0)
 
-@app.errorhandler(werkzeug.exceptions.HTTPException)
+@app.errorhandler(exceptions.HTTPException)
 def handle_exception(e):
     return make_response(jsonify(message=e.description, stacktrace=traceback.format_exc()), e.code)
 

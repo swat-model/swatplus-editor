@@ -1,142 +1,147 @@
 <script setup lang="ts">
-	import { reactive, watch, onMounted, computed } from 'vue';
-	import { useRoute } from 'vue-router';
-	import { useHelpers } from '@/helpers';
-	import SwatPlusToolboxButton from '../components/SwatPlusToolboxButton.vue';
-	import SwatPlusIahrisButton from '../components/SwatPlusIahrisButton.vue';
-	
-	const route = useRoute();
-	const { api, constants, errors, formatters, runProcess, utilities, currentProject } = useHelpers();
+import { reactive, watch, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
+import { useHelpers } from '@/helpers';
+import SwatPlusToolboxButton from '../components/SwatPlusToolboxButton.vue';
+import SwatPlusIahrisButton from '../components/SwatPlusIahrisButton.vue';
 
-	let data:any = reactive({
-		page: {
-			loading: false,
-			error: null,
-			show: {
-				info: true,
-				hyd: false
-			},
-			tabIndex: 0,
-			tabs: [
-				"Information",
-				"Hydrology",
-				"Sediment",
-				"Nitrogen Cycle",
-				"Phosphorus Cycle",
-				"Plant Growth",
-				"Landscape Nutrient Losses",
-				"Land Use Summary",
-				"Instream Processes",
-				"Point Sources",
-				"Reservoirs"
-			]
+const route = useRoute();
+const { api, constants, errors, formatters, runProcess, utilities, currentProject } = useHelpers();
+
+let data: any = reactive({
+	page: {
+		loading: false,
+		error: null,
+		show: {
+			info: true,
+			hyd: false
 		},
-		config: {
-			input_files_dir: null,
-			input_files_last_written: null,
-			swat_last_run: null,
-			output_last_imported: null
+		tabIndex: 0,
+		tabs: [
+			"Information",
+			"Hydrology",
+			"Sediment",
+			"Nitrogen Cycle",
+			"Phosphorus Cycle",
+			"Plant Growth",
+			"Landscape Nutrient Losses",
+			"Land Use Summary",
+			"Instream Processes",
+			"Point Sources",
+			"Reservoirs"
+		]
+	},
+	config: {
+		input_files_dir: null,
+		input_files_last_written: null,
+		swat_last_run: null,
+		output_last_imported: null
+	},
+	check: {
+		setup: {},
+		hydrology: {},
+		nitrogenCycle: {},
+		phosphorusCycle: {},
+		plantGrowth: {},
+		landscapeNutrientLosses: {},
+		landUseSummary: {},
+		pointSources: {},
+		reservoirs: {},
+		instreamProcesses: {},
+		sediment: {},
+	},
+	modals: {
+		hydrology: {
+			monthlyBasinValues: false,
+			baseflowMap: false
 		},
-		check: {
-			setup: {},
-			hydrology: {},
-			nitrogenCycle: {},
-			phosphorusCycle: {},
-			plantGrowth: {},
-			landscapeNutrientLosses: {},
-			landUseSummary: {},
-			pointSources: {},
-			reservoirs: {},
-			instreamProcesses: {},
-			sediment: {},
-		},
-		modals: {
-			hydrology: {
-				monthlyBasinValues: false,
-				baseflowMap: false
-			},
-			reservoirs: {
-				table: false
+		reservoirs: {
+			table: false
+		}
+	}
+});
+
+const currentResultsPath = computed(() => {
+	return runProcess.resultsPath(data.config.input_files_dir);
+});
+
+async function get() {
+	if (!currentProject.projectDb || currentProject.projectDb === null) {
+        console.log("API request aborted: projectDb is not loaded yet.");
+        return;
+    }
+	data.page.loading = true;
+	data.page.error = null;
+
+	try {
+		const response = await api.get(`setup/run-settings`, currentProject.getApiHeader());
+		errors.log(response.data);
+		data.config = response.data.config;
+
+		if (!formatters.isNullOrEmpty(data.config.output_last_imported)) {
+			let outputDb = runProcess.outputDbPath(data.config.input_files_dir);
+			let formData = {
+				'output_db': outputDb
+			}
+			const response2 = await api.put(`setup/swatplus-check`, formData, currentProject.getApiHeader());
+			errors.log(response2.data);
+
+			if (response2.data.error) {
+				data.page.error = response2.data.error;
+			} else {
+				data.check = response2.data;
+
+				if (!response.data.has_observed_weather) {
+					data.check.hydrology.warnings.push('You are using simulated precipitation data; if you intend to calibrate, you should used measured precipitation data');
+				}
+
+				if (response.data.print.prt.nyskip < 1) {
+					data.check.hydrology.warnings.push('It is highly recomended that you use at least 1 year of model warmup; 2-5 years is better');
+				}
+
+				if (data.check.setup.swatVersion === 'development') {
+					data.check.setup.swatVersion = constants.appSettings.swatplus;
+				}
 			}
 		}
-	});
-
-	const currentResultsPath = computed(() => {
-		return runProcess.resultsPath(data.config.input_files_dir);
-	});
-
-	async function get() {
-		data.page.loading = true;
-		data.page.error = null;
-
-		try {
-			const response = await api.get(`setup/run-settings`, currentProject.getApiHeader());
-			errors.log(response.data);
-			data.config = response.data.config;
-
-			if (!formatters.isNullOrEmpty(data.config.output_last_imported)) {
-				let outputDb = runProcess.outputDbPath(data.config.input_files_dir);
-				let formData = {
-					'output_db': outputDb
-				}
-				const response2 = await api.put(`setup/swatplus-check`, formData, currentProject.getApiHeader());
-				errors.log(response2.data);
-
-				if (response2.data.error) {
-					data.page.error = response2.data.error;
-				} else {
-					data.check = response2.data;
-
-					if (!response.data.has_observed_weather) {
-						data.check.hydrology.warnings.push('You are using simulated precipitation data; if you intend to calibrate, you should used measured precipitation data');
-					}
-
-					if (response.data.print.prt.nyskip < 1) {
-						data.check.hydrology.warnings.push('It is highly recomended that you use at least 1 year of model warmup; 2-5 years is better');
-					}
-
-					if (data.check.setup.swatVersion === 'development') {
-						data.check.setup.swatVersion = constants.appSettings.swatplus;
-					}
-				}
-			}
-		} catch (error) {
-			data.page.error = errors.logError(error, 'Unable to get SWAT+ Check data from database.');
-		}
-		
-		data.page.loading = false;
+	} catch (error) {
+		data.page.error = errors.logError(error, 'Unable to get SWAT+ Check data from database.');
 	}
 
-	function nextTab(position:number) {
-		let maxTabPos = data.page.tabs.length - 1;
-		data.page.tabIndex += position;
+	data.page.loading = false;
+}
 
-		if (data.page.tabIndex > maxTabPos)
-			data.page.tabIndex = 0;
-		if (data.page.tabIndex < 0)
-			data.page.tabIndex = maxTabPos;
-	}
+function nextTab(position: number) {
+	let maxTabPos = data.page.tabs.length - 1;
+	data.page.tabIndex += position;
 
-	onMounted(async () => await get());
-	watch(() => route.path, async () => await get())
+	if (data.page.tabIndex > maxTabPos)
+		data.page.tabIndex = 0;
+	if (data.page.tabIndex < 0)
+		data.page.tabIndex = maxTabPos;
+}
+
+onMounted(async () => await get());
+watch(() => route.path, async () => await get())
 </script>
 
 <template>
 	<project-container :loading="data.page.loading" add-error-frame>
-		<v-navigation-drawer permanent id="secondary-nav" v-if="!currentProject.isLte && formatters.isNullOrEmpty(data.page.error) && !formatters.isNullOrEmpty(data.config.output_last_imported)">
+		<v-navigation-drawer permanent id="secondary-nav"
+			v-if="!currentProject.isLte && formatters.isNullOrEmpty(data.page.error) && !formatters.isNullOrEmpty(data.config.output_last_imported)">
 			<v-list :lines="false" density="compact" nav>
-				<v-list-item v-for="(t, i) in data.page.tabs" :key="i"
-					@click.prevent="data.page.tabIndex = i" :active="data.page.tabIndex == i" :title="t"></v-list-item>
+				<v-list-item v-for="(t, i) in data.page.tabs" :key="i" @click.prevent="data.page.tabIndex = i"
+					:active="data.page.tabIndex == i" :title="t"></v-list-item>
 			</v-list>
 		</v-navigation-drawer>
 
-		<v-main>
+		<v-main class="layout-fix">
 			<div class="py-3 px-6">
-				<div v-if="currentProject.isLte">			
+				<div v-if="currentProject.isLte">
 					<h1 class="text-h5 mb-6">SWAT+ Check Not Available</h1>
 
 					<v-alert color="info" icon="$info" variant="tonal" border="start" class="my-4">
-						SWAT+ Check is not available for SWAT+ lte models.					
+						SWAT+ Check is not available for SWAT+ lte models.
 					</v-alert>
 
 					<v-btn @click="utilities.exit" variant="flat" color="primary">Exit SWAT+ Editor</v-btn>
@@ -150,36 +155,38 @@
 					<h1 class="text-h5 mb-6">Not ready to run SWAT+ Check</h1>
 
 					<v-alert color="info" icon="$info" variant="tonal" border="start" class="my-4">
-						You must run the model and analyze output before running SWAT+ Check.				
+						You must run the model and analyze output before running SWAT+ Check.
 					</v-alert>
 
 					<v-btn to="/run" variant="flat" color="primary">Configure Model Run</v-btn>
 				</div>
 				<div v-else>
-					<h1 class="text-h5 mb-6">SWAT+ Check {{data.page.tabIndex > 0 ? '/ ' + data.page.tabs[data.page.tabIndex] : ''}}</h1>
+					<h1 class="text-h5 mb-6">SWAT+ Check {{ data.page.tabIndex > 0 ? '/ ' + data.page.tabs[data.page.tabIndex] : '' }}</h1>
 
 					<div v-if="data.page.tabIndex == 0" title="Information">
 						<p>
-							SWAT+ Check reads model output from a SWAT+ project and performs many simple checks to identify 
-							potential model problems. The intended purpose of this program is to identify model problems early in the 
-							modeling process. Hidden model problems often result in the need to recalibrate or regenerate a model, 
-							resulting in an avoidable waste of time. This program is designed to compare a variety of SWAT+ outputs to 
-							nominal ranges based on the judgment of model developers. A warning does not necessarily indicate a problem; 
-							the purpose is to bring attention to unusual predictions. This software also provides a visual representation 
-							of various model outputs to aid novice users.
+							SWAT+ Check membaca output model dari proyek SWAT+ dan melakukan banyak pemeriksaan sederhana untuk
+							mengidentifikasi potensi masalah model. Tujuan dari program ini adalah untuk mengidentifikasi masalah model 
+							sejak dini dalam proses pemodelan. Masalah model yang tersembunyi seringkali mengakibatkan perlunya kalibrasi ulang atau 
+							regenerasi model, yang mengakibatkan pemborosan waktu yang dapat dihindari. Program ini dirancang untuk membandingkan berbagai
+							output SWAT+ dengan rentang nominal berdasarkan penilaian pengembang model. Peringatan tidak selalu menunjukkan masalah; 
+							tujuannya adalah untuk menarik perhatian pada prediksi yang tidak biasa. Perangkat lunak ini juga menyediakan
+							representasi visual dari berbagai output model untuk membantu pengguna pemula.
 						</p>
 
-						<v-alert v-if="data.check.setup.gwflow" type="warning" icon="$warning" variant="tonal" border="start" class="my-4">
+						<v-alert v-if="data.check.setup.gwflow" type="warning" icon="$warning" variant="tonal"
+							border="start" class="my-4">
 							<p>
-								Your model is using the GWFLOW module. SWAT+ Check is not fully compatible with GWFLOW at this time.
-								We will update this as soon as possible. For now the following values are unavailable:
+								Model Anda menggunakan modul GWFLOW. SWAT+ Check saat ini belum sepenuhnya kompatibel dengan GWFLOW.
+								Kami akan memperbarui ini sesegera mungkin. Untuk saat ini, nilai-nilai berikut tidak tersedia:
 							</p>
 							<ul>
-								<li>Hydrology: return flow, revap, recharge, baseflow total flow, deep recharge precipitation</li>
+								<li>Hydrology: return flow, revap, recharge, baseflow total flow, deep recharge
+									precipitation</li>
 								<li>Landscape Nitrogen Losses: leached, groundwater yield</li>
 							</ul>
 							<p>
-								We encourage you to look in the GWFLOW output files on your own until a fix is available.
+								Kami mendorong Anda untuk memeriksa sendiri file output GWFLOW sampai perbaikan tersedia.
 							</p>
 						</v-alert>
 
@@ -189,19 +196,19 @@
 									<tbody>
 										<tr>
 											<th>Model Version</th>
-											<td>SWAT+ {{data.check.setup.swatVersion}}</td>
+											<td>SWAT+ {{ data.check.setup.swatVersion }}</td>
 										</tr>
 										<tr>
 											<th>Simulation Length</th>
-											<td>{{data.check.setup.simulationLength}} years</td>
+											<td>{{ data.check.setup.simulationLength }} years</td>
 										</tr>
 										<tr>
 											<th>Warm-up</th>
-											<td>{{data.check.setup.warmUp}} years</td>
+											<td>{{ data.check.setup.warmUp }} years</td>
 										</tr>
 										<tr>
 											<th>Weather</th>
-											<td>{{data.check.setup.weatherMethod}}</td>
+											<td>{{ data.check.setup.weatherMethod }}</td>
 										</tr>
 									</tbody>
 								</v-table>
@@ -211,19 +218,20 @@
 									<tbody>
 										<tr>
 											<th>Watershed Area</th>
-											<td>{{formatters.toNumberFormat(data.check.setup.watershedArea, 2)}} ha</td>
+											<td>{{ formatters.toNumberFormat(data.check.setup.watershedArea, 2) }} ha
+											</td>
 										</tr>
 										<tr>
 											<th>HRUs</th>
-											<td>{{formatters.toNumberFormat(data.check.setup.hrus, 0)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.setup.hrus, 0) }}</td>
 										</tr>
 										<tr>
 											<th>LSUs</th>
-											<td>{{formatters.toNumberFormat(data.check.setup.lsus, 0)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.setup.lsus, 0) }}</td>
 										</tr>
 										<tr>
 											<th>Subbasins</th>
-											<td>{{formatters.toNumberFormat(data.check.setup.subbasins, 0)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.setup.subbasins, 0) }}</td>
 										</tr>
 									</tbody>
 								</v-table>
@@ -233,35 +241,46 @@
 
 					<div v-if="data.page.tabIndex == 1" title="Hydrology">
 						<p>
-							Realistic hydrology is the foundation of any model.  Pay particular attention to evapotranspiration, baseflow and surface runoff ratios.
-							Baseflow/streamflow ratios for the US are provided by the USGS, these data are accessible via the button below.
-							The ranges specified here are general guidelines only, and may not apply to your simulation area.
+							Hidrologi yang realistis adalah dasar dari setiap model. Perhatikan secara khusus rasio evapotranspirasi, baseflow, dan aliran permukaan.
+							Rasio baseflow/streamflow untuk AS disediakan oleh USGS, data ini dapat diakses melalui tombol di bawah.
+							Rentang yang ditentukan di sini adalah panduan umum saja, dan mungkin tidak berlaku untuk area simulasi Anda.
 						</p>
-						
-						<v-alert v-if="data.check.hydrology.warnings && data.check.hydrology.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+
+						<v-alert v-if="data.check.hydrology.warnings && data.check.hydrology.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.hydrology.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.hydrology.warnings" :key="i">{{ warning }}</li>
 							</ul>
 						</v-alert>
 
 						<v-row>
 							<v-col cols="12" xl="6">
 								<div id="hydrology" class="picture-holder">
-									<span id="pet">PET<br />{{formatters.toNumberFormat(data.check.hydrology.pet, 2)}}</span>
-									<span id="et">{{formatters.toNumberFormat(data.check.hydrology.et, 2)}}</span>
-									<span id="etPlant">Plant ET<br />{{formatters.toNumberFormat(data.check.hydrology.etPlant, 2)}}</span>
-									<span id="etSoil">Soil ET<br />{{formatters.toNumberFormat(data.check.hydrology.etSoil, 2)}}</span>
-									<span id="precip">{{formatters.toNumberFormat(data.check.hydrology.precipitation, 2)}}</span>
-									<span id="irrigation">Irrigation<br />{{formatters.toNumberFormat(data.check.hydrology.irrigation, 2)}}</span>
-									<span id="tile">Tile<br />{{formatters.toNumberFormat(data.check.hydrology.tile, 2)}}</span>
-									<span id="cn">Average Curve Number<br />{{formatters.toNumberFormat(data.check.hydrology.averageCn, 2)}}</span>
-									<span id="surfacerunoff">{{formatters.toNumberFormat(data.check.hydrology.surfaceRunoff, 2)}}</span>
-									<span id="lateralflow">{{formatters.toNumberFormat(data.check.hydrology.lateralFlow, 2)}}</span>
-									<span id="returnflow">{{formatters.toNumberFormat(data.check.hydrology.returnFlow, 2)}}</span>
-									<span id="perc">{{formatters.toNumberFormat(data.check.hydrology.percolation, 2)}}</span>
-									<span id="revap">{{formatters.toNumberFormat(data.check.hydrology.revap, 2)}}</span>
-									<span id="recharge">{{formatters.toNumberFormat(data.check.hydrology.recharge, 2)}}</span>
+									<span id="pet">PET<br />{{ formatters.toNumberFormat(data.check.hydrology.pet, 2) }}</span>
+									<span id="et">{{ formatters.toNumberFormat(data.check.hydrology.et, 2) }}</span>
+									<span id="etPlant">Plant
+										ET<br />{{ formatters.toNumberFormat(data.check.hydrology.etPlant, 2) }}</span>
+									<span id="etSoil">Soil
+										ET<br />{{ formatters.toNumberFormat(data.check.hydrology.etSoil, 2) }}</span>
+									<span id="precip">{{ formatters.toNumberFormat(data.check.hydrology.precipitation, 2) }}</span>
+									<span id="irrigation">Irrigation<br />{{
+										formatters.toNumberFormat(data.check.hydrology.irrigation,
+											2) }}</span>
+									<span id="tile">Tile<br />{{ formatters.toNumberFormat(data.check.hydrology.tile, 2) }}</span>
+									<span id="cn">Average Curve
+										Number<br />{{ formatters.toNumberFormat(data.check.hydrology.averageCn, 2) }}</span>
+									<span id="surfacerunoff">{{
+										formatters.toNumberFormat(data.check.hydrology.surfaceRunoff,
+											2) }}</span>
+									<span id="lateralflow">{{
+										formatters.toNumberFormat(data.check.hydrology.lateralFlow,
+											2) }}</span>
+									<span id="returnflow">{{ formatters.toNumberFormat(data.check.hydrology.returnFlow, 2) }}</span>
+									<span id="perc">{{ formatters.toNumberFormat(data.check.hydrology.percolation, 2) }}</span>
+									<span id="revap">{{ formatters.toNumberFormat(data.check.hydrology.revap, 2)
+									}}</span>
+									<span id="recharge">{{ formatters.toNumberFormat(data.check.hydrology.recharge, 2) }}</span>
 									<span id="hydrology-units">All Units mm</span>
 								</div>
 							</v-col>
@@ -271,27 +290,38 @@
 									<tbody>
 										<tr>
 											<th>Streamflow/Precipitation</th>
-											<td>{{formatters.toNumberFormat(data.check.hydrology.streamflowPrecipitation, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.hydrology.streamflowPrecipitation,
+													2) }}</td>
 										</tr>
 										<tr>
 											<th>Baseflow/Total Flow</th>
-											<td>{{formatters.toNumberFormat(data.check.hydrology.baseflowTotalFlow, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.hydrology.baseflowTotalFlow, 2)
+											}}
+											</td>
 										</tr>
 										<tr>
 											<th>Surface Runoff/Total Flow</th>
-											<td>{{formatters.toNumberFormat(data.check.hydrology.surfaceRunoffTotalFlow, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.hydrology.surfaceRunoffTotalFlow,
+													2) }}</td>
 										</tr>
 										<tr>
 											<th>Percolation/Precipitation</th>
-											<td>{{formatters.toNumberFormat(data.check.hydrology.percolationPrecipitation, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.hydrology.percolationPrecipitation,
+													2) }}</td>
 										</tr>
 										<tr>
 											<th>Deep Recharge/Precipitation</th>
-											<td>{{formatters.toNumberFormat(data.check.hydrology.deepRechargePrecipitation, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.hydrology.deepRechargePrecipitation,
+													2) }}</td>
 										</tr>
 										<tr>
 											<th>ET/Precipitation</th>
-											<td>{{formatters.toNumberFormat(data.check.hydrology.etPrecipitation, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.hydrology.etPrecipitation, 2) }}
+											</td>
 										</tr>
 									</tbody>
 								</v-table>
@@ -300,125 +330,160 @@
 					</div>
 					<div v-if="data.page.tabIndex == 2" title="Sediment">
 						<p>
-							Sediment loss form the landscape is dependent upon many factors.  Sediment overestimation in SWAT+ is most commonly due to 
-							inadequate biomass production.  This often occurs on specific land uses.  If your maximum upland sediment yield is excessive, 
-							use the landuse summary tab to identify the problem land use.
+							Kehilangan sedimen dari bentang alam bergantung pada banyak faktor. Estimasi sedimen yang berlebihan di
+							SWAT+ paling sering disebabkan oleh produksi biomassa yang tidak memadai. Hal ini sering terjadi pada 
+							penggunaan lahan tertentu. Jika hasil sedimen dataran tinggi maksimum Anda berlebihan,
+							gunakan tab ringkasan penggunaan lahan untuk mengidentifikasi penggunaan lahan yang bermasalah.
 						</p>
 
 						<p>
-							SWAT+ also modifies sediments to account for in-stream deposition and erosion of stream banks and channels.  
-							Often there is little or no measured data to differentiate between upland sediment and in-stream sediment changes. 
-							Streams may be either a net source of sediment, or a sink.  In-stream sediment modification is impacted by physical channel 
-							characteristic’s (slope, width, depth, channel cover, and substrate characteristics) and the quantity of sediment and flow 
-							from upstream.
+						SWAT+ juga memodifikasi sedimen untuk memperhitungkan pengendapan di dalam aliran dan erosi tepian dan saluran sungai.
+						Seringkali hanya ada sedikit atau tidak ada data terukur untuk membedakan antara sedimen di daerah hulu dan perubahan sedimen di dalam aliran.
+						Sungai dapat menjadi sumber sedimen bersih, atau penampung. Modifikasi sedimen di dalam aliran dipengaruhi oleh karakteristik fisik saluran 
+						(kemiringan, lebar, kedalaman, penutup saluran, dan karakteristik substrat) dan kuantitas sedimen serta aliran dari hulu.
 						</p>
 
-						<v-alert v-if="data.check.sediment.warnings && data.check.sediment.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+						<v-alert v-if="data.check.sediment.warnings && data.check.sediment.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.sediment.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.sediment.warnings" :key="i">{{ warning }}</li>
 							</ul>
 						</v-alert>
 
 						<div id="sediment" class="picture-holder">
-							<span id="maxupland">Maximum Upland Sediment Yield<br /> {{formatters.toNumberFormat(data.check.sediment.maxUplandSedimentYield, 2)}} Mg/ha</span>
-							<span id="surfacerunoffsed">Surface Runoff<br /> {{formatters.toNumberFormat(data.check.sediment.surfaceRunoff, 2)}} mm/yr</span>
-							<span id="avgupland">Average Upland Sediment Yield<br /> {{formatters.toNumberFormat(data.check.sediment.avgUplandSedimentYield, 2)}} Mg/ha</span>
-							<span id="inletsed">Inlet/Point Sources Sediment<br /> {{formatters.toNumberFormat(data.check.sediment.inletSediment, 2)}} Mg/year</span>
-							<span id="instreamsed">Instream Sediment Change<br /> {{formatters.toNumberFormat(data.check.sediment.inStreamSedimentChange, 2)}} Mg/ha</span>
+							<span id="maxupland">Maximum Upland Sediment Yield<br />
+								{{ formatters.toNumberFormat(data.check.sediment.maxUplandSedimentYield, 2) }}
+								Mg/ha</span>
+							<span id="surfacerunoffsed">Surface Runoff<br />
+								{{ formatters.toNumberFormat(data.check.sediment.surfaceRunoff, 2) }} mm/yr</span>
+							<span id="avgupland">Average Upland Sediment Yield<br />
+								{{ formatters.toNumberFormat(data.check.sediment.avgUplandSedimentYield, 2) }}
+								Mg/ha</span>
+							<span id="inletsed">Inlet/Point Sources Sediment<br />
+								{{ formatters.toNumberFormat(data.check.sediment.inletSediment, 2) }} Mg/year</span>
+							<span id="instreamsed">Instream Sediment Change<br />
+								{{ formatters.toNumberFormat(data.check.sediment.inStreamSedimentChange, 2) }}
+								Mg/ha</span>
 						</div>
 					</div>
 					<div v-if="data.page.tabIndex == 3" title="Nitrogen Cycle">
 						<p>
-							The nitrogen cycle is key to biomass production, which in turn impacts ET and sediment yield.
-							The nitrogen cycle is complex, it is generally not possible to validate these routines outside a research setting.
-							Of particular importance are the total applied nitrogen fertilizer and losses due to plant uptake, and volatilization and denitrification.
-							Soils contain a large amount of organic nitrogen in the form of organic matter.  Large changes in initial and final nitrogen contents
-							(in particular organic n) may indicate under or over fertilization during the simulation.
+							Siklus nitrogen merupakan kunci produksi biomassa, yang pada gilirannya berdampak pada ET dan hasil sedimen.
+							Siklus nitrogen itu kompleks, umumnya tidak mungkin untuk memvalidasi rutinitas ini di luar lingkungan penelitian.
+							Yang sangat penting adalah total pupuk nitrogen yang diberikan dan kehilangan akibat penyerapan tanaman, serta penguapan dan denitrifikasi.
+							Tanah mengandung sejumlah besar nitrogen organik dalam bentuk bahan organik. Perubahan besar dalam kandungan nitrogen awal dan akhir 
+							(khususnya nitrogen organik) dapat mengindikasikan pemupukan kurang atau berlebih selama simulasi.
 						</p>
 
-						<v-alert v-if="data.check.nitrogenCycle.warnings && data.check.nitrogenCycle.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+						<v-alert
+							v-if="data.check.nitrogenCycle.warnings && data.check.nitrogenCycle.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.nitrogenCycle.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.nitrogenCycle.warnings" :key="i">{{ warning }}
+								</li>
 							</ul>
 						</v-alert>
 
 						<div id="ncycle" class="picture-holder">
 							<span id="initno3">
-								Initial NO<sub>3</sub>: {{formatters.toNumberFormat(data.check.nitrogenCycle.initialNO3, 2)}}<br />
-								Final NO<sub>3</sub>: {{formatters.toNumberFormat(data.check.nitrogenCycle.finalNO3, 2)}}
+								Initial NO<sub>3</sub>: {{
+									formatters.toNumberFormat(data.check.nitrogenCycle.initialNO3, 2) }}<br />
+								Final NO<sub>3</sub>: {{ formatters.toNumberFormat(data.check.nitrogenCycle.finalNO3, 2) }}
 							</span>
-							<span id="volatilization">{{formatters.toNumberFormat(data.check.nitrogenCycle.volatilization, 2)}}</span>
-							<span id="nfix">{{formatters.toNumberFormat(data.check.nitrogenCycle.nFixation, 2)}}</span>
-							<span id="denit">{{formatters.toNumberFormat(data.check.nitrogenCycle.denitrification, 2)}}</span>
-							<span id="inorgnh4">{{formatters.toNumberFormat(data.check.nitrogenCycle.nH4InOrgNFertilizer, 2)}}</span>
-							<span id="inorgno3">{{formatters.toNumberFormat(data.check.nitrogenCycle.nO3InOrgNFertilizer, 2)}}</span>
-							<span id="nplantuptake">{{formatters.toNumberFormat(data.check.nitrogenCycle.plantUptake, 2)}}</span>
-							<span id="nitrification">{{formatters.toNumberFormat(data.check.nitrogenCycle.nitrification, 2)}}</span>
-							<span id="nmineralization">{{formatters.toNumberFormat(data.check.nitrogenCycle.mineralization, 2)}}</span>
+							<span id="volatilization">{{
+								formatters.toNumberFormat(data.check.nitrogenCycle.volatilization, 2) }}</span>
+							<span id="nfix">{{ formatters.toNumberFormat(data.check.nitrogenCycle.nFixation, 2)
+							}}</span>
+							<span id="denit">{{ formatters.toNumberFormat(data.check.nitrogenCycle.denitrification, 2) }}</span>
+							<span id="inorgnh4">{{
+								formatters.toNumberFormat(data.check.nitrogenCycle.nH4InOrgNFertilizer, 2) }}</span>
+							<span id="inorgno3">{{
+								formatters.toNumberFormat(data.check.nitrogenCycle.nO3InOrgNFertilizer, 2) }}</span>
+							<span id="nplantuptake">{{ formatters.toNumberFormat(data.check.nitrogenCycle.plantUptake, 2) }}</span>
+							<span id="nitrification">{{
+								formatters.toNumberFormat(data.check.nitrogenCycle.nitrification, 2) }}</span>
+							<span id="nmineralization">{{
+								formatters.toNumberFormat(data.check.nitrogenCycle.mineralization, 2) }}</span>
 							<span id="initorgn">
-								Initial Org N: {{formatters.toNumberFormat(data.check.nitrogenCycle.initialOrgN, 2)}}<br />
-								Final Org N: {{formatters.toNumberFormat(data.check.nitrogenCycle.finalOrgN, 2)}}
+								Initial Org N: {{ formatters.toNumberFormat(data.check.nitrogenCycle.initialOrgN, 2) }}<br />
+								Final Org N: {{ formatters.toNumberFormat(data.check.nitrogenCycle.finalOrgN, 2) }}
 							</span>
-							<span id="orgn">{{formatters.toNumberFormat(data.check.nitrogenCycle.orgNFertilizer, 2)}}</span>
-							<span id="activetostable">{{formatters.toNumberFormat(data.check.nitrogenCycle.activeToStableOrgN, 2)}}</span>
-							<span id="nresidue">{{formatters.toNumberFormat(data.check.nitrogenCycle.residueMineralization, 2)}}</span>
-							<span id="totaln">Total Fertilizer N: {{formatters.toNumberFormat(data.check.nitrogenCycle.totalFertilizerN, 2)}}</span>
+							<span id="orgn">{{ formatters.toNumberFormat(data.check.nitrogenCycle.orgNFertilizer, 2) }}</span>
+							<span id="activetostable">{{
+								formatters.toNumberFormat(data.check.nitrogenCycle.activeToStableOrgN, 2) }}</span>
+							<span id="nresidue">{{
+								formatters.toNumberFormat(data.check.nitrogenCycle.residueMineralization, 2) }}</span>
+							<span id="totaln">Total Fertilizer N:
+								{{ formatters.toNumberFormat(data.check.nitrogenCycle.totalFertilizerN, 2) }}</span>
 
 							<span id="ncycle-units">All units kg/ha</span>
 						</div>
 					</div>
 					<div v-if="data.page.tabIndex == 4" title="Phosphorus Cycle">
 						<p>
-							The phosphorus cycle is of particular interest in watersheds with significant animal manure application.
-							Soils contain a large reservoir of both mineral and organic phosphorus.  Large increases in mineral phosphorus
-							content during the simulation often result from overfertilization with either commercial or manure phosphorus sources.
-							This also means that phosphorus concentrations in runoff also increase during the simulation period.
-							Plant uptake is the dominant loss pathway for soil phosphorus under most conditions.
+							Siklus fosfor sangat menarik di daerah aliran sungai dengan penggunaan pupuk kandang yang signifikan.
+							Tanah mengandung cadangan besar fosfor mineral dan organik. Peningkatan besar dalam kandungan fosfor mineral 
+							selama simulasi sering kali disebabkan oleh pemupukan berlebihan dengan sumber fosfor komersial atau pupuk kandang.
+							Ini juga berarti bahwa konsentrasi fosfor dalam limpasan juga meningkat selama periode simulasi.
+							Penyerapan oleh tanaman adalah jalur kehilangan dominan untuk fosfor tanah dalam sebagian besar kondisi.
 						</p>
 
-						<v-alert v-if="data.check.phosphorusCycle.warnings && data.check.phosphorusCycle.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+						<v-alert
+							v-if="data.check.phosphorusCycle.warnings && data.check.phosphorusCycle.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.phosphorusCycle.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.phosphorusCycle.warnings" :key="i">{{ warning }}
+								</li>
 							</ul>
 						</v-alert>
 
 						<div id="pcycle" class="picture-holder">
 							<span id="minp">
-								Initial Min P: {{formatters.toNumberFormat(data.check.phosphorusCycle.initialMinP, 2)}}<br />
-								Final Min P: {{formatters.toNumberFormat(data.check.phosphorusCycle.finalMinP, 2)}}
+								Initial Min P: {{ formatters.toNumberFormat(data.check.phosphorusCycle.initialMinP, 2) }}<br />
+								Final Min P: {{ formatters.toNumberFormat(data.check.phosphorusCycle.finalMinP, 2) }}
 							</span>
 							<span id="orgp">
-								Initial Org P: {{formatters.toNumberFormat(data.check.phosphorusCycle.initialOrgP, 2)}}<br />
-								Final Org P: {{formatters.toNumberFormat(data.check.phosphorusCycle.finalOrgP, 2)}}
+								Initial Org P: {{ formatters.toNumberFormat(data.check.phosphorusCycle.initialOrgP, 2) }}<br />
+								Final Org P: {{ formatters.toNumberFormat(data.check.phosphorusCycle.finalOrgP, 2) }}
 							</span>
-							<span id="totalp">Total Fertilizer P: {{formatters.toNumberFormat(data.check.phosphorusCycle.totalFertilizerP, 2)}}</span>
-							<span id="inorgp">{{formatters.toNumberFormat(data.check.phosphorusCycle.inOrgPFertilizer, 2)}}</span>
-							<span id="pplantuptake">{{formatters.toNumberFormat(data.check.phosphorusCycle.plantUptake, 2)}}</span>
-							<span id="pstableactive">{{formatters.toNumberFormat(data.check.phosphorusCycle.stableActive, 2)}}</span>
-							<span id="pactivesol">{{formatters.toNumberFormat(data.check.phosphorusCycle.activeSolution, 2)}}</span>
-							<span id="pmineralization">{{formatters.toNumberFormat(data.check.phosphorusCycle.mineralization, 2)}}</span>
-							<span id="orgpfert">{{formatters.toNumberFormat(data.check.phosphorusCycle.orgPFertilizer, 2)}}</span>
-							<span id="presidue">{{formatters.toNumberFormat(data.check.phosphorusCycle.residueMineralization, 2)}}</span>
+							<span id="totalp">Total Fertilizer P:
+								{{ formatters.toNumberFormat(data.check.phosphorusCycle.totalFertilizerP, 2) }}</span>
+							<span id="inorgp">{{ formatters.toNumberFormat(data.check.phosphorusCycle.inOrgPFertilizer, 2) }}</span>
+							<span id="pplantuptake">{{ formatters.toNumberFormat(data.check.phosphorusCycle.plantUptake, 2) }}</span>
+							<span id="pstableactive">{{
+								formatters.toNumberFormat(data.check.phosphorusCycle.stableActive, 2) }}</span>
+							<span id="pactivesol">{{
+								formatters.toNumberFormat(data.check.phosphorusCycle.activeSolution, 2) }}</span>
+							<span id="pmineralization">{{
+								formatters.toNumberFormat(data.check.phosphorusCycle.mineralization, 2) }}</span>
+							<span id="orgpfert">{{ formatters.toNumberFormat(data.check.phosphorusCycle.orgPFertilizer, 2) }}</span>
+							<span id="presidue">{{
+								formatters.toNumberFormat(data.check.phosphorusCycle.residueMineralization,	2) }}</span>
 
 							<span id="pcycle-units">All units kg/ha</span>
 						</div>
 					</div>
 					<div v-if="data.page.tabIndex == 5" title="Plant Growth">
 						<p>
-							Proper plant growth is key to accurate runoff and sediment predictions.  Problems in plant growth are often related to excessive
-							stress due to temperature or the lack of water/nutrients.  The data presented here are basin averages, and may not reflect problems
-							with individual land uses.  Carefully review the land use summary tab.
+							Pertumbuhan tanaman yang tepat adalah kunci untuk prediksi limpasan dan sedimen yang akurat. 
+							Masalah dalam pertumbuhan tanaman seringkali berkaitan dengan stres berlebihan akibat suhu atau kurangnya air/nutrisi. 
+							Data yang disajikan di sini adalah rata-rata DAS, dan mungkin tidak mencerminkan masalah dengan penggunaan lahan individual. 
+							Harap tinjau dengan saksama tab ringkasan penggunaan lahan.
 						</p>
 
 						<v-row>
 							<v-col cols="12" md="6">
-								<v-alert v-if="data.check.plantGrowth.warnings && data.check.plantGrowth.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+								<v-alert
+									v-if="data.check.plantGrowth.warnings && data.check.plantGrowth.warnings.length > 0"
+									variant="tonal" color="info" border="start" class="my-4">
 									<p class="font-weight-bold mb-0">Messages and Warnings</p>
 									<ul class="mb-0">
-										<li v-for="(warning, i) in data.check.plantGrowth.warnings" :key="i">{{warning}}</li>
+										<li v-for="(warning, i) in data.check.plantGrowth.warnings" :key="i">{{ warning
+										}}
+										</li>
 									</ul>
 								</v-alert>
 
@@ -426,23 +491,29 @@
 									<tbody>
 										<tr>
 											<th>Temperature Stress Days</th>
-											<td>{{formatters.toNumberFormat(data.check.plantGrowth.tempStressDays, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.plantGrowth.tempStressDays, 2)
+											}}
+											</td>
 										</tr>
 										<tr>
 											<th>Water Stress Days</th>
-											<td>{{formatters.toNumberFormat(data.check.plantGrowth.waterStressDays, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.plantGrowth.waterStressDays, 2)
+											}}
+											</td>
 										</tr>
 										<tr>
 											<th>Nitrogen Stress Days</th>
-											<td>{{formatters.toNumberFormat(data.check.plantGrowth.nStressDays, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.plantGrowth.nStressDays, 2) }}
+											</td>
 										</tr>
 										<tr>
 											<th>Phosphorus Stress Days</th>
-											<td>{{formatters.toNumberFormat(data.check.plantGrowth.pStressDays, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.plantGrowth.pStressDays, 2) }}
+											</td>
 										</tr>
 										<tr>
 											<th>Soil Air Stress Days</th>
-											<td>{{formatters.toNumberFormat(data.check.plantGrowth.soilAirStressDays, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.plantGrowth.soilAirStressDays, 2) }}</td>
 										</tr>
 									</tbody>
 								</v-table>
@@ -450,20 +521,32 @@
 							<v-col cols="12" md="6">
 								<div id="plantgrowth" class="picture-holder">
 									<span id="plantavg">
-										Average Biomass: {{formatters.toNumberFormat(data.check.plantGrowth.avgBiomass, 2)}} kg/ha<br />
-										Average Yield: {{formatters.toNumberFormat(data.check.plantGrowth.avgYield, 2)}} kg/ha
+										Average Biomass: {{ formatters.toNumberFormat(data.check.plantGrowth.avgBiomass, 2) }} kg/ha<br />
+										Average Yield: {{ formatters.toNumberFormat(data.check.plantGrowth.avgYield, 2)
+										}}
+										kg/ha
 									</span>
 									<span id="npremoved">
-										N Removed in Yield: {{formatters.toNumberFormat(data.check.plantGrowth.nRemoved, 2)}} kg/ha<br />
-										P Removed in Yield: {{formatters.toNumberFormat(data.check.plantGrowth.pRemoved, 2)}} kg/ha
+										N Removed in Yield: {{
+											formatters.toNumberFormat(data.check.plantGrowth.nRemoved,
+												2) }} kg/ha<br />
+										P Removed in Yield: {{
+											formatters.toNumberFormat(data.check.plantGrowth.pRemoved,
+												2) }} kg/ha
 									</span>
 									<span id="totalnp">
-										Total Fertilizer N: {{formatters.toNumberFormat(data.check.plantGrowth.totalFertilizerN, 2)}} kg/ha<br />
-										Total Fertilizer P: {{formatters.toNumberFormat(data.check.plantGrowth.totalFertilizerP, 2)}} kg/ha
+										Total Fertilizer N:
+										{{ formatters.toNumberFormat(data.check.plantGrowth.totalFertilizerN, 2) }}
+										kg/ha<br />
+										Total Fertilizer P:
+										{{ formatters.toNumberFormat(data.check.plantGrowth.totalFertilizerP, 2) }}
+										kg/ha
 									</span>
 									<span id="plantuptakenp">
-										Plant Uptake N: {{formatters.toNumberFormat(data.check.plantGrowth.plantUptakeN, 2)}} kg/ha<br />
-										Plant Uptake P: {{formatters.toNumberFormat(data.check.plantGrowth.plantUptakeP, 2)}} kg/ha
+										Plant Uptake N: {{
+											formatters.toNumberFormat(data.check.plantGrowth.plantUptakeN, 2) }} kg/ha<br />
+										Plant Uptake P: {{
+											formatters.toNumberFormat(data.check.plantGrowth.plantUptakeP, 2) }} kg/ha
 									</span>
 								</div>
 							</v-col>
@@ -471,15 +554,21 @@
 					</div>
 					<div v-if="data.page.tabIndex == 6" title="Landscape Nutrient Losses">
 						<p>
-							Nutrient losses are a critical aspect of many studies.  The data presented here are losses from the landscape surface, which is delivered to reaches.
-							These are basin averages. The link below contains a summary of edge of field nutrient losses from monitoring studies by individual crops.
-							These data can be compared to SWAT+ predictions to verify the appropriate magnitude of predicted losses.
+							Losses nutrisi adalah aspek kritis dari banyak studi. Data yang disajikan di sini adalah kehilangan
+							dari permukaan lanskap, yang dikirimkan ke reach.
+							Ini adalah rata-rata DAS. Tautan di bawah ini berisi ringkasan kehilangan nutrisi di tepi lahan
+							dari studi pemantauan oleh tanaman individual.
+							Data ini dapat dibandingkan dengan prediksi SWAT+ untuk memverifikasi besaran yang sesuai dari
+							kehilangan yang diprediksi.
 						</p>
 
-						<v-alert v-if="data.check.landscapeNutrientLosses.warnings && data.check.landscapeNutrientLosses.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+						<v-alert
+							v-if="data.check.landscapeNutrientLosses.warnings && data.check.landscapeNutrientLosses.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.landscapeNutrientLosses.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.landscapeNutrientLosses.warnings" :key="i">
+									{{ warning }}</li>
 							</ul>
 						</v-alert>
 
@@ -490,31 +579,38 @@
 									<tbody>
 										<tr>
 											<th>Total N Loss</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.totalLoss, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.totalLoss, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Organic N</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.orgN, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.orgN, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Nitrate Surface Runoff</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.surfaceRunoff, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.surfaceRunoff,	2) }}</td>
 										</tr>
 										<tr>
 											<th>Nitrate Leached</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.leached, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.leached, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Nitrate Lateral Flow</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.lateralFlow, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.lateralFlow, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Nitrate Groundwater Yield</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.groundwaterYield, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.groundwaterYield, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Solubility Ratio in Runoff</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.solubilityRatio, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.nLosses.solubilityRatio, 2) }}</td>
 										</tr>
 									</tbody>
 								</v-table>
@@ -525,19 +621,23 @@
 									<tbody>
 										<tr>
 											<th>Total P Loss</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.pLosses.totalLoss, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.pLosses.totalLoss, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Organic P</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.pLosses.orgP, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.pLosses.orgP, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Soluble P Surface Runoff</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.pLosses.surfaceRunoff, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.pLosses.surfaceRunoff, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Solubility Ratio in Runoff</th>
-											<td>{{formatters.toNumberFormat(data.check.landscapeNutrientLosses.pLosses.solubilityRatio, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.landscapeNutrientLosses.pLosses.solubilityRatio, 2) }}</td>
 										</tr>
 									</tbody>
 								</v-table>
@@ -546,32 +646,41 @@
 
 						<p class="font-weight-bold mt-6">Measured Nutrient Losses by Crop and Tillage</p>
 						<p>
-							From Harmel, D., et al.  2006 Compilation of Measured Nutrient Load Data for Agricultural Land Uses in the United States. <em>Journal of the American Water Resources Association</em> 42(5):1163-1178.
+							Dari Harmel, D., dkk. 2006 Kompilasi Data Beban Nutrien Terukur untuk
+							Penggunaan Lahan Pertanian di Amerika Serikat. <em>Jurnal Asosiasi Sumber Daya Air Amerika</em>
+							42(5):1163-1178.
 						</p>
 						<p>
-							<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/nut_croptype2.png`" alt="nut_croptype2.png" />
+							<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/nut_croptype2.png`"
+								alt="nut_croptype2.png" />
 						</p>
 						<p>
-							<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/nut_croptype3.png`" alt="nut_croptype3.png" />
+							<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/nut_croptype3.png`"
+								alt="nut_croptype3.png" />
 						</p>
 					</div>
 					<div v-if="data.page.tabIndex == 7" title="Land Use Summary">
 						<p>
-							Model errors are often isolated to a particular land use type.  If the land use is relatively minor, these issues
-							may go unnoticed at the basin outlet during calibration.  Often, these minor land uses are the focus of scenario
-							development, and errors become apparent after the investment of much calibration effort.
+							Kesalahan model seringkali terbatas pada jenis penggunaan lahan tertentu.
+							Jika penggunaan lahan tersebut relatif kecil, masalah ini mungkin tidak akan terdeteksi di muara DAS selama kalibrasi.
+							Seringkali, penggunaan lahan kecil ini menjadi fokus pengembangan skenario, dan kesalahan baru terlihat
+							setelah banyak upaya kalibrasi dilakukan.
 						</p>
-						
-						<v-alert v-if="data.check.landUseSummary.warnings && data.check.landUseSummary.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+
+						<v-alert
+							v-if="data.check.landUseSummary.warnings && data.check.landUseSummary.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.landUseSummary.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.landUseSummary.warnings" :key="i">{{ warning }}
+								</li>
 							</ul>
 						</v-alert>
 
 						<p class="font-weight-bold">Summary by Reported Land Use</p>
 						<p>
-							This table contains a few important predictions summarized by land use.  These should be reviewed carefully.
+							This table contains a few important predictions summarized by land use. These should be
+							reviewed carefully.
 						</p>
 
 						<div>
@@ -596,20 +705,20 @@
 								</thead>
 								<tbody>
 									<tr v-for="(m, i) in data.check.landUseSummary.landUseRows" :key="i">
-										<td>{{m.landUse}}</td>
-										<td>{{formatters.toNumberFormat(m.area, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.cn, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.awc, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.usle_ls, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.irr, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.prec, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.surq, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.et, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.sed, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.no3, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.orgn, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.biom, 2)}}</td>
-										<td>{{formatters.toNumberFormat(m.yld, 2)}}</td>
+										<td>{{ m.landUse }}</td>
+										<td>{{ formatters.toNumberFormat(m.area, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.cn, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.awc, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.usle_ls, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.irr, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.prec, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.surq, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.et, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.sed, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.no3, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.orgn, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.biom, 2) }}</td>
+										<td>{{ formatters.toNumberFormat(m.yld, 2) }}</td>
 									</tr>
 								</tbody>
 							</v-table>
@@ -622,38 +731,45 @@
 								We do not recommend that these be used during routine checking of model output.
 							</p>
 							<ul>
-								<li v-for="(warning, i) in data.check.landUseSummary.hruLevelWarnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.landUseSummary.hruLevelWarnings" :key="i">
+									{{ warning }}</li>
 							</ul>
 						</div>
 					</div>
 					<div v-if="data.page.tabIndex == 8" title="Instream Processes">
 						<p>
-							In-stream processes may have a large impact on sediment and nutrient loads.  It is difficult to gage appropriate values for these outputs.
-							In-stream sediment change can be either positive or negative.  Typically streams are a net sink for nutrients.
-							Channel geomorphology can provide some guidance as to the net contribution of in-stream processes.
+							In-stream processes may have a large impact on sediment and nutrient loads. It is difficult
+							to gage appropriate values for these outputs.
+							In-stream sediment change can be either positive or negative. Typically streams are a net
+							sink for nutrients.
+							Channel geomorphology can provide some guidance as to the net contribution of in-stream
+							processes.
 						</p>
 
-						<v-alert v-if="data.check.instreamProcesses.warnings && data.check.instreamProcesses.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+						<v-alert
+							v-if="data.check.instreamProcesses.warnings && data.check.instreamProcesses.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.instreamProcesses.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.instreamProcesses.warnings" :key="i">{{ warning }}
+								</li>
 							</ul>
 						</v-alert>
 
 						<v-row>
 							<v-col cols="12" md="6">
 								<p class="font-weight-bold">Reach Report: Delivery ratio of segment (%)</p>
-								<v-data-table small density="compact"
-									:items="data.check.instreamProcesses.reaches" :items-per-page="10"
+								<v-data-table small density="compact" :items="data.check.instreamProcesses.reaches"
+									:items-per-page="10"
 									:headers="[{ key: 'id', title: 'RCH#' }, { key: 'sediment', title: 'Sediment' }, { key: 'phosphorus', title: 'Phosphorus' }, { key: 'nitrogen', title: 'Nitrogen' }]">
 									<template v-slot:item.sediment="{ value }">
-										{{formatters.toNumberFormat(value, 2)}}
+										{{ formatters.toNumberFormat(value, 2) }}
 									</template>
 									<template v-slot:item.phosphorus="{ value }">
-										{{formatters.toNumberFormat(value, 2)}}
+										{{ formatters.toNumberFormat(value, 2) }}
 									</template>
 									<template v-slot:item.nitrogen="{ value }">
-										{{formatters.toNumberFormat(value, 2)}}
+										{{ formatters.toNumberFormat(value, 2) }}
 									</template>
 								</v-data-table>
 							</v-col>
@@ -663,22 +779,26 @@
 									<tbody>
 										<tr>
 											<th>Upland Sediment Yield</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.uplandSedimentYield, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.instreamProcesses.uplandSedimentYield, 2) }}</td>
 											<td class="min">Mg/ha</td>
 										</tr>
 										<tr>
 											<th>Instream Sediment Change</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.instreamSedimentChange, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.instreamProcesses.instreamSedimentChange, 2) }}</td>
 											<td class="min">Mg/ha</td>
 										</tr>
 										<tr>
 											<th>Channel Erosion</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.channelErosion, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.instreamProcesses.channelErosion, 2) }}</td>
 											<td class="min">%</td>
 										</tr>
 										<tr>
 											<th>Channel Deposition</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.channelDeposition, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.instreamProcesses.channelDeposition, 2) }}</td>
 											<td class="min">%</td>
 										</tr>
 									</tbody>
@@ -689,12 +809,14 @@
 									<tbody>
 										<tr>
 											<th>Total Nitrogen</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.totalN, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.instreamProcesses.totalN, 2) }}
+											</td>
 											<td class="min">%</td>
 										</tr>
 										<tr>
 											<th>Total Phosphorus</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.totalP, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.instreamProcesses.totalP, 2) }}
+											</td>
 											<td class="min">%</td>
 										</tr>
 									</tbody>
@@ -705,17 +827,19 @@
 									<tbody>
 										<tr>
 											<th>Total Streamflow Losses</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.totalStreamflowLosses, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.instreamProcesses.totalStreamflowLosses, 2) }}</td>
 											<td class="min">%</td>
 										</tr>
 										<tr>
 											<th>Evaporation Loss</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.evaporationLoss, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.instreamProcesses.evaporationLoss, 2) }}</td>
 											<td class="min">%</td>
 										</tr>
 										<tr>
 											<th>Seepage Loss</th>
-											<td>{{formatters.toNumberFormat(data.check.instreamProcesses.seepageLoss, 2)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.instreamProcesses.seepageLoss, 2) }}</td>
 											<td class="min">%</td>
 										</tr>
 									</tbody>
@@ -725,15 +849,17 @@
 					</div>
 					<div v-if="data.page.tabIndex == 9" title="Point Sources">
 						<p>
-							Point sources constantly discharge pollutants to streams.  These are an optional feature in SWAT+.
-							These summaries are presented so that the relative contribution of these sources can be verified.
-							Point sources contributions are so varied that there is no reasonable range which can be applied to all basins.
+							Sumber titik terus-menerus melepaskan polutan ke aliran sungai. Ini adalah fitur opsional di
+							SWAT+. Ringkasan ini disajikan agar kontribusi relatif dari sumber-sumber ini dapat diverifikasi.
+							Kontribusi sumber titik sangat bervariasi sehingga tidak ada rentang yang masuk akal yang dapat
+							diterapkan ke semua DAS.
 						</p>
 
-						<v-alert v-if="data.check.pointSources.warnings && data.check.pointSources.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+						<v-alert v-if="data.check.pointSources.warnings && data.check.pointSources.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.pointSources.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.pointSources.warnings" :key="i">{{ warning }}</li>
 							</ul>
 						</v-alert>
 
@@ -744,22 +870,25 @@
 									<tbody>
 										<tr>
 											<th>Flow</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.subbasinLoad.flow, 4)}}</td>
+											<td>{{ formatters.toNumberFormat(data.check.pointSources.subbasinLoad.flow, 4) }}</td>
 											<td>cms</td>
 										</tr>
 										<tr>
 											<th>Sediment</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.subbasinLoad.sediment, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.subbasinLoad.sediment, 2) }}</td>
 											<td>Mg/yr</td>
 										</tr>
 										<tr>
 											<th>Nitrogen</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.subbasinLoad.nitrogen, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.subbasinLoad.nitrogen, 2) }}</td>
 											<td>kg/yr</td>
 										</tr>
 										<tr>
 											<th>Phosphorus</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.subbasinLoad.phosphorus, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.subbasinLoad.phosphorus, 2) }}</td>
 											<td>kg/yr</td>
 										</tr>
 									</tbody>
@@ -771,22 +900,27 @@
 									<tbody>
 										<tr>
 											<th>Flow</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.pointSourceInletLoad.flow, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.pointSourceInletLoad.flow, 2) }}</td>
 											<td>cms</td>
 										</tr>
 										<tr>
 											<th>Sediment</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.pointSourceInletLoad.sediment, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.pointSourceInletLoad.sediment, 2) }}</td>
 											<td>Mg/yr</td>
 										</tr>
 										<tr>
 											<th>Nitrogen</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.pointSourceInletLoad.nitrogen, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.pointSourceInletLoad.nitrogen, 2) }}</td>
 											<td>kg/yr</td>
 										</tr>
 										<tr>
 											<th>Phosphorus</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.pointSourceInletLoad.phosphorus, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.pointSourceInletLoad.phosphorus, 2) }}
+											</td>
 											<td>kg/yr</td>
 										</tr>
 									</tbody>
@@ -798,22 +932,29 @@
 									<tbody>
 										<tr>
 											<th>Flow</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.fromInletAndPointSource.flow, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.fromInletAndPointSource.flow, 2) }}</td>
 											<td>%</td>
 										</tr>
 										<tr>
 											<th>Sediment</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.fromInletAndPointSource.sediment, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.fromInletAndPointSource.sediment, 2) }}
+											</td>
 											<td>%</td>
 										</tr>
 										<tr>
 											<th>Nitrogen</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.fromInletAndPointSource.nitrogen, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.fromInletAndPointSource.nitrogen, 2) }}
+											</td>
 											<td>%</td>
 										</tr>
 										<tr>
 											<th>Phosphorus</th>
-											<td>{{formatters.toNumberFormat(data.check.pointSources.fromInletAndPointSource.phosphorus, 2)}}</td>
+											<td>{{
+												formatters.toNumberFormat(data.check.pointSources.fromInletAndPointSource.phosphorus, 2) }}
+											</td>
 											<td>%</td>
 										</tr>
 									</tbody>
@@ -823,23 +964,28 @@
 					</div>
 					<div v-if="data.page.tabIndex == 10" title="Reservoirs">
 						<p>
-							Reservoirs are an optional feature in SWAT+.   The hydrology of basins with large reservoirs may be completely dominated by reservoir processes and release rates.
-							The data presented below is an average of all reservoirs; <a href="#" @click.prevent="data.modals.reservoirs.table = true">see data for individual reservoirs</a>.
-							The statistics presented here are designed to identify common reservoir issues.   The use of user specified release rate may cause a reservoir to
-							grow continuously or run completely dry.  These common issues can be detected via the final/initial volume ratio and fraction of period empty statistics below.
+							Waduk merupakan fitur opsional di SWAT+. Hidrologi cekungan dengan waduk besar mungkin sepenuhnya
+							didominasi oleh proses waduk dan laju pelepasan. Data yang disajikan di bawah ini adalah rata-rata dari semua waduk; <a href="#" @click.prevent="data.modals.reservoirs.table = true">
+							lihat data untuk masing-masing waduk</a>.
+							Statistik yang disajikan di sini dirancang untuk mengidentifikasi masalah waduk umum. Penggunaan
+							laju pelepasan yang ditentukan pengguna dapat menyebabkan waduk terus bertambah volumenya atau benar-benar kering.
+							Masalah umum ini dapat dideteksi melalui rasio volume akhir/awal dan statistik fraksi periode kosong di bawah ini.
 						</p>
 
-						<v-alert v-if="data.check.reservoirs.warnings && data.check.reservoirs.warnings.length > 0" variant="tonal" color="info" border="start" class="my-4">
+						<v-alert v-if="data.check.reservoirs.warnings && data.check.reservoirs.warnings.length > 0"
+							variant="tonal" color="info" border="start" class="my-4">
 							<p class="font-weight-bold mb-0">Messages and Warnings</p>
 							<ul class="mb-0">
-								<li v-for="(warning, i) in data.check.reservoirs.warnings" :key="i">{{warning}}</li>
+								<li v-for="(warning, i) in data.check.reservoirs.warnings" :key="i">{{ warning }}</li>
 							</ul>
 						</v-alert>
 
-						<v-dialog v-model="data.modals.reservoirs.table" :max-width="constants.dialogSizes.lg" scrollable>
+						<v-dialog v-model="data.modals.reservoirs.table" :max-width="constants.dialogSizes.lg"
+							scrollable>
 							<v-card title="Detailed Reservoir Performance Output">
 								<v-card-item>
-									<div v-if="data.check.reservoirs.reservoirRows && data.check.reservoirs.reservoirRows.length < 1" class="mb-5">
+									<div v-if="data.check.reservoirs.reservoirRows && data.check.reservoirs.reservoirRows.length < 1"
+										class="mb-5">
 										<em>No reservoirs in model.</em>
 									</div>
 									<div v-else class="table-responsive mb-5">
@@ -858,14 +1004,14 @@
 											</thead>
 											<tbody>
 												<tr v-for="(m, i) in data.check.reservoirs.reservoirRows" :key="i">
-													<td>{{m.id}}</td>
-													<td>{{formatters.toNumberFormat(m.sediment, 2)}}</td>
-													<td>{{formatters.toNumberFormat(m.phosphorus, 2)}}</td>
-													<td>{{formatters.toNumberFormat(m.nitrogen, 2)}}</td>
-													<td>{{formatters.toNumberFormat(m.volumeRatio, 2)}}</td>
-													<td>{{formatters.toNumberFormat(m.fractionEmpty, 2)}}</td>
-													<td>{{formatters.toNumberFormat(m.seepage, 2)}}</td>
-													<td>{{formatters.toNumberFormat(m.evapLoss, 2)}}</td>
+													<td>{{ m.id }}</td>
+													<td>{{ formatters.toNumberFormat(m.sediment, 2) }}</td>
+													<td>{{ formatters.toNumberFormat(m.phosphorus, 2) }}</td>
+													<td>{{ formatters.toNumberFormat(m.nitrogen, 2) }}</td>
+													<td>{{ formatters.toNumberFormat(m.volumeRatio, 2) }}</td>
+													<td>{{ formatters.toNumberFormat(m.fractionEmpty, 2) }}</td>
+													<td>{{ formatters.toNumberFormat(m.seepage, 2) }}</td>
+													<td>{{ formatters.toNumberFormat(m.evapLoss, 2) }}</td>
 												</tr>
 											</tbody>
 										</v-table>
@@ -885,15 +1031,24 @@
 									<tbody>
 										<tr>
 											<th>Sediment</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgTrappingEfficiencies.sediment, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgTrappingEfficiencies.sediment, 2) }}
+											</td>
 										</tr>
 										<tr>
 											<th>Nitrogen</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgTrappingEfficiencies.nitrogen, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgTrappingEfficiencies.nitrogen, 2) }}
+											</td>
 										</tr>
 										<tr>
 											<th>Phosphorus</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgTrappingEfficiencies.phosphorus, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgTrappingEfficiencies.phosphorus, 2) }}
+											</td>
 										</tr>
 									</tbody>
 								</v-table>
@@ -903,15 +1058,21 @@
 									<tbody>
 										<tr>
 											<th>Total Removed + Losses</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgWaterLosses.totalRemoved, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgWaterLosses.totalRemoved, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Evaporation</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgWaterLosses.evaporation, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgWaterLosses.evaporation, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Seepage</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgWaterLosses.seepage, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgWaterLosses.seepage, 2) }}</td>
 										</tr>
 									</tbody>
 								</v-table>
@@ -921,46 +1082,67 @@
 									<tbody>
 										<tr>
 											<th>Number of Reservoirs</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgReservoirTrends.numberReservoirs, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgReservoirTrends.numberReservoirs, 2) }}
+											</td>
 										</tr>
 										<tr>
 											<th>Final/Initial Volume (Max)</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgReservoirTrends.maxVolume, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgReservoirTrends.maxVolume, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Final/Initial Volume (Min)</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgReservoirTrends.minVolume, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgReservoirTrends.minVolume, 2) }}</td>
 										</tr>
 										<tr>
 											<th>Fraction of Period Empty (Max)</th>
-											<td class="text-right">{{formatters.toNumberFormat(data.check.reservoirs.avgReservoirTrends.fractionEmpty, 2)}}</td>
+											<td class="text-right">
+												{{
+													formatters.toNumberFormat(data.check.reservoirs.avgReservoirTrends.fractionEmpty, 2) }}
+											</td>
 										</tr>
 									</tbody>
 								</v-table>
 							</v-col>
 							<v-col md>
 								<p>
-									<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/res.jpg`" alt="res image" />
+									<img class="img-fluid" :src="`${utilities.publicPath}/swat-check/res.jpg`"
+										alt="res image" />
 								</p>
 							</v-col>
 						</v-row>
 					</div>
 
 					<action-bar>
-						<v-btn variant="flat" @click="nextTab(-1)" class="border mr-2" :disabled="data.page.tabIndex == 0" title="Previous tab"><font-awesome-icon icon="chevron-left" /></v-btn>
-						<v-btn variant="flat" @click="nextTab(1)" class="border mr-2" :disabled="data.page.tabIndex == data.page.tabs.length - 1" title="Next tab"><font-awesome-icon icon="chevron-right" /></v-btn>
+						<v-btn variant="flat" @click="nextTab(-1)" class="border mr-2"
+							:disabled="data.page.tabIndex == 0" title="Previous tab"><font-awesome-icon
+								icon="chevron-left" /></v-btn>
+						<v-btn variant="flat" @click="nextTab(1)" class="border mr-2"
+							:disabled="data.page.tabIndex == data.page.tabs.length - 1"
+							title="Next tab"><font-awesome-icon icon="chevron-right" /></v-btn>
 						<v-menu>
 							<template v-slot:activator="{ props }">
-								<v-btn type="button" variant="flat" color="primary" class="ml-auto mr-2" v-bind="props">More Actions...</v-btn>
+								<v-btn type="button" variant="flat" color="primary" class="ml-auto mr-2"
+									v-bind="props">More Actions...</v-btn>
 							</template>
 							<v-list>
-								<v-list-item to="/run"><v-list-item-title>Back to Model Run / Save Scenario</v-list-item-title></v-list-item>
-								<swat-plus-toolbox-button :ran-swat="true" as-list-item text="Open SWAT+ Toolbox"></swat-plus-toolbox-button>
-								<swat-plus-iahris-button :ran-swat="true" as-list-item text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
-								<open-file as-list-item :file-path="currentResultsPath">Open Results Directory</open-file>
+								<v-list-item to="/run"><v-list-item-title>Back to Model Run / Save
+										Scenario</v-list-item-title></v-list-item>
+								<swat-plus-toolbox-button :ran-swat="true" as-list-item
+									text="Open SWAT+ Toolbox"></swat-plus-toolbox-button>
+								<swat-plus-iahris-button :ran-swat="true" as-list-item
+									text="Open SWAT+ IAHRIS"></swat-plus-iahris-button>
+								<open-file as-list-item :file-path="currentResultsPath">Open Results
+									Directory</open-file>
 							</v-list>
 						</v-menu>
-						<v-btn type="button" variant="flat" color="secondary" @click="utilities.exit">Exit SWAT+ Editor</v-btn>
+						<v-btn type="button" variant="flat" color="secondary" @click="utilities.exit">Exit SWAT+
+							Editor</v-btn>
 					</action-bar>
 				</div>
 			</div>
@@ -969,320 +1151,322 @@
 </template>
 
 <style scoped>
-	.instream td {
-		width: 1%;
-		white-space: nowrap;
-		text-align: right;	
-	}
 
-	.instream th {
-		width: 85%;
-	}
 
-	.picture-holder {
-		background: no-repeat 0 0;
-		font-size: 0.75em;
-		line-height: 1.4em;
-		margin: 0 auto;
-		position: relative;
-		color: #000;
-	}
+.instream td {
+	width: 1%;
+	white-space: nowrap;
+	text-align: right;
+}
 
-	.picture-holder span {
-		background: #fff;
-		font-weight: bold;
-		padding: 0 2px;
-		position: absolute;
-		text-align: center;
-	}
+.instream th {
+	width: 85%;
+}
 
-	#hydrology {
-		background-image: url(/swat-check/hydro.png);
-		height: 491px;
-		width: 650px;
-	}
+.picture-holder {
+	background: no-repeat 0 0;
+	font-size: 0.75em;
+	line-height: 1.4em;
+	margin: 0 auto;
+	position: relative;
+	color: #000;
+}
 
-	#hydrology #et {
-		top: 65px;
-		left: 130px;
-	}
-	
-	#hydrology #etPlant {
-		top: 95px;
-		left: 0;
-		width: 50px;
-	}
+.picture-holder span {
+	background: #fff;
+	font-weight: bold;
+	padding: 0 2px;
+	position: absolute;
+	text-align: center;
+}
 
-	#hydrology #etSoil {
-		top: 145px;
-		left: 0;
-		width: 50px;
-	}
+#hydrology {
+	background-image: url(/swat-check/hydro.png);
+	height: 491px;
+	width: 650px;
+}
 
-	#hydrology #pet {
-		top: 45px;
-		left: 0px;
-		width: 50px;
-	}
+#hydrology #et {
+	top: 65px;
+	left: 130px;
+}
 
-	#hydrology #precip {
-		top: 110px;
-		left: 410px;
-	}
+#hydrology #etPlant {
+	top: 95px;
+	left: 0;
+	width: 50px;
+}
 
-	#hydrology #irrigation {
-		top: 100px;
-		left: 480px;
-		width: 150px;
-	}
+#hydrology #etSoil {
+	top: 145px;
+	left: 0;
+	width: 50px;
+}
 
-	#hydrology #tile {
-		top: 150px;
-		left: 480px;
-		width: 150px;
-	}
+#hydrology #pet {
+	top: 45px;
+	left: 0px;
+	width: 50px;
+}
 
-	#hydrology #cn {
-		top: 50px;
-		left: 480px;
-		width: 150px;
-	}
+#hydrology #precip {
+	top: 110px;
+	left: 410px;
+}
 
-	#hydrology #surfacerunoff {
-		top: 275px;
-		left: 545px;
-	}
+#hydrology #irrigation {
+	top: 100px;
+	left: 480px;
+	width: 150px;
+}
 
-	#hydrology #lateralflow {
-		top: 315px;
-		left: 450px;
-	}
+#hydrology #tile {
+	top: 150px;
+	left: 480px;
+	width: 150px;
+}
 
-	#hydrology #returnflow {
-		top: 355px;
-		left: 480px;
-	}
+#hydrology #cn {
+	top: 50px;
+	left: 480px;
+	width: 150px;
+}
 
-	#hydrology #perc {
-		top: 350px;
-		left: 320px;
-	}
+#hydrology #surfacerunoff {
+	top: 275px;
+	left: 545px;
+}
 
-	#hydrology #revap {
-		top: 350px;
-		left: 150px;
-	}
+#hydrology #lateralflow {
+	top: 315px;
+	left: 450px;
+}
 
-	#hydrology #recharge {
-		top: 445px;
-		left: 320px;
-	}
+#hydrology #returnflow {
+	top: 355px;
+	left: 480px;
+}
 
-	#hydrology #hydrology-units {
-		bottom: 5px;
-		right: 5px;
-	}
+#hydrology #perc {
+	top: 350px;
+	left: 320px;
+}
 
-	#sediment {
-		background-image: url(/swat-check/WatershedDisplay.jpg);
-		height: 396px;
-		width: 628px;
-	}
+#hydrology #revap {
+	top: 350px;
+	left: 150px;
+}
 
-	#sediment #maxupland {
-		top: 25px;
-		left: 400px;
-	}
+#hydrology #recharge {
+	top: 445px;
+	left: 320px;
+}
 
-	#sediment #surfacerunoffsed {
-		top: 70px;
-		left: 150px;
-	}
+#hydrology #hydrology-units {
+	bottom: 5px;
+	right: 5px;
+}
 
-	#sediment #avgupland {
-		top: 130px;
-		left: 30px;
-	}
+#sediment {
+	background-image: url(/swat-check/WatershedDisplay.jpg);
+	height: 396px;
+	width: 628px;
+}
 
-	#sediment #inletsed {
-		top: 220px;
-		left: 125px;
-	}
+#sediment #maxupland {
+	top: 25px;
+	left: 400px;
+}
 
-	#sediment #instreamsed {
-		top: 220px;
-		left: 370px;
-	}
+#sediment #surfacerunoffsed {
+	top: 70px;
+	left: 150px;
+}
 
-	#ncycle {
-		background-image: url(/swat-check/NCycle.png);
-		height: 362px;
-		width: 800px;
-	}
+#sediment #avgupland {
+	top: 130px;
+	left: 30px;
+}
 
-	#ncycle #initno3 {
-		top: 5px;
-		left: 5px;
-	}
+#sediment #inletsed {
+	top: 220px;
+	left: 125px;
+}
 
-	#ncycle #volatilization {
-		top: 115px;
-		left: 70px;
-	}
+#sediment #instreamsed {
+	top: 220px;
+	left: 370px;
+}
 
-	#ncycle #nfix {
-		top: 77px;
-		left: 242px;
-	}
+#ncycle {
+	background-image: url(/swat-check/NCycle.png);
+	height: 362px;
+	width: 800px;
+}
 
-	#ncycle #denit {
-		top: 115px;
-		left: 275px;
-	}
+#ncycle #initno3 {
+	top: 5px;
+	left: 5px;
+}
 
-	#ncycle #inorgnh4 {
-		top: 160px;
-		left: 85px;
-	}
+#ncycle #volatilization {
+	top: 115px;
+	left: 70px;
+}
 
-	#ncycle #inorgno3 {
-		top: 146px;
-		left: 317px;
-	}
+#ncycle #nfix {
+	top: 77px;
+	left: 242px;
+}
 
-	#ncycle #nplantuptake {
-		top: 200px;
-		left: 240px;
-	}
+#ncycle #denit {
+	top: 115px;
+	left: 275px;
+}
 
-	#ncycle #nitrification {
-		top: 240px;
-		left: 115px;
-	}
+#ncycle #inorgnh4 {
+	top: 160px;
+	left: 85px;
+}
 
-	#ncycle #nmineralization {
-		top: 240px;
-		left: 300px;
-	}
+#ncycle #inorgno3 {
+	top: 146px;
+	left: 317px;
+}
 
-	#ncycle #totaln {
-		top: 320px;
-		left: 30px;
-	}
+#ncycle #nplantuptake {
+	top: 200px;
+	left: 240px;
+}
 
-	#ncycle #initorgn {
-		top: 5px;
-		left: 405px;
-	}
+#ncycle #nitrification {
+	top: 240px;
+	left: 115px;
+}
 
-	#ncycle #orgn {
-		top: 135px;
-		left: 445px;
-	}
+#ncycle #nmineralization {
+	top: 240px;
+	left: 300px;
+}
 
-	#ncycle #activetostable {
-		top: 225px;
-		left: 520px;
-	}
+#ncycle #totaln {
+	top: 320px;
+	left: 30px;
+}
 
-	#ncycle #nresidue {
-		top: 315px;
-		left: 660px;
-	}
+#ncycle #initorgn {
+	top: 5px;
+	left: 405px;
+}
 
-	#ncycle #ncycle-units {
-		top: 5px;
-		right: 5px;
-	}
+#ncycle #orgn {
+	top: 135px;
+	left: 445px;
+}
 
-	#pcycle {
-		background-image: url(/swat-check/PCycle.png);
-		height: 362px;
-		width: 800px;
-	}
+#ncycle #activetostable {
+	top: 225px;
+	left: 520px;
+}
 
-	#pcycle #minp {
-		top: 5px;
-		left: 5px;
-	}
+#ncycle #nresidue {
+	top: 315px;
+	left: 660px;
+}
 
-	#pcycle #orgp {
-		top: 5px;
-		left: 405px;
-	}
+#ncycle #ncycle-units {
+	top: 5px;
+	right: 5px;
+}
 
-	#pcycle #totalp {
-		top: 65px;
-		left: 30px;
-	}
+#pcycle {
+	background-image: url(/swat-check/PCycle.png);
+	height: 362px;
+	width: 800px;
+}
 
-	#pcycle #inorgp {
-		top: 110px;
-		left: 305px;
-	}
+#pcycle #minp {
+	top: 5px;
+	left: 5px;
+}
 
-	#pcycle #pplantuptake {
-		top: 150px;
-		left: 215px;
-	}
+#pcycle #orgp {
+	top: 5px;
+	left: 405px;
+}
 
-	#pcycle #pstableactive {
-		top: 220px;
-		left: 90px;
-	}
+#pcycle #totalp {
+	top: 65px;
+	left: 30px;
+}
 
-	#pcycle #pactivesol {
-		top: 220px;
-		left: 205px;
-	}
+#pcycle #inorgp {
+	top: 110px;
+	left: 305px;
+}
 
-	#pcycle #pmineralization {
-		top: 255px;
-		left: 340px;
-	}
+#pcycle #pplantuptake {
+	top: 150px;
+	left: 215px;
+}
 
-	#pcycle #orgpfert {
-		top: 180px;
-		left: 480px;
-	}
+#pcycle #pstableactive {
+	top: 220px;
+	left: 90px;
+}
 
-	#pcycle #presidue {
-		top: 315px;
-		left: 660px;
-	}
+#pcycle #pactivesol {
+	top: 220px;
+	left: 205px;
+}
 
-	#pcycle #pcycle-units {
-		top: 5px;
-		right: 5px;
-	}
+#pcycle #pmineralization {
+	top: 255px;
+	left: 340px;
+}
 
-	#plantgrowth {
-		background-image: url(/swat-check/plant.png);
-		height: 458px;
-		width: 450px;
-	}
+#pcycle #orgpfert {
+	top: 180px;
+	left: 480px;
+}
 
-	#plantgrowth span {
-		text-align: right;
-	}
+#pcycle #presidue {
+	top: 315px;
+	left: 660px;
+}
 
-	#plantgrowth #plantavg {
-		top: 5px;
-		left: 5px;
-	}
+#pcycle #pcycle-units {
+	top: 5px;
+	right: 5px;
+}
 
-	#plantgrowth #npremoved {
-		top: 50px;
-		left: 230px;
-	}
+#plantgrowth {
+	background-image: url(/swat-check/plant.png);
+	height: 458px;
+	width: 450px;
+}
 
-	#plantgrowth #totalnp {
-		top: 220px;
-		left: 270px;
-	}
+#plantgrowth span {
+	text-align: right;
+}
 
-	#plantgrowth #plantuptakenp {
-		bottom: 10px;
-		left: 260px;
-	}
+#plantgrowth #plantavg {
+	top: 5px;
+	left: 5px;
+}
+
+#plantgrowth #npremoved {
+	top: 50px;
+	left: 230px;
+}
+
+#plantgrowth #totalnp {
+	top: 220px;
+	left: 270px;
+}
+
+#plantgrowth #plantuptakenp {
+	bottom: 10px;
+	left: 260px;
+}
 </style>

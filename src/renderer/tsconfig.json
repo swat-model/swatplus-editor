@@ -18,7 +18,8 @@
 			"vuetify"
 		],
 		"paths": {
-			"@/*": ["./*"]
+			"@/*": ["./*"],
+			"typings/*": ["./typings/*"]
 		},
 	},
 	"include": [
@@ -26,6 +27,7 @@
 		"./**/*.d.ts", 
 		"./**/*.tsx", 
 		"./**/*.vue",
+		"./typings/**/*.d.ts",
 		"../vite.config.ts"
 	],
 }

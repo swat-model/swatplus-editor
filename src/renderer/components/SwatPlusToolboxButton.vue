@@ -81,11 +81,11 @@
 		<v-card :title="unavailableTitle">
 			<v-card-text>
 				<p v-if="unavailable.norun" class="py-5">
-					You must run the model before opening your project in SWAT+ Toolbox.
+					Anda harus menjalankan model terlebih dahulu sebelum membuka proyek Anda di SWAT+ Toolbox.
 				</p>
 				<p v-else-if="unavailable.notinstalled" class="py-5">
-					SWAT+ Toolbox can be used for sensitivity analysis, model calibration, evaluation, and validation.
-					Click the button below to download.
+					SWAT+ Toolbox Dapat digunakan untuk analisis sensitivitas, kalibrasi model, evaluasi, dan validasi.
+					Klik tombol di bawah untuk mengunduh.
 				</p>
 			</v-card-text>
 			<v-divider></v-divider>

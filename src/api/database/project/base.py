@@ -1,4 +1,7 @@
-from peewee import *
+from peewee import (
+    SqliteDatabase,
+    Model
+)
 
 db = SqliteDatabase(None)
 

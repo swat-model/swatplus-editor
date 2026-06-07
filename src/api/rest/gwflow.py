@@ -8,13 +8,16 @@ from database import lib
 from fileio.connect import IndexHelper
 import sys
 
+from typing import Dict, Any
+
 bp = Blueprint('gwflow', __name__, url_prefix='/gwflow')
 
 @bp.route('/enabled', methods=['GET'])
 def enabled():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	pc = config.Project_config.get()
 
@@ -32,7 +35,8 @@ def enabled():
 def base():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	table = gwflow.Gwflow_base
 	item_description = 'Groundwater flow initialization'
@@ -63,7 +67,7 @@ def base():
 				return '', 200
 
 			abort(400, 'Unable to update {item}.'.format(item=item_description.lower()))
-		except table.DoesNotExist:
+		except getattr(table, 'DoesNotExist'):
 			rh.close()
 			abort(404, '{item} does not exist'.format(item=item_description))
 		except Exception as ex:
@@ -86,7 +90,8 @@ def zones():
 def zonesId(id):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 	table = gwflow.Gwflow_zone
 
 	if request.method == 'GET':
@@ -163,10 +168,12 @@ def rescellId(id):
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/rescell-default', methods=['GET', 'PUT'])
-def rescellDefault():
+def rescellDefault() -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
+		return{}
 
 	if request.method == 'GET':
 		m = gwflow.Gwflow_base.get_or_none()
@@ -191,12 +198,13 @@ def rescellDefault():
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except gwflow.Gwflow_base.DoesNotExist:
+		except getattr(gwflow.Gwflow_base, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name='Gwflow setup'))
 		except Exception as ex:
 			rh.close()
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
+
 
 # Gwflow_wetland
 
@@ -208,7 +216,8 @@ def wetland():
 
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	if request.method == 'GET':
 		setup.SetupProjectDatabase.create_these_tables([gwflow.Gwflow_wetland])
@@ -218,7 +227,7 @@ def wetland():
 		gis_col = 'wet_id'
 
 		ml = [model_to_dict(v, recurse=False) for v in m]
-		cons = reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id)
+		cons = reservoir.Wetland_wet.select().order_by(getattr(reservoir.Wetland_wet, 'id'))
 		gis_to_con = {}
 		for con in cons:
 			gis_to_con[con.id] = con.name
@@ -239,9 +248,9 @@ def wetland():
 		args = request.json
 		try:
 			m = gwflow.Gwflow_wetland()
-			m.thickness = 0 if 'thickness' not in args else args['thickness']
+			m.thickness = 0 if 'thickness' not in args else args['thickness'] #type: ignore
 			if 'wet_name' in args:
-				m.wet_id = RestHelpers.get_id_from_name(reservoir.Wetland_wet, args['wet_name'])
+				m.wet_id = RestHelpers.get_id_from_name(reservoir.Wetland_wet, args['wet_name']) #type: ignore
 
 			result = m.save()
 			rh.close()
@@ -263,7 +272,8 @@ def wetlandId(id):
 
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	if request.method == 'GET':
 		m = table.get_or_none(table.wet_id == id)
@@ -272,7 +282,7 @@ def wetlandId(id):
 			abort(400, '{} {} does not exist'.format(description, id))
 
 		d = model_to_dict(m, recurse=False)
-		con = reservoir.Wetland_wet.get_or_none(reservoir.Wetland_wet.id == d['wet_id'])
+		con = reservoir.Wetland_wet.get_or_none(reservoir.Wetland_wet.id == d['wet_id']) #type: ignore
 		d['wet_name'] = con.name if con is not None else None
 		rh.close()
 		return d
@@ -295,7 +305,7 @@ def wetlandId(id):
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except gwflow.Gwflow_wetland.DoesNotExist:
+		except getattr(gwflow.Gwflow_wetland, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wet_name']))
 		except Exception as ex:
@@ -305,10 +315,11 @@ def wetlandId(id):
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/wetland-default', methods=['GET', 'PUT'])
-def wetlandDefault():
+def wetlandDefault() -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	if request.method == 'GET':
 		setup.SetupProjectDatabase.create_these_tables([gwflow.Gwflow_wetland])
@@ -332,7 +343,7 @@ def wetlandDefault():
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except gwflow.Gwflow_base.DoesNotExist:
+		except getattr(gwflow.Gwflow_base, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name='Gwflow setup'))
 		except Exception as ex:
@@ -356,7 +367,8 @@ def solutesId(name):
 
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	if request.method == 'GET':
 		m = table.get_or_none(table.solute_name == name)
@@ -382,7 +394,7 @@ def solutesId(name):
 				return '', 200
 
 			abort(400, 'Unable to update properties {}.'.format(name))
-		except table.DoesNotExist:
+		except getattr(table, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=name))
 		except Exception as ex:
@@ -392,10 +404,11 @@ def solutesId(name):
 	abort(405, 'HTTP Method not allowed.')
 
 @bp.route('/solutes-default', methods=['GET', 'PUT'])
-def solutesDefault():
+def solutesDefault() -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	if request.method == 'GET':
 		m = gwflow.Gwflow_base.get_or_none()
@@ -420,7 +433,7 @@ def solutesDefault():
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except gwflow.Gwflow_base.DoesNotExist:
+		except getattr(gwflow.Gwflow_base, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name='Gwflow setup'))
 		except Exception as ex:
@@ -437,20 +450,24 @@ gis_cols = {
 	gwflow.Gwflow_rescell: ['res', connect.Reservoir_con, 'single', True],
 }
 	
-def get_cell_paged(table, filter_cols) -> Response:
+def get_cell_paged(table, filter_cols) -> Dict[str, Any]:
 	items = DefaultRestMethods.get_paged_items(table, filter_cols)
 	m = items['model']
 
 	gis_col = gis_cols.get(table, None)
 
-	ml = [model_to_dict(v, recurse=False) for v in m]
-	gis_to_con_name = IndexHelper(gis_col[1]).get_names()
-	for d in ml:
-		id = d[gis_col[0]]
-		d[gis_col[0]] = {
-			'id': id,
-			'name': gis_to_con_name.get(id, None)
-		}
+	if gis_col is None:
+     
+		ml = [model_to_dict(v, recurse=False) for v in m]
+	else:
+		ml = [model_to_dict(v, recurse=False) for v in m]
+		gis_to_con_name = IndexHelper(gis_col[1]).get_names()
+		for d in ml:
+			id = d[gis_col[0]]
+			d[gis_col[0]] = {
+				'id': id,
+				'name': gis_to_con_name.get(id, None)
+			}
 
 	return {
 		'total': items['total'],
@@ -458,10 +475,11 @@ def get_cell_paged(table, filter_cols) -> Response:
 		'items': ml
 	}
 
-def get_cell(table, id, description) -> Response:
+def get_cell(table, id, description) -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	gis_col = gis_cols.get(table, None)
 
@@ -471,16 +489,18 @@ def get_cell(table, id, description) -> Response:
 		abort(400, '{} {} does not exist'.format(description, id))
 
 	d = model_to_dict(m, recurse=False)
-	con = gis_col[1].get_or_none(gis_col[1].gis_id == d[gis_col[0]])
-	d['{}_name'.format(gis_col[0])] = con.name if con is not None else None
-	d.pop(gis_col[0], None)
+	if gis_col is not None:
+		con = gis_col[1].get_or_none(gis_col[1].gis_id == d[gis_col[0]])
+		d['{}_name'.format(gis_col[0])] = con.name if con is not None else None	
+		d.pop(gis_col[0], None)
 	rh.close()
 	return d
 
-def delete_all_cells(table, description) -> Response:
+def delete_all_cells(table, description) -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	query = table.delete()
 	result = query.execute()
@@ -490,10 +510,11 @@ def delete_all_cells(table, description) -> Response:
 	
 	abort(400, 'Error deleting {item}.'.format(item=description.lower()))
 
-def delete_cell(table, id, description) -> Response:
+def delete_cell(table, id, description) -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	query = table.delete().where(table.cell_id == id)
 	result = query.execute()
@@ -503,10 +524,11 @@ def delete_cell(table, id, description) -> Response:
 	
 	abort(400, 'Error deleting {item} {id}.'.format(item=description.lower(), id=id))
 		
-def post_cell(table, item_description) -> Response:
+def post_cell(table, item_description) -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	try:
 		result = save_cell_args(table, request.json, is_new=True)
@@ -520,10 +542,11 @@ def post_cell(table, item_description) -> Response:
 		rh.close()
 		abort(400, 'Unexpected error {ex}'.format(ex=ex))
 		
-def put_cell(id, table, item_description) -> Response:
+def put_cell(id, table, item_description) -> Any:
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	try:
 		result = save_cell_args(table, request.json, id=id)
@@ -542,6 +565,13 @@ def put_cell(id, table, item_description) -> Response:
 
 def save_cell_args(table, args, id=0, is_new=False):
 	gis_col = gis_cols.get(table, None)
+
+	if gis_col is None:
+		params = {field.name: args.get(field.name) for field in table._meta.sorted_fields if field.name in args}
+		if is_new:
+			return table.insert(params).execute()
+		return table.update(params).where(table.cell_id == id).execute()
+
 	gis_name_to_con = IndexHelper(gis_col[1]).get_id_from_name()
 	gis_name = '{}_name'.format(gis_col[0])
 

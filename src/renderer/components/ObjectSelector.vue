@@ -219,8 +219,8 @@
 <template>
 	<div>
 		<v-alert type="info" variant="tonal" v-if="!hideAlert">
-			You are in bulk edit mode. Select the objects you want to edit then check the fields to which you 
-			want to apply to the selected.
+			Anda berada dalam mode pengeditan massal. Pilih objek yang ingin Anda edit, 
+			lalu centang kolom yang ingin Anda terapkan pada objek yang dipilih.
 		</v-alert>
 
 		<error-alert :text="page.error"></error-alert>

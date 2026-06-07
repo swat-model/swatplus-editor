@@ -1,5 +1,7 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	JOIN
+)
 from helpers import utils
 from database.project import soils, decision_table, hru_parm_db
 import database.project.hru as db
@@ -16,7 +18,7 @@ class Hru_data_hru(BaseFileModel):
 
 	def write(self):
 		table = db.Hru_data_hru
-		order_by = db.Hru_data_hru.id
+		order_by = getattr(db.Hru_data_hru, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:
@@ -64,7 +66,7 @@ class Hru_lte_hru(BaseFileModel):
 		grow_start = decision_table.D_table_dtl.alias()
 		grow_end = decision_table.D_table_dtl.alias()
 		
-		query = (table.select(table.id, 
+		query = (table.select(getattr(table, 'id'), 
 							table.name,
 							table.area,
 							table.cn2,
@@ -106,6 +108,6 @@ class Hru_lte_hru(BaseFileModel):
 					  .join(grow_end, JOIN.LEFT_OUTER, on=(table.grow_end == grow_end.id).alias('grow_end'))
 					  .switch(table)
 					  .join(hru_parm_db.Plants_plt, JOIN.LEFT_OUTER)
-					  .order_by(table.id))
+					  .order_by(getattr(table, 'id')))
 
 		self.write_custom_query_table(table, query, ignore_id_col=False)

@@ -12,11 +12,16 @@ from database.datasets import change as datasets_change, init as datasets_init, 
 
 import sys
 import argparse
-import os, os.path
+import os
+import os.path
 from shutil import copyfile
 import time
-from peewee import *
-from playhouse.migrate import *
+from peewee import (
+	IntegerField,
+	DoubleField,
+	CharField
+)
+from playhouse.migrate import SqliteMigrator, SqliteDatabase, migrate
 import datetime
 
 # Map version prefixes/values to required upgrades
@@ -76,6 +81,7 @@ class UpdateDatasets(ExecutableApi):
 			# Backup original db before beginning
 			try:
 				self.emit_progress(2, 'Backing up datasets database...')
+				assert datasets_db is not None
 				base_path = os.path.dirname(datasets_db)
 				rel_datasets_db = os.path.relpath(datasets_db, base_path)
 				
@@ -87,7 +93,7 @@ class UpdateDatasets(ExecutableApi):
 				backup_db_file = os.path.join(bak_dir, bak_filename)
 				copyfile(datasets_db, os.path.join(bak_dir, bak_filename))
 			except IOError as err:
-				sys.exit(err)
+				sys.exit(str(err))
 
 			# Apply all upgrades in chain
 			self.emit_progress(15, 'Updating database with new defaults...')
@@ -98,14 +104,15 @@ class UpdateDatasets(ExecutableApi):
 				except Exception as ex:
 					if backup_db_file is not None:
 						self.emit_progress(50, "Error occurred. Rolling back database...")
-						SetupDatasetsDatabase.rollback(datasets_db, backup_db_file)
+						SetupProjectDatabase.rollback(datasets_db, backup_db_file)
 						self.emit_progress(100, "Error occurred.")
 					sys.exit(str(ex))
 			
 			Version.update({Version.value: new_version, Version.release_date: datetime.datetime.now()}).execute()
 
 	def updates_for_3_2_0(self, datasets_db):
-		if not self.name_exists(dataset_file_cio_classification, 'out_path'): dataset_file_cio_classification.insert(name='out_path').execute()
+		if not self.name_exists(dataset_file_cio_classification, 'out_path'): 
+			dataset_file_cio_classification.insert(name='out_path').execute()
 	
 	def updates_for_3_1_0(self, datasets_db):
 		self.cal_parms_value_updates_for_3_1_0(datasets_change.Cal_parms_cal)
@@ -222,12 +229,18 @@ class UpdateDatasets(ExecutableApi):
 		table.delete().where(table.name == 'organicp').execute()
 		table.delete().where(table.name == 'disolvp').execute()
 		
-		if not self.name_exists(table, 'bank_exp'): table.insert(name='bank_exp', obj_typ='rte', abs_min=1.5, abs_max=6, units=None).execute()
-		if not self.name_exists(table, 'mumax'): table.insert(name='mumax', obj_typ='swq', abs_min=1, abs_max=3, units='1/day').execute()
-		if not self.name_exists(table, 'res_d50'): table.insert(name='res_d50', obj_typ='res', abs_min=0.1, abs_max=1000, units='um').execute()
-		if not self.name_exists(table, 'rsd_covco'): table.insert(name='rsd_covco', obj_typ='bsn', abs_min=0.001, abs_max=1.25, units=None).execute()
-		if not self.name_exists(table, 'usle_c'): table.insert(name='usle_c', obj_typ='plt', abs_min=0.001, abs_max=1.95, units=None).execute()
-		if not self.name_exists(table, 'vcr_coef'): table.insert(name='vcr_coef', obj_typ='rte', abs_min=0.5, abs_max=2, units=None).execute()
+		if not self.name_exists(table, 'bank_exp'):
+			table.insert(name='bank_exp', obj_typ='rte', abs_min=1.5, abs_max=6, units=None).execute()
+		if not self.name_exists(table, 'mumax'): 
+			table.insert(name='mumax', obj_typ='swq', abs_min=1, abs_max=3, units='1/day').execute()
+		if not self.name_exists(table, 'res_d50'): 
+			table.insert(name='res_d50', obj_typ='res', abs_min=0.1, abs_max=1000, units='um').execute()
+		if not self.name_exists(table, 'rsd_covco'): 
+			table.insert(name='rsd_covco', obj_typ='bsn', abs_min=0.001, abs_max=1.25, units=None).execute()
+		if not self.name_exists(table, 'usle_c'): 
+			table.insert(name='usle_c', obj_typ='plt', abs_min=0.001, abs_max=1.95, units=None).execute()
+		if not self.name_exists(table, 'vcr_coef'): 
+			table.insert(name='vcr_coef', obj_typ='rte', abs_min=0.5, abs_max=2, units=None).execute()
 		
 		table.update({ table.abs_min: 0.0001 }).where(table.name == 'cherod').execute()
 		table.update({ table.abs_min: 0.00001 }).where(table.name == 'chk').execute()
@@ -244,7 +257,8 @@ class UpdateDatasets(ExecutableApi):
 		table.update({ table.obj_typ: 'hru' }).where(table.name == 'phu_mat').execute()
 	
 	def cal_parms_value_updates_for_3_0_0(self, table):
-		if not self.name_exists(table, 'nperco_lchtile'): table.insert(name='nperco_lchtile', obj_typ='bsn', abs_min=0, abs_max=1, units=None).execute()
+		if not self.name_exists(table, 'nperco_lchtile'): 
+			table.insert(name='nperco_lchtile', obj_typ='bsn', abs_min=0, abs_max=1, units=None).execute()
 		table.delete().where(table.name == 'spcon').execute()
 		table.delete().where(table.name == 'spexp').execute()
 		table.update({
@@ -268,33 +282,59 @@ class UpdateDatasets(ExecutableApi):
 		table.update({ table.abs_max: 0.5 }).where(table.name == 'rs2').execute()
 		table.update({ table.abs_max: 2 }).where(table.name == 'rs3').execute()
 		table.update({ table.name: 'withdraw_rate' }).where(table.name == 'withdrawal_rate').execute()
-		if not self.name_exists(table, 'arc_len_fr'): table.insert(name='arc_len_fr', obj_typ='rte', abs_min=0.5, abs_max=2, units='frac').execute()
-		if not self.name_exists(table, 'ch_n_conc'): table.insert(name='ch_n_conc', obj_typ='rte', abs_min=0, abs_max=500, units='mg/kg').execute()
-		if not self.name_exists(table, 'ch_p_bio'): table.insert(name='ch_p_bio', obj_typ='rte', abs_min=0, abs_max=1, units='frac').execute()
-		if not self.name_exists(table, 'ch_p_conc'): table.insert(name='ch_p_conc', obj_typ='rte', abs_min=0, abs_max=50.9, units='mg/kg').execute()
-		if not self.name_exists(table, 'fp_inun_days'): table.insert(name='fp_inun_days', obj_typ='rte', abs_min=0.05, abs_max=30, units='days').execute()
-		if not self.name_exists(table, 'hum_c_n'): table.insert(name='hum_c_n', obj_typ='sol', abs_min=0, abs_max=20, units='mg/kg').execute()
-		if not self.name_exists(table, 'hum_c_p'): table.insert(name='hum_c_p', obj_typ='sol', abs_min=0, abs_max=160, units='mg/kg').execute()
-		if not self.name_exists(table, 'lab_p'): table.insert(name='lab_p', obj_typ='sol', abs_min=0, abs_max=30, units='mg/kg').execute()
-		if not self.name_exists(table, 'n_dep_enr'): table.insert(name='n_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
-		if not self.name_exists(table, 'n_setl'): table.insert(name='n_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
-		if not self.name_exists(table, 'n_sol_part'): table.insert(name='n_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
-		if not self.name_exists(table, 'p_dep_enr'): table.insert(name='p_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
-		if not self.name_exists(table, 'p_setl'): table.insert(name='p_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
-		if not self.name_exists(table, 'p_sol_part'): table.insert(name='p_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
-		if not self.name_exists(table, 'part_size'): table.insert(name='part_size', obj_typ='rte', abs_min=0.001, abs_max=0.01, units='mm').execute()
-		if not self.name_exists(table, 'pk_rto'): table.insert(name='pk_rto', obj_typ='rte', abs_min=1, abs_max=3, units=None).execute()
-		if not self.name_exists(table, 'sed_stlr'): table.insert(name='sed_stlr', obj_typ='res', abs_min=0.1, abs_max=2, units=None).execute()
-		if not self.name_exists(table, 'velsetlr'): table.insert(name='velsetlr', obj_typ='res', abs_min=0.1, abs_max=15, units='m/day').execute()
-		if not self.name_exists(table, 'wash_bed_fr'): table.insert(name='wash_bed_fr', obj_typ='rte', abs_min=0, abs_max=0.8, units='frac').execute()
+		if not self.name_exists(table, 'arc_len_fr'): 
+			table.insert(name='arc_len_fr', obj_typ='rte', abs_min=0.5, abs_max=2, units='frac').execute()
+		if not self.name_exists(table, 'ch_n_conc'): 
+			table.insert(name='ch_n_conc', obj_typ='rte', abs_min=0, abs_max=500, units='mg/kg').execute()
+		if not self.name_exists(table, 'ch_p_bio'): 
+			table.insert(name='ch_p_bio', obj_typ='rte', abs_min=0, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'ch_p_conc'): 
+			table.insert(name='ch_p_conc', obj_typ='rte', abs_min=0, abs_max=50.9, units='mg/kg').execute()
+		if not self.name_exists(table, 'fp_inun_days'): 
+			table.insert(name='fp_inun_days', obj_typ='rte', abs_min=0.05, abs_max=30, units='days').execute()
+		if not self.name_exists(table, 'hum_c_n'): 
+			table.insert(name='hum_c_n', obj_typ='sol', abs_min=0, abs_max=20, units='mg/kg').execute()
+		if not self.name_exists(table, 'hum_c_p'): 
+			table.insert(name='hum_c_p', obj_typ='sol', abs_min=0, abs_max=160, units='mg/kg').execute()
+		if not self.name_exists(table, 'lab_p'): 
+			table.insert(name='lab_p', obj_typ='sol', abs_min=0, abs_max=30, units='mg/kg').execute()
+		if not self.name_exists(table, 'n_dep_enr'): 
+			table.insert(name='n_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'n_setl'): 
+			table.insert(name='n_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
+		if not self.name_exists(table, 'n_sol_part'): 
+			table.insert(name='n_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
+		if not self.name_exists(table, 'p_dep_enr'): 
+			table.insert(name='p_dep_enr', obj_typ='rte', abs_min=0.2, abs_max=1, units='frac').execute()
+		if not self.name_exists(table, 'p_setl'): 
+			table.insert(name='p_setl', obj_typ='rte', abs_min=0.05, abs_max=0.9, units='frac').execute()
+		if not self.name_exists(table, 'p_sol_part'): 
+			table.insert(name='p_sol_part', obj_typ='rte', abs_min=0.001, abs_max=0.1, units=None).execute()
+		if not self.name_exists(table, 'part_size'): 
+			table.insert(name='part_size', obj_typ='rte', abs_min=0.001, abs_max=0.01, units='mm').execute()
+		if not self.name_exists(table, 'pk_rto'): 
+			table.insert(name='pk_rto', obj_typ='rte', abs_min=1, abs_max=3, units=None).execute()
+		if not self.name_exists(table, 'sed_stlr'): 
+			table.insert(name='sed_stlr', obj_typ='res', abs_min=0.1, abs_max=2, units=None).execute()
+		if not self.name_exists(table, 'velsetlr'): 
+			table.insert(name='velsetlr', obj_typ='res', abs_min=0.1, abs_max=15, units='m/day').execute()
+		if not self.name_exists(table, 'wash_bed_fr'): 
+			table.insert(name='wash_bed_fr', obj_typ='rte', abs_min=0, abs_max=0.8, units='frac').execute()
 		
-		if not self.name_exists(table, 'aquifer_K'): table.insert(name='aquifer_K', obj_typ='gwf', abs_min=0.0001, abs_max=40, units='m/day').execute()
-		if not self.name_exists(table, 'aquifer_Sy'): table.insert(name='aquifer_Sy', obj_typ='gwf', abs_min=0.001, abs_max=0.6, units='m3/m3').execute()
-		if not self.name_exists(table, 'aquifer_delay'): table.insert(name='aquifer_delay', obj_typ='hru', abs_min=0, abs_max=1000, units='days').execute()
-		if not self.name_exists(table, 'aquifer_exdp'): table.insert(name='aquifer_exdp', obj_typ='gwf', abs_min=0, abs_max=4, units='m').execute()
-		if not self.name_exists(table, 'stream_K'): table.insert(name='stream_K', obj_typ='gwf_riv', abs_min=0.0000001, abs_max=0.01, units='m/day').execute()
-		if not self.name_exists(table, 'stream_thk'): table.insert(name='stream_thk', obj_typ='gwf_riv', abs_min=0.01, abs_max=2, units='m').execute()
-		if not self.name_exists(table, 'stream_bed'): table.insert(name='stream_bed', obj_typ='gwf_sgl', abs_min=0, abs_max=20, units='m').execute()
+		if not self.name_exists(table, 'aquifer_K'): 
+			table.insert(name='aquifer_K', obj_typ='gwf', abs_min=0.0001, abs_max=40, units='m/day').execute()
+		if not self.name_exists(table, 'aquifer_Sy'): 
+			table.insert(name='aquifer_Sy', obj_typ='gwf', abs_min=0.001, abs_max=0.6, units='m3/m3').execute()
+		if not self.name_exists(table, 'aquifer_delay'): 
+			table.insert(name='aquifer_delay', obj_typ='hru', abs_min=0, abs_max=1000, units='days').execute()
+		if not self.name_exists(table, 'aquifer_exdp'): 
+			table.insert(name='aquifer_exdp', obj_typ='gwf', abs_min=0, abs_max=4, units='m').execute()
+		if not self.name_exists(table, 'stream_K'): 
+			table.insert(name='stream_K', obj_typ='gwf_riv', abs_min=0.0000001, abs_max=0.01, units='m/day').execute()
+		if not self.name_exists(table, 'stream_thk'): 
+			table.insert(name='stream_thk', obj_typ='gwf_riv', abs_min=0.01, abs_max=2, units='m').execute()
+		if not self.name_exists(table, 'stream_bed'): 
+			table.insert(name='stream_bed', obj_typ='gwf_sgl', abs_min=0, abs_max=20, units='m').execute()
 	
 	def updates_for_2_3_0(self, datasets_db):
 		#Datasets DB - Ignore error if already done
@@ -458,15 +498,15 @@ class UpdateDatasets(ExecutableApi):
 
 		bm_50k_plants = ['aspn', 'cedr', 'frsd', 'frsd_SuHF', 'frsd_SuMs', 'frsd_SuSt', 'frsd_TeCF', 'frsd_TeMs', 'frsd_TeOF', 'frsd_TeST', 'frse', 'frse_SuDrF', 'frse_SuDs', 'frse_SuHF', 'frse_SuMs', 'frse_SuSt', 'frse_TeCF', 'frse_TeDs', 'frse_TeMs', 'frse_TeOF', 'frse_TeST', 'frst', 'frst_SuHF', 'frst_SuMs', 'frst_SuSt', 'frst_TeCF', 'frst_TeMs', 'frst_TeOF', 'frst_TeST', 'juni', 'ldgp', 'mapl', 'mesq', 'oak', 'oilp', 'pine', 'popl', 'rngb', 'rngb_SuDrF', 'rngb_SuDs', 'rngb_SuHF', 'rngb_SuMs', 'rngb_SuSt', 'rngb_TeCF', 'rngb_TeDs', 'rngb_TeMs', 'rngb_TeOF', 'rngb_TeST', 'rubr', 'swrn', 'wetf', 'wetl', 'wetn', 'will', 'wspr']
 		bm_20k_plants = ['almd', 'appl', 'barr', 'cash', 'coco', 'coct', 'coff', 'grap', 'oliv', 'oran', 'orcd', 'papa', 'past', 'plan', 'rnge', 'rnge_SuDrF', 'rnge_SuDs', 'rnge_SuHF', 'rnge_SuMs', 'rnge_SuSt', 'rnge_TeCF', 'rnge_TeDs', 'rnge_TeMs', 'rnge_TeOF', 'rnge_TeST', 'waln']
-		bm_50k_ids = dataset_plants.select(dataset_plants.id).where(dataset_plants.name << bm_50k_plants)
-		bm_20k_ids = dataset_plants.select(dataset_plants.id).where(dataset_plants.name << bm_20k_plants)
+		bm_50k_ids = dataset_plants.select(getattr(dataset_plants, 'id')).where(dataset_plants.name << bm_50k_plants)
+		bm_20k_ids = dataset_plants.select(getattr(dataset_plants, 'id')).where(dataset_plants.name << bm_20k_plants)
 
 		datasets_init.Plant_ini_item.update({
 			datasets_init.Plant_ini_item.bm_init: 50000
-		}).where(datasets_init.Plant_ini_item.plnt_name_id << bm_50k_ids).execute()
+		}).where(getattr(datasets_init.Plant_ini_item, 'plnt_name_id') << bm_50k_ids).execute()
 		datasets_init.Plant_ini_item.update({
 			datasets_init.Plant_ini_item.bm_init: 20000
-		}).where(datasets_init.Plant_ini_item.plnt_name_id << bm_20k_ids).execute()
+		}).where(getattr(datasets_init.Plant_ini_item, 'plnt_name_id') << bm_20k_ids).execute()
 		datasets_init.Plant_ini_item.update({
 			datasets_init.Plant_ini_item.lc_status: 1,
 			datasets_init.Plant_ini_item.yrs_init: 1
@@ -477,7 +517,7 @@ class UpdateDatasets(ExecutableApi):
 
 		datasets_basin.Codes_bsn.update({
 			datasets_basin.Codes_bsn.pet: 1,
-			datasets_basin.Codes_bsn.rtu_wq: 1,
+			getattr(datasets_basin.Codes_bsn, 'rtu_wq'): 1,
 			datasets_basin.Codes_bsn.wq_cha: 1
 		}).execute()
 

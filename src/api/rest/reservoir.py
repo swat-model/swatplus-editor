@@ -2,7 +2,9 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project.connect import Reservoir_con, Reservoir_con_out
@@ -87,48 +89,49 @@ def properties():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		try:
 			m = Reservoir_res()
 			m.name = args['name']
-			m.description = None if 'description' not in args else args['description']
+			m.description = None if 'description' not in args else args['description'] #type: ignore
 
 			if 'init_name' in args:
-				m.init_id = RestHelpers.get_id_from_name(Initial_res, args['init_name'])
+				m.init_id = RestHelpers.get_id_from_name(Initial_res, args['init_name']) #type: ignore
 			if 'rel_name' in args:
-				m.rel_id = RestHelpers.get_id_from_name(D_table_dtl, args['rel_name'])
+				m.rel_id = RestHelpers.get_id_from_name(D_table_dtl, args['rel_name']) #type: ignore 
 			if 'hyd_name' in args:
-				m.hyd_id = RestHelpers.get_id_from_name(Hydrology_res, args['hyd_name'])
+				m.hyd_id = RestHelpers.get_id_from_name(Hydrology_res, args['hyd_name']) #type: ignore
 			if 'sed_name' in args:
-				m.sed_id = RestHelpers.get_id_from_name(Sediment_res, args['sed_name'])
+				m.sed_id = RestHelpers.get_id_from_name(Sediment_res, args['sed_name']) #type: ignore
 			if 'nut_name' in args:
-				m.nut_id = RestHelpers.get_id_from_name(Nutrients_res, args['nut_name'])
+				m.nut_id = RestHelpers.get_id_from_name(Nutrients_res, args['nut_name']) #type: ignore
 
 			result = m.save()
 
 			rh.close()
 			if result > 0:
-				return {'id': m.id }, 200
+				return {'id': getattr(m, 'id') }, 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Initial_res.DoesNotExist:
+		except getattr(Initial_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except D_table_dtl.DoesNotExist:
+		except getattr(D_table_dtl, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['rel_name']))
-		except Hydrology_res.DoesNotExist:
+		except getattr(Hydrology_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Sediment_res.DoesNotExist:
+		except getattr(Sediment_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sed_name']))
-		except Nutrients_res.DoesNotExist:
+		except getattr(Nutrients_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
 		except Exception as ex:
@@ -146,11 +149,12 @@ def propertiesId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
-			m = Reservoir_res.get(Reservoir_res.id == id)
+			m = Reservoir_res.get(getattr(Reservoir_res, 'id') == id)
 			m.name = args['name']
 			m.description = None if 'description' not in args else args['description']
 
@@ -172,25 +176,25 @@ def propertiesId(id):
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Reservoir_res.DoesNotExist:
+		except getattr(Reservoir_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, 'Reservoir properties {id} does not exist'.format(id=id))
-		except Initial_res.DoesNotExist:
+		except getattr(Initial_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except D_table_dtl.DoesNotExist:
+		except getattr(D_table_dtl, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['rel_name']))
-		except Hydrology_res.DoesNotExist:
+		except getattr(Hydrology_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Sediment_res.DoesNotExist:
+		except getattr(Sediment_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sed_name']))
-		except Nutrients_res.DoesNotExist:
+		except getattr(Nutrients_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
 		except Exception as ex:
@@ -206,7 +210,8 @@ def propertiesMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -224,7 +229,7 @@ def propertiesMany():
 				param_dict['nut_id'] = RestHelpers.get_id_from_name(Nutrients_res, args['nut_name'])
 
 			con_table = Reservoir_con
-			con_prop_field = Reservoir_con.res_id
+			con_prop_field = getattr(Reservoir_con, 'res_id')
 			prop_table = Reservoir_res
 
 			result = DefaultRestMethods.put_many_con(args, param_dict, con_table, con_prop_field, prop_table)
@@ -233,19 +238,19 @@ def propertiesMany():
 				return '', 200
 
 			abort(400, 'Unable to update hru properties.')
-		except Initial_res.DoesNotExist:
+		except getattr(Initial_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except D_table_dtl.DoesNotExist:
+		except getattr(D_table_dtl, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['rel_name']))
-		except Hydrology_res.DoesNotExist:
+		except getattr(Hydrology_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Sediment_res.DoesNotExist:
+		except getattr(Sediment_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sed_name']))
-		except Nutrients_res.DoesNotExist:
+		except getattr(Nutrients_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
 		except Exception as ex:
@@ -265,23 +270,24 @@ def initial():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		try:
 			m = Initial_res()
 			m.name = args['name']
-			m.description = None if 'description' not in args else args['description']
+			m.description = None if 'description' not in args else args['description'] #type: ignore
 			if 'org_min_name' in args:
-				m.org_min_id = RestHelpers.get_id_from_name(Om_water_ini, args['org_min_name'])
+				m.org_min_id = RestHelpers.get_id_from_name(Om_water_ini, args['org_min_name']) #type: ignore
 			if 'pest_name' in args:
-				m.pest_id = RestHelpers.get_id_from_name(Pest_water_ini, args['pest_name'])
+				m.pest_id = RestHelpers.get_id_from_name(Pest_water_ini, args['pest_name']) #type: ignore
 			if 'path_name' in args:
-				m.path_id = RestHelpers.get_id_from_name(Path_water_ini, args['path_name'])
+				m.path_id = RestHelpers.get_id_from_name(Path_water_ini, args['path_name']) #type: ignore
 			if 'hmet_name' in args:
-				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name'])
+				m.hmet_id = RestHelpers.get_id_from_name(Hmet_water_ini, args['hmet_name']) #type: ignore
 			if 'salt_name' in args:
-				m.salt_cs_id = RestHelpers.get_id_from_name(Salt_res_ini, args['salt_name'])
+				m.salt_cs_id = RestHelpers.get_id_from_name(Salt_res_ini, args['salt_name']) #type: ignore
 			result = m.save()
 
 			rh.close()
@@ -289,22 +295,22 @@ def initial():
 				return model_to_dict(m), 201
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Om_water_ini.DoesNotExist:
+		except getattr(Om_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['org_min_name']))
-		except Pest_water_ini.DoesNotExist:
+		except getattr(Pest_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except Path_water_ini.DoesNotExist:
+		except getattr(Path_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except Hmet_water_ini.DoesNotExist:
+		except getattr(Hmet_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_res_ini.DoesNotExist:
+		except getattr(Salt_res_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -321,11 +327,12 @@ def initialId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		try:
-			m = Initial_res.get(Initial_res.id == id)
+			m = Initial_res.get(getattr(Initial_res, 'id') == id)
 			m.name = args['name']
 			m.description = None if 'description' not in args else args['description']
 			if 'org_min_name' in args:
@@ -346,22 +353,22 @@ def initialId(id):
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Om_water_ini.DoesNotExist:
+		except getattr(Om_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['org_min_name']))
-		except Pest_water_ini.DoesNotExist:
+		except getattr(Pest_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except Path_water_ini.DoesNotExist:
+		except getattr(Path_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except Hmet_water_ini.DoesNotExist:
+		except getattr(Hmet_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_res_ini.DoesNotExist:
+		except getattr(Salt_res_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -377,7 +384,8 @@ def initialMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -394,7 +402,7 @@ def initialMany():
 			if 'salt_name' in args:
 				param_dict['salt_cs_id'] = RestHelpers.get_id_from_name(Salt_res_ini, args['salt_name'])
 
-			query = Initial_res.update(param_dict).where(Initial_res.id.in_(args['selected_ids']))
+			query = Initial_res.update(param_dict).where(getattr(Initial_res, 'id').in_(args['selected_ids']))
 			result = query.execute()
 
 			rh.close()
@@ -402,19 +410,19 @@ def initialMany():
 				return '', 200
 
 			abort(400, 'Unable to update properties.')
-		except Om_water_ini.DoesNotExist:
+		except getattr(Om_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['org_min_name']))
-		except Pest_water_ini.DoesNotExist:
+		except getattr(Pest_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except Path_water_ini.DoesNotExist:
+		except getattr(Path_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except Hmet_water_ini.DoesNotExist:
+		except getattr(Hmet_water_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_res_ini.DoesNotExist:
+		except getattr(Salt_res_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -531,23 +539,24 @@ def wetlands():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
 			m = Wetland_wet()
 			m.name = args['name']
-			m.description = None if 'description' not in args else args['description']
+			m.description = None if 'description' not in args else args['description'] #type: ignore
 			if 'init_name' in args:
-				m.init_id = RestHelpers.get_id_from_name(Initial_res, args['init_name'])
+				m.init_id = RestHelpers.get_id_from_name(Initial_res, args['init_name']) #type: ignore
 			if 'rel_name' in args:
-				m.rel_id = RestHelpers.get_id_from_name(D_table_dtl, args['rel_name'])
+				m.rel_id = RestHelpers.get_id_from_name(D_table_dtl, args['rel_name']) #type: ignore
 			if 'hyd_name' in args:
-				m.hyd_id = RestHelpers.get_id_from_name(Hydrology_wet, args['hyd_name'])
+				m.hyd_id = RestHelpers.get_id_from_name(Hydrology_wet, args['hyd_name']) #type: ignore
 			if 'sed_name' in args:
-				m.sed_id = RestHelpers.get_id_from_name(Sediment_res, args['sed_name'])
+				m.sed_id = RestHelpers.get_id_from_name(Sediment_res, args['sed_name']) #type: ignore
 			if 'nut_name' in args:
-				m.nut_id = RestHelpers.get_id_from_name(Nutrients_res, args['nut_name'])
+				m.nut_id = RestHelpers.get_id_from_name(Nutrients_res, args['nut_name']) #type: ignore
 			result = m.save()
 
 			rh.close()
@@ -555,22 +564,22 @@ def wetlands():
 				return model_to_dict(m), 201
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Initial_res.DoesNotExist:
+		except getattr(Initial_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except D_table_dtl.DoesNotExist:
+		except getattr(D_table_dtl, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['rel_name']))
-		except Hydrology_wet.DoesNotExist:
+		except getattr(Hydrology_wet, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Sediment_res.DoesNotExist:
+		except getattr(Sediment_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sed_name']))
-		except Nutrients_res.DoesNotExist:
+		except getattr(Nutrients_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
 		except Exception as ex:
@@ -588,11 +597,12 @@ def wetlandsId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		try:
-			m = Wetland_wet.get(Wetland_wet.id == id)
+			m = Wetland_wet.get(getattr(Wetland_wet, 'id') == id)
 			m.name = args['name']
 			m.description = None if 'description' not in args else args['description']
 			if 'init_name' in args:
@@ -613,22 +623,22 @@ def wetlandsId(id):
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Initial_res.DoesNotExist:
+		except getattr(Initial_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except D_table_dtl.DoesNotExist:
+		except getattr(D_table_dtl, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['rel_name']))
-		except Hydrology_wet.DoesNotExist:
+		except getattr(Hydrology_wet, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Sediment_res.DoesNotExist:
+		except getattr(Sediment_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sed_name']))
-		except Nutrients_res.DoesNotExist:
+		except getattr(Nutrients_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
 		except Exception as ex:
@@ -644,7 +654,8 @@ def wetlandsMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -661,7 +672,7 @@ def wetlandsMany():
 			if 'nut_name' in args:
 				param_dict['nut_id'] = RestHelpers.get_id_from_name(Nutrients_res, args['nut_name'])
 
-			query = Wetland_wet.update(param_dict).where(Wetland_wet.id.in_(args['selected_ids']))
+			query = Wetland_wet.update(param_dict).where(getattr(Wetland_wet, 'id').in_(args['selected_ids']))
 			result = query.execute()
 
 			rh.close()
@@ -669,19 +680,19 @@ def wetlandsMany():
 				return '', 200
 
 			abort(400, 'Unable to update properties.')
-		except Initial_res.DoesNotExist:
+		except getattr(Initial_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['init_name']))
-		except D_table_dtl.DoesNotExist:
+		except getattr(D_table_dtl, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['rel_name']))
-		except Hydrology_wet.DoesNotExist:
+		except getattr(Hydrology_wet, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hyd_name']))
-		except Sediment_res.DoesNotExist:
+		except getattr(Sediment_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sed_name']))
-		except Nutrients_res.DoesNotExist:
+		except getattr(Nutrients_res, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nut_name']))
 		except Exception as ex:

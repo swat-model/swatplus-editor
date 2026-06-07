@@ -1,4 +1,3 @@
-from peewee import *
 from . import base, aquifer, channel, hyd, losses, misc, nutbal, plantwx, reservoir, waterbal, pest
 
 
@@ -11,7 +10,8 @@ class SetupOutputDatabase():
 	def close():
 		try:
 			base.db.close()
-		except:
+		except Exception as e:
+			print(f"Gagal menutup databse: {e}")
 			pass
 
 	@staticmethod

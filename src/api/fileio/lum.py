@@ -1,5 +1,8 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	prefetch,
+	DoesNotExist
+)
 from helpers import utils
 import database.project.lum as db
 import database.datasets.lum as db_datasets
@@ -59,8 +62,8 @@ class Management_sch(BaseFileModel):
 		sch, created = self.mgt_sch.get_or_create(name=name)
 
 		if not created:
-			self.mgt_sch_auto.delete().where(self.mgt_sch_auto.management_sch_id == sch.id).execute()
-			self.mgt_sch_op.delete().where(self.mgt_sch_op.management_sch_id == sch.id).execute()
+			self.mgt_sch_auto.delete().where(self.mgt_sch_auto.management_sch == sch).execute()
+			self.mgt_sch_op.delete().where(self.mgt_sch_op.management_sch == sch).execute()
 
 		i += 1  # Next line
 		max_auto_lines = i + num_auto
@@ -82,7 +85,7 @@ class Management_sch(BaseFileModel):
 					plant1=plant1,
 					plant2=plant2
 				)
-			except self.d_table_dtl.DoesNotExist:
+			except DoesNotExist:
 				raise ValueError('Decision table {name} does not exist.'.format(name=mgt_auto_name))
 			i += 1
 			
@@ -117,7 +120,7 @@ class Management_sch(BaseFileModel):
 		table = db.Management_sch
 		op_table = db.Management_sch_op
 
-		mgts = table.select().order_by(table.id)
+		mgts = table.select().order_by(getattr(table, 'id'))
 		ops = op_table.select().order_by(op_table.order, op_table.hu_sch, op_table.mon, op_table.day)
 		query = prefetch(mgts, ops)
 
@@ -184,7 +187,7 @@ class Landuse_lum(BaseFileModel):
 
 	def write(self):
 		table = db.Landuse_lum
-		order_by = db.Landuse_lum.id
+		order_by = getattr(db.Landuse_lum, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:
@@ -265,7 +268,7 @@ class Cntable_lum(BaseFileModel):
 
 	def write(self):
 		table = db.Cntable_lum
-		order_by = db.Cntable_lum.id
+		order_by = getattr(db.Cntable_lum, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:

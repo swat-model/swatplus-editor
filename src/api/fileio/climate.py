@@ -1,5 +1,8 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	JOIN,
+	prefetch
+)
 import database.project.climate as db
 import database.project.config as config_db
 from helpers import utils

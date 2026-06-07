@@ -1,5 +1,5 @@
 import vuetify from './vuetify'
-import pinia from '../store'
+// import pinia from '../store'
 import router from '../router'
 
 //Font Awesome
@@ -43,7 +43,7 @@ export function registerPlugins(app: App) {
     app
         .use(vuetify)
         .use(router)
-        .use(pinia)
+        // .use(pinia)
 		.component('font-awesome-icon', FontAwesomeIcon)
 		.component('font-awesome-layers', FontAwesomeLayers)
 		.component('font-awesome-layers-text', FontAwesomeLayersText)

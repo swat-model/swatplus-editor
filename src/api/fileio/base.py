@@ -1,5 +1,10 @@
 from abc import ABCMeta, abstractmethod
-from peewee import *
+from peewee import (
+	ForeignKeyField,
+	DoubleField,
+	IntegerField,
+	BooleanField
+)
 from playhouse.shortcuts import model_to_dict
 import time
 import ntpath

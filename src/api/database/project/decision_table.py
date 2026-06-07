@@ -1,8 +1,16 @@
-from peewee import *
+from peewee import (
+    BooleanField,
+    IntegerField,
+    CharField,
+    ForeignKeyField,
+    DoubleField,
+    AutoField
+)
 from . import base
 
 
 class D_table_dtl(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	file_name = CharField()
 	description = CharField(null=True)

@@ -1,5 +1,7 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	JOIN
+)
 from database.project import init
 import database.project.channel as db
 import database.project.link as link

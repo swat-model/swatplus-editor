@@ -2,9 +2,13 @@
 	import { reactive, onMounted, computed, onUnmounted } from 'vue';
 	import { useRouter } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	import { storeToRefs } from 'pinia';
+	import {useTaskStore} from '@/store/task';
 
 	const router = useRouter();
 	const { api, constants, currentProject, errors, formatters, utilities, runProcess } = useHelpers();
+	const taskStore = useTaskStore();
+	const { task } = storeToRefs(taskStore);
 
 	interface Props {
 		item: any,
@@ -58,19 +62,16 @@
 		page.saving = true;
 		page.saveSuccess = false;
 		page.validated = true;
-		let val_error = false;
 		
-		if (!val_error) {
-			try {
-				const response = await putDb(props.item);
-
-				if (props.isUpdate)
-					page.saveSuccess = true;
-				else
-					router.push({ name: 'GwflowRescell' });
-			} catch (error) {
-				page.error = errors.logError(error, 'Unable to save changes to database.');
-			}
+		try {
+			const response = props.isUpdate 
+				? await api.put(`gwflow/solutes/${props.item.solute_name}`, props.item, currentProject.getApiHeader())
+				: await api.post(`gwflow/solutes`, props.item, currentProject.getApiHeader());
+			
+			if (props.isUpdate) page.saveSuccess = true;
+			else router.push({ name: 'GwflowRescell' });
+		} catch (error) {
+			page.error = errors.logError(error, 'Unable to save changes to database.');
 		}
 		
 		page.saving = false;
@@ -78,20 +79,19 @@
 	}
 
 	const arrayColumnName = computed(() => {
-		if (props.item.solute_name === 'no3-n') return 'init_no3';
-		return 'init_' + props.item.solute_name;
+    	return props.item.solute_name === 'no3-n' ? 'init_no3' : 'init_' + props.item.solute_name;
 	});
 
-	let task:any = reactive({
-		progress: {
-			percent: 0,
-			message: null
-		},
-		error: null,
-		running: false,
-		currentPid: null,
-		isGridTask: false
-	});
+	// let task:any = reactive({
+	// 	progress: {
+	// 		percent: 0,
+	// 		message: null
+	// 	},
+	// 	error: null,
+	// 	running: false,
+	// 	currentPid: null,
+	// 	isGridTask: false
+	// });
 
 	function importData() {
 		page.import.error = null;
@@ -100,77 +100,87 @@
 
 		if (formatters.isNullOrEmpty(page.import.form.fileName)) {
 			page.import.error = 'Please select a file below.';
+			page.import.saving = false;
 		} else {
-			let args = [page.import.form.type, 
-					'--db_file='+ currentProject.projectDb,
-					'--file_name='+ page.import.form.fileName,
-					'--table_name=gwflow_grid',
-					'--column_name=' + arrayColumnName.value,
-					'--swat_version=' + constants.appSettings.swatplus];
+			let args = [
+				page.import.form.type, 
+				'--db_file=' + currentProject.projectDb,
+				'--file_name=' + page.import.form.fileName,
+				'--table_name=gwflow_grid',
+				'--column_name=' + arrayColumnName.value,
+				'--swat_version=' + constants.appSettings.swatplus
+			];
 
-			runTask(args);
+			taskStore.runTask(args, {
+				proc_name: 'gwflowsolutes',
+				script_name: 'swatplus_api',
+				type: page.import.form.type,
+				isGridTask : true,
+				routePath: '' // Sesuaikan jika perlu
+			}, () => {
+				// Callback setelah sukses
+				page.import.saving = false;
+				closeTaskModals();
+				if (page.import.form.type === 'export_csv') page.exported.show = true;
+				else page.imported.show = true;
+			});
 		}
-
-		page.import.saving = false;
 	}
 
-	function runTask(args:string[]) {
-		task.error = null;
-		task.running = true;
-		task.progress = {
-			percent: 0,
-			message: null
-		};
+	// function runTask(args:string[]) {
+	// 	task.error = null;
+	// 	task.running = true;
+	// 	task.progress = {
+	// 		percent: 0,
+	// 		message: null
+	// 	};
 
-		task.isGridTask = true;
-		task.currentPid = runProcess.runApiProc('gwflowsolutes', 'swatplus_api', args);
-	}
+	// 	task.isGridTask = true;
+	// 	task.currentPid = runProcess.runApiProc('gwflowsolutes', 'swatplus_api', args);
+	// }
 
-	let listeners:any = {
-		stdout: undefined,
-		stderr: undefined,
-		close: undefined
-	}
+	// let listeners:any = {
+	// 	stdout: undefined,
+	// 	stderr: undefined,
+	// 	close: undefined
+	// }
 
-	function initRunProcessHandlers() {
-		listeners.stdout = runProcess.processStdout('gwflowsolutes', (data:any) => {
-			console.log(`stdout: ${data}`);
-			task.progress = runProcess.getApiOutput(data);
-		});
+	// function initRunProcessHandlers() {
+	// 	listeners.stdout = runProcess.processStdout('gwflowsolutes', (data:any) => {
+	// 		console.log(`stdout: ${data}`);
+	// 		task.progress = runProcess.getApiOutput(data);
+	// 	});
 		
-		listeners.stderr = runProcess.processStderr('gwflowsolutes', (data:any) => {
-			console.log(`stderr: ${data}`);
-			task.error = data;
-			task.running = false;
-		});
+	// 	listeners.stderr = runProcess.processStderr('gwflowsolutes', (data:any) => {
+	// 		console.log(`stderr: ${data}`);
+	// 		task.error = data;
+	// 		task.running = false;
+	// 	});
 		
-		listeners.close = runProcess.processClose('gwflowsolutes', (code:any) => {
-			errors.log(`close: ${code}`);
-			if (formatters.isNullOrEmpty(task.error)) {
-				if (page.import.form.type === 'export_csv') {
-					task.running = false;
-					closeTaskModals();
-					page.exported.show = true;
-				} else {
-					task.running = false;
-					closeTaskModals();
-					page.imported.show = true;
-				}
-			}
-		});
-	}
+	// 	listeners.close = runProcess.processClose('gwflowsolutes', (code:any) => {
+	// 		errors.log(`close: ${code}`);
+	// 		if (formatters.isNullOrEmpty(task.error)) {
+	// 			if (page.import.form.type === 'export_csv') {
+	// 				task.running = false;
+	// 				closeTaskModals();
+	// 				page.exported.show = true;
+	// 			} else {
+	// 				task.running = false;
+	// 				closeTaskModals();
+	// 				page.imported.show = true;
+	// 			}
+	// 		}
+	// 	});
+	// }
 
-	function removeRunProcessHandlers() {
-		if (listeners.stdout) listeners.stdout();
-		if (listeners.stderr) listeners.stderr();
-		if (listeners.close) listeners.close();
-	}
+	// function removeRunProcessHandlers() {
+	// 	if (listeners.stdout) listeners.stdout();
+	// 	if (listeners.stderr) listeners.stderr();
+	// 	if (listeners.close) listeners.close();
+	// }
 
 	function cancelTask() {
-		task.error = null;
-		runProcess.killProcess(task.currentPid);
-		
-		task.running = false;
+		taskStore.cancelTask();
 		closeTaskModals();
 	}
 
@@ -178,8 +188,7 @@
 		page.import.show = false;
 	}
 
-	onMounted(() => initRunProcessHandlers())
-	onUnmounted(() => removeRunProcessHandlers());
+
 </script>
 
 <template>
@@ -239,7 +248,7 @@
 			<v-card title="Import/Export Data">
 				<v-card-text>
 					<error-alert :text="page.import.error"></error-alert>
-					<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing or exporting your data." :stack-trace="task.error.toString()" />
+					<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing or exporting your data." :stack-trace="task.error ? task.error.toString() : ''" />
 					
 					<div v-if="task.running">
 						<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped indeterminate></v-progress-linear>

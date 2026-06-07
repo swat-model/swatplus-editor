@@ -52,7 +52,7 @@ class Recall_rec(BaseFileModel):
 				rec_typ = ob_typ
 				
 			if delete_existing:
-				db.Recall_dat.delete().where(db.Recall_dat.recall_rec_id == recall_rec_id).execute()
+				db.Recall_dat.delete().where(getattr(db.Recall_dat, 'recall_rec_id') == recall_rec_id).execute()
 
 			db_lib.bulk_insert(project_base.db, db.Recall_dat, rows)
 			db.Recall_rec.update(rec_typ=rec_typ).where(db.Recall_rec.id == recall_rec_id).execute()
@@ -68,7 +68,7 @@ class Recall_rec(BaseFileModel):
 				rec = db.Recall_rec.get_or_none(db.Recall_rec.name == row['name'])
 				if rec is not None:
 					db.Recall_rec.update(rec_typ=4).where(db.Recall_rec.id == rec.id).execute()
-					db.Recall_dat.delete().where(db.Recall_dat.recall_rec_id == rec.id).execute()
+					db.Recall_dat.delete().where(getattr(db.Recall_dat, 'recall_rec_id') == rec.id).execute()
 
 					if replace_commas:
 						for key in row:
@@ -119,7 +119,7 @@ class Recall_rec(BaseFileModel):
 		with open(file_name, 'w') as file:
 			time_sim = simulation.Time_sim.get()			
 			valid_data = []
-			for row in data.order_by(db.Recall_dat.yr, db.Recall_dat.jday, db.Recall_dat.id):
+			for row in data.order_by(db.Recall_dat.yr, db.Recall_dat.jday, getattr(db.Recall_dat, 'id')):
 				valid_row = row.yr >= time_sim.yrc_start and row.yr <= time_sim.yrc_end
 				rec_typ = row.recall_rec.rec_typ
 				if valid_row and rec_typ == 1 and row.yr == time_sim.yrc_start: #daily

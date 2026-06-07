@@ -1,5 +1,8 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	JOIN,
+	prefetch
+)
 from helpers import utils
 from database.project import soils
 from database.project.simulation import Constituents_cs
@@ -18,7 +21,7 @@ class Plant_ini(BaseFileModel):
 
 	def write(self):
 		table = db.Plant_ini
-		order_by = db.Plant_ini.id
+		order_by = getattr(db.Plant_ini, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:
@@ -96,7 +99,7 @@ class Soil_plant_ini(BaseFileModel):
 					  .join(db.Hmet_hru_ini, JOIN.LEFT_OUTER)
 					  .switch(table)
 					  .join(Salt_hru_ini_cs, JOIN.LEFT_OUTER)
-					  .order_by(table.id))
+					  .order_by(getattr(table, 'id')))
 
 		cols = [col(table.name, direction="left"),
 				col(table.sw_frac),
@@ -130,7 +133,7 @@ class Pest_hru_ini(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		table = db.Pest_hru_ini.select().order_by(db.Pest_hru_ini.id)
+		table = db.Pest_hru_ini.select().order_by(getattr(db.Pest_hru_ini, 'id'))
 		items = db.Pest_hru_ini_item.select().order_by(db.Pest_hru_ini_item.name)
 		query = prefetch(table, items)
 
@@ -168,7 +171,7 @@ class Pest_water_ini(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		table = db.Pest_water_ini.select().order_by(db.Pest_water_ini.id)
+		table = db.Pest_water_ini.select().order_by(getattr(db.Pest_water_ini, 'id'))
 		items = db.Pest_water_ini_item.select().order_by(db.Pest_water_ini_item.name)
 		query = prefetch(table, items)
 
@@ -206,7 +209,7 @@ class Path_hru_ini(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		table = db.Path_hru_ini.select().order_by(db.Path_hru_ini.id)
+		table = db.Path_hru_ini.select().order_by(getattr(db.Path_hru_ini, 'id'))
 		items = db.Path_hru_ini_item.select().order_by(db.Path_hru_ini_item.name)
 		query = prefetch(table, items)
 
@@ -244,7 +247,7 @@ class Path_water_ini(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		table = db.Path_water_ini.select().order_by(db.Path_water_ini.id)
+		table = db.Path_water_ini.select().order_by(getattr(db.Path_water_ini, 'id'))
 		items = db.Path_water_ini_item.select().order_by(db.Path_water_ini_item.name)
 		query = prefetch(table, items)
 

@@ -6,6 +6,8 @@ from database import lib
 from helpers import table_mapper
 from helpers import utils
 from .connect import IndexHelper
+from typing import Union
+
 import os.path
 import sys
 import csv
@@ -46,7 +48,7 @@ class Gwflow_files(BaseFileModel):
 				codes_bsn.gwflow = 0
 			codes_bsn.save()	
 
-	def get_grid_index_to_cell(self, table = gwflow.Gwflow_grid):
+	def get_grid_index_to_cell(self, table: Union[type[gwflow.Gwflow_grid], type[gwflow.Gwflow_init_conc]] = gwflow.Gwflow_grid):
 		data_dict = {}
 		if self.gwflow_base is None:
 			return
@@ -121,7 +123,7 @@ class Gwflow_files(BaseFileModel):
 
 			csv_reader = csv.reader(csv_file, dialect)
 			if hasHeader:
-				headerLine = next(csv_reader)
+				next(csv_reader)
 
 			rows = []
 			fields = table._meta.sorted_fields
@@ -172,9 +174,12 @@ class Gwflow_files(BaseFileModel):
 			csv_writer.writerow(headers)
 
 			wet_thick = { v.wet_id: v.thickness for v in gwflow.Gwflow_wetland.select().order_by(gwflow.Gwflow_wetland.wet_id) }
+   
+			order_by = getattr(reservoir.Wetland_wet, 'id')
 
-			for wet in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id):
-				values = [wet.name, wet_thick.get(wet.id, self.gwflow_base.wet_thickness)]
+			for wet in reservoir.Wetland_wet.select().order_by(order_by):
+				default_thickness = self.gwflow_base.wet_thickness if self.gwflow_base is not None else 0.0
+				values = [wet.name, wet_thick.get(wet.id, default_thickness)]
 				csv_writer.writerow(values)
 
 	def read_wetland_csv(self, file_name):
@@ -187,9 +192,10 @@ class Gwflow_files(BaseFileModel):
 
 			csv_reader = csv.reader(csv_file, dialect)
 			if hasHeader:
-				headerLine = next(csv_reader)
-
-			wet_names = { v.name: v.id for v in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id) }
+				next(csv_reader)
+    
+			order_by = getattr(reservoir.Wetland_wet, 'id')
+			wet_names = { v.name: v.id for v in reservoir.Wetland_wet.select().order_by(order_by) }
 
 			rows = []
 			for val in csv_reader:
@@ -214,6 +220,10 @@ class Gwflow_files(BaseFileModel):
 	def write_grid(self, file_name, column_name='', separator='\t', skip_header=False, return_string=False):
 		table = gwflow.Gwflow_grid if column_name not in solute_grid_cols else gwflow.Gwflow_init_conc
 		grid_cell_dict = self.get_grid_index_to_cell(table)
+
+		if self.gwflow_base is None or grid_cell_dict is None:
+			return "" if return_string else None
+
 		if not return_string:
 			file = open(file_name, 'w')
 			
@@ -241,13 +251,17 @@ class Gwflow_files(BaseFileModel):
 			lines += '{}{}'.format(utils.get_num_format(value, decimals), separator)
 			col += 1
 
-		if not lines.endswith('\n'): lines += '\n'
+		if not lines.endswith('\n'): 
+			lines += '\n'
 		if return_string:
 			return lines
 		else:
 			file.write(lines)
 
 	def read_grid(self, file_name, column_name=''):
+		if self.gwflow_base is None:
+			sys.stderr.write("Error: Gwflow base tidak terinisialisasi.\n")
+			return
 		table = gwflow.Gwflow_grid if column_name not in solute_grid_cols else gwflow.Gwflow_init_conc
 
 		if column_name in solute_grid_cols and gwflow.Gwflow_init_conc.select().count() == 0:
@@ -269,6 +283,8 @@ class Gwflow_files(BaseFileModel):
 			lib.bulk_insert(base.db, gwflow.Gwflow_init_conc, init_rows)
 			
 		grid_cell_dict = self.get_grid_index_to_cell(table)
+		if grid_cell_dict is None:
+			return
 
 		with open(file_name, 'r') as file:
 			start_line = 2
@@ -372,7 +388,9 @@ class Gwflow_files(BaseFileModel):
 				recharge_lines = 'Recharge delay(Days)\n'
 				et_lines = 'Groundwater ET Extinction Depth (m)	\n'
 				init_head_lines = 'Initial Groundwater Head (m)\n'
-
+    
+				if self.grid_index_to_cell is None or self.gwflow_base is None:
+					return
 				col = 1
 				for key in self.grid_index_to_cell:
 					if col == self.gwflow_base.col_count + 1:
@@ -397,14 +415,22 @@ class Gwflow_files(BaseFileModel):
 					et_lines += '{}\t'.format(utils.get_num_format(0 if cell is None else cell.extinction_depth, 2))
 					col += 1
 
-				if not status_lines.endswith('\n'): status_lines += '\n'
-				if not elevation_lines.endswith('\n'): elevation_lines += '\n'
-				if not aquifer_thickness_lines.endswith('\n'): aquifer_thickness_lines += '\n'
-				if not zone_k_lines.endswith('\n'): zone_k_lines += '\n'
-				if not zone_yld_lines.endswith('\n'): zone_yld_lines += '\n'
-				if not recharge_lines.endswith('\n'): recharge_lines += '\n'
-				if not et_lines.endswith('\n'): et_lines += '\n'
-				if not init_head_lines.endswith('\n'): init_head_lines += '\n'
+				if not status_lines.endswith('\n'):
+					status_lines += '\n'
+				if not elevation_lines.endswith('\n'):
+					elevation_lines += '\n'
+				if not aquifer_thickness_lines.endswith('\n'):
+					aquifer_thickness_lines += '\n'
+				if not zone_k_lines.endswith('\n'): 
+					zone_k_lines += '\n'
+				if not zone_yld_lines.endswith('\n'):
+					zone_yld_lines += '\n'
+				if not recharge_lines.endswith('\n'): 
+					recharge_lines += '\n'
+				if not et_lines.endswith('\n'): 
+					et_lines += '\n'
+				if not init_head_lines.endswith('\n'): 
+					init_head_lines += '\n'
 
 				file.write(status_lines)
 				file.write(elevation_lines)
@@ -464,6 +490,8 @@ class Gwflow_files(BaseFileModel):
 					file.write('\n')
 
 	def get_hru_data(self):
+		if self.gwflow_base is None:
+			return False, {}
 		hru_or_lsu_recharge = self.gwflow_base.recharge
 		hru_recharge = hru_or_lsu_recharge == 1 or hru_or_lsu_recharge == 3
 		hrus_gis_to_con = IndexHelper(connect.Hru_con).get()
@@ -650,7 +678,8 @@ class Gwflow_files(BaseFileModel):
 
 				wet_thick = { v.wet_id: v.thickness for v in gwflow.Gwflow_wetland.select().order_by(gwflow.Gwflow_wetland.wet_id) }
 
-				for wet in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id):
+				order_by = getattr(reservoir.Wetland_wet, 'id')
+				for wet in reservoir.Wetland_wet.select().order_by(order_by):
 					utils.write_int(file, wet.id)
 					utils.write_num(file, wet_thick.get(wet.id, self.gwflow_base.wet_thickness), decimals=2) 
 					file.write('\n')
@@ -670,6 +699,8 @@ class Gwflow_files(BaseFileModel):
 
 				status_lines = 'gwflow tile cells (0=no tile; 1=tiles are present)\n'
 
+				if self.grid_index_to_cell is None or self.gwflow_base is None:
+					return
 				col = 1
 				for key in self.grid_index_to_cell:
 					if col == self.gwflow_base.col_count + 1:
@@ -680,7 +711,8 @@ class Gwflow_files(BaseFileModel):
 					status_lines += '{}\t'.format(0 if cell is None else cell.tile)
 					col += 1
 
-				if not status_lines.endswith('\n'): status_lines += '\n'
+				if not status_lines.endswith('\n'):
+					status_lines += '\n'
 
 				file.write(status_lines)
 
@@ -714,4 +746,5 @@ class Gwflow_files(BaseFileModel):
 					else:
 						solute_name = solute.solute_name if solute.solute_name != 'no3-n' else 'no3'
 						grid_text = self.write_grid(os.path.join(self.file_name, file_name), column_name='init_{}'.format(solute_name), skip_header=True, return_string=True)
-						file.write(grid_text)
+						if grid_text is not None:
+							file.write(grid_text)

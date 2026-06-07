@@ -2,7 +2,8 @@ from helpers.executable_api import ExecutableApi, Unbuffered
 from database.output import data, check_toolbox
 
 import csv
-import os, os.path
+import os
+import os.path
 import sqlite3
 import re
 import sys
@@ -94,7 +95,7 @@ class ReadOutput(ExecutableApi):
 		db_file_sanitized = db_file.replace("\\","/")
 		try:
 			os.remove(db_file_sanitized)
-		except:
+		except Exception:
 			reset_database(db_file_sanitized)
 
 		self.output_files_dir = output_files_dir.replace("\\","/")
@@ -136,7 +137,7 @@ class ReadOutput(ExecutableApi):
 		except FileNotFoundError:
 			pass
 		except ValueError as ve:
-			sys.exit(ve)
+			sys.exit(str(ve))
 
 		log_file_name = 'output_db_log.txt'
 		log_file = os.path.join(self.output_files_dir, log_file_name)
@@ -208,7 +209,7 @@ class ReadOutput(ExecutableApi):
 				time_series_key = key
 
 		description = '{ts} {n}'.format(ts=data.time_series_labels.get(time_series_key, ''), n=data.table_labels.get(desc_key, table_name))
-		self.cursor.execute('INSERT INTO table_description (table_name, description) VALUES (?, ?)', (table_name, description))
+		self.cursor.execute('INSERT OR IGNORE INTO table_description (table_name, description) VALUES (?, ?)', (table_name, description))
 
 		data_start_line = data.special_start_lines.get(desc_key, data.default_start_line)
 		read_units = False if desc_key in data.ignore_units else True
@@ -320,7 +321,7 @@ class ReadOutput(ExecutableApi):
 		"""	
 		try:		
 			self.cursor.execute(create_table_sql)
-		except Exception as e:
+		except Exception:
 			raise Exception('Error creating table {} SQL: {}'.format(table_name, create_table_sql))
 
 		# Insert column descriptions (only for columns with units)
@@ -486,7 +487,7 @@ class ReadOutput(ExecutableApi):
 			"""	
 			try:		
 				self.cursor.execute(create_table_sql)
-			except Exception as e:
+			except Exception:
 				raise Exception('Error creating table {} SQL: {}'.format(table_name, create_table_sql))
 
 			# Process file in streaming fashion

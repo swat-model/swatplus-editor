@@ -1,4 +1,10 @@
-from peewee import *
+from peewee import (
+    TextField,
+    IntegerField,
+    CharField,
+    ForeignKeyField,
+    DoubleField
+)
 from . import base
 from . import init
 from . import structural

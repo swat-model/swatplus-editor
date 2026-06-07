@@ -10,6 +10,7 @@ from database.project.salts import Salt_module
 from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, salts, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, water_rights, gwflow
 from helpers import utils
 
+
 import sys
 import argparse
 import os.path
@@ -31,8 +32,8 @@ class WriteFiles(ExecutableApi):
 
 		try:
 			config = Project_config.get()
-			
-			input_files_dir = utils.full_path(project_db_file, config.input_files_dir).replace("\\","/")
+			full_path_str = utils.full_path(project_db_file, config.input_files_dir) or ""
+			input_files_dir = full_path_str.replace("\\", "/")
 			if not os.path.exists(input_files_dir):
 				try:
 					os.makedirs(input_files_dir)
@@ -41,7 +42,7 @@ class WriteFiles(ExecutableApi):
 			
 			weather_data_dir = None
 			if config.weather_data_dir is not None:
-				weather_data_dir = utils.full_path(project_db_file, config.weather_data_dir).replace("\\","/")
+				weather_data_dir = (utils.full_path(project_db_file, config.weather_data_dir) or "").replace("\\","/")
 				if not os.path.exists(weather_data_dir):
 					sys.exit('Weather data directory {dir} does not exist.'.format(dir=weather_data_dir))
 
@@ -57,6 +58,7 @@ class WriteFiles(ExecutableApi):
 			sys.exit('Could not retrieve project configuration from database')
 
 	def __del__(self):
+		# SetupProjectDatabase.close()
 		SetupProjectDatabase.close()
 
 	def write(self):
@@ -161,7 +163,7 @@ class WriteFiles(ExecutableApi):
 
 			Project_config.update(input_files_last_written=datetime.now(), swat_last_run=None, output_last_imported=None).execute()
 		except ValueError as err:
-			sys.exit(err)
+			sys.exit(str(err))
 
 	def get_file_names(self, section, num_required):
 		file_names = []
@@ -171,9 +173,9 @@ class WriteFiles(ExecutableApi):
 			m = project_file_cio.select().where(project_file_cio.classification == c).order_by(project_file_cio.order_in_class)
 			file_names = [v.file_name if v.file_name not in self.ignored_files else NULL_FILE for v in m]
 			#sys.stdout.write(','.join(file_names))
-		except File_cio_classification.DoesNotExist:
+		except getattr(File_cio_classification, 'DoesNotExist'):
 			pass
-		except project_file_cio.DoesNotExist:
+		except getattr(project_file_cio, 'DoesNotExist'):
 			pass
 
 		if len(file_names) < num_required:
@@ -210,6 +212,8 @@ class WriteFiles(ExecutableApi):
 					prog += prog_step
 
 	def copy_weather_file(self, file_name, prog):
+		assert self.__weather_dir is not None
+		assert self.__dir is not None
 		try:
 			self.emit_progress(prog, "Copying weather file {}...".format(file_name))
 			copyfile(os.path.join(self.__weather_dir, file_name), os.path.join(self.__dir, file_name))

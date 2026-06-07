@@ -1,4 +1,10 @@
-from peewee import *
+from peewee import (
+    TextField,
+    IntegerField,
+    CharField,
+    ForeignKeyField,
+    DoubleField
+)
 from . import base, init
 from .decision_table import D_table_dtl
 from .salts import Salt_res_ini

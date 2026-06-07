@@ -1,9 +1,18 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    DoubleField,
+    ForeignKeyField,
+    TextField,
+    AutoField
+)
 from . import base, init
 from .salts import Salt_channel_ini
 
 
 class Initial_cha(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	org_min = ForeignKeyField(init.Om_water_ini, on_delete='SET NULL', null=True)
 	pest = ForeignKeyField(init.Pest_water_ini, on_delete='SET NULL', null=True)
@@ -100,6 +109,7 @@ class Nutrients_cha(base.BaseModel):
 
 
 class Channel_cha(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	init = ForeignKeyField(Initial_cha, null=True, on_delete='SET NULL')
 	hyd = ForeignKeyField(Hydrology_cha, null=True, on_delete='SET NULL')
@@ -138,6 +148,7 @@ class Hyd_sed_lte_cha(base.BaseModel):
 
 
 class Channel_lte_cha(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	init = ForeignKeyField(Initial_cha, null=True, on_delete='SET NULL')
 	hyd = ForeignKeyField(Hyd_sed_lte_cha, null=True, on_delete='SET NULL')

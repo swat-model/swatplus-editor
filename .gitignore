@@ -31,3 +31,5 @@ src/api/.venv/*
 src/api/build/
 src/api/Pipfile.lock
 *.log
+# Abaikan semua file database SQLite
+*.sqlite

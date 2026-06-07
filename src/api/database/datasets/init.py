@@ -1,9 +1,19 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    DoubleField,
+    ForeignKeyField,
+    BooleanField,
+    TextField,
+    AutoField
+)
 from . import base
 from . import hru_parm_db
 
 
 class Plant_ini(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	rot_yr_ini = IntegerField()
 	description = TextField(null=True)

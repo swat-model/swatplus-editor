@@ -1,4 +1,4 @@
-from peewee import *
+from peewee import CharField, ForeignKeyField, DoubleField, TextField
 from . import base
 from . import hru_parm_db
 

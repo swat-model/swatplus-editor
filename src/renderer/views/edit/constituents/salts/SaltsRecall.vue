@@ -2,10 +2,14 @@
 	import { reactive, ref, onMounted, onUnmounted, watch } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	import { storeToRefs } from 'pinia';
+	import {useTaskStore} from '@/store/task';
 
 	const route = useRoute();
 	const { api, constants, errors, formatters, currentProject, runProcess, utilities } = useHelpers();
 	const electron = window.electronApi;
+	const taskStore = useTaskStore();
+	const { task } = storeToRefs(taskStore);
 
 	const recallGrid = ref();
 
@@ -70,16 +74,16 @@
 		}
 	});
 
-	let task:any = reactive({
-		progress: {
-			percent: 0,
-			message: null
-		},
-		process: null,
-		error: null,
-		running: false,
-		currentPid: null
-	});
+	// let task:any = reactive({
+	// 	progress: {
+	// 		percent: 0,
+	// 		message: null
+	// 	},
+	// 	process: null,
+	// 	error: null,
+	// 	running: false,
+	// 	currentPid: null
+	// });
 
 	function getTableTotal(total:any) {
 		table.total = total;
@@ -87,18 +91,13 @@
 
 	async function get() {
 		data.page.loading = true;
-		data.page.error = null;
-		data.page.showError = false;
-
 		try {
 			const response = await api.get(`salts/enable-recall`, currentProject.getApiHeader());
 			data.recall = response.data.recall;
 			data.showGrid = data.recall;
 		} catch (error) {
-			data.page.error = errors.logError(error, 'Unable to get project information from database.');
+			data.page.error = errors.logError(error, 'Unable to get project information.');
 		}
-			
-		data.page.showError = data.page.error !== null;
 		data.page.loading = false;
 	}
 
@@ -162,88 +161,87 @@
 		data.import.error = null;
 		data.import.saving = true;
 
-		if (data.import.type === 'export_csv') {
-			if (formatters.isNullOrEmpty(data.import.exportDir)) {
-				data.import.error = 'Please select a directory to save your data.';
-			} else {
-				let args = ['export_salt_recall', 
-						'--db_file='+ currentProject.projectDb,
-						'--delete_existing=n',
-						'--input_files_dir=' + data.import.exportDir];
-				console.log(args);
-				runTask(args);
-			}
+		const isExport = data.import.type === 'export_csv';
+		const path = isExport ? data.import.exportDir : data.import.inputDir;
+
+		if (formatters.isNullOrEmpty(path)) {
+			data.import.error = isExport ? 'Please select a directory to save your data.' : 'Please select a directory containing your data.';
+			data.import.saving = false;
+			return;
 		}
-		else {
-			if (formatters.isNullOrEmpty(data.import.inputDir)) {
-				data.import.error = 'Please select a directory containing your data.';
+
+		const args = isExport 
+			? ['export_salt_recall', '--db_file=' + currentProject.projectDb, '--delete_existing=n', '--input_files_dir=' + path]
+			: ['import_salt_recall', '--db_file=' + currentProject.projectDb, '--delete_existing=y', '--input_files_dir=' + path];
+
+		taskStore.runTask(args, {
+			proc_name: 'salt_recall',
+			script_name: 'swatplus_api',
+			type: data.import.type,
+			routePath: route.path
+		}, async () => {
+			data.import.saving = false;
+			closeTaskModals();
+			if (isExport) {
+				data.exported.show = true;
 			} else {
-				let args = ['import_salt_recall', 
-						'--db_file='+ currentProject.projectDb,
-						'--delete_existing=y',
-						'--input_files_dir=' + data.import.inputDir];
-				console.log(args);
-
-				runTask(args);
-			}
-		}
-	}
-
-	function runTask(args:string[]) {
-		task.error = null;
-		task.running = true;
-		task.progress = {
-			percent: 0,
-			message: null
-		};
-
-		task.currentPid = runProcess.runApiProc('salt_recall', 'swatplus_api', args);
-	}
-
-	let listeners:any = {
-		stdout: undefined,
-		stderr: undefined,
-		close: undefined
-	}
-
-	function initRunProcessHandlers() {
-		listeners.stdout = runProcess.processStdout('salt_recall', (ldata:any) => {
-			task.progress = runProcess.getApiOutput(ldata);
-		});
-		
-		listeners.stderr = runProcess.processStderr('salt_recall', (ldata:any) => {
-			console.log(`stderr: ${ldata}`);
-			task.error = ldata;
-			task.running = false;
-		});
-		
-		listeners.close = runProcess.processClose('salt_recall', async (code:any) => {
-			console.log('recall close')
-			if (formatters.isNullOrEmpty(task.error)) {
-				if (data.import.type === 'export_csv') {
-					task.running = false;
-					closeTaskModals();
-					data.exported.show = true;
-				} else {
-					await recallGrid?.value?.get(false);
-					task.running = false;
-					closeTaskModals();
-				}
+				await recallGrid?.value?.get(false);
 			}
 		});
 	}
 
-	function removeRunProcessHandlers() {
-		if (listeners.stdout) listeners.stdout();
-		if (listeners.stderr) listeners.stderr();
-		if (listeners.close) listeners.close();
-	}
+	// function runTask(args:string[]) {
+	// 	task.error = null;
+	// 	task.running = true;
+	// 	task.progress = {
+	// 		percent: 0,
+	// 		message: null
+	// 	};
+
+	// 	task.currentPid = runProcess.runApiProc('salt_recall', 'swatplus_api', args);
+	// }
+
+	// let listeners:any = {
+	// 	stdout: undefined,
+	// 	stderr: undefined,
+	// 	close: undefined
+	// }
+
+	// function initRunProcessHandlers() {
+	// 	listeners.stdout = runProcess.processStdout('salt_recall', (ldata:any) => {
+	// 		task.progress = runProcess.getApiOutput(ldata);
+	// 	});
+		
+	// 	listeners.stderr = runProcess.processStderr('salt_recall', (ldata:any) => {
+	// 		console.log(`stderr: ${ldata}`);
+	// 		task.error = ldata;
+	// 		task.running = false;
+	// 	});
+		
+	// 	listeners.close = runProcess.processClose('salt_recall', async (code:any) => {
+	// 		console.log('recall close')
+	// 		if (formatters.isNullOrEmpty(task.error)) {
+	// 			if (data.import.type === 'export_csv') {
+	// 				task.running = false;
+	// 				closeTaskModals();
+	// 				data.exported.show = true;
+	// 			} else {
+	// 				await recallGrid?.value?.get(false);
+	// 				task.running = false;
+	// 				closeTaskModals();
+	// 			}
+	// 		}
+	// 	});
+	// }
+
+	// function removeRunProcessHandlers() {
+	// 	if (listeners.stdout) listeners.stdout();
+	// 	if (listeners.stderr) listeners.stderr();
+	// 	if (listeners.close) listeners.close();
+	// }
 
 	function cancelTask() {
-		task.error = null;
-		runProcess.killProcess(task.currentPid);
-		
-		task.running = false;
+		taskStore.cancelTask();
 		closeTaskModals();
 	}
 
@@ -252,10 +250,10 @@
 	}
 
 	onMounted(async () => {
-		initRunProcessHandlers();
+		// initRunProcessHandlers();
 		await get();
 	})
-	onUnmounted(() => removeRunProcessHandlers());
+
 	watch(() => route.path, async () => await get())
 </script>
 
@@ -292,7 +290,7 @@
 				<v-card title="Import/Export Data">
 					<v-card-text>
 						<error-alert :text="data.import.error"></error-alert>
-						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing or exporting your data." :stack-trace="task.error.toString()" />
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing or exporting your data." :stack-trace="task.error ? task.error.toString() : ''" />
 						
 						<div v-if="task.running">
 							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped></v-progress-linear>

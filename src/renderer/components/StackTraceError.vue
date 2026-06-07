@@ -18,8 +18,8 @@
 		<error-alert :text="props.errorTitle"></error-alert>
 
 		<p>
-			If you do not know the cause of the error, please copy and paste the log below into the <open-in-browser url="https://groups.google.com/d/forum/swatplus-editor" text="SWAT+ Editor user group" />.
-			Please include your project database and any other relevant files.
+			Jika Anda tidak mengetahui penyebab kesalahan tersebut, silakan salin dan tempel log di bawah ini ke dalam <open-in-browser url="https://groups.google.com/d/forum/swatplus-editor" text="SWAT+ Editor user group" />.
+			Harap sertakan basis data proyek Anda dan file relevan lainnya.
 		</p>
 
 		<v-textarea v-model="props.stackTrace" rows="3" max-rows="6" readonly class="mb-4" @focus="$event.target.select()"></v-textarea>

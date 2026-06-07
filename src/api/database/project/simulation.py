@@ -1,4 +1,9 @@
-from peewee import *
+from peewee import (
+    IntegerField,
+    BooleanField,
+    CharField,
+    ForeignKeyField
+)
 from .base import BaseModel
 
 
@@ -110,5 +115,6 @@ class Constituents_cs(BaseModel):
 	@classmethod
 	def is_enabled(cls):
 		cs = cls.get_or_none()
-		if cs is None: return False
+		if cs is None:
+			return False
 		return cs.pest_coms is not None or cs.path_coms is not None or cs.hmet_coms is not None or cs.salt_coms is not None

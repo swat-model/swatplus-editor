@@ -364,8 +364,8 @@
 					<error-alert :text="outflow.delete.error"></error-alert>
 		
 					<p>
-						Are you sure you want to delete <strong>{{outflow.delete.name}}</strong>?
-						This action is permanent and cannot be undone. 
+						Yakin akan menghapus data <strong>{{outflow.delete.name}}</strong>?
+						Tindakan ini bersifat permanen dan tidak dapat dibatalkan. 
 					</p>
 				</v-card-text>
 				<v-divider></v-divider>

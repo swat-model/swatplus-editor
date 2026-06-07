@@ -25,7 +25,7 @@
 
 		<v-card>
 			<v-card-text>
-				This field references a row in the <mark>{{ props.section }}</mark> section.
+				Kolom ini merujuk pada sebuah baris di <mark>{{ props.section }}</mark> section.
 			</v-card-text>
 			<v-divider></v-divider>
 			<v-card-text>

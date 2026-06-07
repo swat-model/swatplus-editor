@@ -13,7 +13,7 @@ bp = Blueprint('definitions', __name__, url_prefix='/definitions')
 @bp.route('/vars/<table>/<path:appPath>', methods=['GET'])
 def getVars(table, appPath):
 	SetupVardefsDatabase.init(os.path.join(appPath, vardef_db))
-	m = Var_range.select().where((Var_range.table == table) & (Var_range.disabled == False))
+	m = Var_range.select().where((Var_range.table == table) & (~Var_range.disabled)) 
 	
 	values = {}
 	for v in m:

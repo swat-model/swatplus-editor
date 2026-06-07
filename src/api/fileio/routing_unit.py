@@ -3,7 +3,7 @@ from helpers import utils, table_mapper
 from database.project import connect
 import database.project.routing_unit as db
 
-from peewee import *
+# from peewee import *
 
 
 class Rout_unit(BaseFileModel):
@@ -17,7 +17,7 @@ class Rout_unit(BaseFileModel):
 
 	def write(self):
 		table = db.Rout_unit_rtu
-		order_by = db.Rout_unit_rtu.id
+		order_by = getattr(db.Rout_unit_rtu, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:
@@ -53,12 +53,14 @@ class Rout_unit_ele(BaseFileModel):
 
 	def write(self):
 		table = connect.Rout_unit_ele
-		order_by = connect.Rout_unit_ele.id
+		order_by = getattr(connect.Rout_unit_ele, 'id')
 
 		con_out_types = table.select(table.obj_typ).distinct()
 		con_out_id_dict = {}
 		for out_typ in con_out_types:
 			obj_table = table_mapper.obj_typs.get(out_typ.obj_typ, None)
+			if obj_table is None:
+				return
 			con_out_id_dict[out_typ.obj_typ] = [o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)]
 
 		if table.select().count() > 0:
@@ -116,6 +118,8 @@ class Rout_unit_def(BaseFileModel):
 			element_table = connect.Rout_unit_ele
 			first_elem = element_table.get()
 			obj_table = table_mapper.obj_typs.get(first_elem.obj_typ, None)
+			if obj_table is None:
+				return
 			obj_ids = [o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)]
 			
 			with open(self.file_name, 'w') as file:

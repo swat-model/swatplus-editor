@@ -2,7 +2,10 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError
+)
+from typing import Dict, Any
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project import init as db
@@ -45,7 +48,8 @@ def soil_plant():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -54,25 +58,25 @@ def soil_plant():
 
 			rh.close()
 			if result > 0:
-				return {'id': m.id }, 200
+				return {'id': getattr(m, 'id') }, 200
 
 			abort(400, 'Unable to create record.')
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Nutrients_sol.DoesNotExist:
+		except getattr(Nutrients_sol, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nutrients_name']))
-		except db.Pest_hru_ini.DoesNotExist:
+		except getattr (db.Pest_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except db.Path_hru_ini.DoesNotExist:
+		except getattr(db.Path_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except db.Hmet_hru_ini.DoesNotExist:
+		except getattr(db.Hmet_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_hru_ini_cs.DoesNotExist:
+		except getattr(Salt_hru_ini_cs, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -89,11 +93,12 @@ def soil_plantId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		try:
-			m = db.Soil_plant_ini.get(db.Soil_plant_ini.id == id)
+			m = db.Soil_plant_ini.get(getattr(db.Soil_plant_ini, 'id') == id)
 			result = save_soil_plant_args(m, args)
 
 			rh.close()
@@ -101,25 +106,25 @@ def soil_plantId(id):
 				return {'id': m.id }, 200
 
 			abort(400, 'Unable to create record.')
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except db.Soil_plant_ini.DoesNotExist:
+		except getattr(db.Soil_plant_ini, 'DoesNotExist'):
 			rh.close()
 			abort(404, 'Soil plant properties {id} does not exist'.format(id=id))
-		except Nutrients_sol.DoesNotExist:
+		except getattr(Nutrients_sol, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nutrients_name']))
-		except db.Pest_hru_ini.DoesNotExist:
+		except getattr(db.Pest_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except db.Path_hru_ini.DoesNotExist:
+		except getattr(db.Path_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except db.Hmet_hru_ini.DoesNotExist:
+		except getattr(db.Hmet_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_hru_ini_cs.DoesNotExist:
+		except getattr(Salt_hru_ini_cs, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -135,7 +140,8 @@ def soil_plantMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -154,7 +160,7 @@ def soil_plantMany():
 			if 'salt_name' in args:
 				param_dict['salt_cs_id'] = RestHelpers.get_id_from_name(Salt_hru_ini_cs, args['salt_name'])
 
-			query = db.Soil_plant_ini.update(param_dict).where(db.Soil_plant_ini.id.in_(args['selected_ids']))
+			query = db.Soil_plant_ini.update(param_dict).where(getattr(db.Soil_plant_ini, 'id').in_(args['selected_ids']))
 			result = query.execute()
 
 			rh.close()
@@ -162,22 +168,22 @@ def soil_plantMany():
 				return '', 200
 
 			abort(400, 'Unable to update properties.')
-		except db.Soil_plant_ini.DoesNotExist:
+		except getattr(db.Soil_plant_ini, 'DoesNotExist'):
 			rh.close()
 			abort(404, 'Soil plant properties {id} does not exist'.format(id=id))
-		except Nutrients_sol.DoesNotExist:
+		except getattr(Nutrients_sol, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['nutrients_name']))
-		except db.Pest_hru_ini.DoesNotExist:
+		except getattr(db.Pest_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['pest_name']))
-		except db.Path_hru_ini.DoesNotExist:
+		except getattr(db.Path_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['path_name']))
-		except db.Hmet_hru_ini.DoesNotExist:
+		except getattr(db.Hmet_hru_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['hmet_name']))
-		except Salt_hru_ini_cs.DoesNotExist:
+		except getattr(Salt_hru_ini_cs, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['salt_name']))
 		except Exception as ex:
@@ -379,7 +385,8 @@ def constituents():
 def get_constituents_ini(ini_table, db_table, col_name):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 	
 	items = [model_to_dict(v, backrefs=True, max_depth=1) for v in ini_table.select()]
 	constituents = []
@@ -397,7 +404,8 @@ def get_constituents_ini(ini_table, db_table, col_name):
 def save_constituents_ini(ini_table, ini_item_table, rel_col_name, row1='plant', row2='soil'):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 	
 	args = request.json
 	

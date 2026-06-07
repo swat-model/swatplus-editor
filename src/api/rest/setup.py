@@ -2,7 +2,18 @@ from flask import Blueprint, jsonify, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from playhouse.migrate import *
+from playhouse.migrate import migrate, SqliteMigrator
+
+from peewee import (
+	fn,
+	prefetch,
+	IntegrityError,
+	SqliteDatabase,
+	CharField,
+	BooleanField,
+	DateTimeField,
+	IntegerField
+)
 
 from actions import import_gis
 from actions.get_swatplus_check import GetSwatplusCheck
@@ -16,6 +27,8 @@ from helpers import utils
 from datetime import datetime
 import os.path
 
+
+
 FILE_CIO_DEFAULT = 0
 FILE_CIO_USER_PROVIDED = 1
 FILE_CIO_NONE = 2
@@ -26,7 +39,8 @@ bp = Blueprint('setup', __name__, url_prefix='/setup')
 def getConfig():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	automatic_updates(project_db)
 	m = config.Project_config.get_or_none()
@@ -56,10 +70,12 @@ def getConfig():
 def saveConfig():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	data = request.json
-	if 'name' not in data: abort(400, 'Project name was omitted from the request.')
+	if 'name' not in data: 
+		abort(400, 'Project name was omitted from the request.')
 	
 	m = config.Project_config.get_or_none()
 	
@@ -82,15 +98,17 @@ def saveConfig():
 	result = oc.save()
 
 	rh.close()
-	if result > 0: return '', 200
+	if result > 0: 
+		return '', 200
 	abort(400, 'Unable to update project configuration table.')
 
 	
 @bp.route('/info', methods=['GET'])
 def getInfo():
-	project_db = request.headers.get(rh.PROJECT_DB)
+	project_db = request.headers.get(rh.PROJECT_DB) or ''
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	conn = lib.open_db(project_db)
 	if not lib.exists_table(conn, 'chandeg_con'):
@@ -220,7 +238,8 @@ def getFileCio():
 def getRunSettings():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	try:
 		c = config.Project_config.get()
@@ -269,7 +288,7 @@ def getRunSettings():
 	except config.Project_config.DoesNotExist:
 		rh.close()
 		abort(404, "Could not retrieve project configuration data.")
-	except simulation.Print_prt.DoesNotExist:
+	except getattr(simulation.Print_prt, 'DoesNotExist'):
 		rh.close()
 		abort(404, "Could not retrieve print_prt data.")
 
@@ -277,7 +296,8 @@ def getRunSettings():
 def putRunSettings():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	args = request.json
 	try:
@@ -315,7 +335,7 @@ def putRunSettings():
 					monthly=o['monthly'],
 					yearly=o['yearly'],
 					avann=o['avann']
-				).where(simulation.Print_prt_object.id == o['id']).execute()
+				).where(getattr(simulation.Print_prt_object, 'id') == o['id']).execute()
 
 		if 'inputs' in args:
 			ignore_files = args['inputs']['ignore_files']
@@ -338,7 +358,8 @@ def putRunSettings():
 def putModelRun():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	try:
 		m = config.Project_config.get()
@@ -359,7 +380,8 @@ def putModelRun():
 def putOutputRead():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	try:
 		m = config.Project_config.get()
@@ -379,10 +401,12 @@ def putOutputRead():
 def putSwatplusCheck():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	args = request.json
-	if 'output_db' not in args: abort(400, 'Output database file was omitted from the request.')
+	if 'output_db' not in args:
+		abort(400, 'Output database file was omitted from the request.')
 
 	api = GetSwatplusCheck(project_db, args['output_db'])
 	return api.get(), 200
@@ -391,13 +415,24 @@ def putSwatplusCheck():
 def putSwatplusCheckToolbox():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	args = request.json
-	if 'output_db' not in args: abort(400, 'Output database file was omitted from the request.')
+	if 'output_db' not in args: 
+		abort(400, 'Output database file was omitted from the request.')
 
 	api = GetSwatplusCheckToolbox(project_db, args['output_db'])
 	return api.get(), 200
+
+# @bp.route('/export-geojson/<table_name>', methods=['GET'])
+# def export_geojson(table_name):
+#     project_db = request.headers.get(rh.PROJECT_DB)
+#     has_db, error = rh.init(project_db)
+#     if not has_db: abort(400, error)
+    
+#     data = get_table_as_geojson(project_db, table_name)
+#     return jsonify(data)
 
 """
 Helper functions
@@ -406,9 +441,9 @@ Helper functions
 def automatic_updates(project_db):
 	#Remove duplicate print objects
 	try:
-		subq = (simulation.Print_prt_object.select(fn.MIN(simulation.Print_prt_object.id).alias('min_id')).group_by(simulation.Print_prt_object.name))
-		(simulation.Print_prt_object.delete().where(simulation.Print_prt_object.id.not_in(subq)).execute())
-	except:
+		subq = (simulation.Print_prt_object.select(fn.MIN(getattr(simulation.Print_prt_object, 'id')).alias('min_id')).group_by(simulation.Print_prt_object.name))
+		(simulation.Print_prt_object.delete().where(getattr(simulation.Print_prt_object, 'id').not_in(subq)).execute())
+	except IntegrityError:
 		pass
 
 	conn = lib.open_db(project_db)

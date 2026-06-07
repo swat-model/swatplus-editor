@@ -1,4 +1,9 @@
-from peewee import *
+from peewee import (
+    TextField,
+    CharField,
+    ForeignKeyField,
+    DoubleField
+)
 from . import base, hydrology, hru_parm_db, soils, lum, init, decision_table, reservoir
 
 

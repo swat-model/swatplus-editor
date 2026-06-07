@@ -4,7 +4,8 @@ from database.project.setup import SetupProjectDatabase
 
 import sys
 import argparse
-import os, os.path
+import os
+import os.path
 from shutil import copyfile, copytree, rmtree
 import time
 #import psutil
@@ -46,7 +47,7 @@ class LoadScenarios(ExecutableApi):
 			os.remove(project_db)
 			copyfile(new_db_file, project_db)
 		except Exception as ex:
-			sys.exit(ex)
+			sys.exit(str(ex))
 
 	def save(self, project_db, txtinout_path, results_path, new_name):
 		try:
@@ -76,7 +77,7 @@ class LoadScenarios(ExecutableApi):
 			self.emit_progress(90, 'Copying project database...')
 			copyfile(project_db, os.path.join(new_scenario_path, project_db_file))
 		except Exception as ex:
-			sys.exit(ex)
+			sys.exit(str(ex))
 
 
 if __name__ == '__main__':

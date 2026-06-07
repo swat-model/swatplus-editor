@@ -2,7 +2,9 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project import base, lum, structural, init, hru_parm_db, decision_table
@@ -55,7 +57,8 @@ def landuse():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -64,43 +67,43 @@ def landuse():
 
 			rh.close()
 			if result > 0:
-				return {'id': m.id }, 200
+				return {'id': getattr(m, 'id') }, 200
 
 			abort(400, 'Unable to create record.')
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except init.Plant_ini.DoesNotExist:
+		except getattr(init.Plant_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['plnt_com_name']))
-		except lum.Management_sch.DoesNotExist:
+		except getattr(lum.Management_sch, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['mgt_name']))
-		except lum.Cntable_lum.DoesNotExist:
+		except getattr(lum.Cntable_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['cn2_name']))
-		except lum.Cons_prac_lum.DoesNotExist:
+		except getattr(lum.Cons_prac_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['cons_prac_name']))
-		except hru_parm_db.Urban_urb.DoesNotExist:
+		except getattr(hru_parm_db.Urban_urb, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['urban_name']))
-		except lum.Ovn_table_lum.DoesNotExist:
+		except getattr(lum.Ovn_table_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['ov_mann_name']))
-		except structural.Tiledrain_str.DoesNotExist:
+		except getattr(structural.Tiledrain_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['tile_name']))
-		except structural.Septic_str.DoesNotExist:
+		except getattr(structural.Septic_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sep_name']))
-		except structural.Filterstrip_str.DoesNotExist:
+		except getattr(structural.Filterstrip_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['vfs_name']))
-		except structural.Grassedww_str.DoesNotExist:
+		except getattr(structural.Grassedww_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['grww_name']))
-		except structural.Bmpuser_str.DoesNotExist:
+		except getattr(structural.Bmpuser_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['bmp_name']))
 		except Exception as ex:
@@ -118,11 +121,12 @@ def landuseId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
-			m = lum.Landuse_lum.get(lum.Landuse_lum.id == id)
+			m = lum.Landuse_lum.get(getattr(lum.Landuse_lum, 'id') == id)
 			result = save_landuse_args(m, args)
 
 			rh.close()
@@ -130,43 +134,43 @@ def landuseId(id):
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except lum.Landuse_lum.DoesNotExist:
+		except getattr(lum.Landuse_lum, 'DoesNotExist'):
 			rh.close()
 			abort(404, 'Land use properties {id} does not exist'.format(id=id))
-		except init.Plant_ini.DoesNotExist:
+		except getattr(init.Plant_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['plnt_com_name']))
-		except lum.Management_sch.DoesNotExist:
+		except getattr(lum.Management_sch, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['mgt_name']))
-		except lum.Cntable_lum.DoesNotExist:
+		except getattr(lum.Cntable_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['cn2_name']))
-		except lum.Cons_prac_lum.DoesNotExist:
+		except getattr(lum.Cons_prac_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['cons_prac_name']))
-		except hru_parm_db.Urban_urb.DoesNotExist:
+		except getattr(hru_parm_db.Urban_urb, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['urban_name']))
-		except lum.Ovn_table_lum.DoesNotExist:
+		except getattr(lum.Ovn_table_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['ov_mann_name']))
-		except structural.Tiledrain_str.DoesNotExist:
+		except getattr(structural.Tiledrain_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['tile_name']))
-		except structural.Septic_str.DoesNotExist:
+		except getattr(structural.Septic_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sep_name']))
-		except structural.Filterstrip_str.DoesNotExist:
+		except getattr(structural.Filterstrip_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['vfs_name']))
-		except structural.Grassedww_str.DoesNotExist:
+		except getattr(structural.Grassedww_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['grww_name']))
-		except structural.Bmpuser_str.DoesNotExist:
+		except getattr(structural.Bmpuser_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['bmp_name']))
 		except Exception as ex:
@@ -182,7 +186,8 @@ def landuseMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -211,7 +216,7 @@ def landuseMany():
 			if 'bmp_name' in args:
 				param_dict['bmp_id'] = RestHelpers.get_id_from_name(structural.Bmpuser_str, args['bmp_name'])
 
-			query = lum.Landuse_lum.update(param_dict).where(lum.Landuse_lum.id.in_(args['selected_ids']))
+			query = lum.Landuse_lum.update(param_dict).where(getattr(lum.Landuse_lum, 'id').in_(args['selected_ids']))
 			result = query.execute()
 
 			rh.close()
@@ -219,37 +224,37 @@ def landuseMany():
 				return '', 200
 
 			abort(400, 'Unable to update properties.')
-		except init.Plant_ini.DoesNotExist:
+		except getattr(init.Plant_ini, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['plnt_com_name']))
-		except lum.Management_sch.DoesNotExist:
+		except getattr(lum.Management_sch, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['mgt_name']))
-		except lum.Cntable_lum.DoesNotExist:
+		except getattr(lum.Cntable_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['cn2_name']))
-		except lum.Cons_prac_lum.DoesNotExist:
+		except getattr(lum.Cons_prac_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['cons_prac_name']))
-		except hru_parm_db.Urban_urb.DoesNotExist:
+		except getattr(hru_parm_db.Urban_urb, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['urban_name']))
-		except lum.Ovn_table_lum.DoesNotExist:
+		except getattr(lum.Ovn_table_lum, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['ov_mann_name']))
-		except structural.Tiledrain_str.DoesNotExist:
+		except getattr(structural.Tiledrain_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['tile_name']))
-		except structural.Septic_str.DoesNotExist:
+		except getattr(structural.Septic_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['sep_name']))
-		except structural.Filterstrip_str.DoesNotExist:
+		except getattr(structural.Filterstrip_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['vfs_name']))
-		except structural.Grassedww_str.DoesNotExist:
+		except getattr(structural.Grassedww_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['grww_name']))
-		except structural.Bmpuser_str.DoesNotExist:
+		except getattr(structural.Bmpuser_str, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['bmp_name']))
 		except Exception as ex:
@@ -396,7 +401,8 @@ def mgt_sch():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -408,15 +414,15 @@ def mgt_sch():
 			for a in args['auto_ops']:
 				try:
 					dt = decision_table.D_table_dtl.get((decision_table.D_table_dtl.file_name == 'lum.dtl') & (decision_table.D_table_dtl.name == a['name']))
-					new_auto.append({'management_sch_id': m.id, 'd_table_id': dt.id, 'plant1': a['plant1'], 'plant2': a['plant2']})
-				except decision_table.D_table_dtl.DoesNotExist:
+					new_auto.append({'management_sch_id': getattr(m, 'id'), 'd_table_id': dt.id, 'plant1': a['plant1'], 'plant2': a['plant2']})
+				except getattr(decision_table.D_table_dtl, 'DoesNotExist'):
 					abort(404, message='Decision table {name} does not exist'.format(name=a['name']))
 
 			new_ops = []
 			order = 1
 			for o in args['operations']:
 				new_ops.append({
-					'management_sch_id': m.id,
+					'management_sch_id': getattr(m, 'id'),
 					'op_typ': o['op_typ'],
 					'mon': o['mon'],
 					'day': o['day'],
@@ -432,7 +438,7 @@ def mgt_sch():
 			lib.bulk_insert(base.db, lum.Management_sch_op, new_ops)
 
 			rh.close()
-			return {'id': m.id }, 201
+			return {'id': getattr(m, 'id') }, 201
 		except IntegrityError as e:
 			rh.close()
 			abort(400, 'Name must be unique.')
@@ -451,11 +457,12 @@ def mgt_schId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
-			m = lum.Management_sch.get(lum.Management_sch.id == id)
+			m = lum.Management_sch.get(getattr(lum.Management_sch, 'id') == id)
 			m.name = args['name']
 			m.save()
 
@@ -464,7 +471,7 @@ def mgt_schId(id):
 				try:
 					dt = decision_table.D_table_dtl.get((decision_table.D_table_dtl.file_name == 'lum.dtl') & (decision_table.D_table_dtl.name == a['name']))
 					new_auto.append({'management_sch_id': m.id, 'd_table_id': dt.id, 'plant1': a['plant1'], 'plant2': a['plant2']})
-				except decision_table.D_table_dtl.DoesNotExist:
+				except getattr(decision_table.D_table_dtl, 'DoesNotExist'):
 					abort(404, message='Decision table {name} does not exist'.format(name=a['name']))
 
 			new_ops = []
@@ -483,18 +490,18 @@ def mgt_schId(id):
 				})
 				order += 1
 
-			lum.Management_sch_auto.delete().where(lum.Management_sch_auto.management_sch_id == m.id).execute()
+			lum.Management_sch_auto.delete().where(getattr(lum.Management_sch_auto, 'management_sch_id') == m.id).execute()
 			lib.bulk_insert(base.db, lum.Management_sch_auto, new_auto)
 
-			lum.Management_sch_op.delete().where(lum.Management_sch_op.management_sch_id == m.id).execute()
+			lum.Management_sch_op.delete().where(getattr(lum.Management_sch_op, 'management_sch_id') == m.id).execute()
 			lib.bulk_insert(base.db, lum.Management_sch_op, new_ops)
 
 			rh.close()
 			return '', 200
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except lum.Management_sch.DoesNotExist:
+		except getattr(lum.Management_sch, 'DoesNotExist'):
 			rh.close()
 			abort(404, 'Management schedule {id} does not exist'.format(id=id))
 		except Exception as ex:

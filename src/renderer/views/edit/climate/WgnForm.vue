@@ -542,8 +542,8 @@
 					<error-alert :text="page.values.delete.error"></error-alert>
 
 					<p>
-						Are you sure you want to delete <strong>{{page.values.delete.name}}</strong>?
-						This action is permanent and cannot be undone. 
+						Yakin akan menghapus data <strong>{{page.values.delete.name}}</strong>?
+						Tindakan ini bersifat permanen dan tidak dapat dibatalkan. 
 					</p>
 				</v-card-text>
 				<v-divider></v-divider>

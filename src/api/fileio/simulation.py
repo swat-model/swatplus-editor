@@ -1,7 +1,9 @@
 from .base import BaseFileModel, FileColumn as col
 from helpers import utils
 
-from peewee import *
+from peewee import (
+	fn
+)
 
 import database.project.simulation as db
 from database.project.regions import Ls_unit_def
@@ -169,7 +171,7 @@ class Print_prt(BaseFileModel):
 				file.write("\n")
 
 				already_written = []
-				for obj in row.objects.order_by(obj_table.id):
+				for obj in row.objects.order_by(getattr(obj_table, 'id')):
 					if obj.name in already_written:
 						continue
 					utils.write_string(file, obj.name, direction="left")
@@ -192,7 +194,7 @@ class Object_cnt(BaseFileModel):
 
 	def write(self):
 		table = db.Object_cnt
-		order_by = db.Object_cnt.id
+		order_by = getattr(db.Object_cnt, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:

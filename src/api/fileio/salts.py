@@ -1,5 +1,7 @@
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
+from peewee import (
+	prefetch
+)
 import database.project.salts as db
 from helpers import utils
 import os.path
@@ -69,14 +71,14 @@ class Salt_recall_rec(BaseFileModel):
 				rec_typ = ob_typ
 				
 			if delete_existing:
-				db.Salt_recall_dat.delete().where(db.Salt_recall_dat.recall_rec_id == recall_rec_id).execute()
+				db.Salt_recall_dat.delete().where(getattr(db.Salt_recall_dat, 'recall_rec_id') == recall_rec_id).execute()
 
 			db_lib.bulk_insert(project_base.db, db.Salt_recall_dat, rows)
-			db.Salt_recall_rec.update(rec_typ=rec_typ).where(db.Salt_recall_rec.id == recall_rec_id).execute()
+			db.Salt_recall_rec.update(rec_typ=rec_typ).where(getattr(db.Salt_recall_rec, 'id') == recall_rec_id).execute()
 	
 	def write(self):
 		table = db.Salt_recall_rec
-		order_by = db.Salt_recall_rec.id
+		order_by = getattr(db.Salt_recall_rec, 'id')
 		data = table.select().where(table.rec_typ != 4)
 
 		module = get_salt_module()
@@ -84,7 +86,7 @@ class Salt_recall_rec(BaseFileModel):
 		if data.count() > 0 and module.enabled and module.recall:
 			with open(self.file_name, 'w') as file:
 				file.write(self.get_meta_line())
-				cols = [col(table.id),
+				cols = [col(getattr(table, 'id')),
 						col(table.name, direction="left"),
 						col(table.rec_typ),
 						col("file", not_in_db=True, padding_override=utils.DEFAULT_STR_PAD, direction="left")]
@@ -109,7 +111,7 @@ class Salt_recall_rec(BaseFileModel):
 		with open(file_name, 'w') as file:
 			time_sim = simulation.Time_sim.get()			
 			valid_data = []
-			for row in data.order_by(db.Salt_recall_dat.yr, db.Salt_recall_dat.jday, db.Salt_recall_dat.id):
+			for row in data.order_by(db.Salt_recall_dat.yr, db.Salt_recall_dat.jday, getattr(db.Salt_recall_dat, 'id')):
 				valid_row = row.yr >= time_sim.yrc_start and row.yr <= time_sim.yrc_end
 				rec_typ = row.recall_rec.rec_typ
 				if valid_row and rec_typ == 1 and row.yr == time_sim.yrc_start: #daily
@@ -189,7 +191,7 @@ class Salt_atmo_cli(BaseFileModel):
 		csv_reader = csv.reader(csv_file, dialect)
 
 		if hasHeader:
-			headerLine = next(csv_reader)
+			next(csv_reader)
 
 		i = 0
 		stations_to_ids = {}
@@ -409,7 +411,7 @@ class Salt_road(BaseFileModel):
 		csv_reader = csv.reader(csv_file, dialect)
 
 		if hasHeader:
-			headerLine = next(csv_reader)
+			next(csv_reader)
 
 		i = 0
 		stations_to_ids = {}
@@ -583,9 +585,9 @@ class Salt_fertilizer_frt(BaseFileModel):
 
 			csv_reader = csv.reader(csv_file, dialect)
 			if hasHeader:
-				headerLine = next(csv_reader)
+				next(csv_reader)
 
-			row_names = { v.name: v.id for v in Fertilizer_frt.select().order_by(Fertilizer_frt.id) }
+			row_names = { v.name: v.id for v in Fertilizer_frt.select().order_by(getattr(Fertilizer_frt, 'id')) }
 
 			rows = []
 			for val in csv_reader:
@@ -612,7 +614,7 @@ class Salt_fertilizer_frt(BaseFileModel):
 		db_lib.bulk_insert(project_base.db, db.Salt_fertilizer_frt, rows)
 
 	def write_csv(self):
-		stations = Fertilizer_frt.select().order_by(Fertilizer_frt.id)
+		stations = Fertilizer_frt.select().order_by(getattr(Fertilizer_frt, 'id'))
 
 		with open(self.file_name, mode='w') as file:
 			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -628,7 +630,7 @@ class Salt_fertilizer_frt(BaseFileModel):
 
 	def write(self):
 		module = get_salt_module()
-		stations = Fertilizer_frt.select().order_by(Fertilizer_frt.id)
+		stations = Fertilizer_frt.select().order_by(getattr(Fertilizer_frt, 'id'))
 
 		if stations.count() > 0 and module.enabled and module.fert:
 			with open(self.file_name, 'w') as file:
@@ -686,7 +688,7 @@ class Salt_urban(BaseFileModel):
 
 			csv_reader = csv.reader(csv_file, dialect)
 			if hasHeader:
-				headerLine = next(csv_reader)
+				next(csv_reader)
 
 			row_names = { v.name: v.id for v in Urban_urb.select().order_by(Urban_urb.id) }
 
@@ -789,9 +791,9 @@ class Salt_plants(BaseFileModel):
 
 			csv_reader = csv.reader(csv_file, dialect)
 			if hasHeader:
-				headerLine = next(csv_reader)
+				next(csv_reader)
 
-			row_names = { v.name: v.id for v in Plants_plt.select().order_by(Plants_plt.id) }
+			row_names = { v.name: v.id for v in Plants_plt.select().order_by(getattr(Plants_plt, 'id')) }
 
 			rows = []
 			for val in csv_reader:
@@ -820,7 +822,7 @@ class Salt_plants(BaseFileModel):
 		db_lib.bulk_insert(project_base.db, db.Salt_plants, rows)
 
 	def write_csv(self):
-		stations = Plants_plt.select().order_by(Plants_plt.id)
+		stations = Plants_plt.select().order_by(getattr(Plants_plt, 'id'))
 
 		with open(self.file_name, mode='w') as file:
 			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -843,7 +845,7 @@ class Salt_plants(BaseFileModel):
 
 	def write(self, uptake_file_name):
 		module = get_salt_module()
-		stations = Plants_plt.select().order_by(Plants_plt.id)
+		stations = Plants_plt.select().order_by(getattr(Plants_plt, 'id'))
 
 		if stations.count() > 0 and module.enabled:
 			with open(self.file_name, 'w') as file:
@@ -989,7 +991,7 @@ class Salt_hru_ini_cs(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
-		table = db.Salt_hru_ini_cs.select().order_by(db.Salt_hru_ini_cs.id)
+		table = db.Salt_hru_ini_cs.select().order_by(getattr(db.Salt_hru_ini_cs, 'id'))
 
 		if table.count() > 0:
 			with open(self.file_name, 'w') as file:
@@ -1064,9 +1066,9 @@ class Salt_irrigation(BaseFileModel):
 
 			csv_reader = csv.reader(csv_file, dialect)
 			if hasHeader:
-				headerLine = next(csv_reader)
+				next(csv_reader)
 
-			row_names = { v.name: v.id for v in db.Salt_hru_ini_cs.select().order_by(db.Salt_hru_ini_cs.id) }
+			row_names = { v.name: v.id for v in db.Salt_hru_ini_cs.select().order_by(getattr(db.Salt_hru_ini_cs, 'id')) }
 
 			rows = []
 			for val in csv_reader:
@@ -1093,7 +1095,7 @@ class Salt_irrigation(BaseFileModel):
 		db_lib.bulk_insert(project_base.db, db.Salt_irrigation, rows)
 
 	def write_csv(self):
-		stations = db.Salt_hru_ini_cs.select().order_by(db.Salt_hru_ini_cs.id)
+		stations = db.Salt_hru_ini_cs.select().order_by(getattr(db.Salt_hru_ini_cs, 'id'))
 
 		with open(self.file_name, mode='w') as file:
 			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -1109,7 +1111,7 @@ class Salt_irrigation(BaseFileModel):
 
 	def write(self):
 		module = get_salt_module()
-		stations = db.Salt_hru_ini_cs.select().order_by(db.Salt_hru_ini_cs.id)
+		stations = db.Salt_hru_ini_cs.select().order_by(getattr(db.Salt_hru_ini_cs, 'id'))
 
 		if stations.count() > 0 and module.enabled and module.irrigation:
 			with open(self.file_name, 'w') as file:

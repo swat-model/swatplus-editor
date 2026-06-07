@@ -1,4 +1,11 @@
-from peewee import *
+from peewee import (
+    BooleanField,
+    TextField,
+    IntegerField,
+    CharField,
+    ForeignKeyField,
+    DoubleField
+)
 from . import base, hru_parm_db, soils
 from .salts import Salt_hru_ini_cs
 

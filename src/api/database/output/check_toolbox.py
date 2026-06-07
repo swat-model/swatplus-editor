@@ -1,4 +1,5 @@
 import json
+from typing import Union
 
 # Note: the interface Run page expects only _aa tables here. Update if that changes.
 required_tables = [
@@ -212,13 +213,13 @@ class CheckToolboxData(CheckToolboxBase):
 class CheckReservoirRow(CheckToolboxBase):
 	def __init__(self):
 		self.id = ''
-		self.sediment = 0
-		self.phosphorus = 0
-		self.nitrogen = 0
-		self.volumeRatio = 0
-		self.fractionEmpty = 0
-		self.seepage = 0
-		self.evapLoss = 0
+		self.sediment: float = 0.0
+		self.phosphorus: float = 0.0
+		self.nitrogen: float = 0.0
+		self.volumeRatio: Union[int, float, str] = 0
+		self.fractionEmpty: Union[int, float, str] = 0
+		self.seepage: float = 0.0
+		self.evapLoss: float = 0.0
 
 
 class CheckAvgTrappingEfficiency(CheckToolboxBase):
@@ -245,11 +246,11 @@ class CheckAvgReservoirTrend(CheckToolboxBase):
 
 class CheckToolboxPointSourcesLoad(CheckToolboxBase):
 	def __init__(self):
-		self.flow = 0
-		self.sediment = 0
-		self.nitrogen = 0
-		self.phosphorus = 0
-
+		self.flow: float = 0.0
+		self.sediment: float = 0.0
+		self.nitrogen: float = 0.0
+		self.phosphorus: float = 0.0
+  
 
 class CheckToolboxDataWarnings(CheckToolboxBase):
 	def __init__(self):

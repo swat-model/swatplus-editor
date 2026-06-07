@@ -8,9 +8,12 @@ from database.project.salts import Salt_recall_rec, Salt_recall_dat
 from fileio import base as fileio
 from fileio import connect, exco, dr, recall, climate, channel, aquifer, hydrology, reservoir, hru, lum, soils, init, routing_unit, regions, simulation, hru_parm_db, config, ops, structural, decision_table, basin, change, gwflow, salts
 
+from typing import cast, Optional
+from peewee import Model, ModelSelect
+
 import sys
 import argparse
-import os, os.path
+import os
 import json
 
 dtl_names = [
@@ -36,7 +39,7 @@ class ImportExportData(ExecutableApi):
 		self.version = version
 		self.input_files_dir = input_files_dir
 		self.rec_typ = rec_typ
-		self.column_name = column_name
+		self.column_name = column_name or None
 		self.swat_version = swat_version
 
 		if self.table is None:
@@ -143,7 +146,7 @@ class ImportExportData(ExecutableApi):
 			lum.Management_sch(self.file_name).read()
 		elif self.table_name == 'gwflow_grid':
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
-			gwflow_writer.read_grid(self.file_name, self.column_name)
+			gwflow_writer.read_grid(self.file_name, self.column_name or '')
 		elif self.table_name in gwflow_cell_tables:
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.read_cell_csv(self.file_name, self.table_name)
@@ -172,7 +175,7 @@ class ImportExportData(ExecutableApi):
 			lum.Management_sch(self.file_name, self.version).write()
 		elif self.table_name == 'gwflow_grid':
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
-			gwflow_writer.write_grid(self.file_name, self.column_name)
+			gwflow_writer.write_grid(self.file_name, self.column_name or '')
 		elif self.table_name in gwflow_cell_tables:
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.write_cell_csv(self.file_name, self.table_name)
@@ -182,10 +185,13 @@ class ImportExportData(ExecutableApi):
 		else:
 			ignored_cols = []
 			initial_headers = []
-			custom_query = None
+			custom_query: Optional[ModelSelect] = None
+			table_model = cast(Model, self.table)
 			if self.table_name == 'rec_dat' or self.table_name == 'salt_rec_dat':
 				ignored_cols.append('recall_rec')
-				custom_query = self.table.select().where(self.table.recall_rec_id == self.related_id)
+				custom_query = table_model.select().where(
+					getattr(table_model,'recall_rec_id') == self.related_id
+				)
 			elif self.table_name == 'rec_cnst':
 				ignored_cols.append('recall_rec')
 				ignored_cols.append('yr')
@@ -235,13 +241,14 @@ if __name__ == '__main__':
 	parser.add_argument("version", type=str, help="editor version", nargs="?")
 	parser.add_argument("input_files_dir", type=str, help="input files directory", nargs="?")
 	parser.add_argument("rec_typ", type=str, help="recall type", nargs="?")
+	parser.add_argument("column_name", type=str, help="primary key column name", nargs="?")
 	args = parser.parse_args()
 
 	del_ex = True if args.delete_existing == "y" else False
 	related_id = 0 if args.related_id is None else args.related_id
 	ignore_id = False if args.ignore_id == "n" else True
 
-	api = ImportExportData(args.file_name, args.table_name, args.db_file, del_ex, related_id, ignore_id, args.version, args.input_files_dir, args.rec_typ)
+	api = ImportExportData(args.file_name, args.table_name, args.db_file, del_ex, related_id, ignore_id, args.version, args.input_files_dir, args.rec_typ, args.column_name)
 	
 	if args.action == "import_csv":
 		api.import_csv()

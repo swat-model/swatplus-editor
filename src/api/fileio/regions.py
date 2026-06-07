@@ -3,7 +3,9 @@ from helpers import utils, table_mapper
 import database.project.regions as db
 from database.project import connect
 
-from peewee import *
+from peewee import (
+	fn
+)
 
 
 class Ls_unit_def(BaseFileModel):
@@ -17,12 +19,15 @@ class Ls_unit_def(BaseFileModel):
 
 	def write(self):
 		table = db.Ls_unit_def
-		order_by = db.Ls_unit_def.id
+		order_by = getattr(db.Ls_unit_def, 'id')
 		count = table.select().count()
 
 		element_table = db.Ls_unit_ele
 		first_elem = element_table.get()
 		obj_table = table_mapper.obj_typs.get(first_elem.obj_typ, None)
+		
+		if obj_table is None:
+			return
 		obj_ids = [o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)]
 
 		if count > 0:
@@ -59,12 +64,16 @@ class Ls_unit_ele(BaseFileModel):
 
 	def write(self):
 		table = db.Ls_unit_ele
-		order_by = db.Ls_unit_ele.id
+		order_by = getattr(db.Ls_unit_ele, 'id')
 
 		con_out_types = table.select(table.obj_typ).distinct()
 		con_out_id_dict = {}
+
+
 		for out_typ in con_out_types:
 			obj_table = table_mapper.obj_typs.get(out_typ.obj_typ, None)
+			if obj_table is None:
+				return
 			con_out_id_dict[out_typ.obj_typ] = [o.id for o in obj_table.select(obj_table.id).order_by(obj_table.id)]
 
 		if table.select().count() > 0:

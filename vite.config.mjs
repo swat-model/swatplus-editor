@@ -13,6 +13,17 @@ export default defineConfig({
     publicDir: 'public',
     server: {
         port: 8080,
+        // TAMBAHKAN BLOK PROXY INI:
+        proxy: {
+            // Jika API Anda di backend dipanggil dengan awalan '/api'
+            // atau Anda bisa menyesuaikan path-nya
+            '/api': {
+                target: 'http://localhost:5001',
+                changeOrigin: true,
+                secure: false,
+                rewrite: (path) => path.replace(/^\/api/, '')
+            }
+        }
     },
     open: false,
     build: {

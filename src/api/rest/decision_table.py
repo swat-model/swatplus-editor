@@ -2,7 +2,10 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	SQL,
+	IntegrityError
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project import decision_table as db
@@ -51,13 +54,13 @@ def save_dtable(args, table_name):
 	table, created = db.D_table_dtl.get_or_create(name=table_name, file_name=args['file_name'])
 
 	if not created:
-		cond_ids = db.D_table_dtl_cond.select(db.D_table_dtl_cond.id).where(db.D_table_dtl_cond.d_table_id == table.id)
-		act_ids = db.D_table_dtl_act.select(db.D_table_dtl_act.id).where(db.D_table_dtl_act.d_table_id == table.id)
-		db.D_table_dtl_cond_alt.delete().where(db.D_table_dtl_cond_alt.cond_id.in_(cond_ids)).execute()
-		db.D_table_dtl_act_out.delete().where(db.D_table_dtl_act_out.act_id.in_(act_ids)).execute()
+		cond_ids = db.D_table_dtl_cond.select(getattr(db.D_table_dtl_cond, 'id')).where(getattr(db.D_table_dtl_cond, 'd_table_id') == table.id)
+		act_ids = db.D_table_dtl_act.select(getattr(db.D_table_dtl_act, 'id')).where(getattr(db.D_table_dtl_act, 'd_table_id') == table.id)
+		db.D_table_dtl_cond_alt.delete().where(getattr(db.D_table_dtl_cond_alt, 'cond_id').in_(cond_ids)).execute()
+		db.D_table_dtl_act_out.delete().where(getattr(db.D_table_dtl_act_out, 'act_id').in_(act_ids)).execute()
 
-		db.D_table_dtl_cond.delete().where(db.D_table_dtl_cond.d_table_id == table.id).execute()
-		db.D_table_dtl_act.delete().where(db.D_table_dtl_act.d_table_id == table.id).execute()
+		db.D_table_dtl_cond.delete().where(getattr(db.D_table_dtl_cond, 'd_table_id') == table.id).execute()
+		db.D_table_dtl_act.delete().where(getattr(db.D_table_dtl_act, 'd_table_id') == table.id).execute()
 
 	table.description = None if 'description' not in args else args['description']
 	table.save()
@@ -68,18 +71,18 @@ def save_dtable(args, table_name):
 			cond.d_table = table
 			cond.var = c['var']
 			cond.obj = c['obj']
-			cond.obj_num = int(c['obj_num'])
+			setattr(cond, 'obj_num', int(c['obj_num']))
 			cond.lim_var = c['lim_var']
 			cond.lim_op = c['lim_op']
-			cond.lim_const = float(c['lim_const'])
-			cond.description = None if 'description' not in args else c['description']
+			setattr(cond, 'lim_const', float(c['lim_const']))
+			cond.description = None if 'description' not in args else c['description'] #type: ignore
 			cond.save()
 
 			if 'alts' in c:
-				for l in c['alts']:
+				for alt_item in c['alts']:
 					alt = db.D_table_dtl_cond_alt()
-					alt.cond = cond
-					alt.alt = l['alt']
+					alt.cond = cond #type: ignore
+					alt.alt = alt_item['alt']
 					alt.save()
 	
 	if 'actions' in args:
@@ -88,7 +91,7 @@ def save_dtable(args, table_name):
 			act.d_table = table
 			act.act_typ = a['act_typ']
 			act.obj = a['obj']
-			act.obj_num = int(a['obj_num'])
+			setattr(act, 'obj_num', int(a['obj_num']))
 			act.name = a['name']
 			act.option = a['option']
 			act.const = a['const']
@@ -99,7 +102,7 @@ def save_dtable(args, table_name):
 			if 'outcomes' in a:
 				for o in a['outcomes']:
 					oc = db.D_table_dtl_act_out()
-					oc.act = act
+					oc.act = act #type: ignore
 					oc.outcome = o['outcome']
 					oc.save()
 
@@ -107,6 +110,8 @@ def save_dtable(args, table_name):
 
 def get_selectlist_index(type):
 	table = table_mapper.types.get(type, None)
+	if table is None:
+		return
 
 	items = []
 	i = 1
@@ -117,6 +122,8 @@ def get_selectlist_index(type):
 
 def get_selectlist_text(type):
 	table = table_mapper.types.get(type, None)
+	if table is None:
+		return
 
 	items = table.select().order_by(table.name)
 	return [{'value': m.name, 'title': m.name} for m in items]
@@ -125,7 +132,8 @@ def get_selectlist_text(type):
 def tables(table_type):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	args = request.args
 	sort = RestHelpers.get_arg(args, 'sort', 'name')
@@ -142,7 +150,8 @@ def datasetTables(table_type):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	datasets_db = request.headers.get(rh.DATASETS_DB)
 	has_db,error = rh.init(project_db, datasets_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	args = request.args
 	sort = RestHelpers.get_arg(args, 'sort', 'name')
@@ -158,7 +167,8 @@ def datasetTables(table_type):
 def table():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	args = request.json
 	try:
@@ -168,7 +178,7 @@ def table():
 
 		rh.close()
 		return {'id': id }, 201
-	except IntegrityError as e:
+	except IntegrityError:
 		rh.close()
 		abort(400, 'Decision table name must be unique.')
 	except Exception as ex:
@@ -184,7 +194,8 @@ def tableId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -197,13 +208,13 @@ def tableId(id):
 
 			rh.close()
 			return {'id': new_table.id }, 201
-		except db.D_table_dtl.DoesNotExist:
+		except getattr(db.D_table_dtl, 'DoesNotExist'):
 			rh.close()
 			abort(404, 'Decision table {id} does not exist'.format(id=id))
 		except IndexError as e:
 			rh.close()
 			abort(400, 'Error parsing decision table. {}'.format(e))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Decision table name must be unique.')
 		except Exception as ex:
@@ -220,7 +231,8 @@ def datasetTableId(id):
 def name(file_name, name):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	table = db.D_table_dtl
 	try:
@@ -229,16 +241,17 @@ def name(file_name, name):
 		RestHelpers.get_obj_name(d)
 		rh.close()
 		return d
-	except table.DoesNotExist:
+	except getattr(table, 'DoesNotExist'):
 		rh.close()
-		abort(404, '{description} {id} does not exist'.format(description='Decision table', name=name))
+		abort(404, '{description} {name} does not exist'.format(description='Decision table', name=name))
 
 @bp.route('/dataset-builder', methods=['GET'])
 def datasetBuilder():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	datasets_db = request.headers.get(rh.DATASETS_DB)
 	has_db,error = rh.init(project_db, datasets_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	m = ds.D_table_dtl.select().where(ds.D_table_dtl.name.in_(builder_tables))
 	ml = [model_to_dict(v, backrefs=True, max_depth=2) for v in m]
@@ -264,7 +277,8 @@ def datasetBuilder():
 def builder():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	args = request.json
 	try:
@@ -284,11 +298,11 @@ def builder():
 					existing_count += 1
 					condition = name in existing_names
 
-		id = save_dtable(args, name)
+		id = save_dtable(args, name) 
 
 		rh.close()
 		return {'name': name }, 201
-	except IntegrityError as e:
+	except IntegrityError:
 		rh.close()
 		abort(400, 'Decision table name must be unique.')
 	except Exception as ex:

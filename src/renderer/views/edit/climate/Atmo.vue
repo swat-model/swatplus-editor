@@ -4,9 +4,13 @@
 	import { required, requiredIf, helpers } from '@vuelidate/validators';
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	import { storeToRefs } from 'pinia';
+	import {useTaskStore} from '@/store/task';
 	const electron = window.electronApi;
 	const route = useRoute();
 	const { api, constants, currentProject, errors, formatters, runProcess, utilities } = useHelpers();
+	const taskStore = useTaskStore();
+	const { task } = storeToRefs(taskStore);
 
 	const grid = ref();
 
@@ -70,16 +74,16 @@
 		}
 	});
 
-	let task:any = reactive({
-		type: 'import',
-		progress: {
-			percent: 0,
-			message: <string|null>null
-		},
-		error: <string|null>null,
-		running: false,
-		currentPid: null
-	});
+	// let task:any = reactive({
+	// 	type: 'import',
+	// 	progress: {
+	// 		percent: 0,
+	// 		message: <string|null>null
+	// 	},
+	// 	error: <string|null>null,
+	// 	running: false,
+	// 	currentPid: null
+	// });
 
 	const formRules = computed(() => ({
 		importMethod: { required },
@@ -190,29 +194,38 @@
 	async function importData() {
 		page.import.error = null;
 		page.import.saving = true;
-		task.type = 'import';
+		// task.type = 'import';
 
 		const valid = await v$.value.$validate();
 		if (!valid) {
 			page.import.error = 'Please enter a value for all fields below and try again.';
+			page.import.saving = false;
 		} else {
-			if (formatters.isNullOrEmpty(page.import.error)) {
-				let args = ['import_weather', 
-					'--project_db_file='+ currentProject.projectDb,
-					'--delete_existing=y',
-					'--import_type=atmo',
-					'--import_method='+ page.import.form.importMethod,
-					'--file1='+ page.import.form.file1,
-					'--file2='+ page.import.form.file2];
+			let args = ['import_weather', 
+				'--project_db_file='+ currentProject.projectDb,
+				'--delete_existing=y',
+				'--import_type=atmo',
+				'--import_method='+ page.import.form.importMethod,
+				'--file1='+ page.import.form.file1,
+				'--file2='+ page.import.form.file2];
 
-				errors.log(args);
+			v$.value.$reset();
+			taskStore.runTask(args, {
+				proc_name: 'atmo',
+				script_name: 'swatplus_api',
+				type: 'import', // Menggantikan task.type = 'import'
+				isGridTask : true,
+				routePath: route.path,
+				isGridTask : true
+        	}, async () => {
+            // Logika setelah import selesai
+            await get();
+            await grid?.value?.get();
+            closeTaskModals();
+        	});
 
-				v$.value.$reset();
-				page.import.saving = false;
-				runTask(args);
-			}
 		}
-
+		
 		page.import.saving = false;
 	}
 
@@ -222,73 +235,80 @@
 
 		if (files !== undefined) {
 			page.exported.fileName = files;
-			let args = ['export_csv', 
-				'--db_file='+ currentProject.projectDb,
-				'--file_name='+ files,
-				'--table_name=atmo_map'];
+			let args = [
+				'export_csv', 
+				'--db_file=' + currentProject.projectDb,
+				'--file_name=' + files,
+				'--table_name=atmo_map'
+			];
 
-			task.type = 'export';
-			runTask(args);
+			taskStore.runTask(args, {
+				proc_name: 'atmo',
+				script_name: 'swatplus_api',
+				type: 'export', // <-- Kirim tipe di sini
+				isGridTask : true,
+				routePath: route.path
+			}, () => {
+				// Logika setelah export selesai
+				page.exported.show = true;
+			});
 		}
 	}
 
-	function runTask(args:string[]) {
-		task.error = null;
-		task.running = true;
-		task.progress = {
-			percent: 0,
-			message: null
-		};
+	// function runTask(args:string[]) {
+	// 	task.error = null;
+	// 	task.running = true;
+	// 	task.progress = {
+	// 		percent: 0,
+	// 		message: null
+	// 	};
 
-		task.isGridTask = true;
-		task.currentPid = runProcess.runApiProc('atmo', 'swatplus_api', args);
-	}
+	// 	task.isGridTask = true;
+	// 	task.currentPid = runProcess.runApiProc('atmo', 'swatplus_api', args);
+	// }
 
-	let listeners:any = {
-		stdout: undefined,
-		stderr: undefined,
-		close: undefined
-	}
+	// let listeners:any = {
+	// 	stdout: undefined,
+	// 	stderr: undefined,
+	// 	close: undefined
+	// }
 
-	function initRunProcessHandlers() {
-		listeners.stdout = runProcess.processStdout('atmo', (data:any) => {
-			console.log(`stdout: ${data}`);
-			task.progress = runProcess.getApiOutput(data);
-		});
+	// function initRunProcessHandlers() {
+	// 	listeners.stdout = runProcess.processStdout('atmo', (data:any) => {
+	// 		console.log(`stdout: ${data}`);
+	// 		task.progress = runProcess.getApiOutput(data);
+	// 	});
 		
-		listeners.stderr = runProcess.processStderr('atmo', (data:any) => {
-			console.log(`stderr: ${data}`);
-			task.error = data;
-			task.running = false;
-		});
+	// 	listeners.stderr = runProcess.processStderr('atmo', (data:any) => {
+	// 		console.log(`stderr: ${data}`);
+	// 		task.error = data;
+	// 		task.running = false;
+	// 	});
 		
-		listeners.close = runProcess.processClose('atmo', async (code:any) => {
-			console.log(`close: ${code}`);
-			if (formatters.isNullOrEmpty(task.error)) {
-				if (task.type === 'import') {
-					await get();
-					await grid?.value?.get();
-					task.running = false;
-					closeTaskModals();
-				} else {
-					task.running = false;
-					page.exported.show = true;
-				}
-			}
-		});
-	}
+	// 	listeners.close = runProcess.processClose('atmo', async (code:any) => {
+	// 		console.log(`close: ${code}`);
+	// 		if (formatters.isNullOrEmpty(task.error)) {
+	// 			if (task.type === 'import') {
+	// 				await get();
+	// 				await grid?.value?.get();
+	// 				task.running = false;
+	// 				closeTaskModals();
+	// 			} else {
+	// 				task.running = false;
+	// 				page.exported.show = true;
+	// 			}
+	// 		}
+	// 	});
+	// }
 
-	function removeRunProcessHandlers() {
-		if (listeners.stdout) listeners.stdout();
-		if (listeners.stderr) listeners.stderr();
-		if (listeners.close) listeners.close();
-	}
+	// function removeRunProcessHandlers() {
+	// 	if (listeners.stdout) listeners.stdout();
+	// 	if (listeners.stderr) listeners.stderr();
+	// 	if (listeners.close) listeners.close();
+	// }
 
 	function cancelTask() {
-		task.error = null;
-		runProcess.killProcess(task.currentPid);
-		
-		task.running = false;
+		taskStore.cancelTask();
 		closeTaskModals();
 	}
 
@@ -298,12 +318,11 @@
 
 	onMounted(async () => {
 		page.loading = true;
-		initRunProcessHandlers();
+		// initRunProcessHandlers();
 		await get();
 		page.loading = false;
 	});
 	
-	onUnmounted(() => removeRunProcessHandlers());
 
 	watch(() => route.path, async () => await get())
 </script>
@@ -405,7 +424,7 @@
 					<v-card title="Import Atmospheric Deposition Data">
 						<v-card-text>
 							<error-alert :text="page.import.error"></error-alert>
-							<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing your data." :stack-trace="task.error.toString()" />
+							<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing your data." :stack-trace="task.error ? task.error.toString() : ''" />
 							
 							<div v-if="task.running">
 								<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped indeterminate></v-progress-linear>

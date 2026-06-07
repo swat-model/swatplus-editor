@@ -10,11 +10,12 @@ from database.datasets import definitions
 from helpers import utils
 from .import_weather import WeatherImport
 
-from peewee import *
+from peewee import fn, SqliteDatabase, CharField, IntegerField
 from playhouse.shortcuts import model_to_dict
-from playhouse.migrate import *
+from playhouse.migrate import SqliteMigrator, migrate
 
-import sys, traceback
+import sys
+import traceback
 import argparse
 import math
 
@@ -62,7 +63,7 @@ class GisImport(ExecutableApi):
 		SetupProjectDatabase.init(project_db_file)
 		self.project_db_file = project_db_file
 		self.project_db = project_base.db
-		self.config = None,
+		self.config = None
 		self.constant_ps = constant_ps
 		self.rollback_db = rollback_db
 
@@ -92,6 +93,14 @@ class GisImport(ExecutableApi):
 			self.delete_existing()
 
 	def insert_default(self):
+		if not hasattr(self, 'config') or self.config is None:
+			try:
+				from database.project.config import Project_config
+				self.config = Project_config.get()
+			except Exception:
+				import sys
+				sys.exit("Gagal memuat konfigurasi project. 'self.config' bernilai None.")
+    
 		if not self.config.imported_gis:
 			try:
 				if gis.Gis_subbasins.select().count() > 0:
@@ -151,10 +160,12 @@ class GisImport(ExecutableApi):
 				else:
 					self.emit_progress(95, "No GIS data to import...")
 			except Exception as err:
+				import traceback
 				if self.rollback_db is not None:
 					self.emit_progress(50, "Error occurred. Rolling back database...")
 					SetupProjectDatabase.rollback(self.project_db_file, self.rollback_db)
 					self.emit_progress(100, "Error occurred.")
+				import sys
 				sys.exit(traceback.format_exc())
 
 	def delete_existing(self):
@@ -255,7 +266,7 @@ class GisImport(ExecutableApi):
 
 			for water in gis.Gis_water.select():
 				channel_id = water.lsu // 10
-				channel = gis.Gis_channels.get_or_none(gis.Gis_channels.id == channel_id)
+				channel = gis.Gis_channels.get_or_none(getattr(gis.Gis_channels, 'id') == channel_id)
 				if channel is not None:
 					water.subbasin = channel.subbasin
 					water.save()
@@ -301,7 +312,7 @@ class GisImport(ExecutableApi):
 			rout_unit_cons = []
 
 			i = 1
-			for row in gis.Gis_lsus.select().order_by(gis.Gis_lsus.id):
+			for row in gis.Gis_lsus.select().order_by(getattr(gis.Gis_lsus, 'id')):
 				self.gis_to_rtu_ids[row.id] = i
 
 				rtu_name = get_name('rtu', row.id, cnt)
@@ -376,8 +387,8 @@ class GisImport(ExecutableApi):
 			aquifer_con_outs = []
 
 			i = 1
-			for row in gis.Gis_subbasins.select().order_by(gis.Gis_subbasins.id):
-				channels_in_sub = gis.Gis_channels.select(gis.Gis_channels.id).where(gis.Gis_channels.subbasin == row.id)
+			for row in gis.Gis_subbasins.select().order_by(getattr(gis.Gis_subbasins, 'id')):
+				channels_in_sub = gis.Gis_channels.select(getattr(gis.Gis_channels, 'id')).where(gis.Gis_channels.subbasin == row.id)
 				channel_ids = [v.id for v in channels_in_sub]
 
 				# Add floodplain aquifer
@@ -510,12 +521,12 @@ class GisImport(ExecutableApi):
 							if route is not None:
 								if route.sinkcat == RouteCat.RES:
 									add_con_out = True
-									end_res = gis.Gis_water.get(gis.Gis_water.id == route.sinkid)
+									end_res = gis.Gis_water.get(getattr(gis.Gis_water, 'id') == route.sinkid)
 									obj_id = self.gis_to_res_ids[end_res.id]
 									obj_typ = 'res'
 								elif route.sinkcat == RouteCat.CH:
 									add_con_out = True
-									end_cha = gis.Gis_channels.get(gis.Gis_channels.id == route.sinkid)
+									end_cha = gis.Gis_channels.get(getattr(gis.Gis_channels, 'id') == route.sinkid)
 									obj_id = self.gis_to_cha_ids[end_cha.id]
 									obj_typ = 'sdc'
 						
@@ -546,13 +557,13 @@ class GisImport(ExecutableApi):
 
 				bsn_area = 0
 				if len(outlets) < 900:
-					bsn_area = gis.Gis_subbasins.select(fn.Sum(gis.Gis_subbasins.area)).where(gis.Gis_subbasins.id << outlets).scalar()
+					bsn_area = gis.Gis_subbasins.select(fn.Sum(gis.Gis_subbasins.area)).where(getattr(gis.Gis_subbasins, 'id') << outlets).scalar()
 				else:
 					for s in gis.Gis_subbasins.select():
 						if s.id in outlets:
 							bsn_area += s.area
 
-				subbasin = gis.Gis_subbasins.get_or_none(gis.Gis_subbasins.id == sub)
+				subbasin = gis.Gis_subbasins.get_or_none(getattr(gis.Gis_subbasins, 'id') == sub)
 
 				if subbasin is None:
 					raise ValueError('Subbasin {} does not exist.'.format(sub))
@@ -619,7 +630,7 @@ class GisImport(ExecutableApi):
 		if num_outlets == 0:
 			raise ValueError("No watershed outlets found.")
 		elif num_outlets == 1:
-			all_subs = gis.Gis_subbasins.select(gis.Gis_subbasins.id)
+			all_subs = gis.Gis_subbasins.select(getattr(gis.Gis_subbasins, 'id'))
 			outlet_sub_map[outlet_sub_ids[0]] = [m.id for m in all_subs]
 		else:
 			sub_routes = gis.Gis_routing.select(gis.Gis_routing.sourceid, gis.Gis_routing.sourcecat, gis.Gis_routing.sinkid, gis.Gis_routing.sinkcat, gis.Gis_routing.percent).where((gis.Gis_routing.sourcecat == RouteCat.SUB) & (gis.Gis_routing.sourceid.not_in(outlet_sub_ids)))
@@ -636,7 +647,7 @@ class GisImport(ExecutableApi):
 					if out_route is None:
 						keep_searching = False
 					elif out_route.sinkcat == RouteCat.CH:
-						channel = gis.Gis_channels.get_or_none(gis.Gis_channels.id == out_route.sinkid)
+						channel = gis.Gis_channels.get_or_none(getattr(gis.Gis_channels, 'id') == out_route.sinkid)
 						if channel is None:
 							keep_searching = False
 						else:	
@@ -650,7 +661,7 @@ class GisImport(ExecutableApi):
 								searchcat = RouteCat.SUB
 								searchid = channel.subbasin
 					elif out_route.sinkcat in RouteCat.WaterTypes:
-						water = gis.Gis_water.get_or_none(gis.Gis_water.id == out_route.sinkid)
+						water = gis.Gis_water.get_or_none(getattr(gis.Gis_water, 'id') == out_route.sinkid)
 						if water is None:
 							keep_searching = False
 						else:
@@ -736,8 +747,8 @@ class GisImport(ExecutableApi):
 
 			i = 1
 			chatb = gis.Gis_channels
-			for row in gis.Gis_channels.select(chatb.id, 
-				chatb.subbasin, chatb.areac, chatb.len2, chatb.slo2, chatb.wid2, chatb.dep2, chatb.elevmin, chatb.elevmax).order_by(gis.Gis_channels.id):
+			for row in gis.Gis_channels.select(getattr(chatb, 'id'), 
+				chatb.subbasin, chatb.areac, chatb.len2, chatb.slo2, chatb.wid2, chatb.dep2, chatb.elevmin, chatb.elevmax).order_by(getattr(gis.Gis_channels, 'id')):
 				self.gis_to_cha_ids[row.id] = i
 
 				cha_name = get_name('cha', row.id, cnt)
@@ -754,7 +765,7 @@ class GisImport(ExecutableApi):
 
 					lat = lsu_coords.avg_lat
 					lon = lsu_coords.avg_lon
-				except gis.Gis_lsus.DoesNotExist:
+				except getattr(gis.Gis_lsus, 'DoesNotExist'):
 					pass
 
 				if lat is None or lon is None:
@@ -762,13 +773,15 @@ class GisImport(ExecutableApi):
 						pt = gis.Gis_points.get(gis.Gis_points.subbasin == row.subbasin)
 						lat = pt.lat
 						lon = pt.lon
-					except gis.Gis_points.DoesNotExist:
+					except getattr(gis.Gis_points, 'DoesNotExist'):
 						pass
 					except IndexError:
 						pass
 
-				if lat is None: lat = 0
-				if lon is None: lon = 0
+				if lat is None:
+					lat = 0
+				if lon is None: 
+					lon = 0
 
 				# Channel tables
 				hyd_cha = {
@@ -833,7 +846,7 @@ class GisImport(ExecutableApi):
 		"""
 		cnt = get_max_id(gis.Gis_water)
 		if reservoir.Reservoir_res.select().count() == 0:
-			res_query = gis.Gis_water.select().order_by(gis.Gis_water.id)
+			res_query = gis.Gis_water.select().order_by(getattr(gis.Gis_water, 'id'))
 			if res_query.count() > 0:
 				init = reservoir.Initial_res.create(
 					name='initres1',
@@ -942,7 +955,7 @@ class GisImport(ExecutableApi):
 		Insert exco (constant point source) SWAT+ tables from GIS database.
 		"""
 		if exco.Exco_exc.select().count() == 0:
-			exco_query = gis.Gis_points.select().where((gis.Gis_points.ptype == 'P') | (gis.Gis_points.ptype == 'I')).order_by(gis.Gis_points.id)
+			exco_query = gis.Gis_points.select().where((gis.Gis_points.ptype == 'P') | (gis.Gis_points.ptype == 'I')).order_by(getattr(gis.Gis_points, 'id'))
 
 			cnt = get_max_id(gis.Gis_points)
 			if exco_query.count() > 0:
@@ -1018,7 +1031,7 @@ class GisImport(ExecutableApi):
 		"""
 		if recall.Recall_rec.select().count() == 0:
 			rec_query = gis.Gis_points.select().where(
-				(gis.Gis_points.ptype == 'P') | (gis.Gis_points.ptype == 'I')).order_by(gis.Gis_points.id)
+				(gis.Gis_points.ptype == 'P') | (gis.Gis_points.ptype == 'I')).order_by(getattr(gis.Gis_points, 'id'))
 
 			cnt = get_max_id(gis.Gis_points)
 			if rec_query.count() > 0:
@@ -1272,7 +1285,7 @@ class GisImport(ExecutableApi):
 						cal_group=ds_m.cal_group
 					)
 
-				except ds_init.Plant_ini.DoesNotExist:
+				except getattr(ds_init.Plant_ini ,'DoesNotExist'):
 					pcom = None
 					if lu != 'barr':
 						pi = init.Plant_ini.create(
@@ -1303,7 +1316,7 @@ class GisImport(ExecutableApi):
 						cal_group=lum_default_cal_group
 					)
 
-			except hru_parm_db.Plants_plt.DoesNotExist:
+			except getattr(hru_parm_db.Plants_plt, 'DoesNotExist'):
 				try:
 					u = hru_parm_db.Urban_urb.get(hru_parm_db.Urban_urb.name ** lu)
 
@@ -1317,13 +1330,13 @@ class GisImport(ExecutableApi):
 						ov_mann=18,
 						cal_group=lum_default_cal_group
 					)
-				except hru_parm_db.Urban_urb.DoesNotExist:
+				except getattr(hru_parm_db.Urban_urb, 'DoesNotExist'):
 					raise ValueError('{name} does not exist in plants_plt or urban_urb, but is used as land use in your GIS HRUs.'.format(name=lu))
 
 		lum_dict = {}
 		for lu in lus:
-			l = lum.Landuse_lum.get(lum.Landuse_lum.name.contains(lu))
-			lum_dict[lu] = l.id
+			entry_id = lum.Landuse_lum.get(lum.Landuse_lum.name.contains(lu))
+			lum_dict[lu] = entry_id.id
 
 		return lum_dict
 
@@ -1552,14 +1565,14 @@ class GisImport(ExecutableApi):
 			try:
 				plant = hru_parm_db.Plants_plt.get(hru_parm_db.Plants_plt.name ** lu)
 				plants[lu] = plant
-			except hru_parm_db.Plants_plt.DoesNotExist:
+			except getattr(hru_parm_db.Plants_plt, 'DoesNotExist'):
 				try:
 					u = hru_parm_db.Urban_urb.get(hru_parm_db.Urban_urb.name ** lu)
 					urbans[lu] = u
 
 					plant = hru_parm_db.Plants_plt.get(hru_parm_db.Plants_plt.name ** 'gras')
 					plants[lu] = plant
-				except hru_parm_db.Urban_urb.DoesNotExist:
+				except getattr(hru_parm_db.Urban_urb, 'DoesNotExist'):
 					raise ValueError('{name} does not exist in plants_plt or urban_urb, but is used as land use in your GIS HRUs.'.format(name=lu))
 
 		distinct_soils = gis.Gis_hrus.select(gis.Gis_hrus.soil).distinct()
@@ -1569,7 +1582,7 @@ class GisImport(ExecutableApi):
 			try:
 				soil = soils.Soils_sol.get(soils.Soils_sol.name ** s)
 				hru_soils[s] = soil
-			except soils.Soils_sol.DoesNotExist:
+			except getattr(soils.Soils_sol, 'DoesNotExist'):
 				raise ValueError('{name} does not exist in soils_sol, but is used as soil in your GIS HRUs.'.format(name=s))
 
 		trop_bounds = definitions.Tropical_bounds.get()
@@ -1645,16 +1658,16 @@ class GisImport(ExecutableApi):
 				'lat': row.lat,
 				'soil_text': soil_lte.id,
 				'trop_flag': 'trop' if row.lat <= trop_bounds.north and row.lat >= trop_bounds.south else 'non_trop',
-				'grow_start': pl_grow_win.id if plant.plnt_typ == 'cold_annual' else pl_grow_sum.id,
-				'grow_end': pl_end_win.id if plant.plnt_typ == 'cold_annual' else pl_end_sum.id,
-				'plnt_typ': plant.id,
+				'grow_start': pl_grow_win.id if getattr(plant, 'plnt_typ') == 'cold_annual' else pl_grow_sum.id,
+				'grow_end': pl_end_win.id if getattr(plant, 'plnt_typ') == 'cold_annual' else pl_end_sum.id,
+				'plnt_typ': getattr(plant, 'id'),
 				'stress': 0,
 				'pet_flag': 'harg',
 				'irr_flag': 'no_irr',
 				'irr_src': 'outside_bsn',
 				't_drain': 0,
 				'usle_k': usle_k,
-				'usle_c': plant.usle_c_min,
+				'usle_c': getattr(plant, 'usle_c_min'),
 				'usle_p': 1,
 				'usle_ls': usle_ls
 			}
@@ -1775,8 +1788,8 @@ class GisImport(ExecutableApi):
 					used[id] = 1
 
 				if row.sourcecat == RouteCat.LSU and row.sinkcat == RouteCat.LSU:
-					upland_lsu = gis.Gis_lsus.get_or_none(gis.Gis_lsus.id == row.sourceid)
-					floodplain_lsu = gis.Gis_lsus.get_or_none(gis.Gis_lsus.id == row.sinkid)
+					upland_lsu = gis.Gis_lsus.get_or_none(getattr(gis.Gis_lsus, 'id') == row.sourceid)
+					floodplain_lsu = gis.Gis_lsus.get_or_none(getattr(gis.Gis_lsus, 'id') == row.sinkid)
 					if upland_lsu is not None and floodplain_lsu is not None:
 						upland_frac = upland_lsu.area / (upland_lsu.area + floodplain_lsu.area)
 						floodplain_route = gis.Gis_routing.get_or_none((gis.Gis_routing.sourceid == row.sinkid) & (gis.Gis_routing.sourcecat == RouteCat.LSU))
@@ -1821,7 +1834,7 @@ class GisImport(ExecutableApi):
 								})
 							elif floodplain_route.sinkcat == RouteCat.WTR or floodplain_route.sinkcat == RouteCat.RES or floodplain_route.sinkcat == RouteCat.PND:
 								res_id = self.gis_to_res_ids[floodplain_route.sinkid]
-								res = gis.Gis_water.get_or_none(gis.Gis_water.id == floodplain_route.sinkid)
+								res = gis.Gis_water.get_or_none(getattr(gis.Gis_water ,'id') == floodplain_route.sinkid)
 
 								if res is not None:
 									res_cha = res.lsu // 10
@@ -1874,7 +1887,7 @@ class GisImport(ExecutableApi):
 					used[id] += 1
 					add_con_out = True
 					if row.sinkcat == RouteCat.RES:
-						res = gis.Gis_water.get_or_none(gis.Gis_water.id == row.sinkid)
+						res = gis.Gis_water.get_or_none(getattr(gis.Gis_water, 'id') == row.sinkid)
 						sub = res.subbasin
 						if sub in self.sub_to_flood_aqu_id:
 							aqu_id = self.sub_to_flood_aqu_id[sub]
@@ -1961,7 +1974,7 @@ class GisImport(ExecutableApi):
 				raise ValueError('Project watershed area cannot be zero. Error summing HRU areas.')
 
 			for row in connect.Rout_unit_con.select().order_by(connect.Rout_unit_con.id):
-				if connect.Rout_unit_ele.select().where(connect.Rout_unit_ele.rtu_id == row.rtu.id).count() > 0:
+				if connect.Rout_unit_ele.select().where(getattr(connect.Rout_unit_ele, 'rtu_id') == row.rtu.id).count() > 0:
 					lsu_def = {
 						'id': row.rtu.id,
 						'name': row.name,

@@ -2,7 +2,9 @@ from .base import BaseFileModel, FileColumn as col
 from helpers import utils
 import database.project.ops as db
 import database.datasets.ops as db_datasets
-
+from peewee import (
+	DoesNotExist
+)
 from database.project import base as project_base
 from database.datasets import base as datasets_base
 from database import lib as db_lib
@@ -45,7 +47,7 @@ class Graze_ops(BaseFileModel):
 						'description': val[6]
 					}
 					data.append(d)
-				except Fertilizer_frt.DoesNotExist:
+				except DoesNotExist:
 					raise ValueError("Could not find matching fertilizer {fert_name} in database.".format(fert_name=fert_name))
 
 			i += 1
@@ -57,7 +59,7 @@ class Graze_ops(BaseFileModel):
 
 	def write(self):
 		table = db.Graze_ops
-		order_by = db.Graze_ops.id
+		order_by = getattr(db.Graze_ops, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:

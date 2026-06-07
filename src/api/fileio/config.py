@@ -1,7 +1,9 @@
 from .base import BaseFileModel, FileColumn as col
 from helpers import utils
 
-from peewee import *
+from peewee import (
+	prefetch
+)
 
 import database.project.config as db
 from database.project import simulation, climate, connect, channel, reservoir, routing_unit, hru, dr, aquifer, link, basin, hydrology, exco, recall, structural, hru_parm_db, ops, lum, change, init, soils, decision_table, regions, config, water_rights

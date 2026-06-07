@@ -1,4 +1,5 @@
 import json
+from typing import Optional, Union
 
 class CheckBase:
 	def toJson(self):
@@ -32,12 +33,12 @@ class CheckHydrology(CheckBase):
 		self.percolation = 0
 		self.revap = 0
 		self.recharge = 0
-		self.streamflowPrecipitation = 0
-		self.baseflowTotalFlow = 0
-		self.surfaceRunoffTotalFlow = 0
-		self.percolationPrecipitation = 0
-		self.deepRechargePrecipitation = 0
-		self.etPrecipitation = 0
+		self.streamflowPrecipitation: float = 0.0
+		self.baseflowTotalFlow: float = 0.0
+		self.surfaceRunoffTotalFlow: float = 0.0
+		self.percolationPrecipitation: float = 0
+		self.deepRechargePrecipitation: float = 0.0
+		self.etPrecipitation: float = 0
 		self.monthlyBasinValues = []
 		self.irrigation = 0
 		self.tile = 0
@@ -56,17 +57,17 @@ class CheckSediment(CheckBase):
 class CheckNitrogenCycle(CheckBase):
 	def __init__(self):
 		self.warnings = []
-		self.initialNO3 = 0
-		self.finalNO3 = 0
-		self.initialOrgN = 0
-		self.finalOrgN = 0
-		self.volatilization = 0
+		self.initialNO3: float | str = 0.0
+		self.finalNO3: float | str = 0.0
+		self.initialOrgN: float | str = 0.0
+		self.finalOrgN: float | str = 0.0
+		self.volatilization: float | str = 0.0
 		self.denitrification = 0
 		self.nH4InOrgNFertilizer = 0
 		self.nO3InOrgNFertilizer = 0
 		self.plantUptake = 0
-		self.nitrification = 0
-		self.mineralization = 0
+		self.nitrification: float | str = 0.0
+		self.mineralization: float | str = 0.0
 		self.totalFertilizerN = 0
 		self.orgNFertilizer = 0
 		self.activeToStableOrgN = 0
@@ -77,17 +78,17 @@ class CheckNitrogenCycle(CheckBase):
 class CheckPhosphorusCycle(CheckBase):
 	def __init__(self):
 		self.warnings = []
-		self.initialMinP = 0
-		self.finalMinP = 0
-		self.initialOrgP = 0
-		self.finalOrgP = 0
+		self.initialMinP: float | str = 0.0
+		self.finalMinP: float | str = 0.0
+		self.initialOrgP: float | str = 0.0
+		self.finalOrgP: float | str = 0.0
 		self.totalFertilizerP = 0
 		self.inOrgPFertilizer = 0
 		self.plantUptake = 0
-		self.orgPFertilizer = 0
+		self.orgPFertilizer: float | str = 0.0
 		self.residueMineralization = 0
-		self.mineralization = 0
-		self.activeSolution = 0
+		self.mineralization: float | str = 0.0
+		self.activeSolution: float | str = 0.0
 		self.stableActive = 0
 
 
@@ -100,8 +101,8 @@ class CheckPlantGrowth(CheckBase):
 		self.pStressDays = 0
 		self.avgBiomass = 0
 		self.avgYield = 0
-		self.nRemoved = 0
-		self.pRemoved = 0
+		self.nRemoved: float | str = 0.0
+		self.pRemoved: float | str = 0.0
 		self.totalFertilizerN = 0
 		self.totalFertilizerP = 0
 		self.plantUptakeN = 0
@@ -131,8 +132,8 @@ class CheckPhosphorusLosses(CheckBase):
 class CheckLandscapeLosses(CheckBase):
 	def __init__(self):
 		self.warnings = []
-		self.nLosses = None
-		self.pLosses = None
+		self.nLosses: Optional[CheckNitrogenLosses] = None
+		self.pLosses: Optional[CheckPhosphorusLosses] = None
 
 
 class CheckLandUseRow(CheckBase):
@@ -186,30 +187,30 @@ class CheckInstreamProcesses(CheckBase):
 
 class CheckPointSourcesLoad(CheckBase):
 	def __init__(self):
-		self.flow = 0
-		self.sediment = 0
-		self.nitrogen = 0
-		self.phosphorus = 0
+		self.flow: float = 0.0
+		self.sediment: float = 0.0
+		self.nitrogen: float = 0.0
+		self.phosphorus: float = 0.0
 
 
 class CheckPointSources(CheckBase):
 	def __init__(self):
 		self.warnings = []
-		self.subbasinLoad = None
-		self.pointSourceInletLoad = None
-		self.fromInletAndPointSource = None
+		self.subbasinLoad: Optional[CheckPointSourcesLoad] = None
+		self.pointSourceInletLoad: Optional[CheckPointSourcesLoad] = None
+		self.fromInletAndPointSource: Optional[CheckPointSourcesLoad] = None
 
 
 class CheckReservoirRow(CheckBase):
 	def __init__(self):
-		self.id = ''
-		self.sediment = 0
-		self.phosphorus = 0
-		self.nitrogen = 0
-		self.volumeRatio = 0
-		self.fractionEmpty = 0
-		self.seepage = 0
-		self.evapLoss = 0
+		self.id : str = ''
+		self.sediment : float = 0.0
+		self.phosphorus : float = 0.0
+		self.nitrogen : float = 0.0
+		self.volumeRatio: Union[float, str] = 0.0
+		self.fractionEmpty : Union[float, str] = 0.0
+		self.seepage : float = 0.0
+		self.evapLoss: float = 0.0
 
 
 class CheckAvgTrappingEfficiency(CheckBase):
@@ -228,16 +229,16 @@ class CheckAvgWaterLoss(CheckBase):
 
 class CheckAvgReservoirTrend(CheckBase):
 	def __init__(self):
-		self.numberReservoirs = 0
-		self.maxVolume = 0
-		self.minVolume = 0
-		self.fractionEmpty = 0
+		self.numberReservoirs : Union[float, str] = 0.0
+		self.maxVolume : Union[float, str] = 0.0
+		self.minVolume: Union[float, str] = 0.0
+		self.fractionEmpty: Union[float, str] = 0.0
 
 
 class CheckReservoirs(CheckBase):
 	def __init__(self):
 		self.warnings = []
 		self.reservoirRows = []
-		self.avgTrappingEfficiencies = None
-		self.avgWaterLosses = None
-		self.avgReservoirTrends = None
+		self.avgTrappingEfficiencies: Optional[CheckAvgTrappingEfficiency] = None
+		self.avgWaterLosses: Optional[CheckAvgWaterLoss] = None
+		self.avgReservoirTrends: Optional[CheckAvgReservoirTrend] = None

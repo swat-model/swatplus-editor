@@ -1,8 +1,16 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    DoubleField,
+    ForeignKeyField,
+    AutoField
+)
 from .base import BaseModel
 
 
 class Weather_wgn_cli(BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	lat = DoubleField()
 	lon = DoubleField()
@@ -30,6 +38,7 @@ class Weather_wgn_cli_mon(BaseModel):
 
 
 class Weather_sta_cli(BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	wgn = ForeignKeyField(Weather_wgn_cli, null=True, on_delete='SET NULL')
 	pcp = CharField(null=True)
@@ -97,6 +106,7 @@ class Atmo_cli(BaseModel):
 
 
 class Atmo_cli_sta(BaseModel):
+	id = AutoField()
 	atmo_cli = ForeignKeyField(Atmo_cli, on_delete='CASCADE', related_name='stations')
 	name = CharField()
 

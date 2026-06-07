@@ -125,8 +125,7 @@
 			</div>
 
 			<v-alert type="info" variant="tonal" class="mb-4">
-				For the fields below, you must enable and set up your data in the 
-				Constituents section.
+				Untuk kolom-kolom di bawah ini, Anda harus mengaktifkan dan mengatur data Anda di bagian Konstituen.
 			</v-alert>
 
 			<v-row>

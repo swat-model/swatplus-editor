@@ -1,9 +1,16 @@
-from peewee import *
+from peewee import (
+    CharField,
+    TextField,
+    ForeignKeyField,
+    DoubleField,
+    AutoField
+)
 from . import base, init
 from .salts import Salt_aqu_ini
 
 
 class Initial_aqu(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	org_min = ForeignKeyField(init.Om_water_ini, on_delete='SET NULL', null=True)
 	pest = ForeignKeyField(init.Pest_water_ini, on_delete='SET NULL', null=True)
@@ -15,6 +22,7 @@ class Initial_aqu(base.BaseModel):
 
 
 class Aquifer_aqu(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	init = ForeignKeyField(Initial_aqu, null=True, on_delete='SET NULL')
 	gw_flo = DoubleField()

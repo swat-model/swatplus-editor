@@ -1,4 +1,10 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    DoubleField,
+    TextField,
+    AutoField
+)
 from . import base
 
 class Plants_plt(base.BaseModel):
@@ -131,6 +137,7 @@ class Salts_slt(base.BaseModel):
 
 
 class Urban_urb(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	frac_imp = DoubleField()
 	frac_dc_imp = DoubleField()

@@ -27,7 +27,7 @@ class Delratio_del(BaseFileModel):
 
 	def write(self):
 		table = db.Delratio_del
-		order_by = db.Delratio_del.id
+		order_by = getattr(db.Delratio_del, 'id')
 
 		if table.select().count() > 0:
 			with open(self.file_name, 'w') as file:

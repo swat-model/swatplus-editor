@@ -1,5 +1,7 @@
+from peewee import (
+	JOIN
+)
 from .base import BaseFileModel, FileColumn as col
-from peewee import *
 from helpers import utils
 from database.project import init, connect
 import database.project.aquifer as db

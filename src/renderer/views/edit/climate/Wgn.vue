@@ -4,8 +4,13 @@
 	import { required, requiredIf, helpers } from '@vuelidate/validators';
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	import { storeToRefs } from 'pinia';
+	import { useTaskStore } from '@/store/task';
+
 	const route = useRoute();
 	const { api, constants, currentProject, errors, formatters, runProcess, utilities } = useHelpers();
+	const taskStore = useTaskStore();
+	const { task } = storeToRefs(taskStore);
 
 	const grid = ref();
 
@@ -36,7 +41,8 @@
 				db: <string|null>null,
 				table: <string|null>null,
 				useObserved: false,
-				deleteExisting: true
+				deleteExisting: true,
+				deleteExistingStations: false // ✅ Dikembalikan agar sinkron dengan fungsi hapus stasiun lama
 			},
 			options: {
 				methods: [
@@ -47,7 +53,8 @@
 			},
 			show: false,
 			error: <string|null>null,
-			saving: false
+			saving: false,
+			hasObservedOnLoad: false // ✅ Dikembalikan untuk melacak status data awal
 		},
 		delete: {
 			show: false,
@@ -60,16 +67,6 @@
 			error: <string|null>null,
 			saving: false
 		}
-	});
-
-	let task:any = reactive({
-		progress: {
-			percent: 0,
-			message: <string|null>null
-		},
-		error: <string|null>null,
-		running: false,
-		currentPid: null
 	});
 
 	const formRules = computed(() => ({
@@ -110,6 +107,8 @@
 
 			page.import.form.db = formatters.toValue(response.data.wgn_db, defaultDb);
 			page.import.form.table = formatters.toValue(response.data.wgn_table_name, defaultTable);
+			page.import.form.useObserved = response.data.has_observed_weather;
+			page.import.hasObservedOnLoad = response.data.has_observed_weather; // ✅ Diaktifkan kembali
 
 			await validateStations();
 		} catch (error) {
@@ -177,6 +176,7 @@
 			if (formatters.isNullOrEmpty(page.import.error)) {
 				let deleteExisting = page.import.form.deleteExisting ? 'y' : 'n';
 				let createStations = page.import.form.useObserved ? 'n' : 'y';
+				let deleteExistingStations = page.import.form.deleteExistingStations && page.import.hasObservedOnLoad ? 'y' : 'n'; // ✅ Dikembalikan
 
 				let args = ['import_weather', 
 					'--project_db_file='+ currentProject.projectDb,
@@ -185,69 +185,48 @@
 					'--create_stations='+ createStations,
 					'--import_method='+ page.import.form.method,
 					'--file1='+ page.import.form.csvFile1,
-					'--file2='+ page.import.form.csvFile2];
+					'--file2='+ page.import.form.csvFile2,
+					'--delete_existing_stations='+ deleteExistingStations]; // ✅ Dikembalikan agar argumen Python lengkap
 				errors.log(args);
 
 				v$.value.$reset();
+				
+				taskStore.runTask(args, {
+					proc_name: 'wgn', 
+					script_name: 'swatplus_api',
+					isGridTask : true,
+					type: 'import', // ✅ Diubah langsung ke string literal 'import' karena page.import.form.type tidak ada
+					routePath: route.path
+				}, async () => {
+					// ✨ REFRESH UI SETELAH SAKRAL SELESAI IMPOR ✨
+					taskStore.task.running = false;
+					page.import.saving = false;
+					closeTaskModals();
+					if (grid?.value) {
+						await grid.value.get();
+					}
+					await validateStations();
+
+				});
+				// closeTaskModals();
+			} else {
 				page.import.saving = false;
-				runTask(args);
 			}
-		}
+    	}
+	}
 
+	function openImportDialog() {
+		taskStore.task.error = null;
+		taskStore.task.running = false;
+		taskStore.task.progress = { percent: 0, message: '' };
+		
+		page.import.error = null;
 		page.import.saving = false;
-	}
-
-	function runTask(args:string[]) {
-		task.error = null;
-		task.running = true;
-		task.progress = {
-			percent: 0,
-			message: null
-		};
-
-		task.isGridTask = true;
-		task.currentPid = runProcess.runApiProc('wgn', 'swatplus_api', args);
-	}
-
-	let listeners:any = {
-		stdout: undefined,
-		stderr: undefined,
-		close: undefined
-	}
-
-	function initRunProcessHandlers() {
-		listeners.stdout = runProcess.processStdout('wgn', (data:any) => {
-			console.log(`stdout: ${data}`);
-			task.progress = runProcess.getApiOutput(data);
-		});
-		
-		listeners.stderr = runProcess.processStderr('wgn', (data:any) => {
-			console.log(`stderr: ${data}`);
-			task.error = data;
-			task.running = false;
-		});
-		
-		listeners.close = runProcess.processClose('wgn', async (code:any) => {
-			console.log(`close: ${code}`);
-			if (formatters.isNullOrEmpty(task.error)) {
-				await grid?.value?.get();
-				task.running = false;
-				closeTaskModals();
-			}
-		});
-	}
-
-	function removeRunProcessHandlers() {
-		if (listeners.stdout) listeners.stdout();
-		if (listeners.stderr) listeners.stderr();
-		if (listeners.close) listeners.close();
+		page.import.show = true; // Buka modal di sini
 	}
 
 	function cancelTask() {
-		task.error = null;
-		runProcess.killProcess(task.currentPid);
-		
-		task.running = false;
+		taskStore.cancelTask();
 		closeTaskModals();
 	}
 
@@ -257,12 +236,9 @@
 
 	onMounted(async () => {
 		page.loading = true;
-		initRunProcessHandlers();
 		await get();
 		page.loading = false;
 	});
-	
-	onUnmounted(() => removeRunProcessHandlers());
 
 	watch(() => route.path, async () => await get())
 </script>
@@ -278,10 +254,10 @@
 			<page-loading :loading="page.validate.loading"></page-loading>
 			<v-alert v-if="!page.validate.loading && page.validate.is_invalid" type="warning" icon="$warning" variant="tonal" border="start" class="mb-4">
 				<p>
-					You have weather generators in your model that do not have corresponding monthly values. 
-					Non-zero monthly values for each statistic are required for SWAT+ to run. 
-					Please use the import function with the SWAT+ WGN database if you are unsure, or refer to the SWAT+ documentation.
-					Stations with missing data are listed below.
+					Anda memiliki generator cuaca dalam model Anda yang tidak memiliki nilai bulanan yang sesuai.
+					Nilai bulanan bukan nol untuk setiap statistik diperlukan agar SWAT+ dapat berjalan.
+					Silakan gunakan fungsi impor dengan basis data SWAT+ WGN jika Anda tidak yakin, atau lihat dokumentasi SWAT+.
+					Stasiun dengan data yang hilang tercantum di bawah ini.
 				</p>
 				<ul>
 					<li v-for="station in page.validate.data">
@@ -292,7 +268,7 @@
 
 			<grid-view ref="grid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal">
 				<template #actions>
-					<v-btn variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import Data</v-btn>
+					<v-btn variant="flat" color="info" class="mr-2" @click="openImportDialog">Import Data</v-btn>
 					<v-btn v-if="table.total > 0" variant="flat" color="error" class="mr-2" @click="page.delete.show = true">Delete All</v-btn>
 				</template>
 			</grid-view>
@@ -303,8 +279,8 @@
 						<error-alert :text="page.delete.error"></error-alert>
 
 						<p>
-							Are you sure you want to delete <strong>ALL</strong> weather generators?
-							This action is permanent and cannot be undone. 
+							Yakin akan menghapus data <strong>ALL</strong> weather generators?
+							Tindakan ini bersifat permanen dan tidak dapat dibatalkan. 
 						</p>
 					</v-card-text>
 					<v-divider></v-divider>
@@ -319,7 +295,7 @@
 				<v-card title="Import Weather Generator Data">
 					<v-card-text>
 						<error-alert :text="page.import.error"></error-alert>
-						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing your data." :stack-trace="task.error.toString()" />
+						<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing your data." :stack-trace="task.error ? task.error.toString() : ''" />
 						
 						<div v-if="task.running">
 							<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped indeterminate></v-progress-linear>
@@ -358,7 +334,7 @@
 							<div v-else-if="page.import.form.method === 'two_file'">
 								<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 									<div>
-										Two CSV files are required. Please ensure the files you're importing are saved with UTF-8 encoding. 
+										Diperlukan dua file CSV. Pastikan file yang Anda impor disimpan dengan pengkodean UTF-8. 
 										<open-in-browser url="https://plus.swat.tamu.edu/downloads/sample_files/wgn/swatplus_tf_wgn_template.zip" text="Download a template."></open-in-browser>
 									</div>
 									<ol class="mb-0">
@@ -366,15 +342,15 @@
 											Stations CSV file:
 											<ul>
 												<li>Columns <code>id, name, lat, lon, elev, rain_yrs</code></li>
-												<li><code>id</code> should be uniquely numbered</li>
+												<li><code>id</code> harus diberi nomor unik</li>
 											</ul>
 										</li>
 										<li>
 											Monthly values CSV file:
 											<ul>
 												<li>Columns <code>id, wgn_id, month, tmp_max_ave, tmp_min_ave, tmp_max_sd, tmp_min_sd, pcp_ave, pcp_sd, pcp_skew, wet_dry, wet_wet, pcp_days, pcp_hhr, slr_ave, dew_ave, wnd_ave</code></li>
-												<li><code>id</code> should be uniquely numbered</li>
-												<li><code>wgn_id</code> corresponds to the <code>id</code> column from the stations file</li>
+												<li><code>id</code> harus diberi nomor unik</li>
+												<li><code>wgn_id</code> sesuai dengan <code>id</code> column dari file stasiun</li>
 											</ul>
 										</li>
 									</ol>
@@ -396,7 +372,7 @@
 							</div>
 							<div v-else-if="page.import.form.method === 'one_file'">
 								<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-									One CSV file is required. One station per row; all 12 months of data are in a single row. Please ensure the files you're importing are saved with UTF-8 encoding. 
+									Diperlukan satu file CSV. Satu stasiun per baris; semua data 12 bulan berada dalam satu baris. Pastikan file yang Anda impor disimpan dengan pengkodean UTF-8.
 									<open-in-browser url="https://plus.swat.tamu.edu/downloads/sample_files/wgn/swatplus_sf_wgn_template.csv" text="Download a template."></open-in-browser>
 								</v-alert>
 
@@ -416,7 +392,7 @@
 
 							<v-checkbox v-model="page.import.form.useObserved" hide-details>
 								<template #label>
-									Check if you are using observed weather data
+									Periksa apakah Anda menggunakan data cuaca yang diamati.
 								</template>
 							</v-checkbox>
 						</div>

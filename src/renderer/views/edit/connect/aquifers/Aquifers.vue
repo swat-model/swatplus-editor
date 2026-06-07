@@ -72,7 +72,7 @@
 			</file-header>
 
 			<v-alert v-if="data.use_gwflow" type="info" icon="$info" variant="tonal" border="start" class="mb-4">
-				Groundwater flow is enabled. Aquifers will not be used in this simulation, but are still shown below.
+				Aliran air tanah diaktifkan. Akuifer tidak akan digunakan dalam simulasi ini, tetapi tetap ditampilkan di bawah ini.
 			</v-alert>
 
 			<grid-view :api-url="table.apiUrl" :headers="table.headers"></grid-view>

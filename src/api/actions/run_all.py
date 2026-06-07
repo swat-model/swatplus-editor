@@ -9,7 +9,8 @@ from database.project.simulation import Time_sim
 
 import sys
 import argparse
-import os, os.path
+import os
+import os.path
 from datetime import datetime
 
 
@@ -58,6 +59,7 @@ class RunAll(ExecutableApi):
 
 		# Run the model
 		cwd = os.getcwd()
+		assert input_files_path is not None, "input_files_path tidak boleh None"
 		os.chdir(input_files_path)
 		run_result = os.system(swat_exe)
 		print(run_result)

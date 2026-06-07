@@ -1,7 +1,10 @@
+from flask import app, request
+
 from helpers.executable_api import Unbuffered
 from actions.setup_project import SetupProject
 from actions.import_gis import GisImport
 from actions.import_weather import WeatherImport, Swat2012WeatherImport, WgnImport, AtmoImport, NetCDFWeatherImport
+from actions.import_csv_weather import CsvWeatherImport
 from actions.read_output import ReadOutput
 from actions.write_files import WriteFiles
 from actions.create_databases import CreateDatasetsDb, CreateOutputDb, CreateProjectDb
@@ -14,9 +17,16 @@ from actions.load_scenarios import LoadScenarios
 from actions.get_swatplus_check import GetSwatplusCheck
 from actions.get_swatplus_check_toolbox import GetSwatplusCheckToolbox
 from database import soils
+from actions.mapdata import CheckMapData
+from actions.shpgeojson import sync_geojson, bulk_sync_geojson
+
+
+# import os
 
 import sys
+
 import argparse
+
 
 if __name__ == '__main__':
 	sys.stdout = Unbuffered(sys.stdout)
@@ -35,6 +45,11 @@ if __name__ == '__main__':
 	parser.add_argument("--file2", type=str, help="full path of file", nargs="?")
 	parser.add_argument("--nc_stations_list", type=str, help="full path of CSV file with NetCDF station coordinates and variable availability", nargs="?")
 	parser.add_argument("--nc_file", type=str, help="full path of NetCDF data file (.nc4) to copy to TxtInOut", nargs="?")
+	parser.add_argument("--delete_existing_stations", type=str, help="y/n delete existing stations first", nargs="?")
+	
+ 	# Tambahkan ini di bagian parser.add_argument
+	parser.add_argument("--csv_dir", type=str, help="path ke folder berisi file-file CSV stasiun", nargs="?")
+	parser.add_argument("--weather_output_dir", type=str, help="path untuk menyimpan file output .cli", nargs="?") 
 
 	# read output
 	parser.add_argument("--output_files_dir", type=str, help="full path of output files directory", nargs="?")
@@ -87,6 +102,14 @@ if __name__ == '__main__':
 	parser.add_argument("--ignore_cio_files", type=lambda s: [item for item in s.split(',')], help="list of file names to not include in file.cio", nargs="?")
 	parser.add_argument("--custom_cio_files", type=lambda s: [item for item in s.split(',')], help="list of file names of user-created files to add to file.cio", nargs="?")
 
+	parser.add_argument("--check_table", type=str, help="name of table to check", nargs="?")
+	
+	# sinkronisasi shapefile ke geojson
+	parser.add_argument("--shapefile_path", type=str, help="path ke file shp", nargs="?")
+	parser.add_argument("--geojson_path", type=str, help="path ke file geojson output", nargs="?")
+	parser.add_argument("--shapes_dir", type=str, help="path ke file shp", nargs="?")
+	parser.add_argument("--output_dir", type=str, help="path ke file geojson output", nargs="?")
+ 
 	args = parser.parse_args()
 
 	del_ex = True if args.delete_existing == "y" else False
@@ -113,6 +136,10 @@ if __name__ == '__main__':
 		if args.import_type == "observed":
 			api = WeatherImport(args.project_db_file, del_ex, cre_sta)
 			api.import_data()
+		elif args.import_type == "csv":
+			# print("DEBUG: API menerima perintah import CSV!")
+			api = CsvWeatherImport(args.project_db_file, del_ex, args.csv_dir, args.weather_output_dir)
+			api.run_import()
 		elif args.import_type == "observed2012":
 			api = Swat2012WeatherImport(args.project_db_file, del_ex, cre_sta, args.source_dir)
 			api.import_data()
@@ -210,3 +237,12 @@ if __name__ == '__main__':
 	elif args.action == "load_scenario":
 		api = LoadScenarios()
 		api.load(args.project_db_file, args.project_name)
+	elif args.action == "check_table":
+		api = CheckMapData(args.project_db_file, args.check_table)
+		print(api.check()) # Hasilnya akan dicetak ke stdout untuk dibaca oleh frontend
+	elif args.action == "sync_geojson":
+		sync_geojson(args.shapefile_path, args.geojson_path)
+	elif args.action == "bulk_sync_geojson":
+		results = bulk_sync_geojson(args.shapes_dir, args.output_dir)
+		print(results) # Hasilnya akan dicetak ke stdout untuk dibaca oleh frontend
+  

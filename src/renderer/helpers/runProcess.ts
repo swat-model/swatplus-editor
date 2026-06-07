@@ -1,10 +1,10 @@
-import { useErrorHandling } from './errorHandling';
+// import { useErrorHandling } from './errorHandling';
 import { useFormatters } from './formatters';
 import { useUtilities } from './utilities';
 
 export function useRunProcess() {
 	const electron = window.electronApi;
-	const errors = useErrorHandling();
+	// const errors = useErrorHandling();
 	const formatters = useFormatters();
 	const utilities = useUtilities();
 
@@ -51,10 +51,10 @@ export function useRunProcess() {
 		return electron.joinPaths([resultsPath(inputDir), 'swatplus_output.sqlite']);
 	}
 
-	const loadFromContextMenu = (callback:(_event:any, data:any) => any) => electron.loadFromContextMenu(callback);
-	const appUpdateStatus = (callback:(_event:any, data:any) => any) => electron.appUpdateStatus(callback);
-	const appUpdateDownloading = (callback:(_event:any, data:any) => any) => electron.appUpdateDownloading(callback);
-	const appUpdateDownloaded = (callback:(_event:any, data:any) => any) => electron.appUpdateDownloaded(callback);
+	const loadFromContextMenu = (callback:(_event:any, data:any) => any) => electron.loadFromContextMenu(callback as any);
+	const appUpdateStatus = (callback:(_event:any, data:any) => any) => electron.appUpdateStatus(callback as any);
+	const appUpdateDownloading = (callback:(_event:any, data:any) => any) => electron.appUpdateDownloading(callback as any);
+	const appUpdateDownloaded = (callback:(_event:any, data:any) => any) => electron.appUpdateDownloaded(callback as any);
 
 	function downloadUpdate() {
 		electron.downloadUpdate();

@@ -40,7 +40,7 @@ wa_src_name = 'Water allocation source'
 def source():
 	if request.method == 'GET':
 		table = db.Water_allocation_src_ob
-		filter_cols = [table.name]
+		filter_cols = [getattr(table, 'name')]
 		return DefaultRestMethods.get_paged_list(table, filter_cols)
 	elif request.method == 'POST':
 		return DefaultRestMethods.post(db.Water_allocation_src_ob, wa_src_name, extra_args=[{'name': 'water_allocation_id', 'type': int}])
@@ -64,7 +64,7 @@ wa_dmd_name = 'Water allocation demand object'
 def demand():
 	if request.method == 'GET':
 		table = db.Water_allocation_dmd_ob
-		filter_cols = [table.name]
+		filter_cols = [getattr(table, 'name')]
 		return DefaultRestMethods.get_paged_list(table, filter_cols)
 	elif request.method == 'POST':
 		return DefaultRestMethods.post(db.Water_allocation_dmd_ob, wa_dmd_name, extra_args=[{'name': 'water_allocation_id', 'type': int}])
@@ -88,7 +88,7 @@ wa_dmd_src_name = 'Water allocation demand source'
 def demandSource():
 	if request.method == 'GET':
 		table = db.Water_allocation_dmd_ob_src
-		filter_cols = [table.name]
+		filter_cols = [getattr(table, 'name')]
 		return DefaultRestMethods.get_paged_list(table, filter_cols)
 	elif request.method == 'POST':
 		return DefaultRestMethods.post(db.Water_allocation_dmd_ob_src, wa_dmd_src_name, extra_args=[{'name': 'water_allocation_dmd_ob_id', 'type': int}])

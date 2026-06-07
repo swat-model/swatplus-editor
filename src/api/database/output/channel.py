@@ -1,4 +1,6 @@
-from peewee import *
+from peewee import (
+    DoubleField
+)
 from .base import OutputBase
 
 

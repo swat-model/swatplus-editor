@@ -2,7 +2,10 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError,
+	SQL
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project.connect import Recall_con, Recall_con_out
@@ -77,7 +80,7 @@ def conOutId(id):
 
 def update_recall_rec(m, id, sim, new_rec_typ):
 	if m.rec_typ != new_rec_typ:
-		Recall_dat.delete().where(Recall_dat.recall_rec_id==id).execute()
+		Recall_dat.delete().where(getattr(Recall_dat, 'recall_rec_id')==id).execute()
 		rec = Recall_rec.get_or_none(Recall_rec.id == id)
 		name = '' if rec is None else rec.name
 
@@ -197,7 +200,8 @@ def propertiesId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		table = Recall_rec
 		item_description = 'Recall'
@@ -214,10 +218,10 @@ def propertiesId(id):
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except table.DoesNotExist:
+		except getattr(table, 'DoesNotExist'):
 			rh.close()
 			abort(404, '{item} {id} does not exist'.format(item=item_description, id=id))
 		except Exception as ex:
@@ -233,7 +237,8 @@ def propertiesMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -243,7 +248,7 @@ def propertiesMany():
 				param_dict['rec_typ'] = args['rec_typ']
 
 			con_table = Recall_con
-			con_prop_field = Recall_con.rec_id
+			con_prop_field = getattr(Recall_con, 'rec_id')
 			prop_table = Recall_rec
 
 			con_param_dict = {}
@@ -264,7 +269,7 @@ def propertiesMany():
 					query = prop_table.select().where(prop_table.id.in_(prop_ids))
 					sim = Time_sim.get_or_create_default()
 					for m in query:
-						update_recall_rec(project_base.db, m, m.id, sim, args['rec_typ'])
+						update_recall_rec(m, m.id, sim, args['rec_typ'])
 
 					query2 = prop_table.update(param_dict).where(prop_table.id.in_(prop_ids))
 					result = query2.execute()
@@ -287,7 +292,8 @@ def propertiesMany():
 def dataList(id):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	table = Recall_dat
 	args = request.args
@@ -296,11 +302,11 @@ def dataList(id):
 	page = RestHelpers.get_arg(args, 'page', 1)
 	per_page = RestHelpers.get_arg(args, 'per_page', 50)
 	
-	s = table.select().where(table.recall_rec_id == id)
+	s = table.select().where(getattr(table, 'recall_rec_id') == id)
 	total = s.count()
 
 	if sort == 'name':
-		sort_val = table.name if reverse != 'y' else table.name.desc()
+		sort_val = getattr(table, 'name') if reverse != 'y' else getattr(table, 'name').desc()
 	else:
 		sort_val = SQL('[{}]'.format(sort))
 		if reverse == 'y':

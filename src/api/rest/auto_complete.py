@@ -12,7 +12,8 @@ bp = Blueprint('auto_complete', __name__, url_prefix='/auto_complete')
 def getMatch(table_type, partial_name):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	table = table_mapper.types.get(table_type, None)
 
@@ -42,7 +43,8 @@ def getMatch(table_type, partial_name):
 def getAll(table_type):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	table = table_mapper.types.get(table_type, None)
 
@@ -63,7 +65,8 @@ def getAll(table_type):
 def getItemId(table_type, name):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	table = table_mapper.types.get(table_type, None)
 
@@ -83,7 +86,8 @@ def getItemId(table_type, name):
 def getSelectList(table_type, value):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
 	table = table_mapper.types.get(table_type, None)
 
@@ -112,9 +116,10 @@ def getSelectList(table_type, value):
 def getSubbasins():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
-	items = gis.Gis_subbasins.select().order_by(gis.Gis_subbasins.id)
+	items = gis.Gis_subbasins.select().order_by(getattr(gis.Gis_subbasins, 'id'))
 	rh.close()
 	return [{'value': m.id, 'text': 'Subbasin {}'.format(m.id)} for m in items]
 
@@ -122,13 +127,15 @@ def getSubbasins():
 def getLanduse():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
-	if 'selected_subs' not in request.json: abort(400, 'Selected subbasins were omitted from the request.')
+	if 'selected_subs' not in request.json: 
+		abort(400, 'Selected subbasins were omitted from the request.')
 	selected_subs = request.json['selected_subs']
 
-	chas = gis.Gis_channels.select(gis.Gis_channels.id).where(gis.Gis_channels.subbasin.in_(selected_subs))
-	lsus = gis.Gis_lsus.select(gis.Gis_lsus.id).where(gis.Gis_lsus.channel.in_(chas))
+	chas = gis.Gis_channels.select(getattr(gis.Gis_channels, 'id')).where(gis.Gis_channels.subbasin.in_(selected_subs))
+	lsus = gis.Gis_lsus.select(getattr(gis.Gis_lsus, 'id')).where(gis.Gis_lsus.channel.in_(chas))
 	items = gis.Gis_hrus.select(gis.Gis_hrus.landuse).distinct().where(gis.Gis_hrus.lsu.in_(lsus))
 	rh.close()
 	return [{'value': m.landuse, 'text': m.landuse} for m in items]
@@ -137,14 +144,16 @@ def getLanduse():
 def getSoils():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db:
+		abort(400, error)
 
-	if 'selected_subs' not in request.json: abort(400, 'Selected subbasins were omitted from the request.')
+	if 'selected_subs' not in request.json: 
+		abort(400, 'Selected subbasins were omitted from the request.')
 	selected_subs = request.json['selected_subs']
 	selected_landuse = request.json['selected_landuse']
 
-	chas = gis.Gis_channels.select(gis.Gis_channels.id).where(gis.Gis_channels.subbasin.in_(selected_subs))
-	lsus = gis.Gis_lsus.select(gis.Gis_lsus.id).where(gis.Gis_lsus.channel.in_(chas))
+	chas = gis.Gis_channels.select(getattr(gis.Gis_channels, 'id')).where(gis.Gis_channels.subbasin.in_(selected_subs))
+	lsus = gis.Gis_lsus.select(getattr(gis.Gis_lsus, 'id')).where(gis.Gis_lsus.channel.in_(chas))
 	items = gis.Gis_hrus.select(gis.Gis_hrus.soil).distinct().where((gis.Gis_hrus.lsu.in_(lsus)) & (gis.Gis_hrus.landuse.in_(selected_landuse)))
 	rh.close()
 	return [{'value': m.soil, 'text': m.soil} for m in items]
@@ -153,7 +162,8 @@ def getSoils():
 def getObjects(table_type):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	table = table_mapper.types.get(table_type, None)
 
@@ -202,39 +212,39 @@ def getObjects(table_type):
 			return abort(404, 'Could not find matching GIS table.')
 		
 		prop_data = {
-			'init_cha': (connect.Chandeg_con, channel.Channel_lte_cha, channel.Channel_lte_cha.init_id),
-			'hyd_sed_lte_cha': (connect.Chandeg_con, channel.Channel_lte_cha, channel.Channel_lte_cha.hyd_id),
-			'nut_cha': (connect.Chandeg_con, channel.Channel_lte_cha, channel.Channel_lte_cha.nut_id),
+			'init_cha': (connect.Chandeg_con, channel.Channel_lte_cha, getattr(channel.Channel_lte_cha,'init_id')),
+			'hyd_sed_lte_cha': (connect.Chandeg_con, channel.Channel_lte_cha, getattr(channel.Channel_lte_cha, 'hyd_id')),
+			'nut_cha': (connect.Chandeg_con, channel.Channel_lte_cha, getattr(channel.Channel_lte_cha, 'nut_id')),
 
-			'fld': (connect.Rout_unit_con, routing_unit.Rout_unit_rtu, routing_unit.Rout_unit_rtu.field_id),
-			'topo': (connect.Rout_unit_con, routing_unit.Rout_unit_rtu, routing_unit.Rout_unit_rtu.topo_id),
+			'fld': (connect.Rout_unit_con, routing_unit.Rout_unit_rtu, getattr(routing_unit.Rout_unit_rtu, 'field_id')),
+			'topo': (connect.Rout_unit_con, routing_unit.Rout_unit_rtu, getattr(routing_unit.Rout_unit_rtu, 'topo_id')),
 
-			'hyd': (connect.Hru_con, hru.Hru_data_hru, hru.Hru_data_hru.hydro_id),
-			'topo_hru': (connect.Hru_con, hru.Hru_data_hru, hru.Hru_data_hru.topo_id),
-			'wet_res': (connect.Hru_con, hru.Hru_data_hru, hru.Hru_data_hru.surf_stor_id),
-			'hyd_wet': (connect.Hru_con, hru.Hru_data_hru, hru.Hru_data_hru.surf_stor_id, reservoir.Wetland_wet, reservoir.Wetland_wet.hyd_id),
+			'hyd': (connect.Hru_con, hru.Hru_data_hru, getattr(hru.Hru_data_hru, 'hydro_id')),
+			'topo_hru': (connect.Hru_con, hru.Hru_data_hru, getattr(hru.Hru_data_hru, 'topo_id')),
+			'wet_res': (connect.Hru_con, hru.Hru_data_hru, getattr(hru.Hru_data_hru, 'surf_stor_id')),
+			'hyd_wet': (connect.Hru_con, hru.Hru_data_hru, getattr(hru.Hru_data_hru, 'surf_stor_id'), reservoir.Wetland_wet, getattr(reservoir.Wetland_wet, 'hyd_id')),
 
-			'init_aqu': (connect.Aquifer_con, aquifer.Aquifer_aqu, aquifer.Aquifer_aqu.init_id),
+			'init_aqu': (connect.Aquifer_con, aquifer.Aquifer_aqu, getattr(aquifer.Aquifer_aqu, 'init_id')),
 
-			'init_res': (connect.Reservoir_con, reservoir.Reservoir_res, reservoir.Reservoir_res.init_id),
-			'hyd_res': (connect.Reservoir_con, reservoir.Reservoir_res, reservoir.Reservoir_res.hyd_id),
-			'sed_res': (connect.Reservoir_con, reservoir.Reservoir_res, reservoir.Reservoir_res.sed_id),
-			'nut_res': (connect.Reservoir_con, reservoir.Reservoir_res, reservoir.Reservoir_res.nut_id)
+			'init_res': (connect.Reservoir_con, reservoir.Reservoir_res, getattr(reservoir.Reservoir_res, 'init_id')),
+			'hyd_res': (connect.Reservoir_con, reservoir.Reservoir_res, getattr(reservoir.Reservoir_res, 'hyd_id')),
+			'sed_res': (connect.Reservoir_con, reservoir.Reservoir_res, getattr(reservoir.Reservoir_res, 'sed_id')),
+			'nut_res': (connect.Reservoir_con, reservoir.Reservoir_res, getattr(reservoir.Reservoir_res, 'nut_id'))
 		}
 		prop_types = prop_data.get(table_type, None)
 
 		selected_subs = request.json['selected_subs']
 
 		if table_type in hru_types or table_type in rtu_types:
-			chas = gis.Gis_channels.select(gis.Gis_channels.id).where(gis.Gis_channels.subbasin.in_(selected_subs))
-			lsus = gis.Gis_lsus.select(gis.Gis_lsus.id).where(gis.Gis_lsus.channel.in_(chas))
+			chas = gis.Gis_channels.select(getattr(gis.Gis_channels, 'id')).where(gis.Gis_channels.subbasin.in_(selected_subs))
+			lsus = gis.Gis_lsus.select(getattr(gis.Gis_lsus, 'id')).where(gis.Gis_lsus.channel.in_(chas))
 			if table_type in hru_types:
 				w = (gis.Gis_hrus.lsu.in_(lsus))
 				if 'selected_landuse' in request.json and len(request.json['selected_landuse']) > 0:
 					w = w & (gis.Gis_hrus.landuse.in_(request.json['selected_landuse']))
 					if 'selected_soils' in request.json and len(request.json['selected_soils']) > 0:
 						w = w & (gis.Gis_hrus.soil.in_(request.json['selected_soils']))
-				sub_items = gis.Gis_hrus.select(gis.Gis_hrus.id).where(w)
+				sub_items = gis.Gis_hrus.select(getattr(gis.Gis_hrus, 'id')).where(w)
 			else:
 				sub_items = lsus
 		else:

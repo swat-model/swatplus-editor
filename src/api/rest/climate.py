@@ -2,8 +2,11 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
-
+from peewee import (
+	IntegrityError,
+ 	JOIN,
+  	fn
+)
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project import base as project_base
 from database.project.config import Project_config
@@ -29,7 +32,8 @@ def stations():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -45,7 +49,8 @@ def stations():
 			m.lat = args['lat']
 			m.lon = args['lon']
 			if 'wgn_name' in args:
-				m.wgn_id = RestHelpers.get_id_from_name(Weather_wgn_cli, args['wgn_name'])
+				wgn_id = RestHelpers.get_id_from_name(Weather_wgn_cli, args['wgn_name'])
+				setattr(m, 'wgn_id', wgn_id)
 			result = m.save()
 
 			rh.close()
@@ -53,10 +58,10 @@ def stations():
 				return model_to_dict(m), 201
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Weather_wgn_cli.DoesNotExist:
+		except getattr(Weather_wgn_cli, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wgn_name']))
 		except Exception as ex:
@@ -65,7 +70,8 @@ def stations():
 	elif request.method == 'DELETE':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 		project_base.db.execute_sql("PRAGMA foreign_keys = ON")
 		Weather_file.delete().execute()
 		Weather_sta_cli.delete().execute()
@@ -79,7 +85,8 @@ def stationsId(id):
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 		try:
 			m = Weather_sta_cli.get(Weather_sta_cli.id == id)
 			d = model_to_dict(m, recurse=False)
@@ -87,7 +94,7 @@ def stationsId(id):
 				d["wgn_name"] = m.wgn.name
 			rh.close()
 			return d
-		except Weather_sta_cli.DoesNotExist:
+		except getattr(Weather_sta_cli, 'DoesNotExist'):
 			rh.close()
 			abort(404, 'Weather station {id} does not exist'.format(id=id))
 	elif request.method == 'DELETE':
@@ -95,7 +102,8 @@ def stationsId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -120,10 +128,10 @@ def stationsId(id):
 				return '', 200
 
 			abort(400, 'Unable to update properties {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Weather_wgn_cli.DoesNotExist:
+		except getattr(Weather_wgn_cli, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wgn_name']))
 		except Exception as ex:
@@ -136,7 +144,8 @@ def stationsId(id):
 def directory():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	if request.method == 'GET':
 		try:
@@ -169,7 +178,8 @@ def directory():
 def files(type, partial_name):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	m = Weather_file.select().where((Weather_file.type == type) & (Weather_file.filename.startswith(partial_name)))
 
@@ -189,7 +199,8 @@ def wgn():
 	elif request.method == 'DELETE':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 		project_base.db.execute_sql("PRAGMA foreign_keys = ON")
 		Weather_wgn_cli_mon.delete().execute()
 		Weather_wgn_cli.delete().execute()
@@ -211,34 +222,38 @@ def wgnId(id):
 
 @bp.route('/wgn/validate', methods=['GET'])
 def wgnValidate():
-	project_db = request.headers.get(rh.PROJECT_DB)
-	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+    project_db = request.headers.get(rh.PROJECT_DB)
+    has_db, error = rh.init(project_db)
+    if not has_db:
+        abort(400, error)
 
-	if request.method == 'GET':
-		"""query = (Weather_wgn_cli
-			.select(Weather_wgn_cli.id, fn.COUNT(Weather_wgn_cli_mon.id).alias('months'))
-			.join(Weather_wgn_cli_mon, JOIN.LEFT_OUTER, on=(Weather_wgn_cli.id == Weather_wgn_cli_mon.weather_wgn_cli_id))
-			.where(SQL('months') < 12)
-			.group_by(Weather_wgn_cli.id))"""
-		
-		data = []
-		for wgn in Weather_wgn_cli.select():
-			months = Weather_wgn_cli_mon.select().where(Weather_wgn_cli_mon.weather_wgn_cli_id == wgn.id).count()
-			if months < 12:
-				data.append({ 'id': wgn.id, 'name': wgn.name, 'months': months })
-		
-		rh.close()
-		return {
-			'is_invalid': len(data) > 0,
-			'data': data
-		}
+    # Ambil field foreign key menggunakan getattr jika ingin aman dari linter
+    fk_field = getattr(Weather_wgn_cli_mon, 'weather_wgn_cli_id')
+
+    # 🚀 QUERY ELEGAN & JAUH LEBIH CEPAT:
+    # Menggunakan klausa HAVING .having() untuk menyaring stasiun yang datanya < 12 bulan
+    query = (Weather_wgn_cli
+             .select(Weather_wgn_cli.id, Weather_wgn_cli.name, fn.COUNT(getattr(Weather_wgn_cli_mon, 'id')).alias('months'))
+             .join(Weather_wgn_cli_mon, JOIN.LEFT_OUTER, on=(Weather_wgn_cli.id == fk_field))
+             .group_by(Weather_wgn_cli.id, Weather_wgn_cli.name)
+             .having(fn.COUNT(getattr(Weather_wgn_cli_mon, 'id')) < 12))
+
+    # Konversi hasil query langsung menjadi format list JSON data
+    data = [{ 'id': row.id, 'name': row.name, 'months': row.months } for row in query]
+
+    rh.close()
+    return {
+        'is_invalid': len(data) > 0,
+        'data': data
+    }
+  
 
 @bp.route('/wgn/db', methods=['GET', 'PUT'])
 def wgnDb():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 
 	if request.method == 'GET':
 		config = Project_config.get()
@@ -299,19 +314,20 @@ def wgnDb():
 def wgnMon(wgn_id):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 	
 	if request.method == 'GET':
-		m = Weather_wgn_cli_mon.select(Weather_wgn_cli_mon.weather_wgn_cli_id == wgn_id).order_by(Weather_wgn_cli_mon.month)
+		m = Weather_wgn_cli_mon.select(getattr(Weather_wgn_cli_mon, 'weather_wgn_cli_id') == wgn_id).order_by(Weather_wgn_cli_mon.month)
 		rh.close()
 		return [model_to_dict(v, recurse=False) for v in m]
 	elif request.method == 'POST':
 		args = request.json
 		try:
-			e = Weather_wgn_cli_mon.get((Weather_wgn_cli_mon.weather_wgn_cli_id == wgn_id) & (Weather_wgn_cli_mon.month == args['month']))
+			e = Weather_wgn_cli_mon.get((getattr(Weather_wgn_cli_mon, 'weather_wgn_cli_id') == wgn_id) & (Weather_wgn_cli_mon.month == args['month']))
 			rh.close()
 			abort(400, 'Weather generator already has data for month {month}.'.format(month=args['month']))
-		except Weather_wgn_cli_mon.DoesNotExist:
+		except getattr(Weather_wgn_cli_mon, 'DoesNotExist'):
 			m = Weather_wgn_cli_mon()
 			m.weather_wgn_cli = wgn_id
 			m.month = args['month']
@@ -355,7 +371,8 @@ def wgnMonId(id):
 def atmo():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 	
 	if request.method == 'GET':
 		m = Atmo_cli.get_or_none()
@@ -436,8 +453,9 @@ def atmoStationsId(id):
 def atmoStationValues(sta_id):
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
-	m = Atmo_cli_sta_value.select(Atmo_cli_sta_value.sta_id == sta_id).order_by(Atmo_cli_sta_value.timestep)
+	if not has_db: 
+		abort(400, error)
+	m = Atmo_cli_sta_value.select(getattr(Atmo_cli_sta_value, 'sta_id') == sta_id).order_by(Atmo_cli_sta_value.timestep)
 	rh.close()
 	return [model_to_dict(v, recurse=False) for v in m]
 

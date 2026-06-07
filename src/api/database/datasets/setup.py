@@ -1,4 +1,8 @@
-from peewee import *
+from peewee import (
+    SqliteDatabase,
+    CharField, 
+    DoubleField
+)
 from . import base, definitions, hru_parm_db, lum, ops, structural, decision_table, basin, climate, soils, init, change
 from fileio import hru_parm_db as files_parmdb
 from fileio import lum as files_lum
@@ -10,8 +14,9 @@ from fileio import change as files_change
 from fileio import soils as files_soils
 from database import lib as db_lib
 from datetime import datetime
+from typing import Optional
 
-from playhouse.migrate import *
+from playhouse.migrate import SqliteMigrator, migrate
 
 #source_data_path = "../data/source-data/"
 source_data_path = "D:\\Repos\\swatplus-editor\\release\\data\\source-data\\"
@@ -23,14 +28,18 @@ def val_exists(val):
 
 class SetupDatasetsDatabase():
 	@staticmethod
-	def init(datasets_db: str = None):
+	def init(datasets_db: Optional[str] = None):
 		base.db.init(datasets_db, pragmas={'journal_mode': 'off'})
 
 	@staticmethod
 	def close():
 		try:
-			base.db.close()
-		except:
+			from database.project import base
+			if getattr(base.db, 'obj', None) is not None:
+				if not base.db.is_closed():
+					base.db.close()
+		except Exception as e :
+			print(f"Gagal Menutup database dari folder Database: {e}")
 			pass
 	
 	@staticmethod
@@ -71,7 +80,7 @@ class SetupDatasetsDatabase():
 		return None
 	
 	@staticmethod
-	def initialize_data(version: str = None):
+	def initialize_data(version: Optional[str] = None):
 		codes = [
 			{'table': 'connect', 'variable': 'obj_typ', 'code': 'hru', 'description': 'hru'},
 			{'table': 'connect', 'variable': 'obj_typ', 'code': 'hlt', 'description': 'hru_lte'},
@@ -609,11 +618,6 @@ class SetupDatasetsDatabase():
 		for pcom in init.Plant_ini.select().order_by(init.Plant_ini.id):
 			plant_name = pcom.name.strip().split('_comm')[0]
 			rule = rules[plant_name]
-			
-			"""mgt_id = lum_default_mgt
-			if val_exists(rule['mgt']):
-				mgt = lum.Management_sch.get(lum.Management_sch.name == rule['mgt'])
-				mgt_id = mgt.id"""
 				
 			cn2_id = lum_default_cn2
 			if val_exists(rule['cn2']):
@@ -630,7 +634,7 @@ class SetupDatasetsDatabase():
 				ov_mann = lum.Ovn_table_lum.get(lum.Ovn_table_lum.name == rule['ov_mann'])
 				ov_mann_id = ov_mann.id
 			
-			l = {
+			landuse_entry = {
 				'id': lum_id,
 				'name': '{name}_lum'.format(name=plant_name),
 				'plnt_com': pcom.id,
@@ -640,7 +644,7 @@ class SetupDatasetsDatabase():
 				'ov_mann': ov_mann_id,
 				'cal_group': lum_default_cal_group
 			}
-			lums.append(l)
+			lums.append(landuse_entry)
 			
 			lum_dict[plant_name] = lum_id
 			lum_id += 1
@@ -650,7 +654,7 @@ class SetupDatasetsDatabase():
 		urbans = hru_parm_db.Urban_urb.select()
 		urb_lums = []
 		for urb in urbans:
-			l = {
+			urban_entry = {
 				'id': lum_id,
 				'name': '{name}_lum'.format(name=urb.name),
 				'urban': urb.id,
@@ -661,7 +665,7 @@ class SetupDatasetsDatabase():
 				'ov_mann': 18,
 				'cal_group': lum_default_cal_group
 			}
-			urb_lums.append(l)
+			urb_lums.append(urban_entry)
 			
 			lum_dict[urb.name] = lum_id
 			lum_id += 1
@@ -669,7 +673,7 @@ class SetupDatasetsDatabase():
 		db_lib.bulk_insert(base.db, lum.Landuse_lum, urb_lums)
 
 	@staticmethod
-	def update_2_1_0(datasets_db: str = None):
+	def update_2_1_0(datasets_db: Optional[str] = None):
 		basin.Codes_bsn.delete().execute()
 		basin.Parameters_bsn.delete().execute()
 		change.Cal_parms_cal.delete().execute()

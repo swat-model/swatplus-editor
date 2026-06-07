@@ -1,5 +1,5 @@
-from helpers.executable_api import ExecutableApi, Unbuffered
-from peewee import *
+from helpers.executable_api import ExecutableApi
+from peewee import fn
 
 from database.project.setup import SetupProjectDatabase
 from database.output.setup import SetupOutputDatabase
@@ -7,9 +7,12 @@ from database.output import check_toolbox, aquifer, channel, hyd, losses, misc, 
 from database.project import connect, climate, gis, regions, simulation, hru_parm_db, config
 from database import lib
 from helpers import utils
+from typing import Optional
 
 import traceback
-import json, sys, argparse
+import json
+import sys
+# import argparse
 from itertools import groupby
 from datetime import date
 
@@ -196,7 +199,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 				hru_mgt = sorted(hru_mgt, key=lambda x: x.index)
 				hru_mgt_options = [{
 						'value': hru.index, 
-						'title': f"{hru.name} / {hru.landuse} / {hru.soil} / {hru.area:.2f} ha" + (f" (no mgt)" if len(hru.mgts) == 0 else '')
+						'title': f"{hru.name} / {hru.landuse} / {hru.soil} / {hru.area:.2f} ha" + (" (no mgt)" if len(hru.mgts) == 0 else '')
 					} for hru in hru_mgt]
 
 			SetupProjectDatabase.close()
@@ -598,7 +601,7 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 			res_list = reservoir.Reservoir_aa.select()
 			overall_data.avgReservoirTrends.numberReservoirs = res_list.count()
 
-			per_res_warns = [None] * 9
+			per_res_warns: list[Optional[str]] = [None] * 9
 			ratios = []
 			empty_vols = []
 			for r in res_list:

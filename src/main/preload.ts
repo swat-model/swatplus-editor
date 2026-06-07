@@ -15,10 +15,17 @@ contextBridge.exposeInMainWorld('electronApi', {
 	joinPaths: (paths:string[]) => { return ipcRenderer.sendSync('join-paths', paths) },
 	pathDirectoryName: (directory:string) => { return ipcRenderer.sendSync('path-directory-name', directory) },
 
+	readDirectory: (dirPath: string) => { return ipcRenderer.sendSync('read-dir', dirPath) },
+    readFile: (filePath: string) => { return ipcRenderer.sendSync('read-file', filePath) },
+
 	openFileOnSystem: (key:string) => ipcRenderer.send('open-file-on-system', key),
 	openUrl: (key:string) => ipcRenderer.send('open-url', key),
 	openFileDialog: (options:any) => { return ipcRenderer.sendSync('open-file-dialog', options) },
 	saveFileDialog: (options:any) => { return ipcRenderer.sendSync('save-file-dialog', options) },
+
+	saveFile: (path: string, data: string) => { return ipcRenderer.sendSync('save-file', { path, data }) },
+
+
 
 	spawnProcess: (proc_name:string, script_name:string, args:string[]) => { return ipcRenderer.sendSync('spawn-process', proc_name, script_name, args) },
 	processStdout: (proc_name:string, callback:(data:any) => any) => {

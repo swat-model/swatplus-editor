@@ -2,7 +2,9 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project.climate import Weather_sta_cli
@@ -84,7 +86,8 @@ def properties():
 	elif request.method == 'POST':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -101,7 +104,7 @@ def properties():
 				return {'id': result }, 201
 
 			abort(400, 'Unable to update hru {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
 		except Exception as ex:
@@ -115,19 +118,20 @@ def propertiesId(id):
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		table = Hru_lte_hru
 		description = 'Hru'
 		
 		try:
-			m = table.get(table.id == id)
+			m = table.get(getattr(table, 'id') == id)
 			d = model_to_dict(m, backrefs=True, max_depth=1)
 			d['grow_start'] = m.grow_start.name
 			d['grow_end'] = m.grow_end.name
 			rh.close()
 			return d
-		except table.DoesNotExist:
+		except getattr(table, 'DoesNotExist'):
 			rh.close()
 			abort(404, '{description} {id} does not exist'.format(description=description, id=id))
 	elif request.method == 'DELETE':
@@ -135,7 +139,8 @@ def propertiesId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -152,10 +157,10 @@ def propertiesId(id):
 				return '', 200
 
 			abort(400, 'Unable to update hru {id}.'.format(id=id))
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, 'Name must be unique.')
-		except Hru_lte_hru.DoesNotExist:
+		except getattr(Hru_lte_hru, 'DoesNotExist'):
 			rh.close()
 			abort(400, 'Hru-lte {id} does not exist'.format(id=id))
 		except Exception as ex:
@@ -171,7 +176,8 @@ def propertiesMany():
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.json
 		try:
@@ -196,7 +202,7 @@ def propertiesMany():
 						param_dict[key] = args[key]
 
 			con_table = Hru_lte_con
-			con_prop_field = Hru_lte_con.lhru_id
+			con_prop_field = getattr(Hru_lte_con, 'lhru_id')
 			prop_table = Hru_lte_hru
 
 			result = DefaultRestMethods.put_many_con(args, param_dict, con_table, con_prop_field, prop_table)

@@ -2,7 +2,9 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	SQL
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project import regions as db
@@ -51,7 +53,8 @@ def lsunitsElementsTable(id):
 		
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		args = request.args
 		total = table.select().count()
@@ -70,9 +73,9 @@ def lsunitsElementsTable(id):
 				else:
 					sub = lu.select().where(lu.name.contains(filter_val))
 					w = w | (f.in_(sub))
-			s = table.select().where((table.ls_unit_def_id == id) & (w))
+			s = table.select().where((getattr(table, 'ls_unit_def_id') == id) & (w))
 		else:
-			s = table.select().where(table.ls_unit_def_id == id)
+			s = table.select().where(getattr(table, 'ls_unit_def_id') == id)
 
 		matches = s.count()
 

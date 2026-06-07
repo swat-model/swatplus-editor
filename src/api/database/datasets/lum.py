@@ -1,4 +1,11 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    DoubleField,
+    ForeignKeyField,
+    TextField
+)
 from . import base, decision_table, hru_parm_db, structural, init
 
 

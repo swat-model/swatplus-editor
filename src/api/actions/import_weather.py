@@ -10,13 +10,16 @@ from helpers import utils
 from fileio import base as fileio
 
 import sys
-import os, os.path
+import os
 import math
 import argparse
-import time, datetime
+import time
+import datetime
 import sqlite3
-from peewee import *
+import builtins
 import csv
+from peewee import fn
+
 
 
 HMD_TXT = "hmd.txt"
@@ -48,6 +51,8 @@ WEATHER_DESC = {
 }
 
 def weather_sta_name(lat, lon, prefix = 's', mult = 1000):
+    # Membuat nama stasiun cuaca otomatis berdasarkan koordinat Latitude dan Longitude
+	# Cara kerja: Jika Lat = 1.234 dan Lon = 101.567, ia akan membulatkan dan menggabungkan arah (n/s/e/w) menjadi string seperti: s1234n101567e.
 	latp = "n" if lat >= 0 else "s"
 	lonp = "e" if lon >= 0 else "w"
 	name = "{prefix}{lat}{latp}{lon}{lonp}".format(prefix=prefix, lat=abs(round(lat * mult)), latp=latp, lon=abs(round(lon * mult)), lonp=lonp)
@@ -55,6 +60,8 @@ def weather_sta_name(lat, lon, prefix = 's', mult = 1000):
 
 
 def update_closest_lat_lon(update_table, update_field, select_table, select_field="id", wtype=None):
+    # Fungsi: Optimasi database skala besar menggunakan query SQL murni (WITH clause dan Common Table Expression).
+    # Cara kerja: Memetakan dan memperbarui kolom foreign key tabel objek spasial (seperti HRU, Aquifer, Channel) langsung ke ID Stasiun Cuaca terdekat secara massal menggunakan rumus jarak kuadrat terdekat.
 	where = ""
 	if wtype is not None:
 		where = "where t2.type = ?"
@@ -77,6 +84,8 @@ def update_closest_lat_lon(update_table, update_field, select_table, select_fiel
 
 
 def closest_lat_lon(db, table_name, lat, lon, wtype=None):
+    # Fungsi: Mencari stasiun terdekat untuk satu titik koordinat tertentu.
+    # Cara Kerja: Menggunakan trik konstanta fudge (math.pow(math.cos(math.radians(lat)), 2)) untuk mengoreksi kelengkungan bumi (jarak longitudinal) saat menghitung jarak terdekat via SQLite query.
 	"""
 	See: http://stackoverflow.com/a/7472230
 	For explanation of getting the closest lat,long
@@ -103,7 +112,9 @@ def closest_lat_lon(db, table_name, lat, lon, wtype=None):
 
 
 class WeatherImport(ExecutableApi):
+    # Peran: Mengimpor data cuaca observasi harian format SWAT+ standard (file .cli).
 	def __init__(self, project_db_file, delete_existing, create_stations):
+    #  Inisialisasi koneksi ke SQLite proyek dan melakukan pembersihan data lama via delete_existing() jika parameter delete_existing=y.
 		self.__abort = False
 		SetupProjectDatabase.init(project_db_file)
 		self.project_db_file = project_db_file
@@ -115,12 +126,19 @@ class WeatherImport(ExecutableApi):
 			self.delete_existing()
 
 	def import_data(self):
+		# 1. Membaca lokasi direktori cuaca dari konfigurasi proyek.
+		# 2. Memanggil add_weather_files(): Membuka file indeks .cli (seperti pcp.cli, tmp.cli), membaca daftar nama file stasiun di dalamnya, mengintip tanggal mulai/akhir data, lalu menyimpan metadata file tersebut ke tabel weather_file. Ia juga memperbarui rentang waktu simulasi proyek di tabel time_sim.
+		# 3. Percabangan create_stations:
+			# - Jika True: Menjalankan create_weather_stations() untuk mengelompokkan koordinat unik dari file cuaca, membuat stasiun baru di tabel weather_sta_cli, lalu memetakan file tersebut ke stasiun terdekat via match_files_to_stations(). Terakhir, menjalankan match_stations() untuk menghubungkan stasiun cuaca ke objek hidrologi (HRU, Aquifer, Channel).
+			# - Jika False: Hanya mencocokkan file cuaca ke stasiun yang sudah ada sebelumnya.
 		try:
 			config = Project_config.get()
 			
 			weather_data_dir = utils.full_path(self.project_db_file, config.weather_data_dir)
-			if not os.path.exists(weather_data_dir):
+			if not weather_data_dir:
 				sys.exit('Weather data directory {dir} does not exist.'.format(dir=weather_data_dir))
+			if not os.path.exists(weather_data_dir):
+				sys.exit(f'Weather data directory {weather_data_dir} does not exist.')
 
 			self.add_weather_files(weather_data_dir)
 
@@ -136,31 +154,54 @@ class WeatherImport(ExecutableApi):
 		Weather_file.delete().execute()
 		Weather_sta_cli.delete().execute()
 
-	def match_stations(self, start_prog):
+	def match_stations(self, start_prog, total_prog=10):
 		self.emit_progress(start_prog, "Adding weather stations to spatial connection tables...")
 		wst_col = "wst_id"
 		wst_table = "weather_sta_cli"
-		update_closest_lat_lon("aquifer_con", wst_col, wst_table)
-		update_closest_lat_lon("channel_con", wst_col, wst_table)
-		update_closest_lat_lon("chandeg_con", wst_col, wst_table)
-		update_closest_lat_lon("rout_unit_con", wst_col, wst_table)
-		update_closest_lat_lon("reservoir_con", wst_col, wst_table)
-		update_closest_lat_lon("recall_con", wst_col, wst_table)
-		update_closest_lat_lon("exco_con", wst_col, wst_table)
-		update_closest_lat_lon("hru_con", wst_col, wst_table)
-		update_closest_lat_lon("hru_lte_con", wst_col, wst_table)
-		update_closest_lat_lon("weather_sta_cli", "wgn_id", "weather_wgn_cli")
+		
+		# Daftar tabel koneksi spasial yang perlu diperbarui
+		tables_to_update = [
+			("aquifer_con", wst_col, wst_table, "aquifer connections"),
+			("channel_con", wst_col, wst_table, "channel connections"),
+			("chandeg_con", wst_col, wst_table, "chandeg connections"),
+			("rout_unit_con", wst_col, wst_table, "routing unit connections"),
+			("reservoir_con", wst_col, wst_table, "reservoir connections"),
+			("recall_con", wst_col, wst_table, "recall connections"),
+			("exco_con", wst_col, wst_table, "exco connections"),
+			("hru_con", wst_col, wst_table, "hru connections"),
+			("hru_lte_con", wst_col, wst_table, "hru lte connections"),
+			("weather_sta_cli", "wgn_id", "weather_wgn_cli", "weather generator stations")
+		]
+		
+		total_tables = len(tables_to_update)
+		
+		for idx, (table_name, col_name, ref_table, label) in enumerate(tables_to_update, 1):
+			# 🛡️ Pagar Pengaman 1: Izinkan pembatalan oleh pengguna
+			if self.__abort:
+				return
 
-		"""self.match_stations_table(Aquifer_con, "aquifer connections", start_prog)
-		self.match_stations_table(Channel_con, "channel connections", start_prog + 5)
-		self.match_stations_table(Chandeg_con, "channel connections", start_prog + 5)
-		self.match_stations_table(Rout_unit_con, "routing unit connections", start_prog + 10)
-		self.match_stations_table(Reservoir_con, "reservoir connections", start_prog + 15)
-		self.match_stations_table(Recall_con, "recall connections", start_prog + 20)
-		self.match_stations_table(Exco_con, "exco connections", start_prog + 20)
-		self.match_stations_table(Hru_con, "hru connections", start_prog + 25)
-		self.match_stations_table(Hru_lte_con, "hru connections", start_prog + 25)
-		self.match_wgn(start_prog + 30)"""
+			prog = round(idx * total_prog / total_tables) + start_prog
+			if prog >= 100:
+				prog = 99
+				
+			# 🛡️ Pagar Pengaman 2: Cek apakah tabel spasial memiliki data
+			# Jalankan query mentah ringan untuk hitung baris data di SQLite
+			try:
+				count_cursor = project_base.db.execute_sql(f"SELECT COUNT(*) FROM {table_name}")
+				row_count = count_cursor.fetchone()[0]
+			except Exception:
+				row_count = 0  # Jika tabel belum dibuat/error, anggap 0
+
+			if row_count > 0:
+				self.emit_progress(prog, f"Connecting stations to spatial {label} ({idx}/{total_tables})...")
+				# Eksekusi query Pythagoras yang berat hanya jika ada datanya
+				update_closest_lat_lon(table_name, col_name, ref_table)
+			else:
+				# Jika kosong, lewati langsung secara instan tanpa membebani memori
+				self.emit_progress(prog, f"Skipping {label}: No spatial data available.")
+
+		# Sinyal akhir bahwa seluruh rangkaian pencocokan spasial selesai
+		self.emit_progress(start_prog + total_prog, "Spatial connection matching completed.")
 
 	def match_stations_table(self, table, name, prog):
 		self.emit_progress(prog, "Adding weather stations to {name}...".format(name=name))
@@ -185,7 +226,8 @@ class WeatherImport(ExecutableApi):
 					row.save()
 
 	def create_weather_stations(self, start_prog, total_prog):  # total_prog is the total progress percentage available for this method
-		if self.__abort: return
+		if self.__abort:
+			return
 
 		stations = []
 		cursor = project_base.db.execute_sql("select lat, lon from weather_file group by lat, lon")
@@ -193,7 +235,9 @@ class WeatherImport(ExecutableApi):
 		records = len(data)
 		i = 1
 		for row in data:
-			if self.__abort: return
+			# row: tuple[float, float]
+			if self.__abort:
+				return
 
 			lat = row[0]
 			lon = row[1]
@@ -201,17 +245,27 @@ class WeatherImport(ExecutableApi):
 
 			prog = round(i * total_prog / records) + start_prog
 			self.emit_progress(prog, "Creating weather station {name}...".format(name=name))
-
+       
+			# if not Weather_sta_cli.select().where(
+			# 	(Weather_sta_cli.name == name)
+			# ).exists():
+			# 	station = {
+			# 		"name": name,
+			# 		"atmo_dep": None,
+			# 		"lat": lat,
+			# 		"lon": lon,
+					
+			# 	}
 			try:
 				existing = Weather_sta_cli.get(Weather_sta_cli.name == name)
-			except Weather_sta_cli.DoesNotExist:
+			except getattr(Weather_sta_cli, 'DoesNotExist'):
 				station = {
 					"name": name,
 					"atmo_dep": None,
 					"lat": lat,
 					"lon": lon,
 					
-				}
+			}
 
 				"""
 					"hmd": closest_lat_lon(project_base.db, "weather_file", lat, lon, "hmd"),
@@ -251,17 +305,23 @@ class WeatherImport(ExecutableApi):
 				i += 1"""
 
 	def add_weather_files(self, dir):
-		if self.__abort: return
+		if self.__abort: 
+			return
 		hmd_start, hmd_end = self.add_weather_files_type(os.path.join(dir, HMD_CLI), "hmd", 0)
-		if self.__abort: return
+		if self.__abort: 
+			return
 		pcp_start, pcp_end = self.add_weather_files_type(os.path.join(dir, PCP_CLI), "pcp", 5)
-		if self.__abort: return
+		if self.__abort: 
+			return
 		slr_start, slr_end = self.add_weather_files_type(os.path.join(dir, SLR_CLI), "slr", 10)
-		if self.__abort: return
+		if self.__abort: 
+			return
 		tmp_start, tmp_end = self.add_weather_files_type(os.path.join(dir, TMP_CLI), "tmp", 15)
-		if self.__abort: return
+		if self.__abort: 
+			return
 		wnd_start, wnd_end = self.add_weather_files_type(os.path.join(dir, WND_CLI), "wnd", 20)
-		if self.__abort: return
+		if self.__abort: 
+			return
 		pet_start, pet_end = self.add_weather_files_type(os.path.join(dir, PET_CLI), "pet", 25)
 
 		starts = [hmd_start, pcp_start, slr_start, tmp_start, wnd_start, pet_start]
@@ -286,7 +346,8 @@ class WeatherImport(ExecutableApi):
 
 			Time_sim.update(day_start=start_day, yrc_start=start_year, day_end=end_day, yrc_end=end_year).execute()
 
-		if self.__abort: return
+		if self.__abort: 
+			return
 		"""warnings = []
 		warnings.append(hmd_res)
 		warnings.append(pcp_res)
@@ -490,7 +551,8 @@ class NetCDFWeatherImport(ExecutableApi):
 
 	def add_weather_files_from_csv(self):
 		"""Read the stations CSV file and add weather file entries for each station/variable combination."""
-		if self.__abort: return
+		if self.__abort: 
+			return
 		
 		self.emit_progress(0, "Reading stations CSV file...")
 		
@@ -517,7 +579,8 @@ class NetCDFWeatherImport(ExecutableApi):
 				
 				row_count = 0
 				for row in reader:
-					if self.__abort: return
+					if self.__abort: 
+						return
 					
 					lat = float(row['lat'])
 					lon = float(row['lon'])
@@ -547,9 +610,10 @@ class NetCDFWeatherImport(ExecutableApi):
 							if has_data and weather_type not in added_types:
 								filename = "{name}.{ext}".format(name=station_name, ext=weather_type)
 								
-								try:
-									existing = Weather_file.get((Weather_file.filename == filename) & (Weather_file.type == weather_type))
-								except Weather_file.DoesNotExist:
+								if not Weather_file.select().where(
+									(Weather_file.filename == filename) & 
+									(Weather_file.type == weather_type)
+								).exists():
 									file_entry = {
 										"filename": filename,
 										"type": weather_type,
@@ -571,7 +635,8 @@ class NetCDFWeatherImport(ExecutableApi):
 
 	def create_weather_stations(self, start_prog, total_prog):
 		"""Create weather stations from unique lat/lon combinations in weather_file table."""
-		if self.__abort: return
+		if self.__abort: 
+			return
 
 		stations = []
 		cursor = project_base.db.execute_sql("select lat, lon from weather_file group by lat, lon")
@@ -579,7 +644,8 @@ class NetCDFWeatherImport(ExecutableApi):
 		records = len(data)
 		i = 1
 		for row in data:
-			if self.__abort: return
+			if self.__abort: 
+				return
 
 			lat = row[0]
 			lon = row[1]
@@ -588,9 +654,18 @@ class NetCDFWeatherImport(ExecutableApi):
 			prog = round(i * total_prog / records) + start_prog
 			self.emit_progress(prog, "Creating weather station {name}...".format(name=name))
 
+			# if not Weather_sta_cli.select().where(
+			# 	(Weather_sta_cli.name == name)
+			# ).exists():
+			# 	station = {
+			# 		"name": name,
+			# 		"atmo_dep": None,
+			# 		"lat": lat,
+			# 		"lon": lon,
+			# 	}
 			try:
 				existing = Weather_sta_cli.get(Weather_sta_cli.name == name)
-			except Weather_sta_cli.DoesNotExist:
+			except getattr(Weather_sta_cli, 'DoesNotExist'):
 				station = {
 					"name": name,
 					"atmo_dep": None,
@@ -613,21 +688,55 @@ class NetCDFWeatherImport(ExecutableApi):
 		update_closest_lat_lon("weather_sta_cli", "wnd", "weather_file", "filename", "wnd")
 		update_closest_lat_lon("weather_sta_cli", "pet", "weather_file", "filename", "pet")
 
-	def match_stations(self, start_prog):
+	def match_stations(self, start_prog, total_prog=10):
 		"""Assign weather stations to spatial connection tables."""
 		self.emit_progress(start_prog, "Adding weather stations to spatial connection tables...")
 		wst_col = "wst_id"
 		wst_table = "weather_sta_cli"
-		update_closest_lat_lon("aquifer_con", wst_col, wst_table)
-		update_closest_lat_lon("channel_con", wst_col, wst_table)
-		update_closest_lat_lon("chandeg_con", wst_col, wst_table)
-		update_closest_lat_lon("rout_unit_con", wst_col, wst_table)
-		update_closest_lat_lon("reservoir_con", wst_col, wst_table)
-		update_closest_lat_lon("recall_con", wst_col, wst_table)
-		update_closest_lat_lon("exco_con", wst_col, wst_table)
-		update_closest_lat_lon("hru_con", wst_col, wst_table)
-		update_closest_lat_lon("hru_lte_con", wst_col, wst_table)
-		update_closest_lat_lon("weather_sta_cli", "wgn_id", "weather_wgn_cli")
+		
+		# Daftar tabel koneksi spasial yang perlu diperbarui
+		tables_to_update = [
+			("aquifer_con", wst_col, wst_table, "aquifer connections"),
+			("channel_con", wst_col, wst_table, "channel connections"),
+			("chandeg_con", wst_col, wst_table, "chandeg connections"),
+			("rout_unit_con", wst_col, wst_table, "routing unit connections"),
+			("reservoir_con", wst_col, wst_table, "reservoir connections"),
+			("recall_con", wst_col, wst_table, "recall connections"),
+			("exco_con", wst_col, wst_table, "exco connections"),
+			("hru_con", wst_col, wst_table, "hru connections"),
+			("hru_lte_con", wst_col, wst_table, "hru lte connections"),
+			("weather_sta_cli", "wgn_id", "weather_wgn_cli", "weather generator stations")
+		]
+		
+		total_tables = len(tables_to_update)
+		
+		for idx, (table_name, col_name, ref_table, label) in enumerate(tables_to_update, 1):
+			# 🛡️ Pagar Pengaman 1: Izinkan pembatalan oleh pengguna
+			if self.__abort:
+				return
+
+			prog = round(idx * total_prog / total_tables) + start_prog
+			if prog >= 100:
+				prog = 99
+				
+			# 🛡️ Pagar Pengaman 2: Cek apakah tabel spasial memiliki data
+			# Jalankan query mentah ringan untuk hitung baris data di SQLite
+			try:
+				count_cursor = project_base.db.execute_sql(f"SELECT COUNT(*) FROM {table_name}")
+				row_count = count_cursor.fetchone()[0]
+			except Exception:
+				row_count = 0  # Jika tabel belum dibuat/error, anggap 0
+
+			if row_count > 0:
+				self.emit_progress(prog, f"Connecting stations to spatial {label} ({idx}/{total_tables})...")
+				# Eksekusi query Pythagoras yang berat hanya jika ada datanya
+				update_closest_lat_lon(table_name, col_name, ref_table)
+			else:
+				# Jika kosong, lewati langsung secara instan tanpa membebani memori
+				self.emit_progress(prog, f"Skipping {label}: No spatial data available.")
+
+		# Sinyal akhir bahwa seluruh rangkaian pencocokan spasial selesai
+		self.emit_progress(start_prog + total_prog, "Spatial connection matching completed.")
 
 	def add_scale_factors(self, start_prog):
 		"""Add scale factors for each weather station from the stored CSV values."""
@@ -660,8 +769,10 @@ class Swat2012WeatherImport(ExecutableApi):
 		config = Project_config.get()
 		
 		weather_data_dir = utils.full_path(project_db_file, config.weather_data_dir)
+		if not weather_data_dir:
+			sys.exit('Weather data directory path is missing or invalid.')
 		if not os.path.exists(weather_data_dir):
-			sys.exit('Weather data directory {dir} does not exist.'.format(dir=weather_data_dir))
+			sys.exit(f'Weather data directory {weather_data_dir} does not exist.')
 
 		self.output_dir = weather_data_dir
 		self.project_db_file = project_db_file
@@ -686,34 +797,41 @@ class Swat2012WeatherImport(ExecutableApi):
 
 		total_files = len(os.listdir(dir))
 
-		if self.__abort: return
+		if self.__abort: 
+			return
 		hmd_file = os.path.join(dir, HMD_TXT)
 		if not os.path.exists(hmd_file):
 			hmd_file = os.path.join(dir, HMD_TXT2)
 		hmd_res = self.write_weather(hmd_file, os.path.join(self.output_dir, HMD_CLI), "hmd", 1, total_files)
 
-		if self.__abort: return
+		if self.__abort: 
+			return
 		pcp_res = self.write_weather(os.path.join(dir, PCP_TXT), os.path.join(self.output_dir, PCP_CLI), "pcp", hmd_res[0], total_files)
 
-		if self.__abort: return
+		if self.__abort: 
+			return
 		slr_file = os.path.join(dir, SLR_TXT)
 		if not os.path.exists(slr_file):
 			slr_file = os.path.join(dir, SLR_TXT2)
 		slr_res = self.write_weather(slr_file, os.path.join(self.output_dir, SLR_CLI), "slr", pcp_res[0], total_files)
 
-		if self.__abort: return
+		if self.__abort: 
+			return
 		tmp_res = self.write_weather(os.path.join(dir, TMP_TXT), os.path.join(self.output_dir, TMP_CLI), "tem", slr_res[0], total_files)
 
-		if self.__abort: return
+		if self.__abort: 
+			return
 		wnd_file = os.path.join(dir, WND_TXT)
 		if not os.path.exists(wnd_file):
 			wnd_file = os.path.join(dir, WND_TXT2)
 		wnd_res = self.write_weather(wnd_file, os.path.join(self.output_dir, WND_CLI), "wnd", tmp_res[0], total_files)
 
-		if self.__abort: return
+		if self.__abort: 
+			return
 		pet_res = self.write_weather(os.path.join(dir, PET_TXT), os.path.join(self.output_dir, PET_CLI), "pet", wnd_res[0], total_files)
 
-		if self.__abort: return
+		if self.__abort: 
+			return
 		warnings.append(hmd_res[1])
 		warnings.append(pcp_res[1])
 		warnings.append(slr_res[1])
@@ -746,7 +864,7 @@ class Swat2012WeatherImport(ExecutableApi):
 							if self.__abort:
 								break
 
-							if i == 0 and not "ID,NAME,LAT,LONG,ELEVATION" in line:
+							if i == 0 and "ID,NAME,LAT,LONG,ELEVATION" not in line:
 								return curr_file_num, "Skipping {type} import. Invalid file format in header: {file}. Expecting 'ID,NAME,LAT,LONG,ELEVATION'".format(type=weather_type, file=source_file)
 							if i > 0:
 								station_obj = [x.strip() for x in line.split(',')]
@@ -793,9 +911,11 @@ class Swat2012WeatherImport(ExecutableApi):
 			linecount = self.file_len(source_file)
 			total_days = linecount - 2 if linecount > 0 else 0
 
+
+
 			with open(source_file, "r") as station_file:
 				i = 0
-				date = None
+				date: datetime.datetime | None = None	
 				for line in station_file:
 					if i == 0:
 						ts = time.strptime(line.strip(), "%Y%m%d")
@@ -812,6 +932,8 @@ class Swat2012WeatherImport(ExecutableApi):
 						new_file.write("{0:.3f}".format(float(station_obj[4])).rjust(10))
 						new_file.write("\n")
 					else:
+						if date is None:
+							continue
 						day_of_year = date.timetuple().tm_yday
 
 						new_file.write(str(date.year))
@@ -832,13 +954,15 @@ class Swat2012WeatherImport(ExecutableApi):
 
 	def file_len(self, fname):
 		with open(fname) as f:
-			for i, l in enumerate(f):
+			for i, _ in enumerate(f):
 				pass
 		return i + 1
 
 
 class WgnImport(ExecutableApi):
-	def __init__(self, project_db_file, delete_existing, create_stations, import_method='database', file1=None, file2=None):
+    # Peran: Mengimpor data generator cuaca (Weather Generator / WGN) yang berisi data statistik bulanan untuk menghasilkan data cuaca buatan jika data observasi kosong.
+    
+	def __init__(self, project_db_file, delete_existing, create_stations, import_method='database', file1=None, file2=None, delete_stations=False):
 		self.__abort = False
 		SetupProjectDatabase.init(project_db_file)
 		self.project_db_file = project_db_file
@@ -852,6 +976,8 @@ class WgnImport(ExecutableApi):
 			config = Project_config.get()
 			if self.import_method == 'database' and self.project_db_file != '' and self.project_db_file is not None:
 				wgn_db = utils.full_path(self.project_db_file, config.wgn_db)
+				if not wgn_db:
+					sys.exit('Direktory WGB tidak ada')
 				if not os.path.exists(wgn_db):
 					sys.exit('WGN path {dir} does not exist.'.format(dir=wgn_db))
 					
@@ -865,6 +991,9 @@ class WgnImport(ExecutableApi):
 
 		if delete_existing:
 			self.delete_existing()
+   
+		if delete_stations or (delete_existing and Weather_sta_cli.observed_count() < 1):
+			self.delete_existing_stations()
 
 	def import_data(self):
 		if self.create_stations:
@@ -880,6 +1009,13 @@ class WgnImport(ExecutableApi):
 		Weather_wgn_cli_mon.delete().execute()
 		Weather_wgn_cli.delete().execute()
 
+	def delete_existing_stations(self):
+		Weather_file.delete().execute()
+		Weather_sta_cli.delete().execute()
+		m = Project_config.get()
+		m.weather_data_dir = None
+		m.save()
+
 	def add_wgn_stations(self, start_prog, total_prog):
 		if self.import_method == 'database':
 			self.add_wgn_stations_db(start_prog, total_prog)
@@ -891,304 +1027,357 @@ class WgnImport(ExecutableApi):
 			sys.exit('Unsupported wgn import method.')
 
 	def add_wgn_stations_tf(self, start_prog, total_prog):
-		if self.__abort: return
+		if self.__abort: 
+			return
 		prog = (total_prog - start_prog) / 4 + start_prog
-		self.emit_progress(prog, 'Adding weather generator stations...')
+		self.emit_progress(prog, 'Menambah weather generator stations...')
 		old_to_new_id = fileio.read_csv_file(self.file1, Weather_wgn_cli, self.project_db, 0, ignore_id_col=True, overwrite=fileio.FileOverwrite.replace, remove_spaces_cols=['name'], return_id_dict=True)
 		prog = (total_prog - start_prog) / 2 + start_prog
-		self.emit_progress(prog, 'Adding weather generator monthly values...')
+		self.emit_progress(prog, 'Menambah weather generator monthly values...')
 		try:
 			fileio.read_csv_file(self.file2, Weather_wgn_cli_mon, self.project_db, 0, ignore_id_col=True, overwrite=fileio.FileOverwrite.ignore, replace_id_col='weather_wgn_cli', replace_id_dict=old_to_new_id)
 		except UnicodeDecodeError:
 			sys.exit('Your CSV files contain a character that is not UTF-8 encoding. Please check your station names and remove any accents or other non-unicode characters.')
 
 	def add_wgn_stations_db(self, start_prog, total_prog):
-		if self.__abort: return
+		if self.__abort:
+			return
 		conn = sqlite3.connect(self.wgn_database)
 		conn.row_factory = sqlite3.Row
 
-		monthly_table = "{}_mon".format(self.wgn_table)
-
-		if not db_lib.exists_table(conn, self.wgn_table):
-			raise ValueError(
-				"Table {table} does not exist in {file}.".format(table=self.wgn_table, file=self.wgn_database))
-
-		if not db_lib.exists_table(conn, monthly_table):
-			raise ValueError(
-				"Table {table} does not exist in {file}.".format(table=monthly_table, file=self.wgn_database))
-
-		if Rout_unit_con.select().count() > 0:
-			coords = Rout_unit_con.select(fn.Min(Rout_unit_con.lat).alias("min_lat"),
-										  fn.Max(Rout_unit_con.lat).alias("max_lat"),
-										  fn.Min(Rout_unit_con.lon).alias("min_lon"),
-										  fn.Max(Rout_unit_con.lon).alias("max_lon")
-										  ).get()
-
-			query = "select * from {table_name} where lat between ? and ? and lon between ? and ? order by name".format(table_name=self.wgn_table)
-			tol = 0.5
-			cursor = conn.cursor().execute(query, (coords.min_lat - tol, coords.max_lat + tol, coords.min_lon - tol, coords.max_lon + tol))
-		elif Chandeg_con.select().count() > 0:
-			coords = Chandeg_con.select(fn.Min(Chandeg_con.lat).alias("min_lat"),
-										  fn.Max(Chandeg_con.lat).alias("max_lat"),
-										  fn.Min(Chandeg_con.lon).alias("min_lon"),
-										  fn.Max(Chandeg_con.lon).alias("max_lon")
-										  ).get()
-
-			query = "select * from {table_name} where lat between ? and ? and lon between ? and ? order by name".format(table_name=self.wgn_table)
-			tol = 0.5
-			cursor = conn.cursor().execute(query, (coords.min_lat - tol, coords.max_lat + tol, coords.min_lon - tol, coords.max_lon + tol))
-		else:
-			query = "select * from {table_name} order by name".format(table_name=self.wgn_table)
-			cursor = conn.cursor().execute(query)
-
-		wgns = []
-		ids = []
-
-		data = cursor.fetchall()
-		records = len(data)
-		#print(records)
-
-		i = 1
-		for row in data:
-			if self.__abort: return
-
-			try:
-				existing = Weather_wgn_cli.get(Weather_wgn_cli.name == row['name'])
-			except Weather_wgn_cli.DoesNotExist:
-				prog = round(i * (total_prog / 2) / records) + start_prog
-				self.emit_progress(prog, "Preparing weather generator {name}...".format(name=row['name']))
-				i += 1
-
-				ids.append(row['id'])
-				wgn = {
-					"id": row['id'],
-					"name": row['name'],
-					"lat": row['lat'],
-					"lon": row['lon'],
-					"elev": row['elev'],
-					"rain_yrs": row['rain_yrs']
-				}
-				wgns.append(wgn)
-
-		prog = start_prog if records < 1 else round(i * (total_prog / 2) / records) + start_prog
-		self.emit_progress(prog, "Inserting {total} weather generators...".format(total=len(ids)))
-		db_lib.bulk_insert(project_base.db, Weather_wgn_cli, wgns)
-
-		# Chunk the id array so we don't hit the SQLite parameter limit!
-		max_length = 999
-		id_chunks = [ids[i:i + max_length] for i in range(0, len(ids), max_length)]
-
-		i = 1
-		start_prog = start_prog + (total_prog / 2)
-
-		mon_count_query = "select count(*) from {table_name}".format(table_name=monthly_table)
-		total_mon_rows = conn.cursor().execute(mon_count_query).fetchone()[0]
-		current_total = 0
-
-		for chunk in id_chunks:
-			monthly_values = []
-			mon_query = "select * from {table_name} where wgn_id in ({ids})".format(table_name=monthly_table, ids=",".join('?'*len(chunk)))
-			mon_cursor = conn.cursor().execute(mon_query, chunk)
-			mon_data = mon_cursor.fetchall()
-			mon_records = len(mon_data)
-			i = 1
-
-			for row in mon_data:
-				if self.__abort: return
-
-				if i == 1 or (i % 12 == 0):
-					prog = round(i * (total_prog / 2) / mon_records) + start_prog
-					self.emit_progress(prog, "Preparing monthly values {i}/{total}...".format(i=i, total=mon_records))
-				i += 1
-
-				mon = {
-					"weather_wgn_cli": row['wgn_id'],
-					"month": row['month'],
-					"tmp_max_ave": row['tmp_max_ave'],
-					"tmp_min_ave": row['tmp_min_ave'],
-					"tmp_max_sd": row['tmp_max_sd'],
-					"tmp_min_sd": row['tmp_min_sd'],
-					"pcp_ave": row['pcp_ave'],
-					"pcp_sd": row['pcp_sd'],
-					"pcp_skew": row['pcp_skew'],
-					"wet_dry": row['wet_dry'],
-					"wet_wet": row['wet_wet'],
-					"pcp_days": row['pcp_days'],
-					"pcp_hhr": row['pcp_hhr'],
-					"slr_ave": row['slr_ave'],
-					"dew_ave": row['dew_ave'],
-					"wnd_ave": row['wnd_ave']
-				}
-				monthly_values.append(mon)
-
-			prog = round(i * (total_prog / 2) / mon_records) + start_prog
-			current_total = current_total + mon_records
-			self.emit_progress(prog, "Inserting monthly values {rec}/{total}...".format(rec=current_total, total=total_mon_rows))
-			db_lib.bulk_insert(project_base.db, Weather_wgn_cli_mon, monthly_values)
-
-	def add_wgn_stations_sf(self, start_prog, total_prog):
-		if self.__abort: return
 		try:
-			csv_file = open(self.file1, "r")
+			monthly_table = "{}_mon".format(self.wgn_table)
 
-			dialect = csv.Sniffer().sniff(csv_file.readline())
-			csv_file.seek(0)
-			replace_commas = dialect is not None and dialect.delimiter != ','
-			hasHeader = csv.Sniffer().has_header(csv_file.readline())
-			csv_file.seek(0)
+			if not db_lib.exists_table(conn, self.wgn_table) or not db_lib.exists_table(conn, monthly_table):
+				raise ValueError(f"Tabel {self.wgn_table} tidak ditemukan di {self.wgn_database}")
 
-			csv_reader = csv.reader(csv_file, dialect)
-
-			if hasHeader:
-				headerLine = next(csv_reader)
-
-			#row_count = sum(1 for row in csv_reader)
-
-			i = 0
-			stations = [] 
-			station_to_mv = {}
-			self.emit_progress(round(total_prog*0.5), 'Reading CSV file...')
-			for val in csv_reader:
-				if replace_commas:
-					val = [item.replace(',', '.', 1) for item in val]
+			# Penentuan Query Koordinat Spasial
+			if Rout_unit_con.select().count() > 0:
+				coords = Rout_unit_con.select(fn.Min(Rout_unit_con.lat).alias("min_lat"),
+											fn.Max(Rout_unit_con.lat).alias("max_lat"),
+											fn.Min(Rout_unit_con.lon).alias("min_lon"),
+											fn.Max(Rout_unit_con.lon).alias("max_lon")).get()
 				
-				station = {}
-				station['name'] = utils.remove_space(val[0])
+				query = "select * from {table_name} where lat between ? and ? and lon between ? and ? order by name".format(table_name=self.wgn_table)
+				tol = 0.5
+				cursor = conn.cursor().execute(query, (coords.min_lat - tol, coords.max_lat + tol, coords.min_lon - tol, coords.max_lon + tol))
+			elif Chandeg_con.select().count() > 0:
+				coords = Chandeg_con.select(fn.Min(Chandeg_con.lat).alias("min_lat"),
+											fn.Max(Chandeg_con.lat).alias("max_lat"),
+											fn.Min(Chandeg_con.lon).alias("min_lon"),
+											fn.Max(Chandeg_con.lon).alias("max_lon")).get()
+				
+				query = "select * from {table_name} where lat between ? and ? and lon between ? and ? order by name".format(table_name=self.wgn_table)
+				tol = 0.5
+				cursor = conn.cursor().execute(query, (coords.min_lat - tol, coords.max_lat + tol, coords.min_lon - tol, coords.max_lon + tol))
+			else:
+				query = "select * from {table_name} order by name".format(table_name=self.wgn_table)
+				cursor = conn.cursor().execute(query)
 
-				#Check for duplicate name
-				table = Weather_wgn_cli
+			data = cursor.fetchall()
+			records = len(data)
+			wgns = []
+			ids = []
+
+			i = 1
+			# Proses data WGN (Stasiun Induk)
+			for row in data:
+				if self.__abort:
+					return
 				try:
-					m = table.get(table.name == station['name'])
+					existing = Weather_wgn_cli.get(Weather_wgn_cli.name == row['name'])
+				except getattr(Weather_wgn_cli, 'DoesNotExist'):
+					prog = round(i * (total_prog / 2) / records) + start_prog
+					self.emit_progress(prog, "Preparing weather generator {name}...".format(name=row['name']))
+					i += 1
 
-					k = 1
-					while table.select().where(table.name == '{name}{num}'.format(name=station['name'], num=k)).exists():
-						k += 1
+					ids.append(row['id'])
+					wgn = {
+						"id": row['id'],
+						"name": row['name'],
+						"lat": row['lat'],
+						"lon": row['lon'],
+						"elev": row['elev'],
+						"rain_yrs": row['rain_yrs']
+					}
+					wgns.append(wgn)
+  
+			prog = start_prog if records < 1 else round(i * (total_prog / 2) / records) + start_prog
+			self.emit_progress(prog, "Inserting {total} weather generators...".format(total=len(ids)))
+			db_lib.bulk_insert(project_base.db, Weather_wgn_cli, wgns)
+  
+			max_length = 999
+			id_chunks = [ids[i:i + max_length] for i in range(0, len(ids), max_length)]
+   
+			i = 1
+			start_prog = start_prog + (total_prog / 2)
 
-					station['name'] = '{name}{num}'.format(name=station['name'], num=k)
-				except table.DoesNotExist:
-					pass
+			mon_count_query = "select count(*) from {table_name}".format(table_name=monthly_table)
+			total_mon_rows = conn.cursor().execute(mon_count_query).fetchone()[0]
+			current_total = 0
 
-				station['lat'] = utils.val_if_null(val[1], 0)
-				station['lon'] = utils.val_if_null(val[2], 0)
-				station['elev'] = utils.val_if_null(val[3], 0)
-				station['rain_yrs'] = utils.val_if_null(val[4], 0)
-
-				idx = 5
+			# Proses Nilai Bulanan (Monthly Values)
+			for chunk in id_chunks:
 				monthly_values = []
-				for m in range(1, 13):
-					month = {}
-					month['month'] = m
-					month['tmp_max_ave'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['tmp_min_ave'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['tmp_max_sd'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['tmp_min_sd'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['pcp_ave'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['pcp_sd'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['pcp_skew'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['wet_dry'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['wet_wet'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['pcp_days'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['pcp_hhr'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['slr_ave'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['dew_ave'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					month['wnd_ave'] = utils.val_if_null(val[idx], 0)
-					idx += 1
-					monthly_values.append(month)
+				mon_query = "select * from {table_name} where wgn_id in ({ids})".format(table_name=monthly_table, ids=",".join('?'*len(chunk)))
+				mon_cursor = conn.cursor().execute(mon_query, chunk)
+				mon_data = mon_cursor.fetchall()
+				mon_records = len(mon_data)
+				i=1
+
+				for row in mon_data:
+					if self.__abort:
+						return
+
+					# Pelindung pembagian nol pada progress internal chunk bulanan
+					if (i == 1 or (i % 12 == 0)) and mon_records > 0:
+						prog = round(i * (total_prog / 2) / mon_records) + start_prog
+						self.emit_progress(prog, "Preparing monthly values {i}/{total}...".format(i=i, total=mon_records))
+					i += 1
+
+					mon = {
+						"weather_wgn_cli": row['wgn_id'],
+						"month": row['month'],
+						"tmp_max_ave": row['tmp_max_ave'],
+						"tmp_min_ave": row['tmp_min_ave'],
+						"tmp_max_sd": row['tmp_max_sd'],
+						"tmp_min_sd": row['tmp_min_sd'],
+						"pcp_ave": row['pcp_ave'],
+						"pcp_sd": row['pcp_sd'],
+						"pcp_skew": row['pcp_skew'],
+						"wet_dry": row['wet_dry'],
+						"wet_wet": row['wet_wet'],
+						"pcp_days": row['pcp_days'],
+						"pcp_hhr": row['pcp_hhr'],
+						"slr_ave": row['slr_ave'],
+						"dew_ave": row['dew_ave'],
+						"wnd_ave": row['wnd_ave']
+					}
+					monthly_values.append(mon)
+
+				current_total += mon_records
+				# Pelindung pembagian nol pada akumulasi kemajuan akhir bulanan
+				if total_mon_rows > 0:
+					prog = round(current_total * (total_prog / 2) / total_mon_rows) + start_prog
+					self.emit_progress(prog, "Inserting monthly values {rec}/{total}...".format(rec=current_total, total=total_mon_rows))
 				
-				stations.append(station)
-				station_to_mv[station['name']] = monthly_values
-				i += 1
+				if monthly_values:
+					db_lib.bulk_insert(project_base.db, Weather_wgn_cli_mon, monthly_values)
+		except Exception:
+			pass
+			
+	def add_wgn_stations_sf(self, start_prog, total_prog):
+		if self.__abort: 
+			return
 
-			self.emit_progress(round(total_prog*0.75), 'Inserting stations into project database...')
-			db_lib.bulk_insert(self.project_db, Weather_wgn_cli, stations)
-			name_to_id = {}
-			for row in Weather_wgn_cli.select(Weather_wgn_cli.id, Weather_wgn_cli.name):
-				name_to_id[row.name] = row.id
+		if not self.file1:
+			return
 
-			mv_to_insert = []
-			for name in station_to_mv:
-				id = name_to_id[name]
-				for m in station_to_mv[name]:
-					m['weather_wgn_cli'] = id
-					mv_to_insert.append(m)
+		try:
+			# Gunakan 'with' agar file otomatis tertutup meskipun ada error
+			with open(self.file1, "r", encoding="utf-8") as csv_file:
+				# Ambil sampel baris yang agak panjang agar Sniffer tidak crash
+				sample_lines = "".join([csv_file.readline() for _ in range(2)])
+				csv_file.seek(0)
+				
+				try:
+					dialect = csv.Sniffer().sniff(sample_lines)
+				except Exception:
+					dialect = csv.excel # Fallback ke standar Excel jika sniffer gagal
+				
+				csv_file.seek(0)
+				replace_commas = dialect is not None and dialect.delimiter != ','
+				
+				try:
+					hasHeader = csv.Sniffer().has_header(sample_lines)
+				except Exception:
+					hasHeader = True # Default aman jika gagal mendeteksi
+					
+				csv_file.seek(0)
+				csv_reader = csv.reader(csv_file, dialect)
 
-			self.emit_progress(round(total_prog*0.90), 'Inserting monthly values into project database...')
-			db_lib.bulk_insert(self.project_db, Weather_wgn_cli_mon, mv_to_insert)
+				if hasHeader:
+					next(csv_reader)
+
+				i = 0
+				stations = [] 
+				station_to_mv = {}
+				self.emit_progress(round(total_prog*0.5), 'Reading CSV file...')
+				
+				for val in csv_reader:
+					if not val: # Lewati jika ada baris kosong di dalam CSV
+						continue
+						
+					if replace_commas:
+						val = [item.replace(',', '.', 1) for item in val]
+					
+					station = {}
+					station['name'] = utils.remove_space(val[0])
+
+					# 🛡️ Perbaikan Sakral: Tangkap exception DoesNotExist lewat modelnya langsung
+					try:
+						Weather_wgn_cli.get(Weather_wgn_cli.name == station['name'])
+						k = 1
+						while Weather_wgn_cli.select().where(
+							Weather_wgn_cli.name == '{name}{num}'.format(name=station['name'], num=k)
+						).exists():
+							k += 1
+						station['name'] = '{name}{num}'.format(name=station['name'], num=k)
+					except getattr(Weather_wgn_cli, 'DoesNotExist'): # Menggunakan Exception global jauh lebih aman dari error circular import
+						pass
+
+					station['lat'] = utils.val_if_null(val[1], 0)
+					station['lon'] = utils.val_if_null(val[2], 0)
+					station['elev'] = utils.val_if_null(val[3], 0)
+					station['rain_yrs'] = utils.val_if_null(val[4], 0)
+
+					idx = 5
+					monthly_values = []
+					for m in range(1, 13):
+						month = {
+							'month': m,
+							'tmp_max_ave': utils.val_if_null(val[idx], 0),
+							'tmp_min_ave': utils.val_if_null(val[idx+1], 0),
+							'tmp_max_sd': utils.val_if_null(val[idx+2], 0),
+							'tmp_min_sd': utils.val_if_null(val[idx+3], 0),
+							'pcp_ave': utils.val_if_null(val[idx+4], 0),
+							'pcp_sd': utils.val_if_null(val[idx+5], 0),
+							'pcp_skew': utils.val_if_null(val[idx+6], 0),
+							'wet_dry': utils.val_if_null(val[idx+7], 0),
+							'wet_wet': utils.val_if_null(val[idx+8], 0),
+							'pcp_days': utils.val_if_null(val[idx+9], 0),
+							'pcp_hhr': utils.val_if_null(val[idx+10], 0),
+							'slr_ave': utils.val_if_null(val[idx+11], 0),
+							'dew_ave': utils.val_if_null(val[idx+12], 0),
+							'wnd_ave': utils.val_if_null(val[idx+13], 0)
+						}
+						idx += 14 
+						monthly_values.append(month)
+					
+					stations.append(station)
+					station_to_mv[station['name']] = monthly_values
+					i += 1
+
+			# Proses insertion tetap di luar blok 'with' agar lebih efisien
+			if stations:
+				self.emit_progress(round(total_prog*0.75), 'Inserting stations into project database...')
+				db_lib.bulk_insert(self.project_db, Weather_wgn_cli, stations)
+				
+				name_to_id = {
+					row.name: row.id for row in Weather_wgn_cli.select(Weather_wgn_cli.id, Weather_wgn_cli.name)
+				}
+
+				mv_to_insert = []
+				for name, mv_list in station_to_mv.items():
+					if name in name_to_id:
+						id = name_to_id[name]
+						for m in mv_list:
+							m['weather_wgn_cli'] = id
+							mv_to_insert.append(m)
+					else:
+						print(f"Warning: Stasiun {name} dilewati karena tidak ditemukan di database.")
+
+				if mv_to_insert:
+					self.emit_progress(round(total_prog*0.90), 'Inserting monthly values into project database...')
+					db_lib.bulk_insert(self.project_db, Weather_wgn_cli_mon, mv_to_insert)
+
 		except UnicodeDecodeError:
 			sys.exit('Your CSV file contains a character that is not UTF-8 encoding. Please check your station names and remove any accents or other non-unicode characters.')
 
-
 	def create_weather_stations(self, start_prog, total_prog):  # total_prog is the total progress percentage available for this method
-		if self.__abort: return
+		if self.__abort: 
+			return
 
 		stations = []
 		query = Weather_wgn_cli.select()
 		records = query.count()
-		i = 1
-		for row in query:
-			if self.__abort: return
+		
+		# 🛡️ SAFETY GUARD: Jalankan hanya jika ada data stasiun WGN yang diproses
+		if records > 0:
+			i = 1
+			for row in query:
+				if self.__abort: 
+					return
 
-			lat = row.lat
-			lon = row.lon
-			#name = "w{lat}{lon}".format(lat=abs(round(lat*1000)), lon=abs(round(lon*1000)))
-			name = weather_sta_name(lat, lon)
+				lat = row.lat
+				lon = row.lon
+				name = weather_sta_name(lat, lon)
 
-			prog = round(i * total_prog / records) + start_prog
-			self.emit_progress(prog, "Creating weather station {name}...".format(name=name))
+				# Hitung progress aman dari pembagian nol karena sudah dikunci records > 0
+				prog = round(i * total_prog / records) + start_prog
+				self.emit_progress(prog, "Creating weather station {name}...".format(name=name))
 
-			try:
-				existing = Weather_sta_cli.get(Weather_sta_cli.name == name)
-			except Weather_sta_cli.DoesNotExist:
-				station = {
-					"name": name,
-					"hmd": None,
-					"pcp": None,
-					"slr": None,
-					"tmp": None,
-					"wnd": None,
-					"pet": None,
-					"atmo_dep": None,
-					"lat": lat,
-					"lon": lon,
-					"wgn": row.id
-				}
+				# Strategi .exists() Anda dipertahankan karena sangat bagus dan bebas dari Pylance error
+				try:
+					existing = Weather_sta_cli.get(Weather_sta_cli.name == name)
+				except getattr(Weather_sta_cli ,'DoesNotExist'):
+					station = {
+						"name": name,
+						"hmd": None,
+						"pcp": None,
+						"slr": None,
+						"tmp": None,
+						"wnd": None,
+						"pet": None,
+						"atmo_dep": None,
+						"lat": lat,
+						"lon": lon,
+						"wgn": row.id
+					}
 
-				stations.append(station)
-			i += 1
-
-		db_lib.bulk_insert(project_base.db, Weather_sta_cli, stations)
+					stations.append(station)
+				i += 1
+			# Eksekusi insert database hanya jika ada array data baru untuk menghemat resource
+			if stations:
+				db_lib.bulk_insert(project_base.db, Weather_sta_cli, stations)
+		else:
+			# Jika data kosong, langsung lompat kemajuan ke target penuh agar UI tidak hang
+			self.emit_progress(start_prog + total_prog, "No weather generator stations found to process.")
 
 	def match_to_weather_stations(self, start_prog, total_prog):
+		if self.__abort:
+			return
+
+		# Cek apakah ada stasiun cuaca generator yang tersedia
 		if Weather_wgn_cli.select().count() > 0:
-			with project_base.db.atomic():
-				query = Weather_sta_cli.select()
-				records = query.count()
-				i = 1
-				for row in query:
-					if self.__abort: return
+			query = Weather_sta_cli.select()
+			records = query.count()
+			
+			# 🛡️ JALANKAN PROSES JIKA ADA DATA
+			if records > 0:
+				db = project_base.db
+				with db.atomic():
+					for i, row in enumerate(query, 1):
+						if self.__abort: 
+							return
 
-					prog = round(i * total_prog / records) + start_prog
-					i += 1
-
-					if row.lat is not None and row.lon is not None:
-						id = closest_lat_lon(project_base.db, "weather_wgn_cli", row.lat, row.lon)
-
-						self.emit_progress(prog, "Updating weather station with generator {i}/{total}...".format(i=i, total=records))
-						row.wgn_id = id
-						row.save()
+						# Hitung progress aktual
+						prog = round(i * total_prog / records) + start_prog
+						if prog >= 100:
+							prog = 99
+						
+						if row.lat is not None and row.lon is not None:
+							# Cari ID stasiun generator terdekat
+							wgn_id = closest_lat_lon(project_base.db, "weather_wgn_cli", row.lat, row.lon)
+							row.wgn_id = wgn_id
+							row.save()
+							# self.emit_progress(prog, "Updating weather station with generator {i}/{total}...".format(i=i, total=records))
+						if i % 5 == 0 or i == records:
+							message = f"Updating weather station with generator {i}/{records}..."
+							self.emit_progress(prog, message)			
+							
+			else:
+				self.emit_progress(start_prog, "Ready. No new weather stations found to match.")
+    			# 🌟 SOLUSI STUCK: Paksa progress melompat ke batas maksimal target modul ini
+				# target_finish = start_prog + total_prog
+				# # Jika ini adalah proses akhir dari rangkaian, langsung tembak ke 100%
+				# if target_finish >= 95:
+				# 	target_finish = 100
+					
+				# self.emit_progress(target_finish, "No weather stations found to match.")
+		else:
+			# Jika bahkan stasiun generatornya pun tidak ada
+			self.emit_progress(100, "No weather generators available.")
 
 
 
@@ -1226,98 +1415,106 @@ class AtmoImport(ExecutableApi):
 		self.match_to_stations(75, 25)
 
 	def read_data_file_csv(self, start_prog, total_prog):
-		#csv headers: name,month,year,nh4_rf,no3_rf,nh4_dry,no3_dry
-		if self.__abort: return
+		# csv headers: name,month,year,nh4_rf,no3_rf,nh4_dry,no3_dry
+		if self.__abort: 
+			return
 
-		csv_file = open(self.atmo_data_file, "r")
+		if not self.atmo_data_file:
+			return
 
-		dialect = csv.Sniffer().sniff(csv_file.readline())
-		csv_file.seek(0)
-		replace_commas = dialect is not None and dialect.delimiter != ','
-		hasHeader = csv.Sniffer().has_header(csv_file.readline())
-		csv_file.seek(0)
+		# Gunakan 'with' agar file otomatis tertutup
+		with builtins.open(self.atmo_data_file, "r", encoding="utf-8") as csv_file:
+			# Baca sample untuk sniffing
+			header_sample = csv_file.readline()
+			csv_file.seek(0)
+			
+			dialect = csv.Sniffer().sniff(header_sample)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			
+			hasHeader = csv.Sniffer().has_header(header_sample)
+			csv_file.seek(0)
 
-		csv_reader = csv.reader(csv_file, dialect)
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				next(csv_reader)
 
-		if hasHeader:
-			headerLine = next(csv_reader)
+			i = 0
+			stations = []
+			stations_to_values = {}
+			self.emit_progress(round(total_prog*0.5), 'Reading CSV file...')
+			
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
 
-		i = 0
-		stations = []
-		stations_to_values = {}
-		self.emit_progress(round(total_prog*0.5), 'Reading CSV file...')
-		for val in csv_reader:
-			if replace_commas:
-				val = [item.replace(',', '.', 1) for item in val]
+				if len(val) < 7:
+					sys.exit('Invalid csv file format. Ensure your data has the following columns: name,month,year,nh4_rf,no3_rf,nh4_dry,no3_dry')
+				
+				name = utils.val_if_null(val[0], 'atmo{}'.format(i+1))
+				month = utils.val_if_null(int(val[1]), 0)
+				year = utils.val_if_null(int(val[2]), 0)
+				nh4_rf = utils.val_if_null(float(val[3]), 0)
+				no3_rf = utils.val_if_null(float(val[4]), 0)
+				nh4_dry = utils.val_if_null(float(val[5]), 0)
+				no3_dry = utils.val_if_null(float(val[6]), 0)
 
-			if len(val) < 7:
-				sys.exit('Invalid csv file format. Ensure your data has the following columns: name,month,year,nh4_rf,no3_rf,nh4_dry,no3_dry')
-			name = utils.val_if_null(val[0], 'atmo{}'.format(i+1))
-			month = utils.val_if_null(int(val[1]), 0)
-			year = utils.val_if_null(int(val[2]), 0)
-			nh4_rf = utils.val_if_null(float(val[3]), 0)
-			no3_rf = utils.val_if_null(float(val[4]), 0)
-			nh4_dry = utils.val_if_null(float(val[5]), 0)
-			no3_dry = utils.val_if_null(float(val[6]), 0)
+				if i == 0:
+					self.atmo_cli.timestep = 'aa' if (month == 0 and year == 0) else ('yr' if month == 0 else 'mo')
+					self.atmo_cli.mo_init = month
+					self.atmo_cli.yr_init = year
+					self.atmo_cli.save()
 
-			if i == 0:
-				if month == 0 and year == 0:
-					self.atmo_cli.timestep = 'aa'
-				elif month == 0:
-					self.atmo_cli.timestep = 'yr'
-				else:
-					self.atmo_cli.timestep = 'mo'
+				if name not in stations:
+					stations.append(name)
+					stations_to_values[name] = []
 
-				self.atmo_cli.mo_init = month
-				self.atmo_cli.yr_init = year
-				self.atmo_cli.save()
+				timestep = 0
+				if self.atmo_cli.timestep == 'mo':
+					timestep = int('{y}{m}'.format(y=year, m=str(month).rjust(2, '0')))
+				elif self.atmo_cli.timestep == 'yr':
+					timestep = year
 
-			if name not in stations:
-				stations.append(name)
-				stations_to_values[name] = []
+				stations_to_values[name].append({
+					'timestep': timestep,
+					'nh4_wet': nh4_rf,
+					'no3_wet': no3_rf,
+					'nh4_dry': nh4_dry,
+					'no3_dry': no3_dry
+				})
+				i += 1
 
-			timestep = 0
-			if self.atmo_cli.timestep == 'mo':
-				timestep = int('{y}{m}'.format(y=year, m=str(month).rjust(2, '0')))
-			elif self.atmo_cli.timestep == 'yr':
-				timestep = year
-
-			data = {
-				'timestep': timestep,
-				'nh4_wet': nh4_rf,
-				'no3_wet': no3_rf,
-				'nh4_dry': nh4_dry,
-				'no3_dry': no3_dry
-			}
-
-			stations_to_values[name].append(data)
-			i += 1
-
+		# Insertion process
 		self.emit_progress(round(total_prog*0.75), 'Inserting stations into project database...')
-		stations_db = [{ 'atmo_cli': self.atmo_cli.id, 'name': v } for v in stations]
+		stations_db = [{'atmo_cli': self.atmo_cli.id, 'name': name} for name in stations]
 		db_lib.bulk_insert(self.project_db, Atmo_cli_sta, stations_db)
-		name_to_id = {}
-		for row in Atmo_cli_sta.select(Atmo_cli_sta.id, Atmo_cli_sta.name):
-			name_to_id[row.name] = row.id
+		
+		# Menggunakan dict comprehension untuk name_to_id agar lebih rapi
+		name_to_id = {row.name: row.id for row in Atmo_cli_sta.select(Atmo_cli_sta.id, Atmo_cli_sta.name)}
 
 		station_values = []
-		i = 0
-		for name in stations_to_values:
+		# Loop melalui stations_to_values untuk mengisi data
+		for name, values in stations_to_values.items():
 			id = name_to_id[name]
-			for v in stations_to_values[name]:
+			for v in values:
 				v['sta'] = id
 				station_values.append(v)
-			if i == 0:
-				self.atmo_cli.num_aa = 0 if self.atmo_cli.timestep == 'aa' else len(stations_to_values[name])
+			
+			# Update num_aa hanya sekali untuk station pertama
+			if name == stations[0]:
+				self.atmo_cli.num_aa = 0 if self.atmo_cli.timestep == 'aa' else len(values)
 				self.atmo_cli.save()
-			i += 1
 
 		self.emit_progress(round(total_prog*0.90), 'Inserting values into project database...')
 		db_lib.bulk_insert(self.project_db, Atmo_cli_sta_value, station_values)
 		
 
 	def read_data_file_cli(self, start_prog, total_prog):
-		if self.__abort: return
+		if self.__abort: 
+			return
+
+		if not self.atmo_data_file:
+			return
+
 		with open(self.atmo_data_file, 'r') as atmo_data:
 			i = 0
 			current_station_line = 3
@@ -1326,7 +1523,8 @@ class AtmoImport(ExecutableApi):
 			stations_to_values = {}
 			self.emit_progress(start_prog + round(total_prog*0.5), 'Reading atmo.cli file...')
 			for line in atmo_data:
-				if self.__abort: break
+				if self.__abort: 
+					break
 				if i == 2:
 					val = line.split()
 					if len(val) < 5:
@@ -1404,43 +1602,73 @@ class AtmoImport(ExecutableApi):
 		return values
 	
 	def match_to_stations(self, start_prog, total_prog):
-		#csv headers: atmo_station,weather_station,lat,lon
-		if self.__abort: return
+		# csv headers: atmo_station,weather_station,lat,lon
+		if self.__abort: 
+			return
+		if not self.atmo_to_stations_file:
+			return
 
-		csv_file = open(self.atmo_to_stations_file, "r")
-
-		dialect = csv.Sniffer().sniff(csv_file.readline())
-		csv_file.seek(0)
-		replace_commas = dialect is not None and dialect.delimiter != ','
-		hasHeader = csv.Sniffer().has_header(csv_file.readline())
-		csv_file.seek(0)
-
-		csv_reader = csv.reader(csv_file, dialect)
-
-		if hasHeader:
-			headerLine = next(csv_reader)
-
-		self.emit_progress(round(total_prog*0.5), 'Matching atmo data to weather stations...')
-		for val in csv_reader:
-			if replace_commas:
-				val = [item.replace(',', '.', 1) for item in val]
-
-			if len(val) < 2:
-				sys.exit('Invalid csv file format. Ensure your data has the following columns: atmo_station,weather_station')
+		# Menggunakan 'with' untuk keamanan file
+		with builtins.open(self.atmo_to_stations_file, "r", encoding="utf-8") as csv_file:
+			header_sample = csv_file.readline()
+			csv_file.seek(0)
 			
-			atmo_station = val[0].strip()
-			weather_station = val[1].strip()
-			if atmo_station is not None and atmo_station != '' and atmo_station != 'null':
-				if weather_station is not None and weather_station != '' and weather_station != 'null':
-					Weather_sta_cli.update(atmo_dep=atmo_station).where(Weather_sta_cli.name == weather_station).execute()
-				else:
-					lat = float(val[2].strip())
-					lon = float(val[3].strip())
-					id = closest_lat_lon(project_base.db, "weather_sta_cli", lat, lon)
-					Weather_sta_cli.update(atmo_dep=atmo_station).where(Weather_sta_cli.id == id).execute()
+			dialect = csv.Sniffer().sniff(header_sample)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			
+			hasHeader = csv.Sniffer().has_header(header_sample)
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				next(csv_reader)
+
+			self.emit_progress(round(total_prog*0.5), 'Matching atmo data to weather stations...')
+			
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				if len(val) < 2:
+					sys.exit('Invalid csv file format. Ensure your data has columns: atmo_station,weather_station')
+				
+				atmo_station = val[0].strip()
+				weather_station = val[1].strip()
+				
+				# Logika validasi yang lebih bersih
+				is_atmo_valid = atmo_station and atmo_station.lower() != 'null'
+				is_weather_valid = weather_station and weather_station.lower() != 'null'
+
+				if is_atmo_valid:
+					if is_weather_valid:
+						Weather_sta_cli.update(atmo_dep=atmo_station).where(
+							Weather_sta_cli.name == weather_station
+						).execute()
+					else:
+						# Pastikan lat/lon tersedia jika weather_station kosong
+						if len(val) < 4:
+							continue
+						lat = float(val[2].strip())
+						lon = float(val[3].strip())
+						
+						wst_id = closest_lat_lon(project_base.db, "weather_sta_cli", lat, lon)
+						if wst_id:
+							Weather_sta_cli.update(atmo_dep=atmo_station).where(
+								Weather_sta_cli.id == wst_id
+							).execute()
 
 
 if __name__ == '__main__':
+	#     [Mulai CLI]
+	#     |
+	#     v
+	# Cek --import_type
+	#     |
+	#     +---> "observed"     ----> Jalankan Class WeatherImport
+	#     +---> "observed2012" ----> Jalankan Class Swat2012WeatherImport
+	#     +---> "wgn"          ----> Jalankan Class WgnImport
+	#     +---> "atmo"         ----> Jalankan Class AtmoImport
+    
 	sys.stdout = Unbuffered(sys.stdout)
 	parser = argparse.ArgumentParser(description="Import weather generator data into project SQLite database.")
 	parser.add_argument("--project_db_file", type=str, help="full path of project SQLite database file", nargs="?")

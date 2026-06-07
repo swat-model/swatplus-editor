@@ -2,9 +2,13 @@
 	import { reactive, onMounted, onUnmounted } from 'vue';
 	import { useRoute } from 'vue-router';
 	import { useHelpers } from '@/helpers';
+	import { storeToRefs } from 'pinia';
+	import {useTaskStore} from '@/store/task';
 
 	const route = useRoute();
 	const { api, currentProject, errors, utilities, formatters, runProcess, constants } = useHelpers();
+	const taskStore = useTaskStore();
+	const { task } = storeToRefs(taskStore);
 
 	let page:any = reactive({
 		loading: false,
@@ -36,16 +40,16 @@
 		}
 	});
 
-	let task:any = reactive({
-		progress: {
-			percent: 0,
-			message: null
-		},
-		error: null,
-		running: false,
-		currentPid: null,
-		isGridTask: false
-	});
+	// let task:any = reactive({
+	// 	progress: {
+	// 		percent: 0,
+	// 		message: null
+	// 	},
+	// 	error: null,
+	// 	running: false,
+	// 	currentPid: null,
+	// 	isGridTask: false
+	// });
 
 	function importData() {
 		page.import.error = null;
@@ -54,79 +58,92 @@
 
 		if (formatters.isNullOrEmpty(page.import.form.fileName)) {
 			page.import.error = 'Please select a file below.';
+			page.import.saving = false;
 		} else {
-			let args = [page.import.form.type, 
-					'--db_file='+ currentProject.projectDb,
-					'--file_name='+ page.import.form.fileName,
-					'--table_name=gwflow_grid',
-					'--column_name=' + page.import.form.columnName,
-					'--swat_version=' + constants.appSettings.swatplus];
+			let args = [
+				page.import.form.type,
+				'--db_file=' + currentProject.projectDb,
+				'--file_name=' + page.import.form.fileName,
+				'--table_name=gwflow_grid',
+				'--column_name=' + page.import.form.columnName,
+				'--swat_version=' + constants.appSettings.swatplus
+			];
 
-			runTask(args);
-		}
-
-		page.import.saving = false;
-	}
-
-	function runTask(args:string[]) {
-		task.error = null;
-		task.running = true;
-		task.progress = {
-			percent: 0,
-			message: null
-		};
-
-		task.isGridTask = true;
-		task.currentPid = runProcess.runApiProc('gwflowgrids', 'swatplus_api', args);
-	}
-
-	let listeners:any = {
-		stdout: undefined,
-		stderr: undefined,
-		close: undefined
-	}
-
-	function initRunProcessHandlers() {
-		listeners.stdout = runProcess.processStdout('gwflowgrids', (data:any) => {
-			console.log(`stdout: ${data}`);
-			task.progress = runProcess.getApiOutput(data);
-		});
-		
-		listeners.stderr = runProcess.processStderr('gwflowgrids', (data:any) => {
-			console.log(`stderr: ${data}`);
-			task.error = data;
-			task.running = false;
-		});
-		
-		listeners.close = runProcess.processClose('gwflowgrids', (code:any) => {
-			errors.log(`close: ${code}`);
-			if (formatters.isNullOrEmpty(task.error)) {
+			// Jalankan task via store
+			taskStore.runTask(args, {
+				proc_name: 'gwflowgrids',
+				script_name: 'swatplus_api',
+				type: page.import.form.type,
+				isGridTask : true,
+				routePath: route.path
+			}, () => {
+				// Callback setelah selesai
+				page.import.saving = false;
 				if (page.import.form.type === 'export_csv') {
-					task.running = false;
 					page.exported.show = true;
 				} else {
-					task.running = false;
 					page.import.show = true;
 				}
-			}
-		});
+			});
+		}
 	}
 
-	function removeRunProcessHandlers() {
-		if (listeners.stdout) listeners.stdout();
-		if (listeners.stderr) listeners.stderr();
-		if (listeners.close) listeners.close();
-	}
+	// function runTask(args:string[]) {
+	// 	task.error = null;
+	// 	task.running = true;
+	// 	task.progress = {
+	// 		percent: 0,
+	// 		message: null
+	// 	};
+
+	// 	task.isGridTask = true;
+	// 	task.currentPid = runProcess.runApiProc('gwflowgrids', 'swatplus_api', args);
+	// }
+
+	// let listeners:any = {
+	// 	stdout: undefined,
+	// 	stderr: undefined,
+	// 	close: undefined
+	// }
+
+	// function initRunProcessHandlers() {
+	// 	listeners.stdout = runProcess.processStdout('gwflowgrids', (data:any) => {
+	// 		console.log(`stdout: ${data}`);
+	// 		task.progress = runProcess.getApiOutput(data);
+	// 	});
+		
+	// 	listeners.stderr = runProcess.processStderr('gwflowgrids', (data:any) => {
+	// 		console.log(`stderr: ${data}`);
+	// 		task.error = data;
+	// 		task.running = false;
+	// 	});
+		
+	// 	listeners.close = runProcess.processClose('gwflowgrids', (code:any) => {
+	// 		errors.log(`close: ${code}`);
+	// 		if (formatters.isNullOrEmpty(task.error)) {
+	// 			if (page.import.form.type === 'export_csv') {
+	// 				task.running = false;
+	// 				page.exported.show = true;
+	// 			} else {
+	// 				task.running = false;
+	// 				page.import.show = true;
+	// 			}
+	// 		}
+	// 	});
+	// }
+
+	// function removeRunProcessHandlers() {
+	// 	if (listeners.stdout) listeners.stdout();
+	// 	if (listeners.stderr) listeners.stderr();
+	// 	if (listeners.close) listeners.close();
+	// }
 
 	function cancelTask() {
-		task.error = null;
-		runProcess.killProcess(task.currentPid);
-		
-		task.running = false;
+		taskStore.cancelTask();
+
 	}
 
-	onMounted(() => initRunProcessHandlers())
-	onUnmounted(() => removeRunProcessHandlers());
+	
 </script>
 
 <template>
@@ -145,7 +162,7 @@
 		<div>
 			<error-alert :text="page.import.error"></error-alert>
 			<success-alert v-if="page.import.show" no-popup text="Data imported successfully"></success-alert>
-			<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing or exporting your data." :stack-trace="task.error.toString()" />
+			<stack-trace-error v-if="!formatters.isNullOrEmpty(task.error)" error-title="There was an error importing or exporting your data." :stack-trace="task.error ? task.error.toString() : ''" />
 			
 			<div v-if="task.running">
 				<v-progress-linear :model-value="task.progress.percent" color="primary" height="15" striped indeterminate></v-progress-linear>

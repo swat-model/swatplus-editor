@@ -16,6 +16,10 @@ import { get } from 'http';
 autoUpdater.autoDownload = false;
 
 const store = new Store();
+
+const nodeFs = require('fs');
+
+
 let DEV_MODE = process.env.NODE_ENV === 'development';
 
 let pids:any = [];
@@ -494,6 +498,17 @@ ipcMain.on('save-file-dialog', (event, options) => {
 	event.returnValue = dialog.showSaveDialogSync(mainWindow, options);
 })
 
+ipcMain.on('save-file', (event, { path, data }) => {
+  try {
+    fs.writeFileSync(path, data, 'utf-8');
+    event.returnValue = { success: true };
+  } catch (error) {
+    console.error("Gagal menulis file:", error);
+    event.returnValue = { success: false, error };
+  }
+})
+
+
 ipcMain.on('spawn-process', (event, proc_name:string, script_name:string, args:string[]) => {
 	console.log(`proc_name: ${proc_name}`)
 	console.log(`script_name: ${script_name}`)
@@ -636,6 +651,22 @@ function setColorTheme(colorTheme:string) {
 			break;
 	}
 }
+
+ipcMain.on('read-dir', (event, dirPath) => {
+    try {
+        event.returnValue = nodeFs.readdirSync(dirPath);
+    } catch (err) {
+        event.returnValue = [];
+    }
+});
+
+ipcMain.on('read-file', (event, filePath) => {
+    try {
+        event.returnValue = nodeFs.readFileSync(filePath, 'utf-8');
+    } catch (err) {
+        event.returnValue = null;
+    }
+});
 
 function initColorTheme() {
 	let colorTheme = 'light';

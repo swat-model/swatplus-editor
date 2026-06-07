@@ -1,7 +1,17 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    BooleanField, 
+    DateTimeField, 
+    ForeignKeyField, 
+    DoesNotExist,
+    AutoField
+)
 from . import base
 
 class File_cio_classification(base.BaseModel):
+	id = AutoField()
 	name = CharField()
 
 
@@ -38,6 +48,8 @@ class Project_config(base.BaseModel):
 	imported_gis = BooleanField(default=False)
 	is_lte = BooleanField(default=False)
 	use_gwflow = BooleanField(default=False)
+	
+	DoesNotExist = DoesNotExist
 
 	@classmethod
 	def update_version(cls, version):

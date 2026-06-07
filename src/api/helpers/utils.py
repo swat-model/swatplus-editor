@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, date
 import calendar
-import json
+import json # noqa: F401
 import urllib.parse
 import os.path
 import sys

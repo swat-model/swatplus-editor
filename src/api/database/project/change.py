@@ -1,4 +1,12 @@
-from peewee import *
+from peewee import (
+    # Model, 
+    CharField, 
+    IntegerField, 
+    DoubleField,
+    ForeignKeyField,
+    BooleanField,
+    AutoField
+)
 from . import base
 from database import lib as db_lib
 
@@ -12,6 +20,7 @@ class Cal_parms_cal(base.BaseModel):
 
 
 class Calibration_cal(base.BaseModel):
+	id = AutoField()
 	cal_parm = ForeignKeyField(Cal_parms_cal, on_delete='CASCADE', related_name='calibrations')
 	chg_typ = CharField()  # absval, abschg, pctchg
 	chg_val = DoubleField()
@@ -24,6 +33,7 @@ class Calibration_cal(base.BaseModel):
 
 
 class Calibration_cal_cond(base.BaseModel):
+	id = AutoField()
 	calibration_cal = ForeignKeyField(Calibration_cal, on_delete='CASCADE', related_name='conditions')
 	cond_typ = CharField()  # hsg, texture, landuse, region
 	cond_op = CharField() # = > <
@@ -77,10 +87,12 @@ class Wb_parms_sft(base.BaseModel):
 
 
 class Water_balance_sft(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 
 
 class Water_balance_sft_item(base.BaseModel):
+	id = AutoField()
 	water_balance_sft = ForeignKeyField(Water_balance_sft, on_delete='CASCADE', related_name='items')
 	name = CharField()
 	surq_rto = DoubleField(default=0)	#a
@@ -96,9 +108,11 @@ class Water_balance_sft_item(base.BaseModel):
 
 
 class Ch_sed_budget_sft(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 
 class Ch_sed_budget_sft_item(base.BaseModel):
+	id = AutoField()
 	ch_sed_budget_sft = ForeignKeyField(Ch_sed_budget_sft, on_delete='CASCADE', related_name='items')
 	name = CharField()
 	cha_wide = DoubleField()
@@ -117,10 +131,12 @@ class Ch_sed_parms_sft(base.BaseModel):
 
 
 class Plant_parms_sft(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 
 
 class Plant_parms_sft_item(base.BaseModel):
+	id = AutoField()
 	plant_parms_sft = ForeignKeyField(Plant_parms_sft, on_delete='CASCADE', related_name='items')
 	var = CharField()
 	name = CharField()
@@ -133,10 +149,12 @@ class Plant_parms_sft_item(base.BaseModel):
 
 
 class Plant_gro_sft(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 
 
 class Plant_gro_sft_item(base.BaseModel):
+	id = AutoField()
 	plant_gro_sft = ForeignKeyField(Plant_gro_sft, on_delete='CASCADE', related_name='items')
 	name = CharField()
 	yld = DoubleField(default=0)

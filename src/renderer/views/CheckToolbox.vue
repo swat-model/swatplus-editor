@@ -23,7 +23,7 @@
 				"Sediment",
 				"Plants",
 				"Point Sources",
-				"Reservoirs"
+				"Reservoirs",
 			],
 			checkByLanduse: false,
 			/*selectedLanduse: <string|null>null,
@@ -74,6 +74,10 @@
 	});
 
 	async function get() {
+		if (!currentProject.projectDb || currentProject.projectDb === null) {
+			console.log("API request aborted: projectDb is not loaded yet.");
+			return;
+    	}
 		data.page.loading = true;
 		data.page.error = null;
 
@@ -670,8 +674,8 @@
 
 <template>
     <project-container :loading="data.page.loading" add-error-frame loading-message="Reading outputs for SWAT+ Check. This may take a few moments on larger models.">
-        <v-main>
-			<div class="py-3 px-6" v-if="!canLoad">
+        <v-main class="layout-fix">
+			<div class="py-3 px-6 my-unformatted-code" v-if="!canLoad">
                 <div v-if="currentProject.isLte">			
 					<h1 class="text-h5 mb-6">SWAT+ Check Not Available</h1>
 
@@ -682,15 +686,15 @@
 					<v-btn @click="utilities.exit" variant="flat" color="primary">Exit SWAT+ Editor</v-btn>
 				</div>
 				<div v-else-if="!formatters.isNullOrEmpty(data.page.error)">
-					<h1 class="text-h5 mb-6">There was an error loading SWAT+ Check for your project.</h1>
+					<h1 class="text-h5 mb-6">Terjadi kesalahan saat memuat SWAT+ Check untuk proyek Anda.</h1>
 					<error-alert :text="data.page.error"></error-alert>
 					<v-btn to="/run" variant="flat" color="primary">Re-Configure Model Run</v-btn>
 				</div>
 				<div v-else-if="formatters.isNullOrEmpty(data.config.output_last_imported)">
 					<h1 class="text-h5 mb-6">Not ready to run SWAT+ Check</h1>
 
-					<v-alert color="info" icon="$info" variant="tonal" border="start" class="my-4">
-						You must run the model and analyze output before running SWAT+ Check.				
+					<v-alert color="red" icon="$info" variant="tonal" border="start" class="my-4">
+						Anda harus menjalankan model dan menganalisis output sebelum menjalankan SWAT+ Check.				
 					</v-alert>
 
 					<v-btn to="/run" variant="flat" color="primary">Configure Model Run</v-btn>
@@ -708,26 +712,26 @@
 							<h1 class="text-h5 mb-6">SWAT+ Check</h1>
 
 							<p> 
-								SWAT+ Check reads model output from a SWAT+ project and performs many simple checks to identify 
-								potential model problems. The intended purpose of this program is to identify model problems early in the 
-								modeling process. Hidden model problems often result in the need to recalibrate or regenerate a model, 
-								resulting in an avoidable waste of time. This program is designed to compare a variety of SWAT+ outputs to 
-								nominal ranges based on the judgment of model developers. A warning does not necessarily indicate a problem; 
-								the purpose is to bring attention to unusual predictions. This software also provides a visual representation 
-								of various model outputs to aid novice users. 
+								SWAT+ Check membaca output model dari proyek SWAT+ dan melakukan banyak pemeriksaan sederhana untuk mengidentifikasi
+								potensi masalah model. Tujuan dari program ini adalah untuk mengidentifikasi masalah model sejak dini dalam
+								proses pemodelan. Masalah model yang tersembunyi seringkali mengakibatkan perlunya kalibrasi ulang atau regenerasi model,
+								yang mengakibatkan pemborosan waktu yang dapat dihindari. Program ini dirancang untuk membandingkan berbagai output SWAT+ dengan
+								rentang nominal berdasarkan penilaian pengembang model. Peringatan tidak selalu menunjukkan masalah;
+								tujuannya adalah untuk menarik perhatian pada prediksi yang tidak biasa. Perangkat lunak ini juga menyediakan representasi visual
+								dari berbagai output model untuk membantu pengguna pemula. 
 							</p>
 
 							<v-alert v-if="data.check.info.gwflow" type="warning" icon="$warning" variant="tonal" border="start" class="my-4">
 								<p>
-									Your model is using the GWFLOW module. SWAT+ Check is not fully compatible with GWFLOW at this time.
-									We will update this as soon as possible. For now the following values are unavailable:
+									Model Anda menggunakan modul GWFLOW. SWAT+ Check saat ini belum sepenuhnya kompatibel dengan GWFLOW.
+									Kami akan memperbarui ini sesegera mungkin. Untuk saat ini, nilai-nilai berikut tidak tersedia:
 								</p>
 								<ul>
 									<li>Hydrology: return flow, revap, recharge, baseflow total flow, deep recharge precipitation</li>
 									<li>Landscape Nitrogen Losses: leached, groundwater yield</li>
 								</ul>
 								<p>
-									We encourage you to look in the GWFLOW output files on your own until a fix is available.
+									Kami menganjurkan Anda untuk memeriksa file output GWFLOW secara manual sampai perbaikan tersedia.
 								</p>
 							</v-alert>
 
@@ -1517,10 +1521,10 @@
 									<v-card-item>
 										<h4 class="mt-4">Reservoirs</h4>
 										<p class="text-body-2">
-											Reservoirs are an optional feature in SWAT+.   The hydrology of basins with large reservoirs may be completely dominated by reservoir processes and release rates.
-											The data presented here is an average of all reservoirs; <a href="#" @click.prevent="data.modals.reservoirs = true">see data for individual reservoirs</a>.
-											The statistics presented here are designed to identify common reservoir issues.   The use of user specified release rate may cause a reservoir to
-											grow continuously or run completely dry.  These common issues can be detected via the final/initial volume ratio and fraction of period empty statistics below.
+											Waduk merupakan fitur opsional di SWAT+. Hidrologi cekungan dengan waduk besar mungkin sepenuhnya didominasi oleh proses waduk dan laju pelepasan air.
+											Data yang disajikan di sini adalah rata-rata dari semua waduk; <a href="#" @click.prevent="data.modals.reservoirs = true">lihat data untuk masing-masing waduk</a>.
+											Statistik yang disajikan di sini dirancang untuk mengidentifikasi masalah umum waduk. Penggunaan laju pelepasan air yang ditentukan pengguna dapat menyebabkan
+											waduk terus bertambah volumenya atau benar-benar kering. Masalah umum ini dapat dideteksi melalui rasio volume akhir/awal dan statistik fraksi periode kosong di bawah ini.
 										</p>
 
 										<h4 class="mt-4 mb-2">Messages and Warnings</h4>
@@ -1718,6 +1722,7 @@
 </template>
 
 <style scoped>
+
 	.semi-transparent {
 		background-color: rgba(var(--v-theme-surface), 0.75) !important;
 	}

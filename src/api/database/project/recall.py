@@ -1,8 +1,15 @@
-from peewee import *
+from peewee import (
+    IntegerField,
+    CharField,
+    ForeignKeyField,
+    DoubleField,
+    AutoField
+)
 from . import base
 
 
 class Recall_rec(base.BaseModel):
+	id = AutoField()
 	name = CharField(unique=True)
 	rec_typ = IntegerField()  # 1-day, 2-mon, 3-yr, 4-const
 

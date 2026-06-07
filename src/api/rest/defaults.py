@@ -1,4 +1,4 @@
-from flask import request, abort, Response
+from flask import request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
@@ -8,14 +8,20 @@ from helpers import table_mapper, utils
 from database import lib as db_lib
 from database.project import base as project_base, climate
 
+from typing import Any, List, Dict
+from peewee import (
+	SQL,
+	IntegrityError
+)
 import ast
 
 class DefaultRestMethods:
 	@staticmethod
-	def get(id, table, description, back_refs=False, max_depth=1) -> Response:
+	def get(id, table, description, back_refs=False, max_depth=1) -> Dict[str, Any]:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		m = table.get(table.id == id)
 		if m is None:
@@ -32,10 +38,11 @@ class DefaultRestMethods:
 			return model_to_dict(m, recurse=False)
 		
 	@staticmethod
-	def get_by_name(name, table, description, back_refs=False, max_depth=1) -> Response:
+	def get_by_name(name, table, description, back_refs=False, max_depth=1) -> Dict[str, Any]:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		m = table.get(table.name == name)
 		if m is None:
@@ -52,11 +59,12 @@ class DefaultRestMethods:
 			return model_to_dict(m, recurse=False)
 		
 	@staticmethod
-	def get_datasets(id, table, description, back_refs=False, max_depth=1) -> Response:
+	def get_datasets(id, table, description, back_refs=False, max_depth=1) -> Dict[str, Any]:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		datasets_db = request.headers.get(rh.DATASETS_DB)
 		has_db,error = rh.init(project_db, datasets_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		m = table.get(table.id == id)
 		if m is None:
@@ -73,11 +81,12 @@ class DefaultRestMethods:
 			return model_to_dict(m, recurse=False)
 		
 	@staticmethod
-	def get_datasets_name(name, table, description, back_refs=False, max_depth=1) -> Response:
+	def get_datasets_name(name, table, description, back_refs=False, max_depth=1) -> Dict[str, Any]:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		datasets_db = request.headers.get(rh.DATASETS_DB)
 		has_db,error = rh.init(project_db, datasets_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		m = table.get(table.name == name)
 		if m is None:
@@ -94,10 +103,11 @@ class DefaultRestMethods:
 			return model_to_dict(m, recurse=False)
 		
 	@staticmethod
-	def delete(id, table, description, related_col=None, related_table=None) -> Response:
+	def delete(id, table, description, related_col=None, related_table=None) -> Any:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		project_base.db.execute_sql("PRAGMA foreign_keys = ON")
 		m = table.get(table.id == id)
@@ -119,10 +129,11 @@ class DefaultRestMethods:
 		abort(400, 'Unable to delete {} {}.'.format(description, id))
 
 	@staticmethod
-	def get_paged_items(table, filter_cols=[], table_lookups={}) -> Response:
+	def get_paged_items(table, filter_cols=[], table_lookups={}) -> Dict[str, Any]:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.args
 		total = table.select().count()
@@ -164,7 +175,7 @@ class DefaultRestMethods:
 		}
 	
 	@staticmethod
-	def get_paged_list(table, filter_cols=[], back_refs=False, table_lookups={}, recurse=False) -> Response:
+	def get_paged_list(table, filter_cols=[], back_refs=False, table_lookups={}, recurse=False) -> Dict[str, Any]:
 		items = DefaultRestMethods.get_paged_items(table, filter_cols, table_lookups)
 		m = items['model']
 
@@ -182,30 +193,33 @@ class DefaultRestMethods:
 		}
 	
 	@staticmethod
-	def get_list(table) -> Response:
+	def get_list(table) -> List[Dict[str, Any]]:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		m = table.select()
 		rh.close()
 		return [model_to_dict(v, recurse=False) for v in m]
 	
 	@staticmethod
-	def get_name_id_list(table) -> Response:
+	def get_name_id_list(table) -> List[Dict[str, Any]]:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		m = table.select(table.id, table.name).order_by(table.name)
 		rh.close()
 		return [{'id': v.id, 'name': v.name} for v in m]
 
 	@staticmethod
-	def post(table, item_description, extra_args=[], lookup_fields=[], remove_spaces=[]) -> Response:
+	def post(table, item_description, extra_args=[], lookup_fields=[], remove_spaces=[]) -> Any:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		try:
 			result = RestHelpers.save_args(table, request.json, is_new=True, extra_args=extra_args, lookup_fields=lookup_fields, remove_spaces=remove_spaces)
@@ -223,10 +237,11 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 	
 	@staticmethod
-	def put(id, table, item_description, lookup_fields=[], remove_spaces=[], primary_key=None) -> Response:
+	def put(id, table, item_description, lookup_fields=[], remove_spaces=[], primary_key=None) -> Any:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		try:
 			result = RestHelpers.save_args(table, request.json, id=id, lookup_fields=lookup_fields, remove_spaces=remove_spaces, primary_key=primary_key)
@@ -247,10 +262,11 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 
 	@staticmethod
-	def put_many(table, item_description, lookup_fields=[], remove_spaces=[]) -> Response:
+	def put_many(table, item_description, lookup_fields=[], remove_spaces=[]) -> Any:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		try:
 			args = request.json
@@ -277,10 +293,11 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 
 	@staticmethod
-	def get_paged_items_con(table, prop_table, filter_cols=[], table_lookups={}, props_lookups={}) -> Response:
+	def get_paged_items_con(table, prop_table, filter_cols=[], table_lookups={}, props_lookups={}) -> dict:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.args
 
@@ -327,10 +344,11 @@ class DefaultRestMethods:
 		}
 
 	@staticmethod
-	def post_con(prop_name, con_table, prop_table) -> Response:
+	def post_con(prop_name, con_table, prop_table) -> Any:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		args = request.json
 		e = con_table.get_or_none(con_table.name == args['name'])
@@ -366,7 +384,7 @@ class DefaultRestMethods:
 		except prop_table.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['{}_name'.format(prop_name)]))
-		except climate.Weather_sta_cli.DoesNotExist:
+		except getattr(climate.Weather_sta_cli, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wst_name']))
 		except Exception as ex:
@@ -374,10 +392,11 @@ class DefaultRestMethods:
 			abort(400, "Unexpected error {ex}".format(ex=ex))
 
 	@staticmethod
-	def put_con(id, prop_name, con_table, prop_table) -> Response:
+	def put_con(id, prop_name, con_table, prop_table) -> Any:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		try:
 			args = request.json
@@ -410,7 +429,7 @@ class DefaultRestMethods:
 		except prop_table.DoesNotExist:
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['{}_name'.format(prop_name)]))
-		except climate.Weather_sta_cli.DoesNotExist:
+		except getattr(climate.Weather_sta_cli, 'DoesNotExist'):
 			rh.close()
 			abort(400, RestHelpers.__invalid_name_msg.format(name=args['wst_name']))
 		except Exception as ex:
@@ -442,10 +461,11 @@ class DefaultRestMethods:
 		return 0
 	
 	@staticmethod
-	def put_con_out(id, prop_name, con_out_table) -> Response:
+	def put_con_out(id, prop_name, con_out_table) -> Any:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		try:
 			args = request.json
@@ -473,10 +493,11 @@ class DefaultRestMethods:
 			abort(400, 'Unexpected error {ex}'.format(ex=ex))
 
 	@staticmethod
-	def post_con_out(prop_name, con_out_table) -> Response:
+	def post_con_out(prop_name, con_out_table) -> Any:
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db:
+			abort(400, error)
 
 		try:
 			args = request.json
@@ -561,34 +582,47 @@ class RestHelpers:
 		if 'con_outs' in d:
 			for o in d['con_outs']:
 				c_table = table_mapper.obj_typs.get(o['obj_typ'], None)
+				if c_table is None:
+					return
 				o['obj_name'] = c_table.get(c_table.id == o['obj_id']).name
 		if 'src_obs' in d:
 			for o in d['src_obs']:
 				obj_typ = o['obj_typ'] if o['obj_typ'] != 'cha' else 'sdc'
 				c_table = table_mapper.obj_typs.get(obj_typ, None)
-				if c_table is None: o['obj_name'] = None
-				else: o['obj_name'] = c_table.get(c_table.id == o['obj_id']).name
+				if c_table is None:
+					o['obj_name'] = None
+				else:
+					o['obj_name'] = c_table.get(c_table.id == o['obj_id']).name
 		if 'dmd_obs' in d:
 			for o in d['dmd_obs']:
 				cobj_typ = o['obj_typ'] if o['obj_typ'] != 'cha' else 'sdc'
 				c_table = table_mapper.obj_typs.get(cobj_typ, None)
-				if c_table is None: o['obj_name'] = None
-				else: o['obj_name'] = c_table.get(c_table.id == o['obj_id']).name
+				if c_table is None:
+					o['obj_name'] = None
+				else: 
+					o['obj_name'] = c_table.get(c_table.id == o['obj_id']).name
 
 				robj_typ = o['rcv_obj'] if o['rcv_obj'] != 'cha' else 'sdc'
 				r_table = table_mapper.obj_typs.get(robj_typ, None)
-				if r_table is None: o['rcv_obj_name'] = None
-				else: o['rcv_obj_name'] = r_table.get(r_table.id == o['rcv_obj_id']).name
+				if r_table is None: 
+					o['rcv_obj_name'] = None
+				else: 
+					o['rcv_obj_name'] = r_table.get(r_table.id == o['rcv_obj_id']).name
 		if 'elements' in d:
 			for o in d['elements']:
 				c_table = table_mapper.obj_typs.get(o['obj_typ'], None)
+				if c_table is None:
+					o['rcv_obj_name'] = None
 				key = 'obj_id' if 'obj_id' in o else 'obj_typ_no'
+				assert c_table is not None
 				o['obj_name'] = c_table.get(c_table.id == o[key]).name
 		if 'obj_typ' in d and ('obj_id' in d or 'obj_typ_no' in d):
 			c_table = table_mapper.obj_typs.get(d['obj_typ'], None)
 			key = 'obj_id' if 'obj_id' in d else 'obj_typ_no'
-			if c_table is None: d['obj_name'] = None
-			else: d['obj_name'] = c_table.get(c_table.id == d[key]).name
+			if c_table is None:
+				d['obj_name'] = None
+			else: 
+				d['obj_name'] = c_table.get(c_table.id == d[key]).name
 
 	@staticmethod
 	def get_con_item_dict(v):

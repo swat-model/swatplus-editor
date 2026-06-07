@@ -2,7 +2,9 @@ from flask import Blueprint, request, abort
 from .config import RequestHeaders as rh
 
 from playhouse.shortcuts import model_to_dict
-from peewee import *
+from peewee import (
+	IntegrityError
+)
 
 from .defaults import DefaultRestMethods, RestHelpers
 from database.project import change as db, connect, gis
@@ -36,7 +38,8 @@ def cal_parmsTypes():
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		table = db.Cal_parms_cal
 		sol_types = table.select(table.name).where(table.obj_typ == 'sol').order_by(table.name)
@@ -79,7 +82,8 @@ def calibrationId(id):
 	if request.method == 'GET':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		table = db.Calibration_cal
 		description = 'Calibration'
@@ -101,15 +105,15 @@ def calibrationId(id):
 					gis_hru_ids = connect.Hru_con.select(connect.Hru_con.gis_id).where(connect.Hru_con.id.in_(initial_selection['objects']))
 				if parm_type == 'hlt':
 					gis_hru_ids = connect.Hru_lte_con.select(connect.Hru_lte_con.gis_id).where(connect.Hru_lte_con.id.in_(initial_selection['objects']))
-				gis_hrus = gis.Gis_hrus.select().where(gis.Gis_hrus.id.in_(gis_hru_ids))
+				gis_hrus = gis.Gis_hrus.select().where(getattr(gis.Gis_hrus, 'id').in_(gis_hru_ids))
 				initial_selection['soils'] = list(dict.fromkeys([v.soil for v in gis_hrus]))
 				initial_selection['landuse'] = list(dict.fromkeys([v.landuse for v in gis_hrus]))
 
 				gis_lsus_ids = list(dict.fromkeys([v.lsu for v in gis_hrus]))
-				gis_lsus = gis.Gis_lsus.select().where(gis.Gis_lsus.id.in_(gis_lsus_ids))
+				gis_lsus = gis.Gis_lsus.select().where(getattr(gis.Gis_lsus, 'id').in_(gis_lsus_ids))
 
 				gis_channel_ids = list(dict.fromkeys([v.channel for v in gis_lsus]))
-				gis_channels = gis.Gis_channels.select().where(gis.Gis_channels.id.in_(gis_channel_ids))
+				gis_channels = gis.Gis_channels.select().where(getattr(gis.Gis_channels, 'id').in_(gis_channel_ids))
 				initial_selection['subbasins'] = list(dict.fromkeys([v.subbasin for v in gis_channels]))
 			else:
 				obj_to_gis = {
@@ -134,7 +138,7 @@ def calibrationId(id):
 
 			rh.close()
 			return {'item': item, 'initialSelection': initial_selection } #{'item': item, 'obj_options': obj_options}
-		except table.DoesNotExist:
+		except getattr(table, 'DoesNotExist'):
 			rh.close()
 			abort(404, '{description} {id} does not exist'.format(description=description, id=id))
 	elif request.method == 'DELETE':
@@ -142,7 +146,8 @@ def calibrationId(id):
 	elif request.method == 'PUT':
 		project_db = request.headers.get(rh.PROJECT_DB)
 		has_db,error = rh.init(project_db)
-		if not has_db: abort(400, error)
+		if not has_db: 
+			abort(400, error)
 
 		table = db.Calibration_cal
 		description = 'Calibration'
@@ -152,7 +157,7 @@ def calibrationId(id):
 			result = RestHelpers.save_args(table, args, id=id)
 
 			if 'elements' in args:
-				cal_parm = db.Cal_parms_cal.get(db.Cal_parms_cal.id == args['cal_parm_id'])
+				cal_parm = db.Cal_parms_cal.get(getattr(db.Cal_parms_cal, 'id') == args['cal_parm_id'])
 				obj_typ = table_mapper.cal_to_obj.get(cal_parm.obj_typ, None)
 				if obj_typ is not None:
 					obj_table = table_mapper.obj_typs.get(obj_typ, None)
@@ -165,7 +170,7 @@ def calibrationId(id):
 								'obj_id': int(e)
 							})
 						
-						db.Calibration_cal_elem.delete().where(db.Calibration_cal_elem.calibration_cal_id == id).execute()
+						db.Calibration_cal_elem.delete().where(getattr(db.Calibration_cal_elem, 'calibration_cal_id') == id).execute()
 						db_lib.bulk_insert(project_base.db, db.Calibration_cal_elem, elements)
 
 			if 'conditions' in args:
@@ -179,18 +184,18 @@ def calibrationId(id):
 						'cond_val_text': c['cond_val_text']
 					})
 				
-				db.Calibration_cal_cond.delete().where(db.Calibration_cal_cond.calibration_cal_id == id).execute()
+				db.Calibration_cal_cond.delete().where(getattr(db.Calibration_cal_cond , 'calibration_cal_id') == id).execute()
 				db_lib.bulk_insert(project_base.db, db.Calibration_cal_cond, conditions)
 
 			rh.close()
 			return '', 200
-		except IntegrityError as e:
+		except IntegrityError:
 			rh.close()
 			abort(400, '{item} save error. '.format(item=description) + str(e))
-		except table.DoesNotExist:
+		except getattr(table, 'DoesNotExist'):
 			rh.close()
 			abort(404, '{item} {id} does not exist'.format(item=description, id=id))
-		except db.Cal_parms_cal.DoesNotExist:
+		except getattr(db.Cal_parms_cal, 'DoesNotExist'):
 			rh.close()
 			abort(404, '{item} {id} does not exist'.format(item='Calibration parameter', id=args['cal_parm_id']))
 		except Exception as ex:
@@ -203,7 +208,8 @@ def calibrationId(id):
 def water_balance():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 	
 	if request.method == 'GET':
 		codes = db.Codes_sft.get_or_none()
@@ -252,30 +258,30 @@ def water_balance():
 		elif args['enabled'] == 'a':
 			codes.hyd = 'a'
 			codes.save()
-			balance.surq_rto = args['balance']['surq_rto'];
-			balance.latq_rto = args['balance']['latq_rto'];
-			balance.perc_rto = args['balance']['perc_rto'];
-			balance.et_rto = args['balance']['et_rto'];
-			balance.tileq_rto = args['balance']['tileq_rto'];
-			balance.pet = args['balance']['pet'];
-			balance.sed = 0;
-			balance.wyr = 0;
-			balance.bfr = 0;
-			balance.solp = 0;
+			balance.surq_rto = args['balance']['surq_rto']
+			balance.latq_rto = args['balance']['latq_rto']
+			balance.perc_rto = args['balance']['perc_rto']
+			balance.et_rto = args['balance']['et_rto']
+			balance.tileq_rto = args['balance']['tileq_rto']
+			balance.pet = args['balance']['pet']
+			balance.sed = 0
+			balance.wyr = 0
+			balance.bfr = 0
+			balance.solp = 0
 			balance.save()
 		elif args['enabled'] == 'b':
 			codes.hyd = 'b'
 			codes.save()
-			balance.surq_rto = 0;
-			balance.latq_rto = 0;
-			balance.perc_rto = 0;
-			balance.et_rto = 0;
-			balance.tileq_rto = 0;
-			balance.pet = 0;
-			balance.sed = 0;
-			balance.wyr = args['balance']['wyr'];
-			balance.bfr = args['balance']['bfr'];
-			balance.solp = 0;
+			balance.surq_rto = 0
+			balance.latq_rto = 0
+			balance.perc_rto = 0
+			balance.et_rto = 0
+			balance.tileq_rto = 0
+			balance.pet = 0
+			balance.sed = 0
+			balance.wyr = args['balance']['wyr']
+			balance.bfr = args['balance']['bfr']
+			balance.solp = 0
 			balance.save()
 		
 		rh.close()
@@ -294,7 +300,8 @@ def waterBalanceParmsId(id):
 def plant_growth():
 	project_db = request.headers.get(rh.PROJECT_DB)
 	has_db,error = rh.init(project_db)
-	if not has_db: abort(400, error)
+	if not has_db: 
+		abort(400, error)
 	
 	if request.method == 'GET':
 		codes = db.Codes_sft.get_or_none()

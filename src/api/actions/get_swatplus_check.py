@@ -1,14 +1,19 @@
 from helpers.executable_api import ExecutableApi, Unbuffered
-from peewee import *
+from peewee import fn
 
 from database.project.setup import SetupProjectDatabase
 from database.output.setup import SetupOutputDatabase
 from database.output import check, aquifer, channel, hyd, losses, misc, nutbal, plantwx, reservoir, waterbal, pest, base
 from database.project import connect, climate, gis, regions, simulation, hru_parm_db, config
 from database import lib
+from typing import Optional
+
+
 
 import traceback
-import json, sys, argparse
+import json
+import sys
+import argparse
 
 
 def get_in_out_percent(value_in, value_out):
@@ -624,7 +629,7 @@ def get_res(has_res, has_yr_res):
 			res_list = reservoir.Reservoir_aa.select()
 			res.avgReservoirTrends.numberReservoirs = res_list.count()
 
-			per_res_warns = [None] * 9
+			per_res_warns: list[Optional[str]] = [None] * 9
 			ratios = []
 			empty_vols = []
 			for r in res_list:
@@ -690,14 +695,14 @@ def get_res(has_res, has_yr_res):
 				res.avgReservoirTrends.maxVolume = max(ratios)
 				res.avgReservoirTrends.minVolume = min(ratios)
 
-				if res.avgReservoirTrends.fractionEmpty > 0:
-					res.warnings.append('At least one of your reservoirs has become complexly dry during the simulation')
-				if res.avgReservoirTrends.maxVolume > 5:
-					res.warnings.append('At least one of your reservoirs ends the simulation with at least 500% more volume that it begins with. Check your release parameters.')
-				if res.avgReservoirTrends.minVolume > 0.2:
-					res.warnings.append('At least one of your reservoirs ends the simulation with less than 20% volume that it begins with. Check your release parameters.')
-
-	return res
+				trend = res.avgReservoirTrends
+				if isinstance(trend.fractionEmpty, (int, float)) and trend.fractionEmpty > 0:
+					res.warnings.append('At least one of your reservoirs has become completely dry...')
+				if isinstance(trend.maxVolume, (int, float)) and trend.maxVolume > 5:
+					res.warnings.append('At least one of your reservoirs ends the simulation with...')
+				if isinstance(trend.minVolume, (int, float)) and trend.minVolume > 0.2:
+					res.warnings.append('At least one of your reservoirs...')
+				return res
 
 
 def get_instream(basin_cha, cha, wb, ls, total_area, psrc):

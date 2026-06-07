@@ -14,11 +14,15 @@ from helpers import utils
 from .import_weather import WeatherImport
 from .import_gis_legacy import GisImport as GisImportLegacy
 
-from peewee import *
+from peewee import (
+	fn,
+	SqliteDatabase
+)
 from playhouse.shortcuts import model_to_dict
-from playhouse.migrate import *
+from playhouse.migrate import SqliteMigrator, migrate
 
-import sys, traceback
+import sys
+import traceback
 import argparse
 import math
 
@@ -29,7 +33,9 @@ min_arcgis_version = 10
 
 
 def is_supported_version(version, type):
+    
 	ver = version
+ 
 	if len(ver) >= 3:
 		ver = version[:3]
 
@@ -67,7 +73,7 @@ class GisImport(ExecutableApi):
 		SetupProjectDatabase.init(project_db_file)
 		self.project_db_file = project_db_file
 		self.project_db = project_base.db
-		self.config = None,
+		self.config = None
 		self.constant_ps = constant_ps
 		self.rollback_db = rollback_db
 
@@ -94,9 +100,17 @@ class GisImport(ExecutableApi):
 			self.delete_existing()
 
 	def insert_default(self):
-		if not is_supported_version(self.config.gis_version, self.config.gis_type):
+		if self.config is None:
+			try:
+				self.config = Project_config.get()
+			except Exception:
+				sys.exit("Gagal memuat konfigurasi project. 'self.config' bernilai None.")
+		gis_version = self.config.gis_version if self.config.gis_version is not None else ""
+		gis_type = self.config.gis_type if self.config.gis_type is not None else ""
+		if not is_supported_version(gis_version, gis_type):
 			legacy_api = GisImportLegacy(self.project_db_file, False, self.constant_ps, self.rollback_db)
 			legacy_api.insert_default()
+
 		elif not self.config.imported_gis:
 			#try to fix wnd_live to aeration column
 			try:
@@ -157,7 +171,7 @@ class GisImport(ExecutableApi):
 					config.save()
 				else:
 					self.emit_progress(95, "No GIS data to import...")
-			except Exception as err:
+			except Exception:
 				#logging.debug("Import error encountered. Trying rollback: {}".format(self.rollback_db))
 				if self.rollback_db is not None:
 					self.emit_progress(50, "Error occurred. Rolling back database...")
@@ -282,7 +296,7 @@ class GisImport(ExecutableApi):
 		ds_m = ds_lum.Landuse_lum.get_or_none(ds_lum.Landuse_lum.name == lum_name)
 		if ds_m is None:
 			lum_default_cn2 = 5
-			ds_m = ds_lum.Landuse_lum.get(ds_lum.Landuse_lum.id == lum_default_cn2)
+			ds_m = ds_lum.Landuse_lum.get(getattr(ds_lum.Landuse_lum, 'id') == lum_default_cn2)
 		
 		cntable = ds_m.cn2
 
@@ -384,7 +398,7 @@ class GisImport(ExecutableApi):
 			rout_unit_cons = []
 
 			i = 1
-			for row in gis.Gis_lsus.select().order_by(gis.Gis_lsus.id):
+			for row in gis.Gis_lsus.select().order_by(getattr(gis.Gis_lsus, 'id')):
 				self.gis_to_rtu_ids[row.id] = i
 
 				rtu_name = get_name('rtu', row.id, cnt)
@@ -504,7 +518,7 @@ class GisImport(ExecutableApi):
 			channel_cons = []
 
 			i = 1
-			for row in gis.Gis_channels.select().order_by(gis.Gis_channels.id):
+			for row in gis.Gis_channels.select().order_by(getattr(gis.Gis_channels ,'id')):
 				self.gis_to_cha_ids[row.id] = i
 
 				cha_name = get_name('cha', row.id, cnt)
@@ -572,7 +586,7 @@ class GisImport(ExecutableApi):
 		"""
 		cnt = get_max_id(gis.Gis_water)
 		if reservoir.Reservoir_res.select().count() == 0:
-			res_query = gis.Gis_water.select().order_by(gis.Gis_water.id)
+			res_query = gis.Gis_water.select().order_by(getattr(gis.Gis_water ,'id'))
 			if res_query.count() > 0:
 				init = reservoir.Initial_res.create(
 					name='initres1',
@@ -607,7 +621,7 @@ class GisImport(ExecutableApi):
 
 				try:
 					db_lib.execute_non_query(self.project_db_file, 'ALTER TABLE weir_res DROP COLUMN num_steps')
-				except:
+				except Exception:
 					pass
 
 				reservoir.Weir_res.create(
@@ -689,7 +703,7 @@ class GisImport(ExecutableApi):
 		"""
 		if recall.Recall_rec.select().count() == 0:
 			rec_query = gis.Gis_points.select().where(
-				(gis.Gis_points.ptype == 'P') | (gis.Gis_points.ptype == 'I')).order_by(gis.Gis_points.id)
+				(gis.Gis_points.ptype == 'P') | (gis.Gis_points.ptype == 'I')).order_by(getattr(gis.Gis_points, 'id'))
 
 			cnt = get_max_id(gis.Gis_points)
 			if rec_query.count() > 0:
@@ -919,7 +933,7 @@ class GisImport(ExecutableApi):
 							cal_group=lum_default_cal_group
 						)
 
-				except ds_init.Plant_ini.DoesNotExist:
+				except getattr(ds_init.Plant_ini, 'DoesNotExist'):
 					pcom = None
 					pi = init.Plant_ini.create(
 						name='{name}_comm'.format(name=lu),
@@ -949,7 +963,7 @@ class GisImport(ExecutableApi):
 						cal_group=lum_default_cal_group
 					)
 
-			except hru_parm_db.Plants_plt.DoesNotExist:
+			except getattr(hru_parm_db.Plants_plt, 'DoesNotExist'):
 				try:
 					u = hru_parm_db.Urban_urb.get(hru_parm_db.Urban_urb.name ** lu)
 
@@ -963,14 +977,14 @@ class GisImport(ExecutableApi):
 						ov_mann=18,
 						cal_group=lum_default_cal_group
 					)
-				except hru_parm_db.Urban_urb.DoesNotExist:
+				except getattr(hru_parm_db.Urban_urb, 'DoesNotExist'):
 					raise ValueError('{name} does not exist in plants_plt or urban_urb, but is used as land use in your GIS HRUs.'.format(name=lu))
 
 		lum_dict = {}
 		for lu in lus:
 			lu_name = '{name}_lum'.format(name=lu)
-			l = lum.Landuse_lum.get(lum.Landuse_lum.name.contains(lu_name))
-			lum_dict[lu] = l.id
+			entry_lu = lum.Landuse_lum.get(lum.Landuse_lum.name.contains(lu_name))
+			lum_dict[lu] = entry_lu.id
 
 		return lum_dict
 
@@ -1209,14 +1223,14 @@ class GisImport(ExecutableApi):
 			try:
 				plant = hru_parm_db.Plants_plt.get(hru_parm_db.Plants_plt.name ** lu)
 				plants[lu] = plant
-			except hru_parm_db.Plants_plt.DoesNotExist:
+			except getattr(hru_parm_db.Plants_plt, 'DoesNotExist'):
 				try:
 					u = hru_parm_db.Urban_urb.get(hru_parm_db.Urban_urb.name ** lu)
 					urbans[lu] = u
 
 					plant = hru_parm_db.Plants_plt.get(hru_parm_db.Plants_plt.name ** 'gras')
 					plants[lu] = plant
-				except hru_parm_db.Urban_urb.DoesNotExist:
+				except getattr(hru_parm_db.Urban_urb, 'DoesNotExist'):
 					raise ValueError('{name} does not exist in plants_plt or urban_urb, but is used as land use in your GIS HRUs.'.format(name=lu))
 
 		distinct_soils = gis.Gis_hrus.select(gis.Gis_hrus.soil).distinct()
@@ -1226,7 +1240,7 @@ class GisImport(ExecutableApi):
 			try:
 				soil = soils.Soils_sol.get(soils.Soils_sol.name ** s)
 				hru_soils[s] = soil
-			except soils.Soils_sol.DoesNotExist:
+			except getattr(soils.Soils_sol, 'DoesNotExist'):
 				raise ValueError('{name} does not exist in soils_sol, but is used as soil in your GIS HRUs.'.format(name=s))
 
 		trop_bounds = definitions.Tropical_bounds.get()
@@ -1366,7 +1380,7 @@ class GisImport(ExecutableApi):
 			aquifer_cons = []
 
 			i = 1
-			for row in gis.Gis_aquifers.select().order_by(gis.Gis_aquifers.id):
+			for row in gis.Gis_aquifers.select().order_by(getattr(gis.Gis_aquifers, 'id')):
 				self.gis_to_aqu_ids[row.id] = i
 
 				aqu_name = get_name('aqu', row.id, cnt)
@@ -1386,7 +1400,7 @@ class GisImport(ExecutableApi):
 				aquifer_cons.append(aqu_con)
 				i += 1
 
-			for row in gis.Gis_deep_aquifers.select().order_by(gis.Gis_deep_aquifers.id):
+			for row in gis.Gis_deep_aquifers.select().order_by(getattr(gis.Gis_deep_aquifers, 'id')):
 				self.gis_to_deep_aqu_ids[row.id] = i
 
 				aqu_name = get_name('aqu_deep', row.id, cnt)
@@ -1616,7 +1630,7 @@ class GisImport(ExecutableApi):
 
 			cnt = get_max_id(gis.Gis_lsus)
 			i = 1
-			for row in gis.Gis_lsus.select().order_by(gis.Gis_lsus.id):
+			for row in gis.Gis_lsus.select().order_by(getattr(gis.Gis_lsus, 'id')):
 				self.gis_to_rtu_ids[row.id] = i
 				#if gis.Gis_hrus.select().where(gis.Gis_hrus.lsu == row.id).count() > 0:
 				if row.id in hru_exists_dict:
