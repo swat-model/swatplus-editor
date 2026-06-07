@@ -1,3 +1,9 @@
+### SWAT+ Editor 3.2.4 ###
+
+* Add fix for resetting observed weather input directory when stations are removed
+* Add check for existing observed weather data to set default in the WGN import form
+* Add option for deleting existing weather stations if you already have observed data from WGN import form
+
 ### SWAT+ Editor 3.2.3 ###
 
 * Add fix for reading misnamed channel_sdmorph_mon.csv output file

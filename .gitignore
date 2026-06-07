@@ -33,3 +33,4 @@ src/api/Pipfile.lock
 *.log
 # Abaikan semua file database SQLite
 *.sqlite
+src/main/static/appsettings.json

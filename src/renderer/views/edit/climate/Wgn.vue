@@ -42,7 +42,11 @@
 				table: <string|null>null,
 				useObserved: false,
 				deleteExisting: true,
+<<<<<<< HEAD
 				deleteExistingStations: false // ✅ Dikembalikan agar sinkron dengan fungsi hapus stasiun lama
+=======
+				deleteExistingStations: false
+>>>>>>> e96babb4fd935ee8edc06a3d3f0b748e1b0051f7
 			},
 			options: {
 				methods: [
@@ -54,7 +58,11 @@
 			show: false,
 			error: <string|null>null,
 			saving: false,
+<<<<<<< HEAD
 			hasObservedOnLoad: false // ✅ Dikembalikan untuk melacak status data awal
+=======
+			hasObservedOnLoad: false
+>>>>>>> e96babb4fd935ee8edc06a3d3f0b748e1b0051f7
 		},
 		delete: {
 			show: false,
@@ -176,7 +184,11 @@
 			if (formatters.isNullOrEmpty(page.import.error)) {
 				let deleteExisting = page.import.form.deleteExisting ? 'y' : 'n';
 				let createStations = page.import.form.useObserved ? 'n' : 'y';
+<<<<<<< HEAD
 				let deleteExistingStations = page.import.form.deleteExistingStations && page.import.hasObservedOnLoad ? 'y' : 'n'; // ✅ Dikembalikan
+=======
+				let deleteExistingStations = page.import.form.deleteExistingStations && page.import.hasObservedOnLoad ? 'y' : 'n';
+>>>>>>> e96babb4fd935ee8edc06a3d3f0b748e1b0051f7
 
 				let args = ['import_weather', 
 					'--project_db_file='+ currentProject.projectDb,
@@ -393,6 +405,12 @@
 							<v-checkbox v-model="page.import.form.useObserved" hide-details>
 								<template #label>
 									Periksa apakah Anda menggunakan data cuaca yang diamati.
+								</template>
+							</v-checkbox>
+
+							<v-checkbox v-if="page.import.hasObservedOnLoad" v-model="page.import.form.deleteExistingStations" hide-details>
+								<template #label>
+									Delete existing weather stations? CAUTION:This will remove any imported observed weather data.
 								</template>
 							</v-checkbox>
 						</div>
