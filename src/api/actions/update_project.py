@@ -1,7 +1,7 @@
 from helpers.executable_api import ExecutableApi, Unbuffered
 from helpers import utils
 from database import lib
-from database.project import base, init, dr, channel, reservoir, simulation, hru, lum, exco, connect, routing_unit, recall, change, soils, aquifer, hru_parm_db, decision_table, ops, basin, water_rights, salts, climate
+from database.project import base, init, dr, channel, reservoir, simulation, hru, lum, exco, connect, routing_unit, recall, change, soils, aquifer, hru_parm_db, decision_table, ops, basin, water_rights, salts, climate, gwflow
 from database.project.config import Project_config, File_cio, File_cio_classification
 from database.project.setup import SetupProjectDatabase
 
@@ -24,16 +24,17 @@ import datetime
 
 # Map version prefixes/values to required upgrades
 UPGRADE_PATHS = {
-	'3.1.': ['3_2_0'],
-	'3.0.': ['3_1_0', '3_2_0'],
-	'2.3.': ['3_0_0', '3_1_0', '3_2_0'],
-	('2.1.', '2.2.'): ['2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	'2.0.': ['2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	('1.3.0', '1.4.0'): ['2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	('1.2.1', '1.2.2', '1.2.3'): ['1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	'1.2.0': ['1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	('1.1.0', '1.1.1', '1.1.2'): ['1_2_0', '1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	'1.0.0': ['1_1_0', '1_2_0', '1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
+	'3.2.': ['4_0_0'],
+	'3.1.': ['3_2_0', '4_0_0'],
+	'3.0.': ['3_1_0', '3_2_0', '4_0_0'],
+	'2.3.': ['3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	('2.1.', '2.2.'): ['2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	'2.0.': ['2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	('1.3.0', '1.4.0'): ['2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	('1.2.1', '1.2.2', '1.2.3'): ['1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	'1.2.0': ['1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	('1.1.0', '1.1.1', '1.1.2'): ['1_2_0', '1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	'1.0.0': ['1_1_0', '1_2_0', '1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
 }
 
 def matches_pattern(version, pattern):
@@ -119,6 +120,271 @@ class UpdateProject(ExecutableApi):
 			reimport_gis = version.startswith('1.1.')
 			if reimport_gis:
 				ReimportGis(project_db, new_version, m.project_name, datasets_db, False, m.is_lte)
+
+	def updates_for_4_0_0(self, project_db):
+		conn = lib.open_db(project_db)
+		self.emit_progress(5, 'Running migrations...')
+		self.migrate_gwflow_4_0_0(project_db, conn)
+		base.db.create_tables([basin.Carbon_bsn, basin.Carbon_lyr_bsn], safe=True)
+
+		migrator = SqliteMigrator(SqliteDatabase(project_db))
+		migrate(
+			migrator.add_column('codes_bsn', 'idc_till', IntegerField(default=3)),
+			migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'),
+		)
+		
+			
+	def migrate_gwflow_4_0_0(self, project_db, conn):
+		if lib.exists_table(conn, 'gwflow_base'):
+			with base.db.atomic():
+				base.db.create_tables([gwflow.Gwflow_config, gwflow.Gwflow_zone, gwflow.Gwflow_cell, gwflow.Gwflow_cell_connection, gwflow.Gwflow_hrucell,
+					gwflow.Gwflow_lsucell, gwflow.Gwflow_chancell, gwflow.Gwflow_fpcell, gwflow.Gwflow_rescell, gwflow.Gwflow_pump,
+					gwflow.Gwflow_hru_pump_obs, gwflow.Gwflow_tvhead, gwflow.Gwflow_obs, gwflow.Gwflow_out_times, gwflow.Gwflow_solute,
+					gwflow.Gwflow_cell_solute, gwflow.Gwflow_wetland, gwflow.Gwflow_sw_group, gwflow.Gwflow_pond, gwflow.Gwflow_pond_solute,
+					gwflow.Gwflow_pond_cell, gwflow.Gwflow_phreato, gwflow.Gwflow_phreato_cell, gwflow.Gwflow_chan_depth, gwflow.Gwflow_pond_div,], safe=True)
+				
+				# Step 2: Migrate gwflow_base → codes_gw
+				old_base_data = lib.get_table_data(conn, 'gwflow_base')
+				if old_base_data:
+					old_base = old_base_data[0]
+					gwflow.Gwflow_config.create(
+						grid_type='structured',
+						cell_size=old_base.get('cell_size', 200),
+						num_rows=old_base.get('row_count', 0),
+						num_cols=old_base.get('col_count', 0),
+						num_cells=0,
+						boundary_condition=old_base.get('boundary_conditions', 2),
+						recharge_type=old_base.get('recharge', 2),
+						gw_soil_transfer=old_base.get('soil_transfer', 1),
+						saturation_excess=old_base.get('saturation_excess', 1),
+						external_pumping=old_base.get('external_pumping', 0),
+						tile_drainage=old_base.get('tile_drainage', 0),
+						reservoir_exchange=old_base.get('reservoir_exchange', 1),
+						wetland_exchange=old_base.get('wetland_exchange', 1),
+						floodplain_exchange=old_base.get('floodplain_exchange', 1),
+						canal_seepage=old_base.get('canal_seepage', 0),
+						solute_transport=old_base.get('solute_transport', 0),
+						heat_transport=0,
+						timestep_days=old_base.get('timestep_balance', 1.0),
+						daily_output=old_base.get('daily_output', 1),
+						monthly_output=0,
+						annual_output=old_base.get('annual_output', 1),
+						aa_output=old_base.get('aa_output', 1),
+						river_depth=old_base.get('river_depth', 5.0),
+						tile_depth=old_base.get('tile_depth', 1.22),
+						tile_area=old_base.get('tile_area', 50),
+						tile_k=old_base.get('tile_k', 5.0),
+						resbed_thickness=old_base.get('resbed_thickness', 2.0),
+						resbed_k=old_base.get('resbed_k', 9.99e-6),
+						wet_thickness=old_base.get('wet_thickness', 0.25),
+						transport_steps=int(old_base.get('transport_steps', 1)),
+						disp_coef=old_base.get('disp_coef', 5.0),
+						detail_row=old_base.get('daily_output_row', 0),
+						detail_col=old_base.get('daily_output_col', 0)
+					)
+				
+				# Step 3: Migrate gwflow_zone → zones_gw
+				old_zones = lib.get_table_data(conn, 'gwflow_zone')
+				for zone in old_zones:
+					gwflow.Gwflow_zone.create(
+						zone_id=zone['zone_id'],
+						aquifer_k=zone.get('aquifer_k'),
+						specific_yield=zone.get('specific_yield', 0.2),
+						streambed_k=zone.get('streambed_k', 0.005),
+						streambed_thickness=zone.get('streambed_thickness', 0.5),
+						thermal_k=0
+					)
+				
+				# Step 4: Migrate gwflow_grid → cells_gw
+				old_cells = lib.get_table_data(conn, 'gwflow_grid')
+				
+				num_cols = 0
+				if old_base_data:
+					num_cols = old_base_data[0].get('col_count', 0)
+				
+				for cell in old_cells:
+					cell_id = cell['cell_id']
+					
+					if num_cols > 0:
+						row = ((cell_id - 1) // num_cols) + 1
+						col = ((cell_id - 1) % num_cols) + 1
+					else:
+						row = None
+						col = None
+					
+					gwflow.Gwflow_cell.create(
+						cell_id=cell_id,
+						status=cell.get('status', 1),
+						row=row,
+						col=col,
+						x_centroid=0,
+						y_centroid=0,
+						area=0,
+						elevation=cell.get('elevation', 0),
+						aquifer_thickness=cell.get('aquifer_thickness', 50),
+						zone_id=cell.get('zone'),
+						extinction_depth=cell.get('extinction_depth', 1.0),
+						initial_head=cell.get('initial_head'),
+						tile=cell.get('tile', 0),
+						streambed_k=None,
+						streambed_thickness=None,
+						bc_type=None,
+						tile_depth=None,
+						tile_area=None,
+						tile_k=None,
+						init_temp=None,
+						gis_id=None
+					)
+				
+				# Step 5: Migrate gwflow_hrucell → hrucell_gw
+				old_hrucells = lib.get_table_data(conn, 'gwflow_hrucell')
+				for row in old_hrucells:
+					gwflow.Gwflow_hrucell.create(
+						cell_id=row['cell_id'],
+						hru_id=row['hru'],
+						area_m2=row.get('area_m2')
+					)
+				
+				# Step 6: Migrate gwflow_lsucell → lsucell_gw
+				old_lsucells = lib.get_table_data(conn, 'gwflow_lsucell')
+				for row in old_lsucells:
+					gwflow.Gwflow_lsucell.create(
+						cell_id=row['cell_id'],
+						lsu_id=row['lsu'],
+						area_m2=row.get('area_m2')
+					)
+				
+				# Step 7: Migrate gwflow_rivcell → chancell_gw
+				old_rivcells = lib.get_table_data(conn, 'gwflow_rivcell')
+				for row in old_rivcells:
+					gwflow.Gwflow_chancell.create(
+						cell_id=row['cell_id'],
+						channel_id=row['channel'],
+						bed_elevation=0,
+						length_m=row.get('length_m', 0),
+						zone_id=1,
+						obs=0,
+						dep_zone=None
+					)
+				
+				# Step 8: Migrate gwflow_fpcell → floodplain_gw
+				old_fpcells = lib.get_table_data(conn, 'gwflow_fpcell')
+				for row in old_fpcells:
+					gwflow.Gwflow_fpcell.create(
+						cell_id=row['cell_id'],
+						channel_id=row['channel'],
+						area_m2=row.get('area_m2'),
+						conductivity=row.get('conductivity', 0)
+					)
+				
+				# Step 9: Migrate gwflow_rescell → rescell_gw
+				old_rescells = lib.get_table_data(conn, 'gwflow_rescell')
+				for row in old_rescells:
+					gwflow.Gwflow_rescell.create(
+						cell_id=row['cell_id'],
+						reservoir_id=row['res'],
+						stage=row.get('res_stage', 0)
+					)
+				
+				# Step 10: Migrate gwflow_obs_locs → obs_gw
+				old_obs = lib.get_table_data(conn, 'gwflow_obs_locs')
+				for row in old_obs:
+					if row.get('cell_id'):
+						gwflow.Gwflow_obs.create(
+							cell_id=row['cell_id'],
+							name=f"obs_{row['cell_id']}"
+						)
+				
+				# Step 11: Migrate gwflow_out_days → out_times_gw
+				old_out_days = lib.get_table_data(conn, 'gwflow_out_days')
+				for row in old_out_days:
+					gwflow.Gwflow_out_times.create(
+						year=row['year'],
+						jday=row['jday']
+					)
+				
+				# Step 12: Migrate gwflow_solutes → solute_gw
+				old_solutes = lib.get_table_data(conn, 'gwflow_solutes')
+				
+				for idx, solute in enumerate(old_solutes, start=1):
+					gwflow.Gwflow_solute.create(
+						name=solute.get('solute_name', f"solute_{idx}"),
+						sorption_coef=solute.get('sorption', 1),
+						rate_const=solute.get('rate_const', 0),
+						canal_irr=solute.get('canal_irr', 0),
+						init_conc=solute.get('init_conc', 0)
+					)
+				
+				# Step 13: Migrate gwflow_init_conc → cell_sol_gw
+				old_init_conc = lib.get_table_data(conn, 'gwflow_init_conc')
+				
+				solute_columns = [
+					('init_no3', 'no3'),
+					('init_p', 'p'),
+					('init_so4', 'so4'),
+					('init_ca', 'ca'),
+					('init_mg', 'mg'),
+					('init_na', 'na'),
+					('init_k', 'k'),
+					('init_cl', 'cl'),
+					('init_co3', 'co3'),
+					('init_hco3', 'hco3')
+				]
+				
+				cell_solute_count = 0
+				for conc_row in old_init_conc:
+					cell_id = conc_row['cell_id']
+					
+					for col_name, solute_name in solute_columns:
+						conc_value = conc_row.get(col_name, 0)
+						if conc_value and conc_value != 0:
+							try:
+								solute = gwflow.Gwflow_solute.get(gwflow.Gwflow_solute.name == solute_name)
+							except gwflow.Gwflow_solute.DoesNotExist:
+								solute = gwflow.Gwflow_solute.create(
+									name=solute_name,
+									init_conc=conc_value
+								)
+							
+							gwflow.Gwflow_cell_solute.create(
+								cell_id=cell_id,
+								solute_id=solute.id,
+								init_conc=conc_value
+							)
+							cell_solute_count += 1
+				
+				# Step 14: Migrate gwflow_wetland → wetland_gw
+				old_wetlands = lib.get_table_data(conn, 'gwflow_wetland')
+				for row in old_wetlands:
+					gwflow.Gwflow_wetland.create(
+						wet_id=row['wet_id'],
+						thickness=row.get('thickness')
+					)
+
+			# Finally, drop old tables
+			old_tables = [
+				'gwflow_base',
+				'gwflow_zone',
+				'gwflow_grid',
+				'gwflow_hrucell',
+				'gwflow_lsucell',
+				'gwflow_rivcell',
+				'gwflow_fpcell',
+				'gwflow_rescell',
+				'gwflow_obs_locs',
+				'gwflow_out_days',
+				'gwflow_solutes',
+				'gwflow_init_conc',
+				'gwflow_wetland'
+			]
+			
+			try:
+				for table_name in old_tables:
+					if lib.exists_table(conn, table_name):
+						conn.execute(f'DROP TABLE {table_name}')
+				conn.commit()
+			except Exception as e:
+				pass
 	
 	def updates_for_3_2_0(self, project_db):
 		conn = lib.open_db(project_db)

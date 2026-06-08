@@ -189,12 +189,12 @@
 
 		<v-form @submit.prevent="save">
 			<div class="form-group">
-				<v-text-field v-model.number="item.solute_name" :rules="[constants.formRules.required]" :readonly="props.isUpdate"
+				<v-text-field v-model.number="item.name" :rules="[constants.formRules.required]" :readonly="props.isUpdate"
 					label="Name" :hint="props.isUpdate ? 'Solute name cannot be modified.' : ''" persistent-hint></v-text-field>
 			</div>
 
 			<div class="form-group">
-				<v-text-field v-model.number="item.sorption" :rules="[constants.formRules.required]" 
+				<v-text-field v-model.number="item.sorption_coef" :rules="[constants.formRules.required]" 
 					label="Sorption" type="number" step="any"></v-text-field>
 			</div>
 
@@ -206,11 +206,6 @@
 			<div class="form-group">
 				<v-text-field v-model.number="item.canal_irr" :rules="[constants.formRules.required]" 
 					label="Canal Irrigation" type="number" step="any"></v-text-field>
-			</div>
-
-			<div class="form-group">
-				<v-select v-model.number="item.init_data" :rules="[constants.formRules.required]" 
-					label="Initial Concentration Data Type" :items="page.options.init_data"></v-select>
 			</div>
 
 			<div v-if="item.init_data === 'single'" class="form-group">

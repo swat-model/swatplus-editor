@@ -47,7 +47,7 @@ class SetupProjectDatabase():
 	@staticmethod
 	def create_tables():
 		base.db.create_tables([config.Project_config, config.File_cio_classification, config.File_cio])
-		base.db.create_tables([basin.Codes_bsn, basin.Parameters_bsn])
+		base.db.create_tables([basin.Codes_bsn, basin.Parameters_bsn, basin.Carbon_bsn, basin.Carbon_lyr_bsn])
 		base.db.create_tables([simulation.Time_sim, simulation.Print_prt, simulation.Print_prt_aa_int, simulation.Print_prt_object, simulation.Object_prt, simulation.Object_cnt, simulation.Constituents_cs])
 		base.db.create_tables([climate.Weather_wgn_cli, climate.Weather_wgn_cli_mon, climate.Weather_sta_cli, climate.Weather_sta_cli_scale, climate.Weather_file, climate.Wind_dir_cli, climate.Atmo_cli, climate.Atmo_cli_sta, climate.Atmo_cli_sta_value])
 		base.db.create_tables([link.Chan_aqu_lin, link.Chan_aqu_lin_ob, link.Chan_surf_lin, link.Chan_surf_lin_ob])

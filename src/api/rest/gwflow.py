@@ -19,7 +19,7 @@ def enabled():
 
 	can_enable = False
 	conn = lib.open_db(project_db)
-	if lib.exists_table(conn, 'gwflow_config'):
+	if lib.exists_table(conn, 'codes_gw'):
 		can_enable = True
 	rh.close()
 	return {

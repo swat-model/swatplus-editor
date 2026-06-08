@@ -6,29 +6,30 @@ class Codes_bsn(base.BaseModel):
 	pet_file = CharField(null=True)
 	wq_file = CharField(null=True)
 	pet = IntegerField()
-	event = IntegerField()
+	event = IntegerField() #not used
 	crack = IntegerField()
 	#rtu_wq = IntegerField()
 	swift_out = IntegerField()
 	sed_det = IntegerField()
 	rte_cha = IntegerField()
-	deg_cha = IntegerField()
-	wq_cha = IntegerField()
+	deg_cha = IntegerField() #not used
+	wq_cha = IntegerField() #not used
 	nostress = IntegerField()
-	cn = IntegerField()
-	c_fact = IntegerField()
+	cn = IntegerField() #not used
+	c_fact = IntegerField() #not used
 	carbon = IntegerField()
 	lapse = IntegerField()
 	uhyd = IntegerField()
-	sed_cha = IntegerField()
+	sed_cha = IntegerField() #not used
 	tiledrain = IntegerField()
 	wtable = IntegerField()
 	soil_p = IntegerField()
 	gampt = IntegerField()
-	atmo_dep = CharField()
-	stor_max = IntegerField()
-	i_fpwet = IntegerField()
+	atmo_dep = CharField() #not used???
+	stor_max = IntegerField() #not used
+	qual2e = IntegerField() #formerly i_fpwet
 	gwflow = IntegerField(default=0)
+	idc_till = IntegerField(default=3)
 
 
 class Parameters_bsn(base.BaseModel):
@@ -76,3 +77,49 @@ class Parameters_bsn(base.BaseModel):
 	co2 = DoubleField()
 	day_lag_max = DoubleField()
 	igen = IntegerField()
+
+
+class Carbon_bsn(base.BaseModel):
+	init_seq = DoubleField()
+	init_microb = DoubleField()
+	init_slow = DoubleField()
+	init_passive = DoubleField()
+	koc_c = DoubleField()
+	solc_ratio = DoubleField()
+	till_eff_days = DoubleField()
+	manure_c_frac = DoubleField()
+	bio_consol = DoubleField()
+	till_consol = DoubleField()
+	tmpf_eqn = IntegerField()
+	watf_eqn = IntegerField()
+	t_cbn_min = DoubleField()
+	t_cbn_opt = DoubleField()
+	t_cbn_max = DoubleField()
+	bmix_a = DoubleField()
+	bmix_b = DoubleField()
+	bmix_c = DoubleField()
+	tillmix_a = DoubleField()
+	tillmix_b = DoubleField()
+	tillmix_c = DoubleField()
+	sfc_rsd_photodeg = DoubleField()
+	n_act_frac = DoubleField()
+	cnr_cap = DoubleField()
+	cnr_ref = DoubleField()
+	cpr_cap = DoubleField()
+	cpr_ref = DoubleField()
+	mathers_method = IntegerField()
+
+
+class Carbon_lyr_bsn(base.BaseModel):
+	layer = IntegerField()
+	hp_rate = DoubleField()
+	hs_rate = DoubleField()
+	microb_rate = DoubleField()
+	meta_rate = DoubleField()
+	str_rate = DoubleField()
+	microb_top_rate = DoubleField()
+	hs_hp = DoubleField()
+	a1co2 = DoubleField()
+	asco2 = DoubleField()
+	apco2 = DoubleField()
+	abco2 = DoubleField()

@@ -77,7 +77,7 @@
 			</div>
 
 			<div class="form-group">
-				<v-text-field v-model.number="item.res_stage" :rules="[constants.formRules.required]" 
+				<v-text-field v-model.number="item.stage" :rules="[constants.formRules.required]" 
 					label="Reservoir Stage (m)" type="number" step="any"></v-text-field>
 			</div>
 
