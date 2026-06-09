@@ -8,7 +8,6 @@ class Codes_bsn(base.BaseModel):
 	pet = IntegerField()
 	event = IntegerField() #not used
 	crack = IntegerField()
-	#rtu_wq = IntegerField()
 	swift_out = IntegerField()
 	sed_det = IntegerField()
 	rte_cha = IntegerField()

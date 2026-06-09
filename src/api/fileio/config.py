@@ -68,14 +68,6 @@ class File_cio(BaseFileModel):
 
 					utils.write_string(file, file_name, direction="left")
 
-				# basin carbon slot: SWAT+ reads the basin line positionally as
-				# (codes.bsn parameters.bsn carbon_bsn), so emit 'null' to fill the carbon
-				# token explicitly; without it the list-directed read runs onto the next
-				# file.cio line and corrupts parsing.
-				# TODO(@celray): wire this to a future carbon config pipeline (write carbon.bsn here when carbon is enabled).
-				if row.name == "basin":
-					utils.write_string(file, null_str, direction="left")
-
 				if len(row.files) < 1:
 					utils.write_string(file, null_str, direction="left")
 
@@ -96,7 +88,9 @@ class File_cio(BaseFileModel):
 		
 		basin_conditions = {
 			1: codes_bsn is not None,
-			2: basin.Parameters_bsn.select().count() > 0
+			2: basin.Parameters_bsn.select().count() > 0,
+			3: basin.Carbon_bsn.get_or_none() is not None,
+			4: basin.Carbon_lyr_bsn.select().count() > 0
 		}
 		
 		# For netcdf format: weather-sta.cli is replaced with netcdf.ncw (handled in write()),

@@ -6,7 +6,7 @@ from database.project.config import Project_config, File_cio, File_cio_classific
 from database.project.setup import SetupProjectDatabase
 
 from database.datasets.setup import SetupDatasetsDatabase
-from database.datasets.definitions import File_cio as dataset_file_cio
+from database.datasets.definitions import File_cio as dataset_file_cio, Version
 from database.datasets.hru_parm_db import Plants_plt as dataset_plants
 
 from actions.import_gis import GisImport
@@ -125,13 +125,29 @@ class UpdateProject(ExecutableApi):
 		conn = lib.open_db(project_db)
 		self.emit_progress(5, 'Running migrations...')
 		self.migrate_gwflow_4_0_0(project_db, conn)
+
 		base.db.create_tables([basin.Carbon_bsn, basin.Carbon_lyr_bsn], safe=True)
+		if File_cio.get_or_none(File_cio.file_name == 'carbon.bsn') is None: File_cio.insert(classification=2, order_in_class=3, file_name='carbon.bsn').execute()
+		if File_cio.get_or_none(File_cio.file_name == 'carbon_lyr.bsn') is None: File_cio.insert(classification=2, order_in_class=4, file_name='carbon_lyr.bsn').execute()
+
+		#Add new print objects if they don't already exist
+		if not self.name_exists(simulation.Print_prt_object, 'hru_cb'): simulation.Print_prt_object.create(name='hru_cb', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(simulation.Print_prt_object, 'hru_cb_vars'): simulation.Print_prt_object.create(name='hru_cb_vars', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_wb'): simulation.Print_prt_object.create(name='gwflow_wb', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_flux'): simulation.Print_prt_object.create(name='gwflow_flux', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_heat'): simulation.Print_prt_object.create(name='gwflow_heat', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_solute'): simulation.Print_prt_object.create(name='gwflow_solute', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_obs'): simulation.Print_prt_object.create(name='gwflow_obs', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_pump'): simulation.Print_prt_object.create(name='gwflow_pump', daily=0, monthly=0, yearly=0, avann=0)
 
 		migrator = SqliteMigrator(SqliteDatabase(project_db))
-		migrate(
-			migrator.add_column('codes_bsn', 'idc_till', IntegerField(default=3)),
-			migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'),
-		)
+		try:
+			migrate(
+				migrator.add_column('codes_bsn', 'idc_till', IntegerField(default=3)),
+				migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'),
+			)
+		except:
+			pass # Ignore errors from migrations
 		
 			
 	def migrate_gwflow_4_0_0(self, project_db, conn):

@@ -47,7 +47,8 @@
 		autoHeight?: boolean,
 		editPathPrefix?: string,
 		hideBackButton?: boolean,
-		showDeleteAll?: boolean
+		showDeleteAll?: boolean,
+		compositeKey?: string,
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -77,7 +78,8 @@
 		autoHeight: false,
 		editPathPrefix: '',
 		hideBackButton: false,
-		showDeleteAll: false
+		showDeleteAll: false,
+		compositeKey: '',
 	});
 
 	const loaderArray = computed(() => {
@@ -113,7 +115,8 @@
 			id: null,
 			name: '',
 			error: null,
-			saving: false
+			saving: false,
+			compositeKey: null
 		},
 		deleteAll: {
 			show: false,
@@ -239,9 +242,10 @@
 		_.debounce(await get(false), 500);
 	}
 
-	function askDelete(id:any, name:any) {
+	function askDelete(id:any, name:any, ck:any) {
 		page.delete.id = id;
 		page.delete.name = name;
+		page.delete.compositeKey = ck;
 		page.delete.show = true;
 	}
 
@@ -251,7 +255,8 @@
 
 		try {
 			let url = formatters.isNullOrEmpty(props.deleteApiUrl) ? props.apiUrl : props.deleteApiUrl;
-			const response = await api.delete(`${url}/${page.delete.id}`, currentProject.getApiHeader());
+			let ck = formatters.isNullOrEmpty(props.compositeKey) ? '' : `/${page.delete.compositeKey}`;
+			const response = await api.delete(`${url}/${page.delete.id}${ck}`, currentProject.getApiHeader());
 			errors.log(response);
 			page.delete.show = false;
 			table.currentPage = 1;
@@ -369,8 +374,10 @@
 
 	function getEditRoute(item:any) {
 		let pk = item.id;
+		let ck = '';
 		if (!formatters.isNullOrEmpty(props.importPrimaryKey)) pk = item[props.importPrimaryKey];
-		return formatters.isNullOrEmpty(props.editPathPrefix) ? utilities.appendRoute(`edit/${pk}`) : `${props.editPathPrefix}edit/${pk}`
+		if (!formatters.isNullOrEmpty(props.compositeKey)) ck = `/${item[props.compositeKey].id}`;
+		return formatters.isNullOrEmpty(props.editPathPrefix) ? utilities.appendRoute(`edit/${pk}${ck}`) : `${props.editPathPrefix}edit/${pk}${ck}`
 	}
 
 	const itemPk = computed(() => {
@@ -481,7 +488,7 @@
 							</div>	
 						</td>
 						<td v-if="!props.hideDelete" class="min">
-							<font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" title="Delete" @click="askDelete(item[itemPk], item.name)"></font-awesome-icon>
+							<font-awesome-icon :icon="['fas', 'times']" class="text-error pointer" title="Delete" @click="askDelete(item[itemPk], item.name, formatters.isNullOrEmpty(props.compositeKey) ? '' : item[props.compositeKey].id)"></font-awesome-icon>
 						</td>
 					</tr>
 				</tbody>

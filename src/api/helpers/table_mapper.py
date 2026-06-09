@@ -165,6 +165,7 @@ types = {
 	"gwflow_zone": gwflow.Gwflow_zone,
 	"gwflow_grid": gwflow.Gwflow_cell,
 	"gwflow_solute": gwflow.Gwflow_solute,
+    "gwflow_cell_solute": gwflow.Gwflow_cell_solute,
 	"gwflow_hrucell": gwflow.Gwflow_hrucell,
 	"gwflow_fpcell": gwflow.Gwflow_fpcell,
 	"gwflow_chancell": gwflow.Gwflow_chancell,

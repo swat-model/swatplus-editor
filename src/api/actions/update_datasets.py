@@ -21,16 +21,17 @@ import datetime
 
 # Map version prefixes/values to required upgrades
 UPGRADE_PATHS = {
-	'3.1.': ['3_2_0'],
-	'3.0.': ['3_1_0', '3_2_0'],
-	'2.3.': ['3_0_0', '3_1_0', '3_2_0'],
-	('2.1.', '2.2.'): ['2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	'2.0.': ['2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	('1.3.0', '1.4.0'): ['2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	('1.2.1', '1.2.2', '1.2.3'): ['1_3_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	'1.2.0': ['1_3_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	('1.1.0', '1.1.1', '1.1.2'): ['1_2_0', '1_3_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
-	'1.0.0': ['1_2_0', '1_3_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0'],
+	'3.2.': ['4_0_0'],
+	'3.1.': ['3_2_0', '4_0_0'],
+	'3.0.': ['3_1_0', '3_2_0', '4_0_0'],
+	'2.3.': ['3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	('2.1.', '2.2.'): ['2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	'2.0.': ['2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	('1.3.0', '1.4.0'): ['2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	('1.2.1', '1.2.2', '1.2.3'): ['1_3_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	'1.2.0': ['1_3_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	('1.1.0', '1.1.1', '1.1.2'): ['1_2_0', '1_3_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	'1.0.0': ['1_2_0', '1_3_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
 }
 
 def matches_pattern(version, pattern):
@@ -104,6 +105,29 @@ class UpdateDatasets(ExecutableApi):
 			
 			Version.update({Version.value: new_version, Version.release_date: datetime.datetime.now()}).execute()
 
+	def updates_for_4_0_0(self, datasets_db):		
+		if dataset_file_cio.get_or_none(dataset_file_cio.file_name == 'carbon.bsn') is None: dataset_file_cio.insert(classification=2, order_in_class=3, database_table='carbon_bsn', default_file_name='carbon.bsn', is_core_file=0).execute()
+		if dataset_file_cio.get_or_none(dataset_file_cio.file_name == 'carbon_lyr.bsn') is None: dataset_file_cio.insert(classification=2, order_in_class=4, database_table='carbon_lyr_bsn', default_file_name='carbon_lyr.bsn', is_core_file=0).execute()
+		
+		#Add new print objects if they don't already exist
+		if not self.name_exists(dataset_print_prt_object, 'hru_cb'): dataset_print_prt_object.create(name='hru_cb', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(dataset_print_prt_object, 'hru_cb_vars'): dataset_print_prt_object.create(name='hru_cb_vars', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_wb'): dataset_print_prt_object.create(name='gwflow_wb', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_flux'): dataset_print_prt_object.create(name='gwflow_flux', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_heat'): dataset_print_prt_object.create(name='gwflow_heat', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_solute'): dataset_print_prt_object.create(name='gwflow_solute', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_obs'): dataset_print_prt_object.create(name='gwflow_obs', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_pump'): dataset_print_prt_object.create(name='gwflow_pump', daily=0, monthly=0, yearly=0, avann=0)
+
+		try:
+			migrator = SqliteMigrator(SqliteDatabase(datasets_db))
+			migrate(
+				migrator.add_column('codes_bsn', 'idc_till', IntegerField(default=3)),
+				migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'),
+			)
+		except Exception:
+			pass
+	
 	def updates_for_3_2_0(self, datasets_db):
 		if not self.name_exists(dataset_file_cio_classification, 'out_path'): dataset_file_cio_classification.insert(name='out_path').execute()
 	

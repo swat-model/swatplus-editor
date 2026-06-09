@@ -48,7 +48,7 @@
 
 	function putDb(data:any) {
 		if (props.isUpdate)
-			return api.put(`gwflow/solutes/${props.item.solute_name}`, data, currentProject.getApiHeader());
+			return api.put(`gwflow/solutes/${props.item.id}`, data, currentProject.getApiHeader());
 		else
 			return api.post(`gwflow/solutes`, data, currentProject.getApiHeader());
 	}
@@ -67,7 +67,7 @@
 				if (props.isUpdate)
 					page.saveSuccess = true;
 				else
-					router.push({ name: 'GwflowRescell' });
+					router.push({ name: 'GwflowSolutes' });
 			} catch (error) {
 				page.error = errors.logError(error, 'Unable to save changes to database.');
 			}
@@ -78,8 +78,8 @@
 	}
 
 	const arrayColumnName = computed(() => {
-		if (props.item.solute_name === 'no3-n') return 'init_no3';
-		return 'init_' + props.item.solute_name;
+		if (props.item.name === 'no3-n') return 'no3';
+		return props.item.name;
 	});
 
 	let task:any = reactive({
@@ -104,8 +104,9 @@
 			let args = [page.import.form.type, 
 					'--db_file='+ currentProject.projectDb,
 					'--file_name='+ page.import.form.fileName,
-					'--table_name=gwflow_grid',
-					'--column_name=' + arrayColumnName.value,
+					'--table_name=gwflow_cell_solute',
+					'--related_id=' + props.item.id,
+					'--column_name=cell_id',
 					'--swat_version=' + constants.appSettings.swatplus];
 
 			runTask(args);
@@ -208,14 +209,14 @@
 					label="Canal Irrigation" type="number" step="any"></v-text-field>
 			</div>
 
-			<div v-if="item.init_data === 'single'" class="form-group">
+			<div class="form-group">
 				<v-text-field v-model.number="item.init_conc" :rules="[constants.formRules.required]" 
 					label="Initial Concentration (g/m3)" type="number" step="any"></v-text-field>
 			</div>
 
-			<div v-else>
+			<div>
 				<p>
-					Use the import/export tool below to add or edit the grid array of initial concentration values.
+					Use the import/export tool below to add or edit the initial concentration values for each cell.
 					We recommend exporting first to get a file template.
 				</p>
 				<p>
@@ -250,7 +251,7 @@
 
 						<select-file-input v-model="page.import.form.fileName" :value="page.import.form.fileName" class="mb-3"
 							:label="page.import.form.type == 'import_csv' ? `Select a file to import` : `Select where to save your file`"
-							fileType="text" required :default-file-name="`gwflow-grid-solutes-${arrayColumnName}.txt`" :save-dialog="page.import.form.type == 'export_csv'"
+							fileType="text" required :default-file-name="`gwflow-grid-solutes-${arrayColumnName}.csv`" :save-dialog="page.import.form.type == 'export_csv'"
 							invalidFeedback="Please select a file."></select-file-input>
 					</div>
 				</v-card-text>

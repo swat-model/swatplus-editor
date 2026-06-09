@@ -2,11 +2,22 @@ from .base import BaseFileModel, FileColumn as col
 from database.project import gis, gwflow, connect, reservoir, basin, base, simulation
 from database.project.config import Project_config
 from database import lib
+from helpers import table_mapper
 from helpers import utils
 from .connect import IndexHelper
 import os.path
 import sys
 import datetime
+import csv
+
+# This is used by the UI
+gis_cols = {
+	'gwflow_hrucell': ['hru_id', connect.Hru_con, 'many', False],
+	'gwflow_fpcell': ['channel_id', connect.Chandeg_con, 'many', True],
+	'gwflow_chancell': ['channel_id', connect.Chandeg_con, 'single', False],
+	'gwflow_lsucell': ['lsu_id', connect.Rout_unit_con, 'many', False],
+	'gwflow_rescell': ['reservoir_id', connect.Reservoir_con, 'many', True],
+}
 
 class Gwflow_files(BaseFileModel):
 	def __init__(self, file_name, version=None, swat_version=None, project_db_file=None):
@@ -554,3 +565,169 @@ class Gwflow_files(BaseFileModel):
 					v = conc.get((c.cell_id, sid))
 					f.write('{:>14.5f}'.format(v if v is not None else 0.0))
 				f.write('\n')
+
+	# The following are used by the UI for import/export
+
+	def write_cell_csv(self, file_name, table_name):
+		table = table_mapper.types.get(table_name, None)
+		gis_col = gis_cols.get(table_name, None)
+		if table is None or gis_col is None:
+			sys.exit("Table '{table}' is not valid for this request.".format(table=table_name))
+
+		with open(file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = []
+			for field in table._meta.sorted_fields:
+				headers.append(field.name)
+
+			csv_writer.writerow(headers)
+
+			query = table.select().order_by(table.cell_id)
+			gis_to_con_name = IndexHelper(gis_col[1]).get_names()
+				
+			for row in query.dicts():
+				values = []
+				for col in headers:
+					if col == gis_col[0]:
+						values.append(gis_to_con_name.get(row[col], 'null'))
+					else:
+						values.append(row[col])
+				csv_writer.writerow(values)
+
+	def read_cell_csv(self, file_name, table_name):
+		table = table_mapper.types.get(table_name, None)
+		gis_col = gis_cols.get(table_name, None)
+		if table is None or gis_col is None:
+			sys.exit("Table '{table}' is not valid for this request.".format(table=table_name))
+
+		gis_name_to_con = IndexHelper(gis_col[1]).get_id_from_name()
+
+		with open(file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			rows = []
+			fields = table._meta.sorted_fields
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				row = {}
+				j = 0
+				table_gis_field = None
+				for field in fields:
+					value = None
+					if len(val) > j:
+						if field.name == gis_col[0]:
+							table_gis_field = field
+							value = gis_name_to_con.get(val[j], None)
+						else:
+							value = val[j]
+
+					if type(value) is str:
+						if value == 'null':
+							value = None
+					
+					row[field.name] = value
+
+					j += 1
+
+				if gis_col[2] == 'single':
+					m = table.get_or_none(table.cell_id == row['cell_id'])
+				else:
+					m = table.get_or_none((table.cell_id == row['cell_id']) & (table_gis_field == row[gis_col[0]]))
+
+				if m is not None:
+					if gis_col[2] == 'single':
+						table.update(row).where(table.cell_id == row['cell_id']).execute()
+					else:
+						table.update(row).where((table.cell_id == row['cell_id']) & (table_gis_field == row[gis_col[0]])).execute()
+				elif gis_col[3]:
+					rows.append(row)
+			
+		lib.bulk_insert(base.db, table, rows)
+
+	def write_wetland_csv(self, file_name):
+		with open(file_name, mode='w') as file:
+			csv_writer = csv.writer(file, delimiter=',', lineterminator='\n', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+			headers = ['wet_id', 'thickness']
+			csv_writer.writerow(headers)
+
+			wet_thick = { v.wet_id: v.thickness for v in gwflow.Gwflow_wetland.select().order_by(gwflow.Gwflow_wetland.wet_id) }
+
+			gwflow_config = gwflow.Gwflow_config.get_or_none()
+			for wet in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id):
+				values = [wet.name, wet_thick.get(wet.id, gwflow_config.wet_thickness)]
+				csv_writer.writerow(values)
+
+	def read_wetland_csv(self, file_name):
+		with open(file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			wet_names = { v.name: v.id for v in reservoir.Wetland_wet.select().order_by(reservoir.Wetland_wet.id) }
+
+			rows = []
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				row = {}
+				name = val[0]
+				thickness = float(val[1])
+				if name in wet_names:
+					row['wet_id'] = wet_names[name]
+					row['thickness'] = thickness
+
+					m = gwflow.Gwflow_wetland.get_or_none(gwflow.Gwflow_wetland.wet_id == row['wet_id'])
+					if m is not None:
+						gwflow.Gwflow_wetland.update(row).where(gwflow.Gwflow_wetland.wet_id == row['wet_id']).execute()
+					else:
+						rows.append(row)
+			
+		lib.bulk_insert(base.db, gwflow.Gwflow_wetland, rows)
+
+	#TODO: make this more graceful later; time crunch and just trying to retain some functionality
+	def read_cell_solute_csv(self, file_name, solute_id):
+		table = gwflow.Gwflow_cell_solute
+
+		with open(file_name, mode='r') as csv_file:
+			dialect = csv.Sniffer().sniff(csv_file.readline())
+			csv_file.seek(0)
+			replace_commas = dialect is not None and dialect.delimiter != ','
+			hasHeader = csv.Sniffer().has_header(csv_file.readline())
+			csv_file.seek(0)
+
+			csv_reader = csv.reader(csv_file, dialect)
+			if hasHeader:
+				headerLine = next(csv_reader)
+
+			rows = []
+			for val in csv_reader:
+				if replace_commas:
+					val = [item.replace(',', '.', 1) for item in val]
+
+				row = {}
+				row['cell_id'] = int(val[0])
+				row['solute_id'] = solute_id
+				row['init_conc'] = float(val[1]) if len(val) > 1 else 0.0
+				rows.append(row)
+			
+		table.delete().where(table.solute_id == solute_id).execute()
+		lib.bulk_insert(base.db, table, rows)

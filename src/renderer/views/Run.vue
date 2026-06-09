@@ -211,6 +211,18 @@
 				'channel_cs': 'Channel',
 				'res_cs': 'Reservoir',
 				'wetland_cs': 'Wetland',
+			},
+			carbon: {
+				'hru_cb': 'Legacy Carbon HRU',
+				'hru_cb_vars': 'Legacy Carbon HRU Vars'
+			},
+			gwflow: {
+				'gwflow_wb': 'Water Balance',
+				'gwflow_flux': 'Fluxes',
+				'gwflow_heat': 'Heat',
+				'gwflow_solute': 'Solute',
+				'gwflow_obs': 'Observations',
+				'gwflow_pump': 'Pumping'
 			}
 		},
 		printConfig: {

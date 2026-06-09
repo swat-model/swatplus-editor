@@ -34,7 +34,7 @@ class Print_prt(BaseModel):
 	yrc_end = IntegerField()
 	interval = IntegerField()
 	csvout = BooleanField()
-	dbout = BooleanField()
+	dbout = BooleanField() #not used, and forcing y for use_obj_lbls which replaces this field
 	cdfout = BooleanField()
 	#soilout = BooleanField()
 	crop_yld = CharField(default='b')

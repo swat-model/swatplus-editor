@@ -530,7 +530,7 @@ class RestHelpers:
 					#d = ast.literal_eval(args[field.column_name])
 					d = args[field.column_name]
 					params[field.column_name] = int(d['id'])
-				else:
+				elif field.column_name in args:
 					val = args[field.column_name] if field.column_name not in remove_spaces else utils.remove_space(args[field.column_name])
 					params[field.column_name] = val
 

@@ -9,8 +9,8 @@
 
 	let data:any = reactive({
 		paths: {
-			data: 'gwflow/zones',
-			vars: 'gwflow_zone'
+			data: 'gwflow/cells',
+			vars: 'gwflow_cell'
 		},
 		page: {
 			loading: false,
@@ -44,17 +44,18 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="zones.gw" docs-path="modflow" use-io>
+		<file-header input-file="cells.gw" docs-path="modflow" use-io>
 			<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
-			/ <router-link to="/edit/cons/gwflow/zones">Zones</router-link>
+			/ <router-link to="/edit/cons/gwflow/cells">Cells</router-link>
 			/ Edit
 		</file-header>
 
-		<edit-form is-update hide-name primary-key="zone_id"
+		<edit-form is-update hide-name primary-key="cell_id"
 			:item="data.item"
-			name="Zone" :table="data.paths.vars" no-gis
+			name="Cell" :table="data.paths.vars" no-gis
 			:vars="data.vars" 
 			:api-url="data.paths.data"
-			redirect-route="GwflowZone" />
+			redirect-route="GwflowCells"
+            :nullable-fields="['row','col','initial_head','streambed_k','streambed_thickness','bc_type','tile_depth','tile_area','tile_k','init_temp','gis_id']" />
 	</project-container>
 </template>

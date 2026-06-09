@@ -26,8 +26,9 @@ class Codes_bsn(base.BaseModel):
 	gampt = IntegerField()
 	atmo_dep = CharField()
 	stor_max = IntegerField()
-	i_fpwet = IntegerField()
+	qual2e = IntegerField() #formerly i_fpwet
 	gwflow = IntegerField(default=0)
+	idc_till = IntegerField(default=3)
 
 
 class Parameters_bsn(base.BaseModel):

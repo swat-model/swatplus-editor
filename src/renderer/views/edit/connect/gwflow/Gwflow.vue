@@ -21,7 +21,11 @@
 		},
 		can_enable: false,
 		vars: [
+			{ name: 'grid_type', description: 'Grid type', default: 'structured', disabled: true, type: 'text', items: [] },
 			{ name: 'cell_size', description: 'Grid cell size (m)', default: 200, disabled: true, type: 'int', items: [] },
+			{ name: 'num_rows', description: 'Grid rows (0 = unstructured)', default: 0, disabled: true, type: 'int', items: [] },
+			{ name: 'num_cols', description: 'Grid cols (0 = unstructured)', default: 0, disabled: true, type: 'int', items: [] },
+			{ name: 'num_cells', description: 'Grid cells', default: 0, disabled: true, type: 'int', items: [] },
 			{ name: 'boundary_condition', description: 'Boundary conditions (1 = constant head; 2 = no flow)', default: 1, disabled: false, type: 'select', items: [{value: 1, title:'1 = constant head'},{value: 2, title:'2 = no flow'}] },
 			{ name: 'recharge_type', description: 'Recharge connection type (1 = HRU-cell, 2 = LSU-cell, 3 = both)', default: 2, disabled: true, type: 'select', items: [] },
 			{ name: 'gw_soil_transfer', description: 'Groundwater --> soil transfer is simulated (0 = no; 1 = yes)', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = no'},{value: 1, title:'1 = yes'}] },
@@ -33,13 +37,23 @@
 			{ name: 'floodplain_exchange', description: 'Groundwater-floodplain exchange (0 = off; 1 = on)', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = off'},{value: 1, title:'1 = on'}] },
 			{ name: 'canal_seepage', description: 'Canal seepage to groundwater (0 = off; 1 = on)', default: 0, disabled: false, type: 'select', items: [{value: 0, title:'0 = off'},{value: 1, title:'1 = on'}] },
 			{ name: 'solute_transport', description: 'Groundwater solute transport (0 = off; 1 = on)', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = off'},{value: 1, title:'1 = on'}] },
+			{ name: 'heat_transport', description: 'Heat transport (0 = off; 1 = on)', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = off'},{value: 1, title:'1 = on'}] },
 			{ name: 'timestep_days', description: 'Time step (days) to solve groundwater balance equation', default: 1, disabled: false, type: 'float', items: [] },
 			{ name: 'daily_output', description: 'Daily groundwater balance output (0 = off; 1 = on)', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = off'},{value: 1, title:'1 = on'}] },
+			{ name: 'monthly_output', description: 'Monthly groundwater balance output (0 = off; 1 = on)', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = off'},{value: 1, title:'1 = on'}] },
 			{ name: 'annual_output', description: 'Annual groundwater balance output (0 = off; 1 = on)', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = off'},{value: 1, title:'1 = on'}] },
 			{ name: 'aa_output', description: 'Average annual groundwater balance output (0 = off; 1 = on)', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = off'},{value: 1, title:'1 = on'}] },
+			{ name: 'river_depth', description: 'Vertical distance (m) of streambed below the DEM value', default: 5, disabled: false, type: 'float', items: [] },
+			/*{ name: 'tile_depth', description: '', default: 1.22, disabled: false, type: 'float', items: [] },
+			{ name: 'tile_area', description: '', default: 50, disabled: false, type: 'float', items: [] },
+			{ name: 'tile_k', description: '', default: 5, disabled: false, type: 'float', items: [] },
+			{ name: 'resbed_thickness', description: '', default: 2, disabled: false, type: 'float', items: [] },
+			{ name: 'resbed_k', description: '', default: 9.99e-6, disabled: false, type: 'float', items: [] },
+			{ name: 'wet_thickness', description: '', default: 0.25, disabled: false, type: 'float', items: [] },
+			{ name: 'transport_steps', description: '', default: 1, disabled: false, type: 'int', items: [] },
+			{ name: 'disp_coef', description: '', default: 5, disabled: false, type: 'float', items: [] },*/
 			{ name: 'detail_row', description: 'Cell row for detailed sources/sink output (0 means not used)', default: 0, disabled: false, type: 'int', items: [] },
 			{ name: 'detail_col', description: 'Cell column for detailed sources/sink output (0 means not used)', default: 0, disabled: false, type: 'int', items: [] },
-			{ name: 'river_depth', description: 'Vertical distance (m) of streambed below the DEM value', default: 5, disabled: false, type: 'float', items: [] },
 			//{ name: '', description: '', default: 1, disabled: false, type: 'select', items: [{value: 0, title:'0 = no'},{value: 1, title:'1 = yes'}] },
 		]
 	});
@@ -90,7 +104,7 @@
 			Groundwater flow must be setup through Step 2, HRUs tab in QSWAT+ in order to use it through the editor.
 		</v-alert>
 		<div v-else-if="$route.name == 'Gwflow'">
-			<file-header input-file="gwflow.input" docs-path="modflow" use-io>
+			<file-header input-file="codes.gw" docs-path="modflow" use-io>
 				Groundwater Flow
 			</file-header>
 

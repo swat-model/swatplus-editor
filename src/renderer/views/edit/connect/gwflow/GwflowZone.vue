@@ -6,7 +6,7 @@
 <template>
 	<project-container>
 		<div v-if="route.name == 'GwflowZone'">
-			<file-header input-file="gwflow.input" docs-path="modflow" use-io>
+			<file-header input-file="zones.gw" docs-path="modflow" use-io>
 				<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
 				/ Zones
 			</file-header>

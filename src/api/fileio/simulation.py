@@ -136,13 +136,13 @@ class Print_prt(BaseFileModel):
 				file.write("\n")
 
 				header_cols = [col(table.csvout, direction="left"),
-							   col(table.dbout, direction="left"),
+							   col("use_obj_lbls", not_in_db=True, direction="left"),
 							   col(table.cdfout, direction="left")]
 				self.write_headers(file, header_cols)
 				file.write("\n")
 
 				utils.write_bool_yn(file, row.csvout, direction="left")
-				utils.write_bool_yn(file, row.dbout, direction="left")
+				utils.write_bool_yn(file, True, direction="left")
 				utils.write_bool_yn(file, row.cdfout, direction="left")
 				file.write("\n")
 

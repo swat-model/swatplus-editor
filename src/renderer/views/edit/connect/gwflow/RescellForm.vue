@@ -70,7 +70,7 @@
 
 			<div class="form-group">
 				<auto-complete label="Reservoir"
-					v-model="item.res_name" :value="item.res_name" :show-item-link="props.isUpdate"
+					v-model="item.reservoir_id_name" :value="item.reservoir_id_name" :show-item-link="props.isUpdate"
 					table-name="reservoir_con" route-name="ReservoirsEdit" required
 					section="Connections / Reservoirs" help-file="reservoir.con" help-db="reservoir_con"
 					api-url="reservoirs/items"></auto-complete>
