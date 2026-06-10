@@ -74,9 +74,12 @@ class File_cio(BaseFileModel):
 				file.write("\n")
 
 	def get_classifications(self, is_lte=False, is_netcdf=False):
-		rec_cnt = recall.Recall_rec.select().where(recall.Recall_rec.rec_typ != 4).count()
+		#TEMP CHANGE: recall disabled in 4.0 due to model not being fully tested and ready
+		rec_cnt = 0 #recall.Recall_rec.select().where(recall.Recall_rec.rec_typ != 4).count()
 		exco_cnt = recall.Recall_dat.select().join(recall.Recall_rec).where((recall.Recall_rec.rec_typ == 4) & (recall.Recall_dat.flo != 0)).count()
 		codes_bsn = basin.Codes_bsn.get_or_none()
+		carbon_bsn = basin.Carbon_bsn.get_or_none()
+		carbon_enabled = codes_bsn is not None and codes_bsn.carbon == 2 and carbon_bsn is not None
 
 		sim_conditions = {
 			1: True,
@@ -89,8 +92,8 @@ class File_cio(BaseFileModel):
 		basin_conditions = {
 			1: codes_bsn is not None,
 			2: basin.Parameters_bsn.select().count() > 0,
-			3: basin.Carbon_bsn.get_or_none() is not None,
-			4: basin.Carbon_lyr_bsn.select().count() > 0
+			3: carbon_enabled,
+			4: carbon_enabled and basin.Carbon_lyr_bsn.select().count() > 0
 		}
 		
 		# For netcdf format: weather-sta.cli is replaced with netcdf.ncw (handled in write()),

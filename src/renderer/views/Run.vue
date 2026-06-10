@@ -212,10 +212,6 @@
 				'res_cs': 'Reservoir',
 				'wetland_cs': 'Wetland',
 			},
-			carbon: {
-				'hru_cb': 'Legacy Carbon HRU',
-				'hru_cb_vars': 'Legacy Carbon HRU Vars'
-			},
 			gwflow: {
 				'gwflow_wb': 'Water Balance',
 				'gwflow_flux': 'Fluxes',
@@ -1023,6 +1019,17 @@ Please check your TxtInOut/diagnostics.out file for any information, and contact
 													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
 													<td class="code text-muted">{{k}}</td>
 												</tr>
+												<tr class="bg-secondary-tonal">
+													<th colspan="6">gwflow</th>
+												</tr>
+												<tr v-for="([k, v], i) in Object.entries(data.printGroups.gwflow)" :key="i" v-show="!data.printConfig.inactive.includes(k) || data.printConfig.showInactive">
+													<td>{{v}}</td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].daily" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].monthly" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].yearly" /></td>
+													<td class="text-center"><v-checkbox density="compact" hide-details v-model="data.print.objects[printIndex(k)].avann" :disabled="requiredForCheck(`${data.print.objects[printIndex(k)].name}_aa`)" /></td>
+													<td class="code text-muted">{{k}}</td>
+												</tr>
 											</tbody>
 										</v-table>
 
@@ -1033,7 +1040,25 @@ Please check your TxtInOut/diagnostics.out file for any information, and contact
 										</p>
 									</v-col>
 									<v-col cols="12" lg="6">
-										<v-expansion-panels variant="inset">
+										<v-card class="mb-4">
+											<v-card-item>
+												<div>
+													<div class="d-flex align-center">
+														<v-checkbox density="comfortable" hide-details v-model="data.print.prt.mgtout" label="Print management output file"></v-checkbox>
+														<v-tooltip location="bottom">
+															<template v-slot:activator="{ props }">
+																<font-awesome-icon v-bind="props" :icon="['fas', 'fa-info-circle']" class="ml-1 text-secondary"></font-awesome-icon>
+															</template>
+															<div style="max-width: 250px;">
+																It is recommended to keep this selected if you would like to preview your management operations in SWAT+ Check.
+																However, this file is not required and can grow very large for long simulations.
+															</div>															
+														</v-tooltip>
+													</div>
+												</div>
+											</v-card-item>
+										</v-card>
+										<v-expansion-panels>
 											<v-expansion-panel title="Advanced Options...">
 												<v-expansion-panel-text>
 													<div class="my-5">
@@ -1057,16 +1082,6 @@ Please check your TxtInOut/diagnostics.out file for any information, and contact
 															
 														</div>
 														<div>
-															<div class="d-flex align-center">
-																<v-checkbox density="comfortable" hide-details v-model="data.print.prt.mgtout" label="Management output file"></v-checkbox>
-																<v-tooltip location="bottom">
-																	<template v-slot:activator="{ props }">
-																		<font-awesome-icon v-bind="props" :icon="['fas', 'fa-info-circle']" class="ml-1 text-secondary"></font-awesome-icon>
-																	</template>
-																	It is recommended to keep this selected if you would like to preview your management operations in SWAT+ Check.
-																</v-tooltip>
-															</div>
-															
 															<v-checkbox density="comfortable" hide-details v-model="data.print.prt.fdcout" label="Flow duration curve output file"></v-checkbox>
 														</div>
 													</div>
@@ -1318,6 +1333,7 @@ Please check your TxtInOut/diagnostics.out file for any information, and contact
 							<p>
 								Caution: providing your own executables may cause errors if it is not compatible with the editor's default official release version. 
 								Changes in input or output file formats between model versions may cause errors.
+								<strong>SWAT+ Editor 4.x is only compatible with SWAT+ rev. 62 and later.</strong>
 							</p>
 						</v-card-item>
 						<v-divider></v-divider>

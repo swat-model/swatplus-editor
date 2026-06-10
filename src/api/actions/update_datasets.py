@@ -106,18 +106,16 @@ class UpdateDatasets(ExecutableApi):
 			Version.update({Version.value: new_version, Version.release_date: datetime.datetime.now()}).execute()
 
 	def updates_for_4_0_0(self, datasets_db):		
-		if dataset_file_cio.get_or_none(dataset_file_cio.file_name == 'carbon.bsn') is None: dataset_file_cio.insert(classification=2, order_in_class=3, database_table='carbon_bsn', default_file_name='carbon.bsn', is_core_file=0).execute()
-		if dataset_file_cio.get_or_none(dataset_file_cio.file_name == 'carbon_lyr.bsn') is None: dataset_file_cio.insert(classification=2, order_in_class=4, database_table='carbon_lyr_bsn', default_file_name='carbon_lyr.bsn', is_core_file=0).execute()
+		if dataset_file_cio.get_or_none(dataset_file_cio.default_file_name == 'carbon.bsn') is None: dataset_file_cio.insert(classification=2, order_in_class=3, database_table='carbon_bsn', default_file_name='carbon.bsn', is_core_file=0).execute()
+		if dataset_file_cio.get_or_none(dataset_file_cio.default_file_name == 'carbon_lyr.bsn') is None: dataset_file_cio.insert(classification=2, order_in_class=4, database_table='carbon_lyr_bsn', default_file_name='carbon_lyr.bsn', is_core_file=0).execute()
 		
 		#Add new print objects if they don't already exist
-		if not self.name_exists(dataset_print_prt_object, 'hru_cb'): dataset_print_prt_object.create(name='hru_cb', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(dataset_print_prt_object, 'hru_cb_vars'): dataset_print_prt_object.create(name='hru_cb_vars', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(dataset_print_prt_object, 'gwflow_wb'): dataset_print_prt_object.create(name='gwflow_wb', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(dataset_print_prt_object, 'gwflow_flux'): dataset_print_prt_object.create(name='gwflow_flux', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(dataset_print_prt_object, 'gwflow_heat'): dataset_print_prt_object.create(name='gwflow_heat', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(dataset_print_prt_object, 'gwflow_solute'): dataset_print_prt_object.create(name='gwflow_solute', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(dataset_print_prt_object, 'gwflow_obs'): dataset_print_prt_object.create(name='gwflow_obs', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(dataset_print_prt_object, 'gwflow_pump'): dataset_print_prt_object.create(name='gwflow_pump', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_wb'): dataset_print_prt_object.create(name='gwflow_wb', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_flux'): dataset_print_prt_object.create(name='gwflow_flux', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_heat'): dataset_print_prt_object.create(name='gwflow_heat', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_solute'): dataset_print_prt_object.create(name='gwflow_solute', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_obs'): dataset_print_prt_object.create(name='gwflow_obs', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(dataset_print_prt_object, 'gwflow_pump'): dataset_print_prt_object.create(name='gwflow_pump', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
 
 		try:
 			migrator = SqliteMigrator(SqliteDatabase(datasets_db))

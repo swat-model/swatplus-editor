@@ -131,14 +131,12 @@ class UpdateProject(ExecutableApi):
 		if File_cio.get_or_none(File_cio.file_name == 'carbon_lyr.bsn') is None: File_cio.insert(classification=2, order_in_class=4, file_name='carbon_lyr.bsn').execute()
 
 		#Add new print objects if they don't already exist
-		if not self.name_exists(simulation.Print_prt_object, 'hru_cb'): simulation.Print_prt_object.create(name='hru_cb', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(simulation.Print_prt_object, 'hru_cb_vars'): simulation.Print_prt_object.create(name='hru_cb_vars', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(simulation.Print_prt_object, 'gwflow_wb'): simulation.Print_prt_object.create(name='gwflow_wb', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(simulation.Print_prt_object, 'gwflow_flux'): simulation.Print_prt_object.create(name='gwflow_flux', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(simulation.Print_prt_object, 'gwflow_heat'): simulation.Print_prt_object.create(name='gwflow_heat', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(simulation.Print_prt_object, 'gwflow_solute'): simulation.Print_prt_object.create(name='gwflow_solute', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(simulation.Print_prt_object, 'gwflow_obs'): simulation.Print_prt_object.create(name='gwflow_obs', daily=0, monthly=0, yearly=0, avann=0)
-		if not self.name_exists(simulation.Print_prt_object, 'gwflow_pump'): simulation.Print_prt_object.create(name='gwflow_pump', daily=0, monthly=0, yearly=0, avann=0)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_wb'): simulation.Print_prt_object.create(name='gwflow_wb', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_flux'): simulation.Print_prt_object.create(name='gwflow_flux', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_heat'): simulation.Print_prt_object.create(name='gwflow_heat', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_solute'): simulation.Print_prt_object.create(name='gwflow_solute', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_obs'): simulation.Print_prt_object.create(name='gwflow_obs', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
+		if not self.name_exists(simulation.Print_prt_object, 'gwflow_pump'): simulation.Print_prt_object.create(name='gwflow_pump', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
 
 		migrator = SqliteMigrator(SqliteDatabase(project_db))
 		try:
