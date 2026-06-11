@@ -117,14 +117,24 @@ class UpdateDatasets(ExecutableApi):
 		if not self.name_exists(dataset_print_prt_object, 'gwflow_obs'): dataset_print_prt_object.create(name='gwflow_obs', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
 		if not self.name_exists(dataset_print_prt_object, 'gwflow_pump'): dataset_print_prt_object.create(name='gwflow_pump', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
 
-		try:
-			migrator = SqliteMigrator(SqliteDatabase(datasets_db))
-			migrate(
-				migrator.add_column('codes_bsn', 'idc_till', IntegerField(default=3)),
-				migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'),
-			)
-		except Exception:
-			pass
+		#try:
+		db = SqliteDatabase(datasets_db, timeout=10)
+
+		# Drop the broken index before migrations
+		db.execute_sql('DROP INDEX IF EXISTS management_sch_auto_plant1_id')
+		db.execute_sql('DROP INDEX IF EXISTS management_sch_auto_plant2_id')
+
+		migrator = SqliteMigrator(db)
+		# Run migrations separately
+		with db.atomic():
+			migrate(migrator.add_column('codes_bsn', 'idc_till', IntegerField(default=3)))
+
+		with db.atomic():
+			migrate(migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e', legacy=False))
+
+		db.close()
+		#except Exception:
+		#	pass
 	
 	def updates_for_3_2_0(self, datasets_db):
 		if not self.name_exists(dataset_file_cio_classification, 'out_path'): dataset_file_cio_classification.insert(name='out_path').execute()

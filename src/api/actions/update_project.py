@@ -122,9 +122,9 @@ class UpdateProject(ExecutableApi):
 				ReimportGis(project_db, new_version, m.project_name, datasets_db, False, m.is_lte)
 
 	def updates_for_4_0_0(self, project_db):
-		conn = lib.open_db(project_db)
+		
 		self.emit_progress(5, 'Running migrations...')
-		self.migrate_gwflow_4_0_0(project_db, conn)
+		self.migrate_gwflow_4_0_0(project_db)
 
 		base.db.create_tables([basin.Carbon_bsn, basin.Carbon_lyr_bsn], safe=True)
 		if File_cio.get_or_none(File_cio.file_name == 'carbon.bsn') is None: File_cio.insert(classification=2, order_in_class=3, file_name='carbon.bsn').execute()
@@ -138,18 +138,47 @@ class UpdateProject(ExecutableApi):
 		if not self.name_exists(simulation.Print_prt_object, 'gwflow_obs'): simulation.Print_prt_object.create(name='gwflow_obs', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
 		if not self.name_exists(simulation.Print_prt_object, 'gwflow_pump'): simulation.Print_prt_object.create(name='gwflow_pump', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)
 
-		migrator = SqliteMigrator(SqliteDatabase(project_db))
 		try:
-			migrate(
-				migrator.add_column('codes_bsn', 'idc_till', IntegerField(default=3)),
-				migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'),
-			)
+			db = SqliteDatabase(project_db, timeout=10)
+			migrator = SqliteMigrator(db)
+
+			# Run migrations separately
+			with db.atomic():
+				migrate(migrator.add_column('codes_bsn', 'idc_till', IntegerField(default=3)))
+
+			with db.atomic():
+				migrate(migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'))
+
+			db.close()
 		except:
 			pass # Ignore errors from migrations
 		
 			
-	def migrate_gwflow_4_0_0(self, project_db, conn):
+	def migrate_gwflow_4_0_0(self, project_db):
+		conn = lib.open_db(project_db)
 		if lib.exists_table(conn, 'gwflow_base'):
+			# Read ALL data first before starting write transaction
+			old_base_data = lib.get_table_data(conn, 'gwflow_base')
+			old_zones = lib.get_table_data(conn, 'gwflow_zone')
+			old_cells = lib.get_table_data(conn, 'gwflow_grid')
+			old_hrucells = lib.get_table_data(conn, 'gwflow_hrucell')
+			old_lsucells = lib.get_table_data(conn, 'gwflow_lsucell')
+			old_rivcells = lib.get_table_data(conn, 'gwflow_rivcell')
+			old_fpcells = lib.get_table_data(conn, 'gwflow_fpcell')
+			old_rescells = lib.get_table_data(conn, 'gwflow_rescell')
+			old_obs = lib.get_table_data(conn, 'gwflow_obs_locs')
+			old_out_days = lib.get_table_data(conn, 'gwflow_out_days')
+			old_solutes = lib.get_table_data(conn, 'gwflow_solutes')
+			old_init_conc = lib.get_table_data(conn, 'gwflow_init_conc')
+			old_wetlands = lib.get_table_data(conn, 'gwflow_wetland')
+
+			# Close the read connection
+			conn.close()
+
+			# Set SQLite pragmas
+			base.db.execute_sql('PRAGMA journal_mode=WAL')
+			base.db.execute_sql('PRAGMA busy_timeout=30000')
+	
 			with base.db.atomic():
 				base.db.create_tables([gwflow.Gwflow_config, gwflow.Gwflow_zone, gwflow.Gwflow_cell, gwflow.Gwflow_cell_connection, gwflow.Gwflow_hrucell,
 					gwflow.Gwflow_lsucell, gwflow.Gwflow_chancell, gwflow.Gwflow_fpcell, gwflow.Gwflow_rescell, gwflow.Gwflow_pump,
@@ -158,7 +187,6 @@ class UpdateProject(ExecutableApi):
 					gwflow.Gwflow_pond_cell, gwflow.Gwflow_phreato, gwflow.Gwflow_phreato_cell, gwflow.Gwflow_chan_depth, gwflow.Gwflow_pond_div,], safe=True)
 				
 				# Step 2: Migrate gwflow_base → codes_gw
-				old_base_data = lib.get_table_data(conn, 'gwflow_base')
 				if old_base_data:
 					old_base = old_base_data[0]
 					gwflow.Gwflow_config.create(
@@ -198,7 +226,6 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 3: Migrate gwflow_zone → zones_gw
-				old_zones = lib.get_table_data(conn, 'gwflow_zone')
 				for zone in old_zones:
 					gwflow.Gwflow_zone.create(
 						zone_id=zone['zone_id'],
@@ -210,7 +237,6 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 4: Migrate gwflow_grid → cells_gw
-				old_cells = lib.get_table_data(conn, 'gwflow_grid')
 				
 				num_cols = 0
 				if old_base_data:
@@ -251,7 +277,6 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 5: Migrate gwflow_hrucell → hrucell_gw
-				old_hrucells = lib.get_table_data(conn, 'gwflow_hrucell')
 				for row in old_hrucells:
 					gwflow.Gwflow_hrucell.create(
 						cell_id=row['cell_id'],
@@ -260,7 +285,6 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 6: Migrate gwflow_lsucell → lsucell_gw
-				old_lsucells = lib.get_table_data(conn, 'gwflow_lsucell')
 				for row in old_lsucells:
 					gwflow.Gwflow_lsucell.create(
 						cell_id=row['cell_id'],
@@ -269,7 +293,6 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 7: Migrate gwflow_rivcell → chancell_gw
-				old_rivcells = lib.get_table_data(conn, 'gwflow_rivcell')
 				for row in old_rivcells:
 					gwflow.Gwflow_chancell.create(
 						cell_id=row['cell_id'],
@@ -282,7 +305,6 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 8: Migrate gwflow_fpcell → floodplain_gw
-				old_fpcells = lib.get_table_data(conn, 'gwflow_fpcell')
 				for row in old_fpcells:
 					gwflow.Gwflow_fpcell.create(
 						cell_id=row['cell_id'],
@@ -292,7 +314,6 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 9: Migrate gwflow_rescell → rescell_gw
-				old_rescells = lib.get_table_data(conn, 'gwflow_rescell')
 				for row in old_rescells:
 					gwflow.Gwflow_rescell.create(
 						cell_id=row['cell_id'],
@@ -301,7 +322,7 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 10: Migrate gwflow_obs_locs → obs_gw
-				old_obs = lib.get_table_data(conn, 'gwflow_obs_locs')
+				
 				for row in old_obs:
 					if row.get('cell_id'):
 						gwflow.Gwflow_obs.create(
@@ -310,7 +331,7 @@ class UpdateProject(ExecutableApi):
 						)
 				
 				# Step 11: Migrate gwflow_out_days → out_times_gw
-				old_out_days = lib.get_table_data(conn, 'gwflow_out_days')
+				
 				for row in old_out_days:
 					gwflow.Gwflow_out_times.create(
 						year=row['year'],
@@ -318,7 +339,7 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 12: Migrate gwflow_solutes → solute_gw
-				old_solutes = lib.get_table_data(conn, 'gwflow_solutes')
+				
 				
 				for idx, solute in enumerate(old_solutes, start=1):
 					gwflow.Gwflow_solute.create(
@@ -330,7 +351,7 @@ class UpdateProject(ExecutableApi):
 					)
 				
 				# Step 13: Migrate gwflow_init_conc → cell_sol_gw
-				old_init_conc = lib.get_table_data(conn, 'gwflow_init_conc')
+				
 				
 				solute_columns = [
 					('init_no3', 'no3'),
@@ -368,7 +389,7 @@ class UpdateProject(ExecutableApi):
 							cell_solute_count += 1
 				
 				# Step 14: Migrate gwflow_wetland → wetland_gw
-				old_wetlands = lib.get_table_data(conn, 'gwflow_wetland')
+				
 				for row in old_wetlands:
 					gwflow.Gwflow_wetland.create(
 						wet_id=row['wet_id'],
@@ -393,10 +414,12 @@ class UpdateProject(ExecutableApi):
 			]
 			
 			try:
+				conn = lib.open_db(project_db)
 				for table_name in old_tables:
 					if lib.exists_table(conn, table_name):
 						conn.execute(f'DROP TABLE {table_name}')
 				conn.commit()
+				conn.close()
 			except Exception as e:
 				pass
 	
