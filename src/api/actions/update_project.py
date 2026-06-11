@@ -128,7 +128,6 @@ class UpdateProject(ExecutableApi):
 
 		base.db.create_tables([basin.Carbon_bsn, basin.Carbon_lyr_bsn], safe=True)
 		if File_cio.get_or_none(File_cio.file_name == 'carbon.bsn') is None: File_cio.insert(classification=2, order_in_class=3, file_name='carbon.bsn').execute()
-		if File_cio.get_or_none(File_cio.file_name == 'carbon_lyr.bsn') is None: File_cio.insert(classification=2, order_in_class=4, file_name='carbon_lyr.bsn').execute()
 
 		#Add new print objects if they don't already exist
 		if not self.name_exists(simulation.Print_prt_object, 'gwflow_wb'): simulation.Print_prt_object.create(name='gwflow_wb', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)

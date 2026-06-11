@@ -92,8 +92,7 @@ class File_cio(BaseFileModel):
 		basin_conditions = {
 			1: codes_bsn is not None,
 			2: basin.Parameters_bsn.select().count() > 0,
-			3: carbon_enabled,
-			4: carbon_enabled and basin.Carbon_lyr_bsn.select().count() > 0
+			3: carbon_enabled
 		}
 		
 		# For netcdf format: weather-sta.cli is replaced with netcdf.ncw (handled in write()),

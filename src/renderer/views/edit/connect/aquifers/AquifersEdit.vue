@@ -48,7 +48,7 @@
 			const response2 = await api.get(`${data.apiUrl}/properties/${response.data.aqu.id}`, currentProject.getApiHeader());
 			data.item.props = response2.data;
 
-			const response3 = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			const response3 = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
 			data.vars = response3.data;
 		} catch (error) {
 			console.log(error);

@@ -27,7 +27,7 @@
 			data.item.rtu_name = response.data.rtu != null ? response.data.rtu.name : '';
 			data.item.dlr_name = response.data.dlr != null ? response.data.dlr.name : '';
 
-			const response2 = await api.get(`definitions/codes/connect/obj_typ/${utilities.appPathUrl}`);
+			const response2 = await api.get(`definitions/codes/connect/obj_typ`, utilities.getAppPathHeader());
 			data.objTypes = response2.data;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');

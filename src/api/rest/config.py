@@ -3,6 +3,7 @@ from database.project.setup import SetupProjectDatabase
 class RequestHeaders:
 	PROJECT_DB = "Project-Db"
 	DATASETS_DB = "Datasets-Db"
+	APP_PATH = "App-Path"
     
 	@staticmethod
 	def init(project_db_header, datasets_db_header=None):

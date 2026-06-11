@@ -61,7 +61,7 @@
 			data.item = response.data;
 			data.item.recall_rec_id = data.item.recall_rec;
 
-			const response2 = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			const response2 = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
 			data.vars = response2.data;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');

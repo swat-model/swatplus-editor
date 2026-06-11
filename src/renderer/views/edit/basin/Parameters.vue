@@ -24,7 +24,7 @@
 			const response = await api.get(`basin/parms`, currentProject.getApiHeader());
 			data.item = response.data;
 
-			const response2 = await api.get(`definitions/vars/parameters_bsn/${utilities.appPathUrl}`);
+			const response2 = await api.get(`definitions/vars/parameters_bsn`, utilities.getAppPathHeader());
 			data.vars = response2.data;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');

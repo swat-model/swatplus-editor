@@ -107,7 +107,6 @@ class UpdateDatasets(ExecutableApi):
 
 	def updates_for_4_0_0(self, datasets_db):		
 		if dataset_file_cio.get_or_none(dataset_file_cio.default_file_name == 'carbon.bsn') is None: dataset_file_cio.insert(classification=2, order_in_class=3, database_table='carbon_bsn', default_file_name='carbon.bsn', is_core_file=0).execute()
-		if dataset_file_cio.get_or_none(dataset_file_cio.default_file_name == 'carbon_lyr.bsn') is None: dataset_file_cio.insert(classification=2, order_in_class=4, database_table='carbon_lyr_bsn', default_file_name='carbon_lyr.bsn', is_core_file=0).execute()
 		
 		#Add new print objects if they don't already exist
 		if not self.name_exists(dataset_print_prt_object, 'gwflow_wb'): dataset_print_prt_object.create(name='gwflow_wb', daily=0, monthly=0, yearly=0, avann=0, print_prt_id=1)

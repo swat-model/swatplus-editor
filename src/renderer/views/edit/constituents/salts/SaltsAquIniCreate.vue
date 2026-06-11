@@ -26,7 +26,7 @@
 		data.page.error = null;
 
 		try {
-			const response = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			const response = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
 			data.vars = response.data;
 			data.item = utilities.setVars(data.item, data.vars);
 		} catch (error) {
