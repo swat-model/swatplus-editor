@@ -126,7 +126,7 @@ const getSwatPlusToolboxPath = () => {
 	let path = join(app.getAppPath(), '../../../', 'SWATPlusToolbox', 'SWATPlusToolbox.exe');
 	if (!fs.existsSync(path)) path = 'C:/SWAT/SWATPlus/SWATPlusToolbox/SWATPlusToolbox.exe';
 
-	if (process.platform === 'linux') path = '';
+	if (process.platform === 'linux') path = join(app.getPath('home'), '.local/share/SWATPlus/SWATPlusToolbox/swatplusToolboX');
 	else if (process.platform === 'darwin') path = '';
 
 	return path;
@@ -586,7 +586,7 @@ ipcMain.on('get-swatplustoolbox-path', (event) => {
 })
 
 ipcMain.on('launch-swatplustoolbox', (event, projectDb:string) => {
-	if (process.platform !== 'win32') event.returnValue = 'SWAT+ Toolbox is currently only available on Windows.';
+	if (process.platform === 'darwin') event.returnValue = 'SWAT+ Toolbox is currently only available on Windows and Linux.';
 	else {
 		let path = getSwatPlusToolboxPath();
 		if (!fs.existsSync(path)) event.returnValue = `Could not find SWAT+ Toolbox at "${path}"`;
