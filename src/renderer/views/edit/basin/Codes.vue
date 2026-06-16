@@ -25,7 +25,7 @@
 			errors.log(response.data);
 			data.item = response.data;
 
-			const response2 = await api.get(`definitions/vars/codes_bsn/${utilities.appPathUrl}`);
+			const response2 = await api.get(`definitions/vars/codes_bsn`, utilities.getAppPathHeader());
 			errors.log(response2.data);
 			data.vars = response2.data;
 		} catch (error) {

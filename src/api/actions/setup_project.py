@@ -145,6 +145,16 @@ class SetupProject(ExecutableApi):
 
 		try:
 			SetupProjectDatabase.init(project_db, datasets_db)
+			existing_config = Project_config.get_or_none()
+			if existing_config is not None and existing_config.editor_version is None:
+				ver = existing_config.gis_version
+				if len(ver) >= 3:
+					ver = existing_config.gis_version[:3]
+
+				ver = ver.replace('.', '')
+				if int(ver) < 40:
+					raise Exception("QSWAT+ version 4.0 or higher is required for new projects in SWAT+ Editor 4. Please either update your QSWAT+ or use version 3.x of the editor instead.")
+
 			self.emit_progress(10, 'Creating database tables...')
 			SetupProjectDatabase.create_tables()
 			self.emit_progress(50, 'Copying data from SWAT+ datasets database...')

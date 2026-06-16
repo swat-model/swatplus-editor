@@ -1,0 +1,59 @@
+<script setup lang="ts">
+	import { reactive, onMounted, watch } from 'vue';
+	import { useRoute } from 'vue-router';
+	import { useHelpers } from '@/helpers';
+	import EditForm from '@/components/EditForm.vue';
+
+	const route = useRoute();
+	const { api, currentProject, errors, utilities } = useHelpers();
+
+	let data: any = reactive({
+		paths: {
+			data: 'basin/carbon/lyrs',
+			vars: 'carbon_lyr_bsn'
+		},
+		page: {
+			loading: false,
+			error: null
+		},
+		item: {},
+		vars: []
+	});
+
+	async function get() {
+		if (route.params.id === undefined) return;
+		data.page.loading = true;
+		data.page.error = null;
+
+		try {
+			const response = await api.get(`${data.paths.data}/${route.params.id}`, currentProject.getApiHeader());
+			data.item = response.data;
+
+			const response2 = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
+			data.vars = response2.data;
+		} catch (error) {
+			data.page.error = errors.logError(error, 'Unable to get project information from database.');
+		}
+
+		data.page.loading = false;
+	}
+
+	onMounted(async () => await get())
+	watch(() => route.path, async () => await get())
+</script>
+
+<template>
+	<project-container :loading="data.page.loading" :load-error="data.page.error">
+		<file-header input-file="carbon_lyr.bsn" docs-path="basin-1" use-io>
+			<router-link to="/edit/basin/carbon/layers">Carbon Layers</router-link>
+			/ Edit
+		</file-header>
+
+		<edit-form show-range is-update hide-name :readonly-fields="['layer']"
+				   :item="data.item"
+				   name="Carbon Layers" table="carbon_lyr_bsn" no-gis
+				   :vars="data.vars"
+				   api-url="basin/carbon/lyrs"
+				   redirect-route="BasinCarbonLayers"></edit-form>
+	</project-container>
+</template>

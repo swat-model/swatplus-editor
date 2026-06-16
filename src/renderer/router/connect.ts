@@ -39,9 +39,11 @@ import AquifersInitialEdit from '../views/edit/connect/aquifers/InitialEdit.vue'
 import AquifersInitialCreate from '../views/edit/connect/aquifers/InitialCreate.vue';
 
 import Gwflow from '../views/edit/connect/gwflow/Gwflow.vue';
-import GwflowGrids from '../views/edit/connect/gwflow/GwflowGrids.vue';
 import GwflowZone from '../views/edit/connect/gwflow/GwflowZone.vue';
 import GwflowZoneEdit from '../views/edit/connect/gwflow/GwflowZoneEdit.vue';
+
+import GwflowCells from '../views/edit/connect/gwflow/Cells.vue';
+import GwflowCellsEdit from '../views/edit/connect/gwflow/CellsEdit.vue';
 
 import GwflowFpcell from '../views/edit/connect/gwflow/Fpcell.vue';
 import GwflowFpcellEdit from '../views/edit/connect/gwflow/FpcellEdit.vue';
@@ -166,7 +168,6 @@ export default [
 	{ 
 		path: 'cons/gwflow', name: 'Gwflow', component: Gwflow, 
 			children: [
-				{ path: 'grids', name: 'GwflowGrids', component: GwflowGrids },
 				{ 
 					path: 'zones', name: 'GwflowZone', component: GwflowZone,
 					children: [
@@ -174,16 +175,22 @@ export default [
 					] 
 				},
 				{ 
+					path: 'cells', name: 'GwflowCells', component: GwflowCells,
+					children: [
+						{ path: 'edit/:id', name: 'GwflowCellsEdit', component: GwflowCellsEdit },
+					] 
+				},
+				{ 
 					path: 'fpcell', name: 'GwflowFpcell', component: GwflowFpcell,
 					children: [
-						{ path: 'edit/:id', name: 'GwflowFpcellEdit', component: GwflowFpcellEdit },
+						{ path: 'edit/:id/:comp_id', name: 'GwflowFpcellEdit', component: GwflowFpcellEdit },
 						{ path: 'create', name: 'GwflowFpcellCreate', component: GwflowFpcellCreate }
 					] 
 				},
 				{ 
 					path: 'rescell', name: 'GwflowRescell', component: GwflowRescell,
 					children: [
-						{ path: 'edit/:id', name: 'GwflowRescellEdit', component: GwflowRescellEdit },
+						{ path: 'edit/:id/:comp_id', name: 'GwflowRescellEdit', component: GwflowRescellEdit },
 						{ path: 'create', name: 'GwflowRescellCreate', component: GwflowRescellCreate }
 					] 
 				},

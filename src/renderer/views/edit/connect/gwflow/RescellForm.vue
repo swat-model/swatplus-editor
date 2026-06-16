@@ -70,14 +70,14 @@
 
 			<div class="form-group">
 				<auto-complete label="Reservoir"
-					v-model="item.res_name" :value="item.res_name" :show-item-link="props.isUpdate"
+					v-model="item.reservoir_id_name" :value="item.reservoir_id_name" :show-item-link="props.isUpdate"
 					table-name="reservoir_con" route-name="ReservoirsEdit" required
 					section="Connections / Reservoirs" help-file="reservoir.con" help-db="reservoir_con"
 					api-url="reservoirs/items"></auto-complete>
 			</div>
 
 			<div class="form-group">
-				<v-text-field v-model.number="item.res_stage" :rules="[constants.formRules.required]" 
+				<v-text-field v-model.number="item.stage" :rules="[constants.formRules.required]" 
 					label="Reservoir Stage (m)" type="number" step="any"></v-text-field>
 			</div>
 

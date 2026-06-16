@@ -53,3 +53,33 @@ class Parameters_bsn(BaseFileModel):
 
 	def write(self):
 		self.write_default_table(db.Parameters_bsn, True, value_overrides={'lin_sed': '0.0', 'exp_sed': '0.0'}, precision_overrides={'day_lag_max': 0})
+
+
+class Carbon_bsn(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		pass
+
+	def write(self):
+		codes_bsn = db.Codes_bsn.get_or_none()
+		if codes_bsn is not None and codes_bsn.carbon == 2:
+			self.write_default_table(db.Carbon_bsn, True)
+
+
+class Carbon_lyr_bsn(BaseFileModel):
+	def __init__(self, file_name, version=None, swat_version=None):
+		self.file_name = file_name
+		self.version = version
+		self.swat_version = swat_version
+
+	def read(self):
+		pass
+
+	def write(self):
+		codes_bsn = db.Codes_bsn.get_or_none()
+		if codes_bsn is not None and codes_bsn.carbon == 2:
+			self.write_default_table(db.Carbon_lyr_bsn, True)

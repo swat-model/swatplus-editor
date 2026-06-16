@@ -58,7 +58,7 @@
 			data.rec.rec_typ = item.props.rec_typ;
 			data.rec.rec_typ_name = utilities.getRecTypDescription(data.rec.rec_typ);
 
-			const response = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			const response = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
 			data.vars = response.data;
 			data.item = utilities.setVars(data.item, data.vars);
 			data.item.recall_rec_id = route.params.id;

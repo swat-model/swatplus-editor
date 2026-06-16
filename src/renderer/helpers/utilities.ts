@@ -15,6 +15,10 @@ export function useUtilities() {
 	const appPath = electron.getAppPath().replace('app.asar', 'app.asar.unpacked');
 	const appPathUrl = encodeURIComponent(appPath||'');
 
+	function getAppPathHeader() {
+		return { headers: { 'App-Path': appPath } };
+	}
+
 	const publicPath = constants.globals.dev_mode ? '' : electron.getAppPath().replace('static', 'renderer');
 
 	const publicPathAbsolute = publicPath === '' ? '' : `/${publicPath}`;
@@ -244,7 +248,7 @@ export function useUtilities() {
 	}
 
 	return {
-		appPath, appPathUrl, publicPath, publicPathAbsolute, appendRoute, pathExists, joinPaths,
+		appPath, appPathUrl, getAppPathHeader, publicPath, publicPathAbsolute, appendRoute, pathExists, joinPaths,
 		getAutoComplete, getAutoCompleteId,
 		getVersionSupport,
 		getMostRecentProject, getRecentProjects, pushRecentProject, deleteRecentProject,

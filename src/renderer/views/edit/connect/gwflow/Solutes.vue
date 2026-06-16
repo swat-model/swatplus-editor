@@ -56,7 +56,7 @@
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<div v-if="route.name == 'GwflowSolutes'">
-			<file-header input-file="gwflow.solutes" docs-path="modflow" use-io>
+			<file-header input-file="solute.gw" docs-path="modflow" use-io>
 				<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
 				/ Solutes
 			</file-header>
@@ -81,9 +81,9 @@
 			</v-form>
 			
 			<grid-view auto-height
-				api-url="gwflow/solutes" :default-sort="['solute_name', 'asc']"
+				api-url="gwflow/solutes" :default-sort="['name', 'asc']"
 				use-dynamic-headers hide-create hide-delete
-				table-name="gwflow_solutes" import-primary-key="solute_name" />
+				table-name="gwflow_solutes" />
 		</div>
 		<router-view></router-view>
 	</project-container>

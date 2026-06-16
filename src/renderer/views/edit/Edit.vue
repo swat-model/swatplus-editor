@@ -87,7 +87,7 @@
 					name: 'Groundwater Flow', path: '/edit/cons/gwflow', show: !currentProject.isLte, routeName: 'Gwflow', 
 					subItems: [
 						{ name: 'Zones', path: '/edit/cons/gwflow/zones', show: true, routeName: '', subItems: [] },
-						{ name: 'Grid Data', path: '/edit/cons/gwflow/grids', show: true, routeName: '', subItems: [] },
+						{ name: 'Cells', path: '/edit/cons/gwflow/cells', show: true, routeName: '', subItems: [] },
 						{ name: 'Reservoirs', path: '/edit/cons/gwflow/rescell', show: true, routeName: '', subItems: [] },
 						{ name: 'Floodplain', path: '/edit/cons/gwflow/fpcell', show: true, routeName: '', subItems: [] },
 						{ name: 'Wetlands', path: '/edit/cons/gwflow/wetlands', show: true, routeName: '', subItems: [] },
@@ -100,7 +100,13 @@
 			name: 'Basin', routeName: 'Basin', show: true,
 			items: [
 				{ name: 'Codes', path: '/edit/basin/codes', show: true, routeName: '', subItems: [] },
-				{ name: 'Parameters', path: '/edit/basin/parameters', show: true, routeName: '', subItems: [] }
+				{ name: 'Parameters', path: '/edit/basin/parameters', show: true, routeName: '', subItems: [] },
+				{ 
+					name: 'Carbon', path: '/edit/basin/carbon', show: true, routeName: 'BasinCarbon', 
+					subItems: [
+						{ name: 'Layers', path: '/edit/basin/carbon/layers', show: true, routeName: '', subItems: [] }
+					] 
+				}
 			]
 		},
 		{
@@ -255,7 +261,7 @@
 
 	function processSubOpen(thisRoute:RouteRecordName|null|undefined) {
 		let subOpenItems = [
-			'Channels', 'Aquifers', 'Reservoirs', 'RoutingUnits', 'Gwflow',
+			'Channels', 'Aquifers', 'Reservoirs', 'RoutingUnits', 'Gwflow', 'BasinCarbon',
 			'Stations', 'Operations', 'LandscapeUnits', 'HardCalibration', 'SoftCalibration', 'Constituents', 'Salts'
 		];
 

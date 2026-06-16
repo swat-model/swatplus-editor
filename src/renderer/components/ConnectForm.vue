@@ -72,7 +72,7 @@
 	});
 
 	function getCodesDb(type:string) {
-		return api.get(`definitions/codes/connect/${type}/${utilities.appPathUrl}`);
+		return api.get(`definitions/codes/connect/${type}`, utilities.getAppPathHeader());
 	}
 
 	async function get() {

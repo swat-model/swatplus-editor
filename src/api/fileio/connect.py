@@ -245,8 +245,10 @@ class Recall_con(BaseFileModel):
 		raise NotImplementedError('Reading not implemented yet.')
 
 	def write(self):
+		#TEMP CHANGE: recall disabled in 4.0 due to model not being fully tested and ready
+		pass
 		#write_con_table(self.file_name, self.get_meta_line(), db.Recall_con, db.Recall_con_out, "rec", recall.Recall_rec)
-		con_table = db.Recall_con
+		"""con_table = db.Recall_con
 		con_out_table = db.Recall_con_out
 		elem_table = recall.Recall_rec
 		data = con_table.select(con_table, elem_table).join(elem_table).where(elem_table.rec_typ != 4)
@@ -270,7 +272,7 @@ class Recall_con(BaseFileModel):
 					elem_id = con.rec_id
 					con_to_index = elem_ids.index(elem_id) + 1
 					write_row(file, con, i, con_to_index, con.con_outs.order_by(con_out_table.order), con_out_id_dict)
-					i += 1
+					i += 1"""
 
 
 class Exco_con(BaseFileModel):

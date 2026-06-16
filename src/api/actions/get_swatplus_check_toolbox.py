@@ -142,33 +142,33 @@ class GetSwatplusCheckToolbox(ExecutableApi):
 							mgt.date = date(op.year, op.mon, op.day).isoformat()
 							mgt.op = op.operation
 							if op.operation == "PLANT":
-								mgt.description = "Plant " + plant_desc_lookup[op.crop]
+								mgt.description = "Plant " + plant_desc_lookup.get(op.crop, op.crop)
 							elif op.operation == "HARV/KILL":
-								mgt.description = "Harvest and kill\n" + plant_desc_lookup[op.crop]
+								mgt.description = "Harvest and kill\n" + plant_desc_lookup.get(op.crop, op.crop)
 							elif op.operation == "HARV":
-								mgt.description = "Harvest " + plant_desc_lookup[op.crop]
+								mgt.description = "Harvest " + plant_desc_lookup.get(op.crop, op.crop)
 							elif op.operation == "HARVEST":
-								mgt.description = "Harvest " + plant_desc_lookup[op.crop]
+								mgt.description = "Harvest " + plant_desc_lookup.get(op.crop, op.crop)
 							elif op.operation == "KILL":
-								mgt.description = "Kill " + plant_desc_lookup[op.crop]
+								mgt.description = "Kill " + plant_desc_lookup.get(op.crop, op.crop)
 							elif op.operation == "IRRIGATE":
 								mgt.description = "Irrigate"
 							elif op.operation == "FERT":
 								mgt.description = "Apply fertilizer"
 							elif op.operation == "TILLAGE":
-								mgt.description = f"Till ({plant_desc_lookup[op.crop]} option)"
+								mgt.description = f"Till ({op.crop} option)"
 							elif op.operation == "RESET WEIR":  
-								mgt.description = f"Reset weir ({plant_desc_lookup[op.crop]}) to {round(op.soil_water, 2)}m"
+								mgt.description = f"Reset weir ({plant_desc_lookup.get(op.crop, op.crop)}) to {round(op.soil_water, 2)}m"
 							elif op.operation == "STOP PADDY":  
 								mgt.description = "Stop paddy irrigation (set 0mm)"
 							elif op.operation == "PADDY":
-								mgt.description = f"Irrigate Paddy ({plant_desc_lookup[op.crop]})"
+								mgt.description = f"Irrigate Paddy ({plant_desc_lookup.get(op.crop, op.crop)})"
 							elif op.operation == "BEGIN/ADJUST":
 								mgt.description = f"Adjust paddy irrigation\nto {round(op.soil_water, 0)}mm"
 							elif op.operation == "PUDDLE":
 								mgt.description = "Puddle"
 							elif op.operation == "TRANSPLANT":
-								mgt.description = f"Transplant {plant_desc_lookup[op.crop]}"
+								mgt.description = f"Transplant {plant_desc_lookup.get(op.crop, op.crop)}"
 							else:
 								mgt.description = f"{op.operation} {op.crop}"
 							mgts.append(mgt)

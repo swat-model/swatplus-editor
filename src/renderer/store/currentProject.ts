@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed, reactive } from 'vue';
 import { useUtilities } from '../helpers/utilities';
-import { ProjectSettings } from 'typings';
+import { ProjectSettings } from '@/typings';
 
 export const useCurrentProject = defineStore('project', () => {
 	const electron = window.electronApi;

@@ -10,8 +10,9 @@ vardef_db = 'swatplus_vardefs.sqlite'
 
 bp = Blueprint('definitions', __name__, url_prefix='/definitions')
 
-@bp.route('/vars/<table>/<path:appPath>', methods=['GET'])
-def getVars(table, appPath):
+@bp.route('/vars/<table>', methods=['GET'])
+def getVars(table):
+	appPath = request.headers.get(rh.APP_PATH)
 	SetupVardefsDatabase.init(os.path.join(appPath, vardef_db))
 	m = Var_range.select().where((Var_range.table == table) & (Var_range.disabled == False))
 	
@@ -44,8 +45,9 @@ def getVars(table, appPath):
 	SetupVardefsDatabase.close()
 	return values
 
-@bp.route('/codes/<table>/<variable>/<path:appPath>', methods=['GET'])
-def getCodes(table, variable, appPath):
+@bp.route('/codes/<table>/<variable>', methods=['GET'])
+def getCodes(table, variable):
+	appPath = request.headers.get(rh.APP_PATH)
 	SetupVardefsDatabase.init(os.path.join(appPath, vardef_db))
 	m = Var_code.select().where((Var_code.table == table) & (Var_code.variable == variable))
 	

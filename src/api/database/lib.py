@@ -93,3 +93,11 @@ def execute_non_query(db, sql):
 	cursor = conn.cursor()
 	cursor.execute(sql)
 	conn.commit()
+
+
+def get_table_data(db_conn, table_name):
+	if not exists_table(db_conn, table_name):
+		return []
+
+	cursor = db_conn.execute(f'SELECT * FROM {table_name}')
+	return [dict(row) for row in cursor.fetchall()]

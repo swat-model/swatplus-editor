@@ -29,7 +29,7 @@
 			const response = await api.get(`${data.paths.data}/${route.params.id}`, currentProject.getApiHeader());
 			data.item = response.data;
 
-			const response2 = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			const response2 = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
 			data.vars = response2.data;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');
@@ -44,7 +44,7 @@
 
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="gwflow.input" docs-path="modflow" use-io>
+		<file-header input-file="zones.gw" docs-path="modflow" use-io>
 			<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
 			/ <router-link to="/edit/cons/gwflow/zones">Zones</router-link>
 			/ Edit

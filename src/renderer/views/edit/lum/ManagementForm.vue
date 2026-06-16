@@ -229,7 +229,7 @@
 		}
 
 		try {
-			const response = await api.get(`definitions/codes/management_sch/op_typ/${utilities.appPathUrl}`);
+			const response = await api.get(`definitions/codes/management_sch/op_typ`, utilities.getAppPathHeader());
 			errors.log(response.data);
 			data.op_codes = response.data;
 

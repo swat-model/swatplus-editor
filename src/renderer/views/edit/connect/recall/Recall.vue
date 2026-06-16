@@ -163,6 +163,13 @@
 				Point Source / Inlet Data
 			</file-header>
 
+			<v-alert type="error" icon="$error" variant="tonal" border="start" class="mb-4">
+                WARNING: While this interface and any existing data remain, time-series data will not be written nor processed by the model in this release.
+				Later in summer 2026, an update will be released that moves recall to the water allocation module.
+				This is not fully operational or tested in SWAT+ rev. 62 yet.
+				If you need time-series recall in your model before this release, please uninstall this version of the editor and use version 3.2.4 instead.
+            </v-alert>
+
 			<grid-view ref="recallGrid" :api-url="table.apiUrl" :headers="table.headers">
 				<template v-slot:header>
 					<v-dialog v-model="page.showInfo" :max-width="constants.dialogSizes.md">

@@ -29,7 +29,7 @@
 			const response = await api.get(`${data.paths.data}/${route.params.id}`, currentProject.getApiHeader());
 			data.item = response.data;
 
-			const response2 = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			const response2 = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
 			data.vars = response2.data;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');

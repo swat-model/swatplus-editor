@@ -29,7 +29,7 @@
 			data.item = response.data;
 			data.item.ls_unit_def_name = response.data.ls_unit_def !== null ? response.data.ls_unit_def.name : null;
 
-			const response2 = await api.get(`definitions/codes/connect/obj_typ/${utilities.appPathUrl}`);
+			const response2 = await api.get(`definitions/codes/connect/obj_typ`, utilities.getAppPathHeader());
 			data.objTypes = response2.data;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');

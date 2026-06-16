@@ -87,7 +87,9 @@ class Recall_rec(BaseFileModel):
 			db_lib.bulk_insert(project_base.db, db.Recall_dat, rows)
 
 	def write(self):
-		table = db.Recall_rec
+		#TEMP CHANGE: recall disabled in 4.0 due to model not being fully tested and ready
+		pass
+		"""table = db.Recall_rec
 		order_by = db.Recall_rec.id
 		data = table.select().where(table.rec_typ != 4)
 
@@ -112,7 +114,7 @@ class Recall_rec(BaseFileModel):
 
 					dir = os.path.dirname(self.file_name)
 					self.write_data(row.data, os.path.join(dir, file_name))
-					i += 1
+					i += 1"""
 
 	def write_data(self, data, file_name):
 		table = db.Recall_dat

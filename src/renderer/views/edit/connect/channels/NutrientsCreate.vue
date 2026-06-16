@@ -25,7 +25,7 @@
 		data.page.error = null;
 
 		try {
-			const response = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			const response = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
 			data.vars = response.data;
 			
 			let keys = Object.keys(data.vars);

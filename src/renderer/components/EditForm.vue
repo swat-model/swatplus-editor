@@ -28,6 +28,7 @@
 		includeHruOption?: boolean,
 		hideCopy?: boolean,
 		nullableFields?: string[],
+		readonlyFields?: string[],
 		primaryKey?: string
 	}
 
@@ -52,6 +53,7 @@
 		includeHruOption: false,
 		hideCopy: false,
 		nullableFields: () => [],
+		readonlyFields: () => [],
 		primaryKey: ''
 	});
 
@@ -315,7 +317,7 @@
 				</thead>
 				<tbody>
 					<tr-var-editor v-for="(v, i) in props.vars" :key="i" :bulk-mode="data.page.bulk.show" @change="selectedVarChange"
-						:id="'item_' + v.name" :required="!data.page.bulk.show && !props.nullableFields.includes(v.name)" :show-range="showRange"
+						:id="'item_' + v.name" :required="!data.page.bulk.show && !props.nullableFields.includes(v.name)" :show-range="showRange" :readonly="props.readonlyFields?.includes(v.name)"
 						v-model="item[v.name]" :value="item[v.name]"
 						:var-def="v"
                         :show-datasets="data.hasDatasetItem" :dataset-value="data.hasDatasetItem ? data.datasetItem[v.name] : null"></tr-var-editor>

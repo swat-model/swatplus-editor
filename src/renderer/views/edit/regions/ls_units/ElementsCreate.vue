@@ -29,7 +29,7 @@
 		data.page.error = null;
 
 		try {
-			const response = await api.get(`definitions/codes/connect/obj_typ/${utilities.appPathUrl}`);
+			const response = await api.get(`definitions/codes/connect/obj_typ`, utilities.getAppPathHeader());
 			data.objTypes = response.data;
 		} catch (error) {
 			data.page.error = errors.logError(error, 'Unable to get project information from database.');

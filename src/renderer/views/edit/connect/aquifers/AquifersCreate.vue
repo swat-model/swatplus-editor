@@ -34,7 +34,7 @@
 		data.page.error = null;
 
 		try {
-			const response = await api.get(`definitions/vars/${data.paths.vars}/${utilities.appPathUrl}`);
+			const response = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
 			data.vars = response.data;
 			data.item.props = utilities.setVars(data.item.props, data.vars);
 			data.item.props.init = { id: 1 };

@@ -18,7 +18,7 @@ dtl_names = [
 ]
 
 gwflow_cell_tables = [
-	'gwflow_hrucell', 'gwflow_fpcell', 'gwflow_rivcell', 'gwflow_lsucell', 'gwflow_rescell'
+	'gwflow_hrucell', 'gwflow_fpcell', 'gwflow_chancell', 'gwflow_lsucell', 'gwflow_rescell'
 ]
 
 class ImportExportData(ExecutableApi):
@@ -141,15 +141,15 @@ class ImportExportData(ExecutableApi):
 			decision_table.D_table_dtl(self.file_name, file_type=self.table_name).read()
 		elif self.table_name == 'mgt_sch':
 			lum.Management_sch(self.file_name).read()
-		elif self.table_name == 'gwflow_grid':
-			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
-			gwflow_writer.read_grid(self.file_name, self.column_name)
 		elif self.table_name in gwflow_cell_tables:
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.read_cell_csv(self.file_name, self.table_name)
 		elif self.table_name == 'gwflow_wetland':
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.read_wetland_csv(self.file_name)
+		elif self.table_name == 'gwflow_cell_solute':
+			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
+			gwflow_writer.read_cell_solute_csv(self.file_name, self.related_id)
 		else:
 			fileio.read_csv_file(self.file_name, self.table, project_base.db, 0, ignore_id_col=self.ignore_id_col, overwrite=fileio.FileOverwrite.replace, remove_spaces_cols=['name'], primary_key=self.column_name)
 
@@ -170,9 +170,6 @@ class ImportExportData(ExecutableApi):
 			salts.Salt_irrigation(self.file_name, self.version, self.swat_version).write_csv()
 		elif self.table_name == 'mgt_sch':
 			lum.Management_sch(self.file_name, self.version).write()
-		elif self.table_name == 'gwflow_grid':
-			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
-			gwflow_writer.write_grid(self.file_name, self.column_name)
 		elif self.table_name in gwflow_cell_tables:
 			gwflow_writer = gwflow.Gwflow_files('', self.version, self.swat_version, self.db_file)
 			gwflow_writer.write_cell_csv(self.file_name, self.table_name)
@@ -210,6 +207,9 @@ class ImportExportData(ExecutableApi):
 				initial_headers.append('weather_station')
 				ws = Weather_sta_cli
 				custom_query = ws.select(ws.atmo_dep.alias('atmo_station'), ws.name.alias('weather_station'), ws.lat, ws.lon)
+			elif self.table_name == 'gwflow_cell_solute':
+				ignored_cols.append('solute_id')
+				custom_query = self.table.select().where(self.table.solute_id == self.related_id)
 
 			try:
 				fileio.write_csv(self.file_name, self.table, ignore_id_col=self.ignore_id_col, ignored_cols=ignored_cols, custom_query=custom_query, initial_headers=initial_headers, primary_key=self.column_name)

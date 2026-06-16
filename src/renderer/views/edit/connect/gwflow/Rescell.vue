@@ -56,7 +56,7 @@
 <template>
 	<project-container :loading="data.page.loading" :load-error="data.page.error">
 		<div v-if="route.name == 'GwflowRescell'">
-			<file-header input-file="gwflow.rescells" docs-path="modflow" use-io>
+			<file-header input-file="rescell.gw" docs-path="modflow" use-io>
 				<router-link to="/edit/cons/gwflow">Groundwater Flow</router-link>
 				/ Reservoirs
 			</file-header>
@@ -83,7 +83,7 @@
 			<grid-view
 				api-url="gwflow/rescell" :default-sort="['cell_id', 'asc']" auto-height
 				use-dynamic-headers show-delete-all
-				show-import-export default-csv-file="gwflow_rescells.csv" table-name="gwflow_rescell" import-primary-key="cell_id" />
+				show-import-export default-csv-file="gwflow_rescells.csv" table-name="gwflow_rescell" import-primary-key="cell_id" composite-key="reservoir_id" />
 		</div>
 		<router-view></router-view>
 	</project-container>

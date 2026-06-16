@@ -12,6 +12,7 @@
 		datasetValue?: any,
 		showDatasets?: boolean,
 		bulkMode?: boolean,
+		readonly?: boolean,
 	}
 
 	const props = withDefaults(defineProps<Props>(), {
@@ -23,6 +24,7 @@
 		datasetValue: {},
 		showDatasets: false,
 		bulkMode: false,
+		readonly: false
 	});
 
 	const data:any = reactive({
@@ -82,7 +84,7 @@
 	}
 
 	const inputDisabled = computed(() => {
-		return props.bulkMode && !data.varSelected;
+		return (props.readonly || (props.bulkMode && !data.varSelected));
 	})
 
 	onMounted(async () => await get())

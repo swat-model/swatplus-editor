@@ -70,7 +70,7 @@
 
 			<div class="form-group">
 				<auto-complete label="Channel"
-					v-model="item.channel_name" :value="item.channel_name" :show-item-link="props.isUpdate"
+					v-model="item.channel_id_name" :value="item.channel_id_name" :show-item-link="props.isUpdate"
 					table-name="chandeg_con" route-name="ChannelsEdit" required
 					section="Connections / Channels" help-file="chandeg.con" help-db="chandeg_con"
 					api-url="channels/items"></auto-complete>
