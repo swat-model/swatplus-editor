@@ -67,13 +67,13 @@
 </script>
 
 <template>
-	<v-list-item v-if="constants.globals.platform !== 'darwin' && asListItem" @click="open">
+	<v-list-item v-if="asListItem" @click="open">
 		<v-list-item-title>{{ props.text }}</v-list-item-title>
 	</v-list-item>
-	<v-btn v-else-if="constants.globals.platform !== 'darwin' && !noIcon" @click="open" :active="false">
+	<v-btn v-else-if="!noIcon" @click="open" :active="false">
 		<v-icon>fas fa-toolbox</v-icon> {{ props.text }}
 	</v-btn>
-	<v-btn v-else-if="constants.globals.platform !== 'darwin' && noIcon" @click="open" :variant="variant" :color="color" :block="block" :rounded="rounded" :size="size" :class="class">
+	<v-btn v-else-if="noIcon" @click="open" :variant="variant" :color="color" :block="block" :rounded="rounded" :size="size" :class="class">
 		{{ props.text }}
 	</v-btn>
 
