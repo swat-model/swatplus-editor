@@ -1,14 +1,14 @@
 #include <idp.iss>
 
-#define SWATPlusVersion "3.2"
-#define SWATPlusPatchVersion "4"
-#define SWATPlusToolsPatchVersion "5"
-#define QSWATPlusVersion "3.2"
-#define QSWATPlusPatchVersion "3"
-#define ToolboxVersion "3.2"
+#define SWATPlusVersion "4.0"
+#define SWATPlusPatchVersion "0"
+#define SWATPlusToolsPatchVersion "0"
+#define QSWATPlusVersion "4.0"
+#define QSWATPlusPatchVersion "1"
+#define ToolboxVersion "4"
 #define ToolboxPatchVersion "0"
 #define IahrisVersion "1.1"
-#define ModelVersion "61.0.2"
+#define ModelVersion "62"
 #define SWATURL "https://swat.tamu.edu/"
 
 [Setup]
@@ -37,9 +37,9 @@ SolidCompression=yes
 WizardStyle=modern
 
 [Files]
-Source: "data\downloads\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; DestDir: "{tmp}"; Components: qswat; 
+Source: "data\downloads\QSWATPlus_{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}_Installer.exe"; DestDir: "{tmp}"; Components: qswat; 
 Source: "dist\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; DestDir: "{tmp}"; Components: editor; 
-Source: "data\downloads\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; DestDir: "{tmp}"; Components: toolbox; 
+Source: "data\downloads\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}-win-x64-Setup.exe"; DestDir: "{tmp}"; Components: toolbox; 
 Source: "data\downloads\SWATPlus-IAHRIS_{#IahrisVersion}_Setup.exe"; DestDir: "{tmp}"; Components: iahris;  
 Source: "{tmp}\swatplus_soils.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 44190170; Components: soils
 Source: "{tmp}\swatplus_wgn.zip"; DestDir: "{tmp}"; Flags: external; ExternalSize: 188325993; Components: wgn
@@ -68,9 +68,9 @@ Source: "data\downloads\SWATPlus\Tools\SWATGraph\runSWATGraph.bat"; DestDir: "{a
 Source: "data\downloads\SWATPlus\Documents\QSWATPlus Manual_v3.0.pdf"; DestDir: "{app}\Documents"; Components: qswat\manual;  Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Run]
-Filename: "{tmp}\QSWATPlusinstall{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}.exe"; Parameters: "/SILENT {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
+Filename: "{tmp}\QSWATPlus_{#QSWATPlusVersion}.{#QSWATPlusPatchVersion}_Installer.exe"; Parameters: "/S {code:InstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
 Filename: "{tmp}\swatplus-editor-{#SWATPlusVersion}.{#SWATPlusPatchVersion}-win32-x64.exe"; Parameters: "/S {code:InstallTypeFlag} /D=""{app}\SWATPlusEditor"""; WorkingDir: "{tmp}"; Flags: skipifdoesntexist
-Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}.exe"; Parameters: "/silent {code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
+Filename: "{tmp}\SWATPlusToolbox-v{#ToolboxVersion}.{#ToolboxPatchVersion}-win-x64-Setup.exe"; Parameters: "/S {code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
 Filename: "{tmp}\SWATPlus-IAHRIS_{#IahrisVersion}_Setup.exe"; Parameters: "/silent {code:TbInstallTypeFlag}"; WorkingDir: "{tmp}"; Flags: skipifdoesntexist shellexec
 
 [Messages]
