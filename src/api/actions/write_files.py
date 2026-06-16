@@ -573,7 +573,7 @@ class WriteFiles(ExecutableApi):
 			aquifer.Chan_aqu_lin(os.path.join(self.__dir, chan_aqu_lin_file), self.__version, self.__swat_version).write()"""
 
 	def write_basin(self, start_prog, allocated_prog):
-		num_files = 4
+		num_files = 3
 		files = self.get_file_names("basin", num_files)
 
 		prog_step = round(allocated_prog / num_files)
@@ -595,12 +595,6 @@ class WriteFiles(ExecutableApi):
 		if carbon_bsn_file != NULL_FILE:
 			self.update_file_status(prog, carbon_bsn_file)
 			basin.Carbon_bsn(os.path.join(self.__dir, carbon_bsn_file), self.__version, self.__swat_version).write()
-
-		prog += prog_step
-		carbon_lyr_bsn_file = files[3].strip()
-		if carbon_lyr_bsn_file != NULL_FILE:
-			self.update_file_status(prog, carbon_lyr_bsn_file)
-			basin.Carbon_lyr_bsn(os.path.join(self.__dir, carbon_lyr_bsn_file), self.__version, self.__swat_version).write()
 
 	def write_hydrology(self, start_prog, allocated_prog):
 		num_files = 3
