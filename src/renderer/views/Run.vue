@@ -275,6 +275,29 @@
 		return !(data.selection.inputs || data.selection.model || data.selection.output);
 	});
 
+	const legacyChannelFileNames = new Set([
+		'channel.con',
+		'channel.cha',
+		'hydrology.cha',
+		'sediment.cha'
+	]);
+
+	const selectedLegacyChannelFiles = computed(() => {
+		let selected:string[] = [];
+
+		for (let category of data.file_cio) {
+			for (let file of category.files) {
+				let isIncluded = !data.inputs.ignore_cio_files.includes(file.name)
+					&& (file.available || data.inputs.custom_cio_files.includes(file.name));
+
+				if (legacyChannelFileNames.has(file.name) && isIncluded)
+					selected.push(file.name);
+			}
+		}
+
+		return selected;
+	});
+
 	const totalProgress = computed(() => {
 		if (!data.task.running) return 0;
 
@@ -1156,6 +1179,13 @@ Please check your TxtInOut/diagnostics.out file for any information, and contact
 						This will be used by the visualization tool in QSWAT+. If you do not intend to use this feature, 
 						you may uncheck this box to save time.
 					</p>
+
+					<v-alert v-if="selectedLegacyChannelFiles.length > 0" color="warning" icon="$warning" variant="tonal" border="start" class="my-4">
+						<strong>Unsupported legacy channel files selected:</strong>
+						{{ selectedLegacyChannelFiles.join(', ') }}.
+						Current SWAT+ versions do not execute the legacy full-channel routing method.
+						Use <code>chandeg.con</code>, <code>channel-lte.cha</code>, and <code>hyd-sed-lte.cha</code> instead.
+					</v-alert>
 
 					<v-card>
 						<v-card-item>
