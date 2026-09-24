@@ -1,12 +1,12 @@
 <script setup lang="ts">
-	import { reactive } from 'vue';
-	import LandscapeUnitsForm from './LandscapeUnitsForm.vue';
+import { reactive } from "vue";
+import LandscapeUnitsForm from "./LandscapeUnitsForm.vue";
 
-	let data:any = reactive({
-		name: <string|null>null,
-		area: <number>0,
-		elements: <any[]>[]
-	});
+let data: any = reactive({
+	name: null as string | null,
+	area: 0,
+	elements: [] as any[],
+});
 </script>
 
 <template>

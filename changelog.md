@@ -1,6 +1,6 @@
 # Change Log #
 
-## Version 3 ##
+## Version 4 ##
 
 ### Revision 4.0.2 ###
 
@@ -22,6 +22,8 @@
 * Add carbon module (see basin section for carbon and carbon layers)
 * Update print.prt to include gwflow options and legacy carbon options
 * Time-series recall DISABLED (see note above)
+
+## Version 3 ##
 
 ### Revision 3.2.4 ###
 

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-	import { reactive } from 'vue';
-	import PlantCommForm from './PlantCommForm.vue';
+import { reactive } from "vue";
+import PlantCommForm from "./PlantCommForm.vue";
 
-	let item:any = reactive({
-		name: null,
-		description: null,
-		rot_yr_ini: 1
-	});
+let item: any = reactive({
+	name: null,
+	description: null,
+	rot_yr_ini: 1,
+});
 </script>
 
 <template>

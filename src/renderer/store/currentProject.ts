@@ -18,7 +18,7 @@ export const useCurrentProject = defineStore('project', () => {
 
 	const hasCurrentProject = computed(() => !!projectDb.value)
 	const isSupported = computed(() => {
-		if (!hasCurrentProject) return false;
+		if (!hasCurrentProject.value) return false;
 		let versionSupport = utilities.getVersionSupport(version.value||'');
         return versionSupport.supported;
 	})

@@ -7,6 +7,7 @@ module.exports = {
         'plugin:vue/vue3-essential',
         'eslint:recommended',
         '@vue/eslint-config-typescript',
+		'plugin:vuejs-accessibility/recommended',
     ],
     rules: {
         'indent': 'off',
@@ -22,5 +23,19 @@ module.exports = {
             },
         ],
         'vue/multi-word-component-names': 'off',
+		'vuejs-accessibility/label-has-for': [
+			'error',
+			{
+				components: ['Label'],
+				controlComponents: ['VCheckbox', 'VTextField', 'VSelect', 'VSwitch'],
+				required: {
+				some: ['nesting', 'id'],
+				},
+				allowChildren: false,
+			},
+		],
+		'vue/no-side-effects-in-computed-properties': 'off',
+		'vue/valid-v-slot': 'off',
+		'vue/no-mutating-props': 'off',
     },
 }

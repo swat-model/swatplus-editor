@@ -1,15 +1,15 @@
 <script setup lang="ts">
-	import { reactive } from 'vue';
-	import WgnForm from './WgnForm.vue';
+import { reactive } from "vue";
+import WgnForm from "./WgnForm.vue";
 
-	let data:any = reactive({
-		name: <string|null>null,
-		lat: <number|null>null,
-		lon: <number|null>null,
-		elev: <number|null>null,
-		rain_yrs: <number|null>null,
-		monthly_values: <any[]>[]
-	});
+let data: any = reactive({
+	name: null as string | null,
+	lat: null as number | null,
+	lon: null as number | null,
+	elev: null as number | null,
+	rain_yrs: null as number | null,
+	monthly_values: [] as any[],
+});
 </script>
 
 <template>

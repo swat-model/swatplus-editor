@@ -1,6 +1,6 @@
 <script setup lang="ts">
-	import { useRoute } from 'vue-router';
-	const route = useRoute();
+import { useRoute } from "vue-router";
+const route = useRoute();
 </script>
 
 <template>
@@ -10,9 +10,13 @@
 				Snow
 			</file-header>
 
-			<grid-view api-url="db/snow"
-					   use-dynamic-headers
-					   show-import-export default-csv-file="snow.csv" table-name="snow" />
+			<grid-view
+				api-url="db/snow"
+				use-dynamic-headers
+				show-import-export
+				default-csv-file="snow.csv"
+				table-name="snow"
+			/>
 		</div>
 		<router-view></router-view>
 	</project-container>
