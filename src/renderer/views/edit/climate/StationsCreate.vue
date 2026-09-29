@@ -19,10 +19,8 @@ let data: any = reactive({
 
 <template>
 	<project-container>
-		<file-header input-file="weather-sta.cli" docs-path="climate">
-			<router-link to="/edit/climate/stations"
-				>Weather Stations</router-link
-			>
+		<file-header input-file="weather-sta.cli" docs-path="weather">
+			<router-link to="/edit/climate/stations">Weather Stations</router-link>
 			/ Create
 		</file-header>
 

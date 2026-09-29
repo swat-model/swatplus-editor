@@ -14,7 +14,7 @@ let data: any = reactive({
 
 <template>
 	<project-container>
-		<file-header input-file="weather-wgn.cli" docs-path="climate">
+		<file-header input-file="weather-wgn.cli" docs-path="wgn">
 			<router-link to="/edit/climate/wgn">Weather Generator</router-link>
 			/ Create
 		</file-header>

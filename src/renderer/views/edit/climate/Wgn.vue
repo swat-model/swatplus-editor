@@ -5,15 +5,7 @@ import { required, requiredIf, helpers } from "@vuelidate/validators";
 import { useRoute } from "vue-router";
 import { useHelpers } from "@/helpers";
 const route = useRoute();
-const {
-	api,
-	constants,
-	currentProject,
-	errors,
-	formatters,
-	runProcess,
-	utilities,
-} = useHelpers();
+const { api, constants, currentProject, errors, formatters, runProcess, utilities } = useHelpers();
 
 const grid = ref();
 
@@ -96,10 +88,7 @@ const formRules = computed(() => ({
 		required: helpers.withMessage(
 			"Value is required",
 			requiredIf(() => {
-				return (
-					page.import.form.method === "two_file" ||
-					page.import.form.method === "one_file"
-				);
+				return page.import.form.method === "two_file" || page.import.form.method === "one_file";
 			}),
 		),
 	},
@@ -142,35 +131,21 @@ async function get() {
 	page.error = null;
 
 	try {
-		const response = await api.get(
-			`climate/wgn/db`,
-			currentProject.getApiHeader(),
-		);
+		const response = await api.get(`climate/wgn/db`, currentProject.getApiHeader());
 		errors.log(response.data);
 
 		let defaultDb = utilities.getDatabaseInstallPath("swatplus_wgn.sqlite");
 		errors.log(defaultDb);
-		let defaultTable = formatters.isNullOrEmpty(defaultDb)
-			? null
-			: page.import.defaults.table;
+		let defaultTable = formatters.isNullOrEmpty(defaultDb) ? null : page.import.defaults.table;
 
-		page.import.form.db = formatters.toValue(
-			response.data.wgn_db,
-			defaultDb,
-		);
-		page.import.form.table = formatters.toValue(
-			response.data.wgn_table_name,
-			defaultTable,
-		);
+		page.import.form.db = formatters.toValue(response.data.wgn_db, defaultDb);
+		page.import.form.table = formatters.toValue(response.data.wgn_table_name, defaultTable);
 		page.import.form.useObserved = response.data.has_observed_weather;
 		page.import.hasObservedOnLoad = response.data.has_observed_weather;
 
 		await validateStations();
 	} catch (error) {
-		page.error = errors.logError(
-			error,
-			"Unable to get project information from database.",
-		);
+		page.error = errors.logError(error, "Unable to get project information from database.");
 	}
 
 	page.loading = false;
@@ -181,18 +156,12 @@ async function validateStations() {
 	page.validate.error = null;
 
 	try {
-		const response = await api.get(
-			`climate/wgn/validate`,
-			currentProject.getApiHeader(),
-		);
+		const response = await api.get(`climate/wgn/validate`, currentProject.getApiHeader());
 		errors.log(response.data);
 		page.validate.is_invalid = response.data.is_invalid;
 		page.validate.data = response.data.data;
 	} catch (error) {
-		page.validate.error = errors.logError(
-			error,
-			"Unable to get project information from database.",
-		);
+		page.validate.error = errors.logError(error, "Unable to get project information from database.");
 	}
 
 	page.validate.loading = false;
@@ -203,19 +172,13 @@ async function confirmDelete() {
 	page.delete.saving = true;
 
 	try {
-		const response = await api.delete(
-			`climate/wgn`,
-			currentProject.getApiHeader(),
-		);
+		const response = await api.delete(`climate/wgn`, currentProject.getApiHeader());
 		errors.log(response);
 		page.delete.show = false;
 		await grid?.value?.get();
 		await validateStations();
 	} catch (error) {
-		page.delete.error = errors.logError(
-			error,
-			"Unable to delete from database.",
-		);
+		page.delete.error = errors.logError(error, "Unable to delete from database.");
 	}
 
 	page.delete.saving = false;
@@ -228,8 +191,7 @@ async function importData() {
 
 	const valid = await v$.value.$validate();
 	if (!valid) {
-		page.import.error =
-			"Please enter a value for all fields below and try again.";
+		page.import.error = "Please enter a value for all fields below and try again.";
 	} else {
 		if (page.import.form.method === "database") {
 			try {
@@ -237,28 +199,17 @@ async function importData() {
 					wgn_db: page.import.form.db,
 					wgn_table_name: page.import.form.table,
 				};
-				const response = await api.put(
-					`climate/wgn/db`,
-					data,
-					currentProject.getApiHeader(),
-				);
+				const response = await api.put(`climate/wgn/db`, data, currentProject.getApiHeader());
 				errors.log(response);
 			} catch (error) {
-				page.import.error = errors.logError(
-					error,
-					"Error saving wgn database and table parameters.",
-				);
+				page.import.error = errors.logError(error, "Error saving wgn database and table parameters.");
 			}
 		}
 
 		if (formatters.isNullOrEmpty(page.import.error)) {
 			let deleteExisting = page.import.form.deleteExisting ? "y" : "n";
 			let createStations = page.import.form.useObserved ? "n" : "y";
-			let deleteExistingStations =
-				page.import.form.deleteExistingStations &&
-				page.import.hasObservedOnLoad
-					? "y"
-					: "n";
+			let deleteExistingStations = page.import.form.deleteExistingStations && page.import.hasObservedOnLoad ? "y" : "n";
 
 			let args = [
 				"import_weather",
@@ -358,9 +309,7 @@ watch(
 <template>
 	<project-container :loading="page.loading" :load-error="page.error">
 		<div v-if="route.name === 'Wgn'">
-			<file-header input-file="weather-wgn.cli" docs-path="climate">
-				Weather Generator
-			</file-header>
+			<file-header input-file="weather-wgn.cli" docs-path="wgn"> Weather Generator </file-header>
 
 			<error-alert :text="page.validate.error"></error-alert>
 			<page-loading :loading="page.validate.loading"></page-loading>
@@ -373,88 +322,45 @@ watch(
 				class="mb-4"
 			>
 				<p>
-					You have weather generators in your model that do not have
-					corresponding monthly values. Non-zero monthly values for
-					each statistic are required for SWAT+ to run. Please use the
-					import function with the SWAT+ WGN database if you are
-					unsure, or refer to the SWAT+ documentation. Stations with
-					missing data are listed below.
+					You have weather generators in your model that do not have corresponding monthly values. Non-zero monthly values for each
+					statistic are required for SWAT+ to run. Please use the import function with the SWAT+ WGN database if you are unsure, or refer to
+					the SWAT+ documentation. Stations with missing data are listed below.
 				</p>
 				<ul>
-					<li
-						v-for="(station, index) in page.validate.data"
-						:key="index"
-					>
+					<li v-for="(station, index) in page.validate.data" :key="index">
 						Station
-						<router-link
-							class="text-warning"
-							:to="`/edit/climate/wgn/edit/${station.id}`"
-							>{{ station.name }}</router-link
-						>
-						has <b>{{ station.months }}</b> months of data; 12 are
-						required.
+						<router-link class="text-warning" :to="`/edit/climate/wgn/edit/${station.id}`">{{ station.name }}</router-link>
+						has <b>{{ station.months }}</b> months of data; 12 are required.
 					</li>
 				</ul>
 			</v-alert>
 
-			<grid-view
-				ref="grid"
-				:api-url="table.apiUrl"
-				:headers="table.headers"
-				@change="getTableTotal"
-			>
+			<grid-view ref="grid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal">
 				<template #actions>
-					<v-btn
-						variant="flat"
-						color="info"
-						class="mr-2"
-						@click="page.import.show = true"
-						>Import Data</v-btn
-					>
-					<v-btn
-						v-if="table.total > 0"
-						variant="flat"
-						color="error"
-						class="mr-2"
-						@click="page.delete.show = true"
-						>Delete All</v-btn
-					>
+					<v-btn variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import Data</v-btn>
+					<v-btn v-if="table.total > 0" variant="flat" color="error" class="mr-2" @click="page.delete.show = true">Delete All</v-btn>
 				</template>
 			</grid-view>
 
-			<v-dialog
-				v-model="page.delete.show"
-				:max-width="constants.dialogSizes.md"
-			>
+			<v-dialog v-model="page.delete.show" :max-width="constants.dialogSizes.md">
 				<v-card title="Confirm delete">
 					<v-card-text>
 						<error-alert :text="page.delete.error"></error-alert>
 
 						<p>
 							Are you sure you want to delete
-							<strong>ALL</strong> weather generators? This action
-							is permanent and cannot be undone.
+							<strong>ALL</strong> weather generators? This action is permanent and cannot be undone.
 						</p>
 					</v-card-text>
 					<v-divider></v-divider>
 					<v-card-actions>
-						<v-btn
-							@click="confirmDelete"
-							:loading="page.delete.saving"
-							color="error"
-							variant="text"
-							>Delete All</v-btn
-						>
+						<v-btn @click="confirmDelete" :loading="page.delete.saving" color="error" variant="text">Delete All</v-btn>
 						<v-btn @click="page.delete.show = false">Cancel</v-btn>
 					</v-card-actions>
 				</v-card>
 			</v-dialog>
 
-			<v-dialog
-				v-model="page.import.show"
-				:max-width="constants.dialogSizes.lg"
-				persistent
-			>
+			<v-dialog v-model="page.import.show" :max-width="constants.dialogSizes.lg" persistent>
 				<v-card title="Import Weather Generator Data">
 					<v-card-text>
 						<error-alert :text="page.import.error"></error-alert>
@@ -482,11 +388,7 @@ watch(
 									label="Select your data format"
 									v-model="page.import.form.method"
 									:items="page.import.options.methods"
-									:error-messages="
-										v$.method.$errors
-											.map((e) => e.$message)
-											.join(', ')
-									"
+									:error-messages="v$.method.$errors.map((e) => e.$message).join(', ')"
 									@input="v$.method.$touch"
 									@blur="v$.method.$touch"
 								></v-select>
@@ -499,11 +401,7 @@ watch(
 									variant="tonal"
 									border="start"
 									class="mb-4"
-									v-if="
-										formatters.isNullOrEmpty(
-											page.import.form.db,
-										)
-									"
+									v-if="formatters.isNullOrEmpty(page.import.form.db)"
 								>
 									Need wgn data?
 									<open-in-browser
@@ -518,10 +416,7 @@ watch(
 										:value="page.import.form.db"
 										label="Database file"
 										fileType="sqlite"
-										:required="
-											page.import.form.method ===
-											'database'
-										"
+										:required="page.import.form.method === 'database'"
 										invalidFeedback="Please select a SQLite database file"
 									></select-file-input>
 								</div>
@@ -530,32 +425,16 @@ watch(
 									<v-text-field
 										v-model="page.import.form.table"
 										label="Table name in database"
-										:error-messages="
-											v$.table.$errors
-												.map((e) => e.$message)
-												.join(', ')
-										"
+										:error-messages="v$.table.$errors.map((e) => e.$message).join(', ')"
 										@input="v$.table.$touch"
 										@blur="v$.table.$touch"
 									></v-text-field>
 								</div>
 							</div>
-							<div
-								v-else-if="
-									page.import.form.method === 'two_file'
-								"
-							>
-								<v-alert
-									type="info"
-									icon="$info"
-									variant="tonal"
-									border="start"
-									class="mb-4"
-								>
+							<div v-else-if="page.import.form.method === 'two_file'">
+								<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 									<div>
-										Two CSV files are required. Please
-										ensure the files you're importing are
-										saved with UTF-8 encoding.
+										Two CSV files are required. Please ensure the files you're importing are saved with UTF-8 encoding.
 										<open-in-browser
 											url="https://plus.swat.tamu.edu/downloads/sample_files/wgn/swatplus_tf_wgn_template.zip"
 											text="Download a template."
@@ -567,15 +446,9 @@ watch(
 											<ul>
 												<li>
 													Columns
-													<code
-														>id, name, lat, lon,
-														elev, rain_yrs</code
-													>
+													<code>id, name, lat, lon, elev, rain_yrs</code>
 												</li>
-												<li>
-													<code>id</code> should be
-													uniquely numbered
-												</li>
+												<li><code>id</code> should be uniquely numbered</li>
 											</ul>
 										</li>
 										<li>
@@ -584,26 +457,15 @@ watch(
 												<li>
 													Columns
 													<code
-														>id, wgn_id, month,
-														tmp_max_ave,
-														tmp_min_ave, tmp_max_sd,
-														tmp_min_sd, pcp_ave,
-														pcp_sd, pcp_skew,
-														wet_dry, wet_wet,
-														pcp_days, pcp_hhr,
-														slr_ave, dew_ave,
-														wnd_ave</code
+														>id, wgn_id, month, tmp_max_ave, tmp_min_ave, tmp_max_sd, tmp_min_sd, pcp_ave, pcp_sd,
+														pcp_skew, wet_dry, wet_wet, pcp_days, pcp_hhr, slr_ave, dew_ave, wnd_ave</code
 													>
 												</li>
-												<li>
-													<code>id</code> should be
-													uniquely numbered
-												</li>
+												<li><code>id</code> should be uniquely numbered</li>
 												<li>
 													<code>wgn_id</code>
 													corresponds to the
-													<code>id</code> column from
-													the stations file
+													<code>id</code> column from the stations file
 												</li>
 											</ul>
 										</li>
@@ -616,10 +478,7 @@ watch(
 										:value="page.import.form.csvFile1"
 										label="Stations CSV file"
 										fileType="csv"
-										:required="
-											page.import.form.method ===
-											'two_file'
-										"
+										:required="page.import.form.method === 'two_file'"
 										invalidFeedback="Please select a CSV file"
 									></select-file-input>
 								</div>
@@ -630,30 +489,15 @@ watch(
 										:value="page.import.form.csvFile2"
 										label="Monthly values CSV file"
 										fileType="csv"
-										:required="
-											page.import.form.method ===
-											'two_file'
-										"
+										:required="page.import.form.method === 'two_file'"
 										invalidFeedback="Please select a CSV file"
 									></select-file-input>
 								</div>
 							</div>
-							<div
-								v-else-if="
-									page.import.form.method === 'one_file'
-								"
-							>
-								<v-alert
-									type="info"
-									icon="$info"
-									variant="tonal"
-									border="start"
-									class="mb-4"
-								>
-									One CSV file is required. One station per
-									row; all 12 months of data are in a single
-									row. Please ensure the files you're
-									importing are saved with UTF-8 encoding.
+							<div v-else-if="page.import.form.method === 'one_file'">
+								<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+									One CSV file is required. One station per row; all 12 months of data are in a single row. Please ensure the files
+									you're importing are saved with UTF-8 encoding.
 									<open-in-browser
 										url="https://plus.swat.tamu.edu/downloads/sample_files/wgn/swatplus_sf_wgn_template.csv"
 										text="Download a template."
@@ -666,45 +510,23 @@ watch(
 										:value="page.import.form.csvFile1"
 										label="CSV file"
 										fileType="csv"
-										:required="
-											page.import.form.method ===
-											'one_file'
-										"
+										:required="page.import.form.method === 'one_file'"
 										invalidFeedback="Please select a CSV file"
 									></select-file-input>
 								</div>
 							</div>
 
-							<v-checkbox
-								v-model="page.import.form.deleteExisting"
-								v-if="table.total > 0"
-								hide-details
-							>
-								<template #label>
-									Delete existing weather generators?
-								</template>
+							<v-checkbox v-model="page.import.form.deleteExisting" v-if="table.total > 0" hide-details>
+								<template #label> Delete existing weather generators? </template>
 							</v-checkbox>
 
-							<v-checkbox
-								v-model="page.import.form.useObserved"
-								hide-details
-							>
-								<template #label>
-									Check if you are using observed weather data
-								</template>
+							<v-checkbox v-model="page.import.form.useObserved" hide-details>
+								<template #label> Check if you are using observed weather data </template>
 							</v-checkbox>
 
-							<v-checkbox
-								v-if="page.import.hasObservedOnLoad"
-								v-model="
-									page.import.form.deleteExistingStations
-								"
-								hide-details
-							>
+							<v-checkbox v-if="page.import.hasObservedOnLoad" v-model="page.import.form.deleteExistingStations" hide-details>
 								<template #label>
-									Delete existing weather stations?
-									CAUTION:This will remove any imported
-									observed weather data.
+									Delete existing weather stations? CAUTION:This will remove any imported observed weather data.
 								</template>
 							</v-checkbox>
 						</div>

@@ -1,6 +1,6 @@
 {
 	"name": "swatplus-editor",
-	"version": "4.0.2",
+	"version": "4.0.3",
 	"description": "SWAT+ Editor",
 	"author": "Jaclyn Tech <jaclynt@tamu.edu>",
 	"private": true,
@@ -60,10 +60,10 @@
 		"vue-tsc": "^2.2.12"
 	},
 	"allowScripts": {
-		"@parcel/watcher@2.5.1": true,
 		"vue-demi@0.13.11": true,
 		"vue-demi@0.14.10": true,
 		"electron@31.7.7": true,
-		"esbuild@0.21.5": true
+		"esbuild@0.21.5": true,
+		"@parcel/watcher@2.6.0": true
 	}
 }

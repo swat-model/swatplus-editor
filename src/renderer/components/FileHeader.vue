@@ -1,32 +1,32 @@
 <script setup lang="ts">
-	import { computed } from 'vue';
-	import { useFormatters } from '@/helpers/formatters';
-	const formatters = useFormatters();
-	const electron = window.electronApi;
+import { computed } from "vue";
+import { useFormatters } from "@/helpers/formatters";
+const formatters = useFormatters();
+const electron = window.electronApi;
 
-	interface Props {
-		docsPath?: string | null,
-		inputFile?: string | null,
-		useIo?: boolean
+interface Props {
+	docsPath?: string | null;
+	inputFile?: string | null;
+	useIo?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+	docsPath: null,
+	inputFile: null,
+	useIo: false,
+});
+
+const docsUrl = computed(() => {
+	if (props.useIo) return "https://swatplus.gitbook.io/io-docs/introduction/" + props.docsPath;
+	return "https://swat-model.github.io/swatplus-editor-documentation/edit-inputs/" + props.docsPath;
+});
+
+function open(e: any) {
+	if (!formatters.isNullOrEmpty(props.docsPath)) {
+		e.preventDefault();
+		electron.openUrl(docsUrl.value);
 	}
-
-	const props = withDefaults(defineProps<Props>(), {
-		docsPath: null,
-		inputFile: null,
-		useIo: false
-	});
-
-	const docsUrl = computed(() => {
-		if (props.useIo) return 'https://swatplus.gitbook.io/io-docs/introduction/' + props.docsPath;		
-		return 'https://swatplus.gitbook.io/docs/user/editor/inputs/' + props.docsPath;
-	})
-
-	function open(e:any) {
-		if (!formatters.isNullOrEmpty(props.docsPath)) {
-			e.preventDefault();
-			electron.openUrl(docsUrl.value);
-		}
-	}
+}
 </script>
 
 <template>
@@ -36,7 +36,7 @@
 		</span>
 		<span class="info ml-auto">
 			<a @click.prevent="open" v-if="props.docsPath != ''" :title="docsUrl" href="#" class="text-decoration-none text-medium-emphasis">
-				{{inputFile}}
+				{{ inputFile }}
 				<font-awesome-icon :icon="['fas', 'book']" class="ml-2 pointer" />
 			</a>
 		</span>

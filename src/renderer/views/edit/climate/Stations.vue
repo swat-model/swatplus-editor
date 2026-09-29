@@ -5,15 +5,7 @@ import { required, requiredIf, helpers } from "@vuelidate/validators";
 import { useRoute } from "vue-router";
 import { useHelpers } from "@/helpers";
 const route = useRoute();
-const {
-	api,
-	constants,
-	currentProject,
-	errors,
-	formatters,
-	runProcess,
-	utilities,
-} = useHelpers();
+const { api, constants, currentProject, errors, formatters, runProcess, utilities } = useHelpers();
 
 const grid = ref();
 
@@ -128,10 +120,7 @@ async function get() {
 	page.error = null;
 
 	try {
-		const response = await api.get(
-			`climate/directory`,
-			currentProject.getApiHeader(),
-		);
+		const response = await api.get(`climate/directory`, currentProject.getApiHeader());
 		errors.log(response.data);
 
 		page.import.form.weatherDataDir = response.data.weather_data_dir;
@@ -148,10 +137,7 @@ async function get() {
 			table.headers[i].filePath = page.import.form.weatherDataDir;
 		}
 	} catch (error) {
-		page.error = errors.logError(
-			error,
-			"Unable to get project information from database.",
-		);
+		page.error = errors.logError(error, "Unable to get project information from database.");
 	}
 
 	page.loading = false;
@@ -162,18 +148,12 @@ async function confirmDelete() {
 	page.delete.saving = true;
 
 	try {
-		const response = await api.delete(
-			`climate/stations`,
-			currentProject.getApiHeader(),
-		);
+		const response = await api.delete(`climate/stations`, currentProject.getApiHeader());
 		errors.log(response);
 		page.delete.show = false;
 		await grid?.value?.get();
 	} catch (error) {
-		page.delete.error = errors.logError(
-			error,
-			"Unable to delete from database.",
-		);
+		page.delete.error = errors.logError(error, "Unable to delete from database.");
 	}
 
 	page.delete.saving = false;
@@ -186,36 +166,22 @@ async function importData() {
 
 	const valid = await v$.value.$validate();
 	if (!valid) {
-		page.import.error =
-			"Please enter a value for all fields below and try again.";
+		page.import.error = "Please enter a value for all fields below and try again.";
 	} else {
 		try {
 			let data = {
-				weather_data_dir:
-					page.import.form.format === "SWAT+"
-						? page.import.form.weatherDataDir
-						: page.import.form.saveDir,
+				weather_data_dir: page.import.form.format === "SWAT+" ? page.import.form.weatherDataDir : page.import.form.saveDir,
 			};
-			const response = await api.put(
-				`climate/directory`,
-				data,
-				currentProject.getApiHeader(),
-			);
+			const response = await api.put(`climate/directory`, data, currentProject.getApiHeader());
 			errors.log(response);
 		} catch (error) {
-			page.import.error = errors.logError(
-				error,
-				"Error saving weather directory to database.",
-			);
+			page.import.error = errors.logError(error, "Error saving weather directory to database.");
 		}
 
 		if (formatters.isNullOrEmpty(page.import.error)) {
 			let deleteExisting = page.import.form.deleteExisting ? "y" : "n";
 			let createStations = page.import.form.matchExisting ? "n" : "y";
-			let importType =
-				page.import.form.format === "SWAT2012"
-					? "observed2012"
-					: "observed";
+			let importType = page.import.form.format === "SWAT2012" ? "observed2012" : "observed";
 
 			let args = [
 				"import_weather",
@@ -249,11 +215,7 @@ function runTask(args: string[]) {
 	};
 
 	task.isGridTask = true;
-	task.currentPid = runProcess.runApiProc(
-		"weather_stations",
-		"swatplus_api",
-		args,
-	);
+	task.currentPid = runProcess.runApiProc("weather_stations", "swatplus_api", args);
 }
 
 let listeners: any = {
@@ -263,34 +225,25 @@ let listeners: any = {
 };
 
 function initRunProcessHandlers() {
-	listeners.stdout = runProcess.processStdout(
-		"weather_stations",
-		(data: any) => {
-			console.log(`stdout: ${data}`);
-			task.progress = runProcess.getApiOutput(data);
-		},
-	);
+	listeners.stdout = runProcess.processStdout("weather_stations", (data: any) => {
+		console.log(`stdout: ${data}`);
+		task.progress = runProcess.getApiOutput(data);
+	});
 
-	listeners.stderr = runProcess.processStderr(
-		"weather_stations",
-		(data: any) => {
-			console.log(`stderr: ${data}`);
-			task.error = data;
+	listeners.stderr = runProcess.processStderr("weather_stations", (data: any) => {
+		console.log(`stderr: ${data}`);
+		task.error = data;
+		task.running = false;
+	});
+
+	listeners.close = runProcess.processClose("weather_stations", async (code: any) => {
+		console.log(`close: ${code}`);
+		if (formatters.isNullOrEmpty(task.error)) {
+			await grid?.value?.get();
 			task.running = false;
-		},
-	);
-
-	listeners.close = runProcess.processClose(
-		"weather_stations",
-		async (code: any) => {
-			console.log(`close: ${code}`);
-			if (formatters.isNullOrEmpty(task.error)) {
-				await grid?.value?.get();
-				task.running = false;
-				closeTaskModals();
-			}
-		},
-	);
+			closeTaskModals();
+		}
+	});
 }
 
 function removeRunProcessHandlers() {
@@ -329,69 +282,34 @@ watch(
 <template>
 	<project-container :loading="page.loading" :load-error="page.error">
 		<div v-if="route.name === 'Stations'">
-			<file-header input-file="weather-sta.cli" docs-path="climate">
-				Weather Stations
-			</file-header>
+			<file-header input-file="weather-sta.cli" docs-path="weather"> Weather Stations </file-header>
 
-			<grid-view
-				ref="grid"
-				:api-url="table.apiUrl"
-				:headers="table.headers"
-				@change="getTableTotal"
-				hide-create
-			>
+			<grid-view ref="grid" :api-url="table.apiUrl" :headers="table.headers" @change="getTableTotal" hide-create>
 				<template #actions>
-					<v-btn
-						variant="flat"
-						color="info"
-						class="mr-2"
-						@click="page.import.show = true"
-						>Import Data</v-btn
-					>
-					<v-btn
-						v-if="table.total > 0"
-						variant="flat"
-						color="error"
-						class="mr-2"
-						@click="page.delete.show = true"
-						>Delete All</v-btn
-					>
+					<v-btn variant="flat" color="info" class="mr-2" @click="page.import.show = true">Import Data</v-btn>
+					<v-btn v-if="table.total > 0" variant="flat" color="error" class="mr-2" @click="page.delete.show = true">Delete All</v-btn>
 				</template>
 			</grid-view>
 
-			<v-dialog
-				v-model="page.delete.show"
-				:max-width="constants.dialogSizes.md"
-			>
+			<v-dialog v-model="page.delete.show" :max-width="constants.dialogSizes.md">
 				<v-card title="Confirm delete">
 					<v-card-text>
 						<error-alert :text="page.delete.error"></error-alert>
 
 						<p>
 							Are you sure you want to delete
-							<strong>ALL</strong> weather stations? This action
-							is permanent and cannot be undone.
+							<strong>ALL</strong> weather stations? This action is permanent and cannot be undone.
 						</p>
 					</v-card-text>
 					<v-divider></v-divider>
 					<v-card-actions>
-						<v-btn
-							@click="confirmDelete"
-							:loading="page.delete.saving"
-							color="error"
-							variant="text"
-							>Delete All</v-btn
-						>
+						<v-btn @click="confirmDelete" :loading="page.delete.saving" color="error" variant="text">Delete All</v-btn>
 						<v-btn @click="page.delete.show = false">Cancel</v-btn>
 					</v-card-actions>
 				</v-card>
 			</v-dialog>
 
-			<v-dialog
-				v-model="page.import.show"
-				:max-width="constants.dialogSizes.lg"
-				persistent
-			>
+			<v-dialog v-model="page.import.show" :max-width="constants.dialogSizes.lg" persistent>
 				<v-card title="Import Weather Stations">
 					<v-card-text>
 						<error-alert :text="page.import.error"></error-alert>
@@ -414,20 +332,10 @@ watch(
 							</p>
 						</div>
 						<div v-else-if="formatters.isNullOrEmpty(task.error)">
-							<v-alert
-								type="info"
-								icon="$info"
-								variant="tonal"
-								border="start"
-								class="mb-4"
-							>
+							<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
 								Need weather data?
-								<open-in-browser
-									url="https://swat.tamu.edu/data/"
-									text="See options on the SWAT website."
-								></open-in-browser>
-								<br />Have <b>hourly</b> data? This is only
-								supported in SWAT+ format, not SWAT2012.
+								<open-in-browser url="https://swat.tamu.edu/data/" text="See options on the SWAT website."></open-in-browser>
+								<br />Have <b>hourly</b> data? This is only supported in SWAT+ format, not SWAT2012.
 							</v-alert>
 
 							<div class="form-group mb-0">
@@ -435,116 +343,73 @@ watch(
 									label="Select your data format"
 									v-model="page.import.form.format"
 									:items="page.import.options.formats"
-									:error-messages="
-										v$.format.$errors
-											.map((e) => e.$message)
-											.join(', ')
-									"
+									:error-messages="v$.format.$errors.map((e) => e.$message).join(', ')"
 									@input="v$.format.$touch"
 									@blur="v$.format.$touch"
 								></v-select>
 							</div>
 
-							<v-alert
-								type="info"
-								icon="$info"
-								variant="tonal"
-								border="start"
-								class="mb-4"
-							>
-								<span
-									v-if="
-										page.import.form.format === 'SWAT2012'
-									"
-								>
-									Each measurement provided must have a file
-									named as: <code>pcp.txt</code>,
-									<code>rh.txt</code>, <code>solar.txt</code>,
-									<code>tmp.txt</code>, <code>wind.txt</code>,
-									and <code>pet.txt</code>.
+							<v-alert type="info" icon="$info" variant="tonal" border="start" class="mb-4">
+								<span v-if="page.import.form.format === 'SWAT2012'">
+									Each measurement provided must have a file named as: <code>pcp.txt</code>, <code>rh.txt</code>,
+									<code>solar.txt</code>, <code>tmp.txt</code>, <code>wind.txt</code>, and <code>pet.txt</code>.
 									<open-in-browser
 										url="https://plus.swat.tamu.edu/downloads/sample_files/weather-stations/swat2012-weather-stations.zip"
 										text="Download a sample format"
 									></open-in-browser>
 									and
 									<open-in-browser
-										url="https://swatplus.gitbook.io/docs/user/editor/inputs/climate#swat2012-global-weather-websites-format"
+										url="https://swat-model.github.io/swatplus-editor-documentation/edit-inputs/weather/#swat2012global-weather-websites-format"
 										text="read the instructions"
 									></open-in-browser
 									>.
 								</span>
 								<span v-else>
-									Each measurement provided must have a file
-									named as: <code>pcp.cli</code>,
-									<code>hmd.cli</code>, <code>slr.cli</code>,
-									<code>tmp.cli</code>, <code>wnd.cli</code>,
-									and <code>pet.cli</code>.
+									Each measurement provided must have a file named as: <code>pcp.cli</code>, <code>hmd.cli</code>,
+									<code>slr.cli</code>, <code>tmp.cli</code>, <code>wnd.cli</code>, and <code>pet.cli</code>.
 									<open-in-browser
 										url="https://plus.swat.tamu.edu/downloads/sample_files/weather-stations/swatplus-weather-stations.zip"
 										text="Download a sample format"
 									></open-in-browser>
 									and
 									<open-in-browser
-										url="https://swatplus.gitbook.io/docs/user/editor/inputs/climate#swat+-format"
+										url="https://swat-model.github.io/swatplus-editor-documentation/edit-inputs/weather/#swat-format"
 										text="read the instructions"
 									></open-in-browser
 									>.
 								</span>
 
-								Please ensure the files you're importing are
-								saved with UTF-8 encoding. Replace any accent or
-								non-unicode characters in the station names or
-								comment lines of all files.
+								Please ensure the files you're importing are saved with UTF-8 encoding. Replace any accent or non-unicode characters
+								in the station names or comment lines of all files.
 							</v-alert>
 
 							<div class="form-group mb-0">
 								<select-folder-input
 									v-model="page.import.form.weatherDataDir"
 									:value="page.import.form.weatherDataDir"
-									:label="
-										page.import.form.format +
-										' weather files directory'
-									"
+									:label="page.import.form.format + ' weather files directory'"
 									required
 									invalidFeedback="Required"
 								></select-folder-input>
 							</div>
 
-							<div
-								class="form-group mb-0"
-								v-if="page.import.form.format !== 'SWAT+'"
-							>
+							<div class="form-group mb-0" v-if="page.import.form.format !== 'SWAT+'">
 								<select-folder-input
 									v-model="page.import.form.saveDir"
 									:value="page.import.form.saveDir"
 									label="Directory to save your SWAT+ weather files"
-									:required="
-										page.import.form.format !== 'SWAT+'
-									"
+									:required="page.import.form.format !== 'SWAT+'"
 									invalidFeedback="Required"
 								></select-folder-input>
 							</div>
 
 							<div v-if="table.total > 0">
-								<v-checkbox
-									v-model="page.import.form.deleteExisting"
-									hide-details
-								>
-									<template #label>
-										Delete existing stations? Leave
-										unchecked to keep.
-									</template>
+								<v-checkbox v-model="page.import.form.deleteExisting" hide-details>
+									<template #label> Delete existing stations? Leave unchecked to keep. </template>
 								</v-checkbox>
 
-								<v-checkbox
-									v-model="page.import.form.matchExisting"
-									hide-details
-								>
-									<template #label>
-										Match files to existing stations? Leave
-										unchecked to create new weather
-										stations.
-									</template>
+								<v-checkbox v-model="page.import.form.matchExisting" hide-details>
+									<template #label> Match files to existing stations? Leave unchecked to create new weather stations. </template>
 								</v-checkbox>
 							</div>
 						</div>

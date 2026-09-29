@@ -2,7 +2,7 @@
 
 Desktop interface to SWAT+ allowing the user to import a project from GIS, modify SWAT+ input, write the text files, and run the model.
 
-Read the documentation at [swatplus.gitbook.io/docs](https://swatplus.gitbook.io/docs) and [join the user group](https://groups.google.com/g/swatplus-editor) to be notified of new releases.
+Read the documentation at [swat-model.github.io/swatplus-editor-documentation/](https://swat-model.github.io/swatplus-editor-documentation/) and [join the user group](https://groups.google.com/g/swatplus-editor) to be notified of new releases.
 
 ## Installing and running the source code ##
 
