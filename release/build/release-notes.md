@@ -2,6 +2,7 @@
 
 * Update to SWAT+ rev. 62.0.1
 * Time-series recall (point source/inlet) data is re-enabled with SWAT+ rev. 62.0.1
+* Removed unused carbon=1 option in codes.bsn drop down list
 
 ### SWAT+ Editor 4.0.2 ###
 

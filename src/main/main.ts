@@ -103,7 +103,26 @@ async function readCSV(filePath: string): Promise<any[]> {
 
 const getSwatExeOptions = async () => {
 	try {
-		return await readCSV(join(app.getAppPath(), 'static', 'swat_exe', 'exe-options.csv').replace('app.asar', 'app.asar.unpacked'));
+		const platformFileMap: Partial<Record<NodeJS.Platform, string>> = {
+            linux: 'exe-options-linux.csv',
+            darwin: 'exe-options-mac.csv',
+        };
+
+        const platformFile = platformFileMap[process.platform];
+        const fallbackFile = 'exe-options.csv';
+
+        const resolvePath = (filename: string) =>
+            join(app.getAppPath(), 'static', 'swat_exe', filename)
+                .replace('app.asar', 'app.asar.unpacked');
+
+        if (platformFile) {
+            const platformPath = resolvePath(platformFile);
+            if (fs.existsSync(platformPath)) {
+                return await readCSV(platformPath);
+            }
+        }
+
+        return await readCSV(resolvePath(fallbackFile));
 	} catch (error) {
 		console.error('Error reading CSV:', error);
 		return null;

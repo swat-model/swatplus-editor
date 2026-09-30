@@ -75,7 +75,7 @@ class File_cio(BaseFileModel):
 
 	def get_classifications(self, is_lte=False, is_netcdf=False):
 		#TEMP CHANGE: recall disabled in 4.0 due to model not being fully tested and ready
-		rec_cnt = 0 #recall.Recall_rec.select().where(recall.Recall_rec.rec_typ != 4).count()
+		rec_cnt = recall.Recall_rec.select().where(recall.Recall_rec.rec_typ != 4).count()
 		exco_cnt = recall.Recall_dat.select().join(recall.Recall_rec).where((recall.Recall_rec.rec_typ == 4) & (recall.Recall_dat.flo != 0)).count()
 		codes_bsn = basin.Codes_bsn.get_or_none()
 		carbon_bsn = basin.Carbon_bsn.get_or_none()

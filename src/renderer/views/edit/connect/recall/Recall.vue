@@ -245,7 +245,8 @@ onUnmounted(() => removeRunProcessHandlers());
 										<code>pt001</code> should have a file in the directory <code>pt001.csv</code>.
 									</p>
 									<p>
-										Time series files may be daily, monthly, or yearly.
+										Time series files may be daily, monthly, or yearly. Every value is a per-day amount, so a monthly or yearly
+										file holds the average daily load.
 										<strong>Make sure your simulation dates fall within the dates of your data.</strong>
 										Not all recall objects need to be the same time step. You do not need to have a time series file or constant
 										record for each recall object. Just leave it out of the directory to ignore.

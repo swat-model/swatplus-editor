@@ -80,6 +80,8 @@ onMounted(async () => await get());
 			/ Create
 		</file-header>
 
+		<p>Every value is a per-day amount, so a monthly or yearly file holds the average daily load.</p>
+
 		<edit-form
 			show-range
 			hide-name
