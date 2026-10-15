@@ -319,7 +319,7 @@ class WeatherImport(ExecutableApi):
 							break
 
 						if i > 1:
-							station_name = line.strip('\n')
+							station_name = line.strip()
 							station_file = os.path.join(dir, station_name)
 							if not os.path.exists(station_file):
 								raise IOError("File {file} not found. Weather data import aborted.".format(file=station_file))
