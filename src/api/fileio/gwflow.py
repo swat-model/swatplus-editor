@@ -288,7 +288,7 @@ class Gwflow_files(BaseFileModel):
 			for r in rows:
 				utils.write_int(f, r.cell_id)
 				utils.write_int(f, lsu_idx.get(r.lsu_id, r.lsu_id))
-				utils.write_num(f, r.area_m2, decimals=2)
+				utils.write_num(f, r.area_m2, decimals=0)
 				f.write('\n')
 
 	def write_rescells(self):
@@ -537,7 +537,7 @@ class Gwflow_files(BaseFileModel):
 			self.write_meta_line(f, 'solute.gw')
 			f.write('\n')
 			f.write('{}\n'.format(cfg.transport_steps))
-			f.write('{}\n'.format(utils.get_num_format(cfg.disp_coef, 2)))
+			f.write('{}\n'.format(utils.get_num_format(cfg.disp_coef, 0)))
 			f.write('{}\n'.format(len(solutes)))
 			for s in solutes:
 				f.write('{}\t{}\t{}\t{}\t{}\n'.format(

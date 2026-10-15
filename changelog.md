@@ -8,12 +8,15 @@
 - Time-series recall (point source/inlet) data is re-enabled with SWAT+ rev. 62.0.1
 - Rev. 62.0.1 also fixes bug from 62.0.0 in export coefficient (constant point source) input file structure, so this functionality is also restored
 - Update nutrients.res columns: chla_co -> nsolr and secchi_co -> psolr; same default values used for both (1)
+- Update file writing precision to integer for gwflow: lsucell_gw.area_m2 and codes_gw.disp_coef
+- Update carbon.bsn column till_eff_days from type double to integer
+- Bug fix: write the carbon_lyr.bsn file if carbon module is enabled
 - Removed unused carbon=1 option in codes.bsn drop down list
 - Developer feature: update reading exe-options.csv to have Linux and MacOS specific files with fallback to default to ease compiling on these platforms
 
 ### Revision 4.0.2
 
-- Bug fix affecting gfortran compiling: print plants.plt days_mat and yrs_mat as integer instead of decimals.
+- Bug fix affecting gfortran compiling: print plants.plt days_mat and yrs_mat and parameters.bsn day_lag_max as integer instead of decimals.
 - Work-around fix affecting instances where the model has an error exit code despite the model running successfully.
 
 ### Revision 4.0.1

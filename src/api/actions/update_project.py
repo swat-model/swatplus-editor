@@ -166,6 +166,9 @@ class UpdateProject(ExecutableApi):
 			with db.atomic():
 				migrate(migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'))
 
+			with db.atomic():
+				migrate(migrator.change_column_type('carbon_bsn', 'till_eff_days', IntegerField(default=100)))
+
 			db.close()
 		except:
 			sys.exit("Error trying to update your project sqlite codes_bsn table for 4.0. Please contact the user group and post a link for the team to download your project.")

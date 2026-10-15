@@ -85,7 +85,7 @@ class Carbon_bsn(base.BaseModel):
 	init_passive = DoubleField(default=0.54)
 	koc_c = DoubleField(default=1000)
 	solc_ratio = DoubleField(default=0.5)
-	till_eff_days = DoubleField(default=100)
+	till_eff_days = IntegerField(default=100)
 	manure_c_frac = DoubleField(default=0.5)
 	bio_consol = DoubleField(default=0.15)
 	till_consol = DoubleField(default=0.1)

@@ -595,6 +595,7 @@ class WriteFiles(ExecutableApi):
 		if carbon_bsn_file != NULL_FILE:
 			self.update_file_status(prog, carbon_bsn_file)
 			basin.Carbon_bsn(os.path.join(self.__dir, carbon_bsn_file), self.__version, self.__swat_version).write()
+			basin.Carbon_lyr_bsn(os.path.join(self.__dir, 'carbon_lyr.bsn'), self.__version, self.__swat_version).write()
 
 	def write_hydrology(self, start_prog, allocated_prog):
 		num_files = 3
