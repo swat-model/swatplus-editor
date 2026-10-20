@@ -1,59 +1,86 @@
 <script setup lang="ts">
-	import { reactive, onMounted, watch } from 'vue';
-	import { useRoute } from 'vue-router';
-	import { useHelpers } from '@/helpers';
-	import EditForm from '@/components/EditForm.vue';
+import { reactive, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+import { useHelpers } from "@/helpers";
+import EditForm from "@/components/EditForm.vue";
 
-	const route = useRoute();
-	const { api, currentProject, errors, utilities } = useHelpers();
+const route = useRoute();
+const { api, currentProject, errors, utilities } = useHelpers();
 
-	let data:any = reactive({
-		paths: {
-			data: 'db/plants',
-			vars: 'plants_plt'
-		},
-		page: {
-			loading: false,
-			error: null
-		},
-		item: {},
-		vars: []
-	});
+let data: any = reactive({
+	paths: {
+		data: "db/plants",
+		vars: "plants_plt",
+	},
+	page: {
+		loading: false,
+		error: null,
+	},
+	item: {},
+	vars: [],
+});
 
-	async function get() {
-		if (route.params.id === undefined) return;
-		data.page.loading = true;
-		data.page.error = null;
+async function get() {
+	if (route.params.id === undefined) return;
+	data.page.loading = true;
+	data.page.error = null;
 
-		try {
-			const response = await api.get(`${data.paths.data}/${route.params.id}`, currentProject.getApiHeader());
-			data.item = response.data;
+	try {
+		const response = await api.get(
+			`${data.paths.data}/${route.params.id}`,
+			currentProject.getApiHeader(),
+		);
+		data.item = response.data;
 
-			const response2 = await api.get(`definitions/vars/${data.paths.vars}`, utilities.getAppPathHeader());
-			data.vars = response2.data;
-		} catch (error) {
-			data.page.error = errors.logError(error, 'Unable to get project information from database.');
-		}
-			
-		data.page.loading = false;
+		const response2 = await api.get(
+			`definitions/vars/${data.paths.vars}`,
+			utilities.getAppPathHeader(),
+		);
+		data.vars = response2.data;
+	} catch (error) {
+		data.page.error = errors.logError(
+			error,
+			"Unable to get project information from database.",
+		);
 	}
 
-	onMounted(async () => await get())
-	watch(() => route.path, async () => await get())
+	data.page.loading = false;
+}
+
+onMounted(async () => await get());
+watch(
+	() => route.path,
+	async () => await get(),
+);
 </script>
 
 <template>
-	<project-container :loading="data.page.loading" :load-error="data.page.error">
-		<file-header input-file="plants.plt" docs-path="databases/plants.plt" use-io>
+	<project-container
+		:loading="data.page.loading"
+		:load-error="data.page.error"
+	>
+		<file-header
+			input-file="plants.plt"
+			docs-path="databases/plants.plt"
+			use-io
+		>
 			<router-link to="/edit/db/plants">Plants</router-link>
 			/ Edit
 		</file-header>
 
-		<edit-form show-description show-range is-update get-datasets-record allow-bulk-edit
+		<edit-form
+			show-description
+			show-range
+			is-update
+			get-datasets-record
+			allow-bulk-edit
 			:item="data.item"
-			name="Plants" table="plant" no-gis
-			:vars="data.vars" 
+			name="Plants"
+			table="plant"
+			no-gis
+			:vars="data.vars"
 			api-url="db/plants"
-			redirect-route="Plants"></edit-form>
+			redirect-route="Plants"
+		></edit-form>
 	</project-container>
 </template>

@@ -23,10 +23,10 @@ let pythonProcess: any = null;
 
 const cli = parseArgs(`
 		swatpluseditor
- 
+
 		Usage
 			$ swatpluseditor [path_to_project_database]
- 
+
 		Options
 			--help                      show help
 			--version                   show version
@@ -44,7 +44,7 @@ const cli = parseArgs(`
 			--year-end                  ending year of simulation (defaults to weather files dates)
 			--day-end                   ending day of simulation (defaults to weather files dates)
 			--input-files-dir           full path of where to write input files (defaults to Scenarios/Default/TxtInOut)
- 
+
 		Examples
 			$ swatpluseditor path/to/project-database.sqlite
 			$ swatpluseditor path/to/project-database.sqlite --cmd-only --weather-dir=path/to/weather_files
@@ -103,7 +103,26 @@ async function readCSV(filePath: string): Promise<any[]> {
 
 const getSwatExeOptions = async () => {
 	try {
-		return await readCSV(join(app.getAppPath(), 'static', 'swat_exe', 'exe-options.csv').replace('app.asar', 'app.asar.unpacked'));
+		const platformFileMap: Partial<Record<NodeJS.Platform, string>> = {
+            linux: 'exe-options-linux.csv',
+            darwin: 'exe-options-mac.csv',
+        };
+
+        const platformFile = platformFileMap[process.platform];
+        const fallbackFile = 'exe-options.csv';
+
+        const resolvePath = (filename: string) =>
+            join(app.getAppPath(), 'static', 'swat_exe', filename)
+                .replace('app.asar', 'app.asar.unpacked');
+
+        if (platformFile) {
+            const platformPath = resolvePath(platformFile);
+            if (fs.existsSync(platformPath)) {
+                return await readCSV(platformPath);
+            }
+        }
+
+        return await readCSV(resolvePath(fallbackFile));
 	} catch (error) {
 		console.error('Error reading CSV:', error);
 		return null;
@@ -169,7 +188,7 @@ function createWindow () {
 	});
 
 	mainWindow = new BrowserWindow({
-		width: mainWindowState.width, 
+		width: mainWindowState.width,
 		height: mainWindowState.height,
 		x: mainWindowState.x,
 		y: mainWindowState.y,
@@ -224,7 +243,7 @@ app.whenReady().then(async () => {
 		let defaultSwatExe = swatExeOptions?.find((r) => r.isDefault === '1')?.fileName || swatExeOptions?.[0]?.fileName || '';
 		const swat_exe = getSwatExeFile(defaultSwatExe);
 
-		var script_args = [
+		let script_args = [
 			'run',
 			'--project_db_file=' + cli.input[0],
 			'--editor_version=' + appsettings.version,
@@ -261,11 +280,11 @@ app.whenReady().then(async () => {
 		pythonProcess.stdout.on('data', (data) => {
 			console.log(data.toString());
 		});
-		
+
 		pythonProcess.stderr.on('data', (data) => {
 			console.log(`stderr: ${data}`);
 		});
-		
+
 		pythonProcess.on('close', (code) => {
 			console.log('Done.');
 			app.quit();
@@ -277,28 +296,28 @@ app.whenReady().then(async () => {
 		portfinder.getPortPromise()
 			.then((port) => {
 				global.api_port = port;
-				
+
 				if (DEV_MODE || appsettings.python) {
 					pythonProcess = child_process.spawn(appsettings.pythonPath, [script, port.toString()]);
 				} else {
 					pythonProcess = child_process.spawn(script, [port.toString()]);
 				}
 				pids.push(pythonProcess.pid);
-			
+
 				if (pythonProcess != null) {
 					console.log('SWAT+ API started: ' + port + ', process ID: ' + pythonProcess.pid);
 
 					pythonProcess.stdout.on('data', (data) => {
 						console.log(`stdout: ${data}`);
 					});
-				
+
 					pythonProcess.stderr.on('data', (data) => {
 						console.log(`stderr: ${data}`);
 					});
 				} else {
 					console.log('SWAT+ API failed to start.');
 				}
-			
+
 				createWindow();
 				initColorTheme();
 
@@ -310,7 +329,7 @@ app.whenReady().then(async () => {
 			.catch((err) => {
 				console.log('Could not find port: ' + err);
 			});
-		
+
 
 		session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
 			callback({
@@ -335,7 +354,9 @@ async function closeProcesses() {
 		if (pid != undefined) {
 			try {
 				kill(pid);
-			} catch(error) {}
+			} catch(error) {
+				console.log(`Error killing process ${pid}: ${error}`);
+			}
 		}
 	}
 
@@ -502,8 +523,8 @@ ipcMain.on('spawn-process', (event, proc_name:string, script_name:string, args:s
 	if (DEV_MODE || appsettings.python) {
 		args.unshift(script);
 		script = appsettings.pythonPath;
-	} 
-	
+	}
+
 	let ipcProcess = child_process.spawn(script, args);
 	pids.push(ipcProcess.pid);
 	let stderrChunks = [];
@@ -524,7 +545,7 @@ ipcMain.on('spawn-process', (event, proc_name:string, script_name:string, args:s
 			mainWindow.webContents.send(`process-stderr-${proc_name}`, stderrContent);
 		}
 	});
-	
+
 	ipcProcess.on('close', (code) => {
 		mainWindow.webContents.send(`process-close-${proc_name}`, code);
 	});
@@ -548,11 +569,11 @@ ipcMain.on('run-swat', (event, inputDir:string, modelExe:string) => {
 	if (process.platform === 'darwin') {
 		process.env.DYLD_FALLBACK_LIBRARY_PATH = getLibPath();
 	}
-	
+
 	let ipcProcess = child_process.spawn(swatExe, [], { cwd: inputDir });
 	pids.push(ipcProcess.pid);
 	let stderrChunks = [];
-	
+
 	ipcProcess.stdout.on('data', (data) => {
 		mainWindow.webContents.send('process-stdout-run-swat', data.toString());
 	});
@@ -569,7 +590,7 @@ ipcMain.on('run-swat', (event, inputDir:string, modelExe:string) => {
 			mainWindow.webContents.send('process-stderr-run-swat', stderrContent);
 		}
 	});
-	
+
 	ipcProcess.on('close', (code) => {
 		mainWindow.webContents.send('process-close-run-swat', code);
 	});
@@ -682,7 +703,7 @@ const template: Electron.MenuItemConstructorOptions[] = [
 			},
 			{
 				label: 'SWAT+ Editor Documentation',
-				click () { shell.openExternal('https://swatplus.gitbook.io/docs/') }
+				click () { shell.openExternal('https://swat-model.github.io/swatplus-editor-documentation/') }
 			},
 			{
 				label: 'SWAT+ Input/Output Documentation',
@@ -690,7 +711,7 @@ const template: Electron.MenuItemConstructorOptions[] = [
 			},
 			{
 				label: 'SWAT+ Release Notes',
-				click () { shell.openExternal('https://swatplus.gitbook.io/docs/release-notes') }
+				click () { shell.openExternal('https://swat.tamu.edu/software/release-notes/') }
 			},
 			{
 				label: 'SWAT Website',

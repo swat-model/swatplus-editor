@@ -1,22 +1,30 @@
-### SWAT+ Editor 4.0.2 ###
+### SWAT+ Editor 4.1.0
 
-* Bug fix affecting gfortran compiling: print plants.plt days_mat and yrs_mat as integer instead of decimals.
-* Work-around fix affecting instances where the model has an error exit code despite the model running successfully.
-* **IMPORTANT:** Time-series recall (point source/inlet) data is still not supported in this release. Please keep using version 3.2.x and do not upgrade yet if you need recall.
+- Update to SWAT+ rev. 62.0.1
+- Time-series recall (point source/inlet) data is re-enabled with SWAT+ rev. 62.0.1
+- Rev. 62.0.1 also fixes bug from 62.0.0 in export coefficient (constant point source) input file structure, so this functionality is also restored
+- Update nutrients.res columns: chla_co -> nsolr and secchi_co -> psolr; same default values used for both (1)
+- Update file writing precision to integer for gwflow: lsucell_gw.area_m2 and codes_gw.disp_coef
+- Update carbon.bsn column till_eff_days from type double to integer
+- Bug fix: write the carbon_lyr.bsn file if carbon module is enabled
+- Removed unused carbon=1 option in codes.bsn drop down list
+- Developer feature: update reading exe-options.csv to have Linux and MacOS specific files with fallback to default to ease compiling on these platforms
 
-### SWAT+ Editor 4.0.1 ###
+### SWAT+ Editor 4.0.2
 
-* Bug fix related to codes_bsn/i_fpwet column name change giving an error on new project setups using an old swatplus_datasets.sqlite version.
+- Bug fix affecting gfortran compiling: print plants.plt days_mat and yrs_mat and parameters.bsn day_lag_max as integer instead of decimals.
+- Work-around fix affecting instances where the model has an error exit code despite the model running successfully.
 
-### SWAT+ Editor 4.0.0 ###
-**IMPORTANT:** This new version of the editor is only compatible with SWAT+ rev. 62 and later. Due to structural model changes, rev. 61 and earlier are NOT supported. Project updates are available after software update.
+### SWAT+ Editor 4.0.1
 
-**RECALL NOT SUPPORTED:** If you are using time-series recall (point source/inlet) data, we encourage you to not update your software yet. Continue using the 3.2.x versions with SWAT+ rev. 61.0.2. Recall is moving to water allocation and is not yet ready in this release of the model. We expect it to be ready late summer 2026.
+- Bug fix related to codes_bsn/i_fpwet column name change giving an error on new project setups using an old swatplus_datasets.sqlite version.
 
-* Compatible with SWAT+ rev. 62
-* gwflow structure updates (QSWAT+ v4.0 update is REQUIRED)
-* Add carbon module (see basin section for carbon and carbon layers)
-* Update print.prt to include gwflow options and legacy carbon options
-* Time-series recall DISABLED (see note above)
+### SWAT+ Editor 4.0.0
+
+- Compatible with SWAT+ rev. 62
+- gwflow structure updates (QSWAT+ v4.0 update is REQUIRED)
+- Add carbon module (see basin section for carbon and carbon layers)
+- Update print.prt to include gwflow options and legacy carbon options
+- Time-series recall DISABLED (update to 4.1.0 to re-enable)
 
 _Several breaking changes from v3.x. This version is NOT backwards compatible._

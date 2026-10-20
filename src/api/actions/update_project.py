@@ -24,17 +24,18 @@ import datetime
 
 # Map version prefixes/values to required upgrades
 UPGRADE_PATHS = {
-	'3.2.': ['4_0_0'],
-	'3.1.': ['3_2_0', '4_0_0'],
-	'3.0.': ['3_1_0', '3_2_0', '4_0_0'],
-	'2.3.': ['3_0_0', '3_1_0', '3_2_0', '4_0_0'],
-	('2.1.', '2.2.'): ['2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
-	'2.0.': ['2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
-	('1.3.0', '1.4.0'): ['2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
-	('1.2.1', '1.2.2', '1.2.3'): ['1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
-	'1.2.0': ['1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
-	('1.1.0', '1.1.1', '1.1.2'): ['1_2_0', '1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
-	'1.0.0': ['1_1_0', '1_2_0', '1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0'],
+	'4.0.': ['4_1_0'],
+	'3.2.': ['4_0_0', '4_1_0'],
+	'3.1.': ['3_2_0', '4_0_0', '4_1_0'],
+	'3.0.': ['3_1_0', '3_2_0', '4_0_0', '4_1_0'],
+	'2.3.': ['3_0_0', '3_1_0', '3_2_0', '4_0_0', '4_1_0'],
+	('2.1.', '2.2.'): ['2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0', '4_1_0'],
+	'2.0.': ['2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0', '4_1_0'],
+	('1.3.0', '1.4.0'): ['2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0', '4_1_0'],
+	('1.2.1', '1.2.2', '1.2.3'): ['1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0', '4_1_0'],
+	'1.2.0': ['1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0', '4_1_0'],
+	('1.1.0', '1.1.1', '1.1.2'): ['1_2_0', '1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0', '4_1_0'],
+	'1.0.0': ['1_1_0', '1_2_0', '1_2_1', '1_3_0', '2_0_0', '2_1_0', '2_3_0', '3_0_0', '3_1_0', '3_2_0', '4_0_0', '4_1_0'],
 }
 
 def matches_pattern(version, pattern):
@@ -122,6 +123,22 @@ class UpdateProject(ExecutableApi):
 			if reimport_gis:
 				ReimportGis(project_db, new_version, m.project_name, datasets_db, False, m.is_lte)
 
+	def updates_for_4_1_0(self, project_db):
+		self.emit_progress(5, 'Running migrations...')
+		try:
+			db = SqliteDatabase(project_db, timeout=10)
+			migrator = SqliteMigrator(db)
+
+			with db.atomic():
+				migrate(migrator.rename_column('nutrients_res', 'chla_co', 'nsolr'))
+
+			with db.atomic():
+				migrate(migrator.rename_column('nutrients_res', 'secchi_co', 'psolr'))
+
+			db.close()
+		except:
+			sys.exit("Error trying to update your project sqlite nutrients_res table for 4.1. Please contact the user group and post a link for the team to download your project.")
+
 	def updates_for_4_0_0(self, project_db):
 		
 		self.emit_progress(5, 'Running migrations...')
@@ -148,6 +165,9 @@ class UpdateProject(ExecutableApi):
 
 			with db.atomic():
 				migrate(migrator.rename_column('codes_bsn', 'i_fpwet', 'qual2e'))
+
+			with db.atomic():
+				migrate(migrator.change_column_type('carbon_bsn', 'till_eff_days', IntegerField(default=100)))
 
 			db.close()
 		except:

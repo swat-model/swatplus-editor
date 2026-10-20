@@ -5,12 +5,12 @@ export function useErrorHandling() {
 
 	function logError(error:any, defaultMessage:string='') {
 		//console.log(error);
-		var message = '';
+		let message = '';
 
 		if (error.response) {
 			console.log(error.response);
 			console.log(error.response?.data?.stacktrace);
-			var r = error.response;
+			let r = error.response;
 			message = r.data != null && r.data.message != null ? r.data.message : '';
 		} else if (error.data) {
 			console.log(error.data);
